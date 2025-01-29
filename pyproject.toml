@@ -21,6 +21,12 @@ ruff = "^0.9.3"
 mypy = "^1.14.1"
 pytest-cov = "^6.0.0"
 
+[tool.pytest.ini_options]
+markers = "integration: marks tests that require external resources (like HuggingFace datasets)"
+
+[tool.coverage.run]
+relative_files = true
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
