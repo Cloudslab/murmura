@@ -1,8 +1,11 @@
 from enum import Enum
-from typing import Union, Optional, Dict, List
+from typing import Union, Optional, Dict, List, Callable, TypeVar, Any
 from pathlib import Path
 import pandas as pd
-from datasets import Dataset, DatasetDict, load_dataset
+
+from datasets import Dataset, DatasetDict, load_dataset  # type: ignore
+
+T = TypeVar('T', bound='MDataset')
 
 
 class Source(Enum):
@@ -19,7 +22,7 @@ class MDataset:
     def __init__(self, splits: DatasetDict):
         """
         Unified dataset representation with split management
-        
+
         Args:
             splits: Hugging Face DatasetDict containing all splits
         """
@@ -32,101 +35,79 @@ class MDataset:
 
     @classmethod
     def load(
-            cls,
+            cls: type[T],
             source: Source,
             split: Optional[Union[str, List[str]]] = None,
-            **kwargs
-    ) -> 'MDataset':
+            **kwargs: Any
+    ) -> T:
         """
         Load data from specified source with consistent interface
-        
+
         Args:
             source: Data source type (from Source enum)
             split: Split(s) to load (format depends on source)
             **kwargs: Source-specific parameters
         """
-        loader = {
+        loader: Dict[Source, Callable[..., T]] = {
             Source.CSV: cls._load_csv,
             Source.JSON: cls._load_json,
             Source.PARQUET: cls._load_parquet,
             Source.PANDAS: cls._load_pandas,
             Source.DICT: cls._load_dict,
             Source.LIST: cls._load_list,
-            Source.HUGGING_FACE: cls._load_hf
-        }[source]
+            Source.HUGGING_FACE: cls._load_hf,
+        }
 
-        return loader(split=split, **kwargs)
+        return loader[source](split=split, **kwargs)
 
     @classmethod
     def _load_csv(
-            cls,
-            path: Union[str, Path],
-            split: Optional[str] = None,
-            **kwargs
-    ) -> 'MDataset':
+            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+    ) -> T:
         df = pd.read_csv(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_json(
-            cls,
-            path: Union[str, Path],
-            split: Optional[str] = None,
-            **kwargs
-    ) -> 'MDataset':
+            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+    ) -> T:
         df = pd.read_json(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_parquet(
-            cls,
-            path: Union[str, Path],
-            split: Optional[str] = None,
-            **kwargs
-    ) -> 'MDataset':
+            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+    ) -> T:
         df = pd.read_parquet(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_pandas(
-            cls,
-            data: pd.DataFrame,
-            split: Optional[str] = None,
-            **_
-    ) -> 'MDataset':
+            cls: type[T], data: pd.DataFrame, split: Optional[str] = None, **_: Any
+    ) -> T:
         return cls._create_from_data(data, split)
 
     @classmethod
-    def _load_dict(
-            cls,
-            data: Dict,
-            split: Optional[str] = None,
-            **_
-    ) -> 'MDataset':
+    def _load_dict(cls: type[T], data: Dict, split: Optional[str] = None, **_: Any) -> T:
         return cls._create_from_data(data, split)
 
     @classmethod
-    def _load_list(
-            cls,
-            data: List,
-            split: Optional[str] = None,
-            **_
-    ) -> 'MDataset':
+    def _load_list(cls: type[T], data: List, split: Optional[str] = None, **_: Any) -> T:
         return cls._create_from_data(data, split)
 
     @classmethod
     def _load_hf(
-            cls,
+            cls: type[T],
             dataset_name: str,
             split: Optional[Union[str, List[str]]] = None,
-            **kwargs
-    ) -> 'MDataset':
+            **kwargs: Any
+    ) -> T:
         try:
             dataset = load_dataset(dataset_name, split=split, **kwargs)
-            if isinstance(dataset, List):
+            if isinstance(dataset, list) and isinstance(split, list):
                 dataset_dict = DatasetDict()
-                for i in range(len(dataset)):
-                    dataset_dict[split[i]] = dataset[i]
+                for i, s in enumerate(split):
+                    dataset_dict[s] = dataset[i]
                 return cls(dataset_dict)
             return cls(DatasetDict({split or "train": dataset}))
         except ValueError as e:
@@ -137,10 +118,8 @@ class MDataset:
 
     @classmethod
     def _create_from_data(
-            cls,
-            data: Union[pd.DataFrame, Dict, List],
-            split: Optional[str] = None
-    ) -> 'MDataset':
+            cls: type[T], data: Union[pd.DataFrame, Dict, List], split: Optional[str] = None
+    ) -> T:
         """Create MDataset from in-memory data structures"""
         if isinstance(data, pd.DataFrame):
             dataset = Dataset.from_pandas(data)
@@ -163,19 +142,20 @@ class MDataset:
             source_split: str = "train",
             test_size: float = 0.2,
             seed: int = 42,
-            new_split_names: tuple = ("train", "test")
-    ) -> 'MDataset':
+            new_split_names: tuple[str, str] = ("train", "test"),
+    ) -> "MDataset":
         """Create new splits from existing data"""
         base_dataset = self._splits[source_split]
-        splits = base_dataset.train_test_split(
-            test_size=test_size,
-            seed=seed
+        splits = base_dataset.train_test_split(test_size=test_size, seed=seed)
+        return MDataset(
+            DatasetDict(
+                {
+                    **self._splits,
+                    new_split_names[0]: splits["train"],
+                    new_split_names[1]: splits["test"],
+                }
+            )
         )
-        return MDataset(DatasetDict({
-            **self._splits,
-            new_split_names[0]: splits["train"],
-            new_split_names[1]: splits["test"]
-        }))
 
     def __repr__(self) -> str:
         return f"MDataset(splits={self.available_splits})"

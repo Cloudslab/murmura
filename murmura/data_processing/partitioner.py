@@ -6,7 +6,8 @@ from murmura.data_processing.dataset import MDataset
 
 class Partitioner(ABC):
     @abstractmethod
-    def partition(self, dataset: MDataset, num_partitions: int, seed: int = None) -> List[MDataset]:
+    def partition(
+            self, dataset: MDataset, num_partitions: int, seed: int) -> List[MDataset]:
         """
         Partitions the dataset into multiple subsets.
 
@@ -16,4 +17,3 @@ class Partitioner(ABC):
         :return: List of Partitions
         """
         pass
-

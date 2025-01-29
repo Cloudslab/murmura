@@ -1,19 +1,24 @@
 [project]
 name = "murmura"
 version = "0.1.0"
-description = ""
+description = "A decentralized federated learning library"
+license = "GPL-3.0-only"
 authors = [
-    {name = "Murtaza Hatim",email = "murtazahatimr@icloud.com"}
+    {name = "Murtaza Rangwala",email = "murtazahatimr@icloud.com"}
 ]
 readme = "README.md"
+repository = "https://github.com/murtazahr/murmura"
 requires-python = ">=3.11"
 dependencies = [
     "pandas (>=2.2.3,<3.0.0)",
     "datasets (>=3.2.0,<4.0.0)"
 ]
 
-[tool.poetry.group.test.dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
+ruff = "^0.9.3"
+mypy = "^1.14.1"
+pytest-cov = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
