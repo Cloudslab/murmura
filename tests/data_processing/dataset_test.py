@@ -149,10 +149,14 @@ def test_load_hugging_face():
     assert "train" in dataset.available_splits
     assert "test" in dataset.available_splits
 
-    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="scikit-learn/iris")
+    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="mnist")
 
     assert "train" in dataset.available_splits
+    assert "test" in dataset.available_splits
 
-    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="scikit-learn/iris", split="invalid_split")
+    dataset = MDataset.load(
+        Source.HUGGING_FACE, dataset_name="mnist", split="test"
+    )
 
-    assert "train" in dataset.available_splits
+    assert "test" in dataset.available_splits
+    assert "train" not in dataset.available_splits

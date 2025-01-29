@@ -12,7 +12,8 @@ requires-python = ">=3.11"
 dependencies = [
     "pandas (>=2.2.3,<3.0.0)",
     "datasets (>=3.2.0,<4.0.0)",
-    "pandas-stubs (>=2.2.3.241126,<3.0.0.0)"
+    "pandas-stubs (>=2.2.3.241126,<3.0.0.0)",
+    "numpy (>=2.2.2,<3.0.0)"
 ]
 
 [tool.poetry.group.dev.dependencies]

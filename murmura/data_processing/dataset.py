@@ -107,6 +107,8 @@ class MDataset:
         **kwargs: Any,
     ) -> T:
         try:
+            if split is None:
+                raise ValueError("split is not specified")
             dataset = load_dataset(dataset_name, split=split, **kwargs)
             if isinstance(dataset, list) and isinstance(split, list):
                 dataset_dict = DatasetDict()
