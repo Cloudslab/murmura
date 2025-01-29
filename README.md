@@ -5,8 +5,8 @@
 | Name                                |    Stmts |     Miss |   Cover |   Missing |
 |------------------------------------ | -------: | -------: | ------: | --------: |
 | murmura/\_\_init\_\_.py             |        0 |        0 |    100% |           |
-| murmura/data\_processing/dataset.py |       79 |        7 |     91% |117-121, 135, 165 |
-|                           **TOTAL** |   **79** |    **7** | **91%** |           |
+| murmura/data\_processing/dataset.py |       79 |        2 |     97% |  121, 135 |
+|                           **TOTAL** |   **79** |    **2** | **97%** |           |
 
 
 ## Setup coverage badge
