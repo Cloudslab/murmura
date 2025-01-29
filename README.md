@@ -28,7 +28,7 @@ We welcome contributions! Please feel free to open issues or submit pull request
 
 ## License
 
-This project is licensed under the GPL-3.0-only - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
