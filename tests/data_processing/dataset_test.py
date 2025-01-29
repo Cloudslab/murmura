@@ -154,9 +154,7 @@ def test_load_hugging_face():
     assert "train" in dataset.available_splits
     assert "test" in dataset.available_splits
 
-    dataset = MDataset.load(
-        Source.HUGGING_FACE, dataset_name="mnist", split="test"
-    )
+    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="mnist", split="test")
 
     assert "test" in dataset.available_splits
     assert "train" not in dataset.available_splits

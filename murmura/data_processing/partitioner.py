@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict, Union, cast
 
 import numpy as np
-from datasets import Dataset
+from datasets import Dataset  # type: ignore
 from numpy.typing import NDArray
 
 
@@ -98,35 +98,60 @@ class DirichletPartitioner(Partitioner):
 
             for cls in unique_classes:
                 cls_indices = np.where(targets == cls)[0]
-                proportions = self.rng.dirichlet(self.alpha)
-                pid_to_prop = {pid: float(proportions[pid]) for pid in range(self.num_partitions)}
+                n_class_samples = len(cls_indices)
 
+                # Generate proportions and handle types explicitly
+                proportions = self.rng.dirichlet(self.alpha)
+                pid_to_prop = {
+                    pid: float(proportions[pid]) for pid in range(self.num_partitions)
+                }
+
+                # Self-balancing logic
                 if self.self_balancing:
-                    for pid in list(pid_to_prop.keys()):
+                    for pid in pid_to_prop.copy():
                         if len(self.partitions[pid]) > self.avg_samples_per_partition:
                             pid_to_prop[pid] = 0.0
 
                     total = sum(pid_to_prop.values())
                     if total > 0:
-                        pid_to_prop = {pid: val/total for pid, val in pid_to_prop.items()}
+                        pid_to_prop = {
+                            pid: val / total for pid, val in pid_to_prop.items()
+                        }
                     else:
                         equal_share = 1.0 / self.num_partitions
                         pid_to_prop = {pid: equal_share for pid in pid_to_prop}
 
-                split_points = np.cumsum(list(pid_to_prop.values()))[:-1] * len(cls_indices)
-                splits = np.split(cls_indices, split_points.astype(int))
+                # Calculate split points safely
+                cumulative_props = np.cumsum(list(pid_to_prop.values()))
+                split_points = (cumulative_props[:-1] * n_class_samples).astype(int)
 
-                for pid, indices in enumerate(splits):
-                    self.partitions[pid].extend(indices.tolist())
+                # Handle splits with explicit type casting
+                try:
+                    splits = np.split(cls_indices, split_points)
+                except ValueError:
+                    splits = [
+                        cls_indices,
+                        *[
+                            np.array([], dtype=np.int64)
+                            for _ in range(self.num_partitions - 1)
+                        ],
+                    ]
+
+                # Distribute indices with type-safe conversion
+                for pid, indices_arr in enumerate(splits):
+                    indices_list = cast(List[int], indices_arr.tolist())
+                    self.partitions[pid].extend(indices_list)
 
             if min(len(v) for v in self.partitions.values()) >= self.min_partition_size:
                 break
         else:
-            raise RuntimeError("Failed to meet minimum partition size after 10 attempts")
+            raise RuntimeError(
+                "Failed to meet minimum partition size after 10 attempts"
+            )
 
         if self.shuffle:
-            for indices in self.partitions.values():
-                self.rng.shuffle(indices)
+            for pid in self.partitions:
+                self.rng.shuffle(self.partitions[pid])
 
         return self.partitions
 
@@ -138,10 +163,12 @@ class IIDPartitioner(Partitioner):
         self, dataset: Dataset, partition_by: Optional[str] = None
     ) -> Dict[int, List[int]]:
         """Partition dataset into IID subsets."""
-        indices = np.arange(len(dataset))
+        indices = np.arange(len(dataset), dtype=np.int64)  # Explicit dtype
         self.rng.shuffle(indices)
+
+        # Ensure equal split sizes with type-safe conversion
+        split_arrays = np.array_split(indices, self.num_partitions)
         self.partitions = {
-            pid: split.tolist()
-            for pid, split in enumerate(np.array_split(indices, self.num_partitions))
+            pid: cast(List[int], arr.tolist()) for pid, arr in enumerate(split_arrays)
         }
         return self.partitions
