@@ -95,6 +95,7 @@ def test_load_list(sample_list):
     dataset = MDataset.load(Source.LIST, data=sample_list)
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 10
+    assert repr(dataset) == "MDataset(splits=['train'])"
 
 
 def test_custom_split_name():
@@ -148,6 +149,10 @@ def test_load_hugging_face():
     assert "train" in dataset.available_splits
     assert "test" in dataset.available_splits
 
-    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="mnist")
+    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="scikit-learn/iris")
+
+    assert "train" in dataset.available_splits
+
+    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="scikit-learn/iris", split="invalid_split")
 
     assert "train" in dataset.available_splits

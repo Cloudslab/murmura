@@ -5,7 +5,7 @@ import pandas as pd
 
 from datasets import Dataset, DatasetDict, load_dataset  # type: ignore
 
-T = TypeVar('T', bound='MDataset')
+T = TypeVar("T", bound="MDataset")
 
 
 class Source(Enum):
@@ -35,10 +35,10 @@ class MDataset:
 
     @classmethod
     def load(
-            cls: type[T],
-            source: Source,
-            split: Optional[Union[str, List[str]]] = None,
-            **kwargs: Any
+        cls: type[T],
+        source: Source,
+        split: Optional[Union[str, List[str]]] = None,
+        **kwargs: Any,
     ) -> T:
         """
         Load data from specified source with consistent interface
@@ -62,45 +62,49 @@ class MDataset:
 
     @classmethod
     def _load_csv(
-            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+        cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
     ) -> T:
         df = pd.read_csv(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_json(
-            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+        cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
     ) -> T:
         df = pd.read_json(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_parquet(
-            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+        cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
     ) -> T:
         df = pd.read_parquet(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_pandas(
-            cls: type[T], data: pd.DataFrame, split: Optional[str] = None, **_: Any
+        cls: type[T], data: pd.DataFrame, split: Optional[str] = None, **_: Any
     ) -> T:
         return cls._create_from_data(data, split)
 
     @classmethod
-    def _load_dict(cls: type[T], data: Dict, split: Optional[str] = None, **_: Any) -> T:
+    def _load_dict(
+        cls: type[T], data: Dict, split: Optional[str] = None, **_: Any
+    ) -> T:
         return cls._create_from_data(data, split)
 
     @classmethod
-    def _load_list(cls: type[T], data: List, split: Optional[str] = None, **_: Any) -> T:
+    def _load_list(
+        cls: type[T], data: List, split: Optional[str] = None, **_: Any
+    ) -> T:
         return cls._create_from_data(data, split)
 
     @classmethod
     def _load_hf(
-            cls: type[T],
-            dataset_name: str,
-            split: Optional[Union[str, List[str]]] = None,
-            **kwargs: Any
+        cls: type[T],
+        dataset_name: str,
+        split: Optional[Union[str, List[str]]] = None,
+        **kwargs: Any,
     ) -> T:
         try:
             dataset = load_dataset(dataset_name, split=split, **kwargs)
@@ -118,7 +122,7 @@ class MDataset:
 
     @classmethod
     def _create_from_data(
-            cls: type[T], data: Union[pd.DataFrame, Dict, List], split: Optional[str] = None
+        cls: type[T], data: Union[pd.DataFrame, Dict, List], split: Optional[str] = None
     ) -> T:
         """Create MDataset from in-memory data structures"""
         if isinstance(data, pd.DataFrame):
@@ -138,11 +142,11 @@ class MDataset:
         return self._splits[split]
 
     def train_test_split(
-            self,
-            source_split: str = "train",
-            test_size: float = 0.2,
-            seed: int = 42,
-            new_split_names: tuple[str, str] = ("train", "test"),
+        self,
+        source_split: str = "train",
+        test_size: float = 0.2,
+        seed: int = 42,
+        new_split_names: tuple[str, str] = ("train", "test"),
     ) -> "MDataset":
         """Create new splits from existing data"""
         base_dataset = self._splits[source_split]
