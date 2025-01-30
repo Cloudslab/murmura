@@ -184,6 +184,6 @@ class IIDPartitioner(Partitioner):
             self.rng.shuffle(indices)
 
         split_arrays = np.array_split(indices, self.num_partitions)
-        self.partitions = {pid: arr.tolist() for pid, arr in enumerate(split_arrays)}
+        self.partitions = cast(Dict[int, List[int]], {pid: arr.tolist() for pid, arr in enumerate(split_arrays)})
 
-        dataset.add_partitions(split_name, cast(Dict[int, List[int]], self.partitions))
+        dataset.add_partitions(split_name, self.partitions)
