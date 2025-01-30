@@ -6,6 +6,7 @@ import pytest
 from datasets import Dataset, DatasetDict
 
 from murmura.data_processing.dataset import Source, MDataset
+from murmura.data_processing.partitioner import DirichletPartitioner, IIDPartitioner
 
 
 @pytest.fixture
@@ -47,6 +48,12 @@ def temp_parquet_file(sample_dataframe):
         sample_dataframe.to_parquet(f.name)
         yield Path(f.name)
     Path(f.name).unlink()
+
+
+@pytest.fixture
+def sample_mdataset():
+    data = {"text": ["sample"] * 100, "label": [i % 5 for i in range(100)]}
+    return MDataset(DatasetDict({"train": Dataset.from_dict(data)}))
 
 
 def test_init():
@@ -137,6 +144,149 @@ def test_invalid_split_access():
     dataset = MDataset.load(Source.DICT, data={"a": [1, 2, 3]})
     with pytest.raises(KeyError):
         dataset.get_split("invalid_split")
+
+
+def test_partition_storage_initialization():
+    """Test that partitions are initialized as empty dict"""
+    splits = DatasetDict({"train": Dataset.from_dict({"a": [1, 2, 3]})})
+    dataset = MDataset(splits)
+    assert dataset.partitions == {}
+    assert dataset.list_partitioned_splits() == []
+
+
+def test_add_and_retrieve_partitions():
+    """Test basic partition storage and retrieval"""
+    splits = DatasetDict({"train": Dataset.from_dict({"a": range(10)})})
+    dataset = MDataset(splits)
+
+    sample_partitions = {0: [1, 2, 3], 1: [4, 5, 6], 2: [7, 8, 9]}
+    dataset.add_partitions("train", sample_partitions)
+
+    assert "train" in dataset.partitions
+    assert dataset.list_partitioned_splits() == ["train"]
+    assert dataset.get_partitions("train") == sample_partitions
+
+
+def test_clear_partitions():
+    """Test partition clearing functionality"""
+    splits = DatasetDict(
+        {
+            "train": Dataset.from_dict({"a": range(10)}),
+            "test": Dataset.from_dict({"a": range(5)}),
+        }
+    )
+    dataset = MDataset(splits)
+
+    # Add partitions to multiple splits
+    dataset.add_partitions("train", {0: [1, 2, 3]})
+    dataset.add_partitions("test", {0: [1, 2]})
+
+    # Clear specific split
+    dataset.clear_partitions("train")
+    assert "train" not in dataset.partitions
+    assert "test" in dataset.partitions
+
+    # Clear all partitions
+    dataset.clear_partitions()
+    assert dataset.partitions == {}
+
+
+def test_partition_integration_with_partitioners(sample_mdataset):
+    """Test end-to-end workflow with actual partitioners"""
+    # Test Dirichlet Partitioner
+    dirichlet_part = DirichletPartitioner(
+        num_partitions=3, alpha=0.5, partition_by="label", min_partition_size=10
+    )
+    dirichlet_part.partition(sample_mdataset, "train")
+
+    dirichlet_partitions = sample_mdataset.get_partitions("train")
+    assert len(dirichlet_partitions) == 3
+    assert sum(len(p) for p in dirichlet_partitions.values()) == 100
+
+    # Test IID Partitioner
+    iid_part = IIDPartitioner(num_partitions=4)
+    sample_mdataset.clear_partitions()
+    iid_part.partition(sample_mdataset, "train")
+
+    iid_partitions = sample_mdataset.get_partitions("train")
+    assert len(iid_partitions) == 4
+    assert (
+        max(
+            len(p) - min(len(p) for p in iid_partitions.values())
+            for p in iid_partitions.values()
+        )
+        <= 1
+    )
+
+
+def test_multiple_split_partitioning():
+    """Test partitioning different splits independently"""
+    splits = DatasetDict(
+        {
+            "train": Dataset.from_dict(
+                {"a": range(100), "label": [i % 5 for i in range(100)]}
+            ),
+            "test": Dataset.from_dict(
+                {"a": range(20), "label": [i % 5 for i in range(20)]}
+            ),
+        }
+    )
+    dataset = MDataset(splits)
+
+    # Partition different splits with different strategies
+    dirichlet_part = DirichletPartitioner(3, 0.5, "label")
+    iid_part = IIDPartitioner(2)
+
+    dirichlet_part.partition(dataset, "train")
+    iid_part.partition(dataset, "test")
+
+    # Verify separate partition storage
+    assert len(dataset.get_partitions("train")) == 3
+    assert len(dataset.get_partitions("test")) == 2
+    assert dataset.list_partitioned_splits() == ["train", "test"]
+
+
+def test_get_nonexistent_partitions():
+    """Test behavior when requesting partitions for unpartitioned split"""
+    dataset = MDataset(DatasetDict({"train": Dataset.from_dict({"a": [1, 2, 3]})}))
+
+    # Should return empty dict for unpartitioned split
+    assert dataset.get_partitions("train") == {}
+
+    # Should raise KeyError for unknown split
+    with pytest.raises(KeyError):
+        dataset.get_partitions("invalid_split")
+
+
+def test_partition_metadata_persistence():
+    """Test that partitions survive dataset operations"""
+    splits = DatasetDict({"train": Dataset.from_dict({"a": range(10)})})
+    dataset = MDataset(splits)
+    dataset.add_partitions("train", {0: [1, 2, 3], 1: [4, 5, 6]})
+
+    # Access underlying dataset
+    hf_dataset = dataset.get_split("train")
+    assert len(hf_dataset) == 10
+
+    # Verify partitions remain after dataset operations
+    assert dataset.get_partitions("train") == {0: [1, 2, 3], 1: [4, 5, 6]}
+
+
+def test_partition_repr():
+    """Test string representation includes partition info"""
+    splits = DatasetDict({"train": Dataset.from_dict({"a": range(10)})})
+    dataset = MDataset(splits)
+
+    # Test initial state
+    assert repr(dataset) == "MDataset(splits=['train'])"
+
+    # Test with partitions
+    dataset.add_partitions("train", {0: [1, 2, 3]})
+    assert "partitions=1 split" in repr(dataset)
+
+    # Test with multiple partitioned splits
+    dataset.add_partitions("test", {0: [4, 5, 6]})
+    assert "partitions=2 splits" in repr(dataset)
 
 
 # Note: The following test requires internet connection and the dataset to exist

@@ -27,11 +27,17 @@ class MDataset:
             splits: Hugging Face DatasetDict containing all splits
         """
         self._splits = splits
+        self._partitions: Dict[str, Dict[int, List[int]]] = {}
 
     @property
     def available_splits(self) -> List[str]:
         """Get list of available split names"""
         return list(self._splits.keys())
+
+    @property
+    def partitions(self) -> Dict[str, Dict[int, List[int]]]:
+        """Get all partitions across all splits"""
+        return self._partitions
 
     @classmethod
     def load(
@@ -163,5 +169,29 @@ class MDataset:
             )
         )
 
+    def get_partitions(self, split_name: str) -> Dict[int, List[int]]:
+        if split_name not in self._splits:
+            raise KeyError(f"Split {split_name} does not exist")
+        return self._partitions.get(split_name, {})
+
+    def add_partitions(self, split_name: str, partitions: Dict[int, List[int]]) -> None:
+        """Store partitions for a specific split"""
+        self._partitions[split_name] = partitions
+
+    def list_partitioned_splits(self) -> List[str]:
+        """Get list of splits with existing partitions"""
+        return list(self._partitions.keys())
+
+    def clear_partitions(self, split_name: Optional[str] = None) -> None:
+        """Remove partitions for a split or all splits"""
+        if split_name:
+            self._partitions.pop(split_name, None)
+        else:
+            self._partitions.clear()
+
     def __repr__(self) -> str:
-        return f"MDataset(splits={self.available_splits})"
+        base = f"MDataset(splits={self.available_splits}"
+        if self._partitions:
+            partitioned_splits = len(self._partitions)
+            return f"{base}, partitions={partitioned_splits} split{'s' if partitioned_splits > 1 else ''})"
+        return f"{base})"

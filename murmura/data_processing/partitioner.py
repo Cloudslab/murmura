@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Union, cast
 
 import numpy as np
-from datasets import Dataset  # type: ignore
 from numpy.typing import NDArray
+
+from murmura.data_processing.dataset import MDataset
 
 
 class Partitioner(ABC):
@@ -19,14 +20,14 @@ class Partitioner(ABC):
 
     @abstractmethod
     def partition(
-        self, dataset: Dataset, partition_by: Optional[str] = None
-    ) -> Dict[int, List[int]]:
+        self, dataset: MDataset, split_name: str, partition_by: Optional[str] = None
+    ) -> None:
         """
-        Partition the dataset into multiple subsets.
+        Partition the dataset into a specified number of partitions.
 
         :param dataset: Dataset to partition.
-        :param partition_by: Class to partition the dataset by.
-        :return: Dictionary of partitioned subsets.
+        :param split_name: Which split to partition.
+        :param partition_by: Class to partition the data by
         """
         pass
 
@@ -79,19 +80,20 @@ class DirichletPartitioner(Partitioner):
         raise TypeError("Alpha must be float, list, or numpy array")
 
     def partition(
-        self, dataset: Dataset, partition_by: Optional[str] = None
-    ) -> Dict[int, List[int]]:
+        self, dataset: MDataset, split_name: str, partition_by: Optional[str] = None
+    ) -> None:
         """
-        Partition dataset using Dirichlet distribution.
-
-        :param dataset: dataset to partition.
-        :param partition_by: class to partition the dataset by.
-        :return: partitioned dataset.
+        Partition the dataset into a specified number of partitions using Dirichlet distribution across classes.
+        :param dataset: Dataset to partition.
+        :param split_name: Split to partition within the dataset
+        :param partition_by: class to partition the data by
         """
         partition_by = partition_by or self.partition_by
-        targets = np.array(dataset[partition_by])
+
+        split_dataset = dataset.get_split(split_name)
+        targets = np.array(split_dataset[partition_by])
         unique_classes = np.unique(targets)
-        self.avg_samples_per_partition = len(dataset) / self.num_partitions
+        self.avg_samples_per_partition = len(split_dataset) / self.num_partitions
 
         for attempt in range(10):
             self.partitions = {i: [] for i in range(self.num_partitions)}
@@ -153,22 +155,35 @@ class DirichletPartitioner(Partitioner):
             for pid in self.partitions:
                 self.rng.shuffle(self.partitions[pid])
 
-        return self.partitions
+        dataset.add_partitions(split_name, cast(Dict[int, List[int]], self.partitions))
 
 
 class IIDPartitioner(Partitioner):
     """Creates IID partitions by random sampling."""
 
-    def partition(
-        self, dataset: Dataset, partition_by: Optional[str] = None
-    ) -> Dict[int, List[int]]:
-        """Partition dataset into IID subsets."""
-        indices = np.arange(len(dataset), dtype=np.int64)  # Explicit dtype
-        self.rng.shuffle(indices)
+    def __init__(
+        self, num_partitions: int, shuffle: bool = True, seed: Optional[int] = 42
+    ):
+        super().__init__(num_partitions, seed)
+        self.shuffle = shuffle
 
-        # Ensure equal split sizes with type-safe conversion
+    def partition(
+        self, dataset: MDataset, split_name: str, partition_by: Optional[str] = None
+    ) -> None:
+        """
+        Partition the dataset into a specified number of equal, random partitions.
+
+        :param dataset: Dataset to partition.
+        :param split_name: Split to partition within the dataset
+        :param partition_by: Class to partition the data by (Not required for IID)
+        """
+        hf_dataset = dataset.get_split(split_name)
+        indices = np.arange(len(hf_dataset), dtype=np.int64)
+
+        if self.shuffle:
+            self.rng.shuffle(indices)
+
         split_arrays = np.array_split(indices, self.num_partitions)
-        self.partitions = {
-            pid: cast(List[int], arr.tolist()) for pid, arr in enumerate(split_arrays)
-        }
-        return self.partitions
+        self.partitions = {pid: arr.tolist() for pid, arr in enumerate(split_arrays)}
+
+        dataset.add_partitions(split_name, cast(Dict[int, List[int]], self.partitions))
