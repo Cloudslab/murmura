@@ -5,9 +5,9 @@
 | Name                                    |    Stmts |     Miss |   Cover |   Missing |
 |---------------------------------------- | -------: | -------: | ------: | --------: |
 | murmura/\_\_init\_\_.py                 |        0 |        0 |    100% |           |
-| murmura/data\_processing/dataset.py     |       81 |        2 |     98% |  123, 137 |
-| murmura/data\_processing/partitioner.py |       78 |        7 |     91% |31, 79, 121-122, 131-132, 148 |
-|                               **TOTAL** |  **159** |    **9** | **94%** |           |
+| murmura/data\_processing/dataset.py     |      101 |        2 |     98% |  129, 143 |
+| murmura/data\_processing/partitioner.py |       84 |        7 |     92% |32, 80, 123-124, 133-134, 150 |
+|                               **TOTAL** |  **185** |    **9** | **95%** |           |
 
 
 ## Setup coverage badge
