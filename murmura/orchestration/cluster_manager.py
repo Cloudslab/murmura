@@ -25,8 +25,8 @@ class ClusterManager:
         :return: List of actors
         """
         self.actors = [
-            VirtualClientActor.remote(f"client_{i}")
-            for i in range(num_actors)  # type: ignore[attr-defined]
+            VirtualClientActor.remote(f"client_{i}")  # type: ignore[attr-defined]
+            for i in range(num_actors)
         ]
         return self.actors
 
