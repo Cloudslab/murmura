@@ -5,13 +5,16 @@
 | Name                                             |    Stmts |     Miss |   Cover |   Missing |
 |------------------------------------------------- | -------: | -------: | ------: | --------: |
 | murmura/\_\_init\_\_.py                          |        0 |        0 |    100% |           |
-| murmura/config.py                                |       10 |        0 |    100% |           |
 | murmura/data\_processing/dataset.py              |      101 |        2 |     98% |  129, 143 |
 | murmura/data\_processing/partitioner.py          |       84 |        7 |     92% |32, 80, 123-124, 133-134, 150 |
 | murmura/data\_processing/partitioner\_factory.py |       10 |        1 |     90% |        32 |
-| murmura/node/client\_actor.py                    |       14 |        0 |    100% |           |
-| murmura/orchestration/cluster\_manager.py        |       22 |        1 |     95% |        18 |
-|                                        **TOTAL** |  **241** |   **11** | **95%** |           |
+| murmura/helper.py                                |       18 |        0 |    100% |           |
+| murmura/network\_management/topology.py          |       24 |        0 |    100% |           |
+| murmura/network\_management/topology\_manager.py |       23 |        0 |    100% |           |
+| murmura/node/client\_actor.py                    |       21 |        2 |     90% |    54, 62 |
+| murmura/orchestration/cluster\_manager.py        |       34 |        2 |     94% |    21, 73 |
+| murmura/orchestration/orchestration\_config.py   |       12 |        0 |    100% |           |
+|                                        **TOTAL** |  **327** |   **14** | **96%** |           |
 
 
 ## Setup coverage badge
