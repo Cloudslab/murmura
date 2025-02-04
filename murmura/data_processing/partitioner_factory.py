@@ -1,4 +1,4 @@
-from murmura.config import OrchestrationConfig
+from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.data_processing.partitioner import (
     Partitioner,
     DirichletPartitioner,

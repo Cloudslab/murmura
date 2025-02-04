@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from murmura.config import OrchestrationConfig
+from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.data_processing.partitioner import DirichletPartitioner, IIDPartitioner
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 

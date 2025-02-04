@@ -11,6 +11,7 @@ class VirtualClientActor:
         self.client_id = client_id
         self.data_partition: Optional[List[int]] = None
         self.metadata: Dict[str, Any] = {}
+        self.neighbours: List[Any] = []
 
     def receive_data(
         self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
@@ -35,3 +36,27 @@ class VirtualClientActor:
             "data_size": len(self.data_partition) if self.data_partition else 0,
             "metadata": self.metadata,
         }
+
+    def set_neighbours(self, neighbours: List[Any]) -> None:
+        """
+        Set neighbour actors for communication
+
+        :param neighbours: Neighbour actors
+        """
+        self.neighbours = neighbours
+
+    def get_neighbours(self) -> List[str]:
+        """
+        Get IDs of neighbouring clients
+
+        :return: IDs of neighbouring clients
+        """
+        return [ray.get(n.get_id.remote()) for n in self.neighbours]
+
+    def get_id(self) -> str:
+        """
+        Return ID of client actor
+
+        :return: ID of client actor
+        """
+        return self.client_id
