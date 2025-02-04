@@ -8,7 +8,7 @@ from datasets import Dataset, DatasetDict, load_dataset  # type: ignore
 T = TypeVar("T", bound="MDataset")
 
 
-class Source(Enum):
+class DatasetSource(Enum):
     CSV = "csv"
     JSON = "json"
     PARQUET = "parquet"
@@ -42,7 +42,7 @@ class MDataset:
     @classmethod
     def load(
         cls: type[T],
-        source: Source,
+        source: DatasetSource,
         split: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> T:
@@ -54,14 +54,14 @@ class MDataset:
             split: Split(s) to load (format depends on source)
             **kwargs: Source-specific parameters
         """
-        loader: Dict[Source, Callable[..., T]] = {
-            Source.CSV: cls._load_csv,
-            Source.JSON: cls._load_json,
-            Source.PARQUET: cls._load_parquet,
-            Source.PANDAS: cls._load_pandas,
-            Source.DICT: cls._load_dict,
-            Source.LIST: cls._load_list,
-            Source.HUGGING_FACE: cls._load_hf,
+        loader: Dict[DatasetSource, Callable[..., T]] = {
+            DatasetSource.CSV: cls._load_csv,
+            DatasetSource.JSON: cls._load_json,
+            DatasetSource.PARQUET: cls._load_parquet,
+            DatasetSource.PANDAS: cls._load_pandas,
+            DatasetSource.DICT: cls._load_dict,
+            DatasetSource.LIST: cls._load_list,
+            DatasetSource.HUGGING_FACE: cls._load_hf,
         }
 
         return loader[source](split=split, **kwargs)

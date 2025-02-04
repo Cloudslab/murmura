@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from datasets import Dataset, DatasetDict
 
-from murmura.data_processing.dataset import Source, MDataset
+from murmura.data_processing.dataset import DatasetSource, MDataset
 from murmura.data_processing.partitioner import DirichletPartitioner, IIDPartitioner
 
 
@@ -69,37 +69,37 @@ def test_init():
 
 
 def test_load_csv(temp_csv_file):
-    dataset = MDataset.load(Source.CSV, path=temp_csv_file)
+    dataset = MDataset.load(DatasetSource.CSV, path=temp_csv_file)
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 10
 
 
 def test_load_json(temp_json_file):
-    dataset = MDataset.load(Source.JSON, path=temp_json_file, orient="records")
+    dataset = MDataset.load(DatasetSource.JSON, path=temp_json_file, orient="records")
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 10
 
 
 def test_load_parquet(temp_parquet_file):
-    dataset = MDataset.load(Source.PARQUET, path=temp_parquet_file)
+    dataset = MDataset.load(DatasetSource.PARQUET, path=temp_parquet_file)
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 10
 
 
 def test_load_pandas(sample_dataframe):
-    dataset = MDataset.load(Source.PANDAS, data=sample_dataframe)
+    dataset = MDataset.load(DatasetSource.PANDAS, data=sample_dataframe)
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 10
 
 
 def test_load_dict(sample_dict):
-    dataset = MDataset.load(Source.DICT, data=sample_dict)
+    dataset = MDataset.load(DatasetSource.DICT, data=sample_dict)
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 10
 
 
 def test_load_list(sample_list):
-    dataset = MDataset.load(Source.LIST, data=sample_list)
+    dataset = MDataset.load(DatasetSource.LIST, data=sample_list)
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 10
     assert repr(dataset) == "MDataset(splits=['train'])"
@@ -107,14 +107,14 @@ def test_load_list(sample_list):
 
 def test_custom_split_name():
     df = pd.DataFrame({"a": [1, 2, 3]})
-    dataset = MDataset.load(Source.PANDAS, data=df, split="validation")
+    dataset = MDataset.load(DatasetSource.PANDAS, data=df, split="validation")
     assert "validation" in dataset.available_splits
     assert len(dataset.get_split("validation")) == 3
 
 
 def test_train_test_split():
     df = pd.DataFrame({"a": range(100)})
-    dataset = MDataset.load(Source.PANDAS, data=df)
+    dataset = MDataset.load(DatasetSource.PANDAS, data=df)
 
     assert "train" in dataset.available_splits
     assert len(dataset.get_split("train")) == 100
@@ -129,7 +129,7 @@ def test_train_test_split():
 
 def test_train_test_split_custom_names():
     df = pd.DataFrame({"a": range(100)})
-    dataset = MDataset.load(Source.PANDAS, data=df)
+    dataset = MDataset.load(DatasetSource.PANDAS, data=df)
     split_dataset = dataset.train_test_split(
         test_size=0.3, seed=42, new_split_names=("validation", "eval")
     )
@@ -141,7 +141,7 @@ def test_train_test_split_custom_names():
 
 
 def test_invalid_split_access():
-    dataset = MDataset.load(Source.DICT, data={"a": [1, 2, 3]})
+    dataset = MDataset.load(DatasetSource.DICT, data={"a": [1, 2, 3]})
     with pytest.raises(KeyError):
         dataset.get_split("invalid_split")
 
@@ -293,18 +293,20 @@ def test_partition_repr():
 @pytest.mark.integration
 def test_load_hugging_face():
     dataset = MDataset.load(
-        Source.HUGGING_FACE, dataset_name="mnist", split=["train", "test"]
+        DatasetSource.HUGGING_FACE, dataset_name="mnist", split=["train", "test"]
     )
 
     assert "train" in dataset.available_splits
     assert "test" in dataset.available_splits
 
-    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="mnist")
+    dataset = MDataset.load(DatasetSource.HUGGING_FACE, dataset_name="mnist")
 
     assert "train" in dataset.available_splits
     assert "test" in dataset.available_splits
 
-    dataset = MDataset.load(Source.HUGGING_FACE, dataset_name="mnist", split="test")
+    dataset = MDataset.load(
+        DatasetSource.HUGGING_FACE, dataset_name="mnist", split="test"
+    )
 
     assert "test" in dataset.available_splits
     assert "train" not in dataset.available_splits
