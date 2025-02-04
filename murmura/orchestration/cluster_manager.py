@@ -2,7 +2,7 @@ from typing import Dict, Any, List, Optional
 
 import ray
 
-from murmura.orchestration.client_actor import VirtualClientActor
+from murmura.node.client_actor import VirtualClientActor
 
 
 class ClusterManager:
@@ -15,7 +15,9 @@ class ClusterManager:
         self.actors: List[Any] = []
 
         if not ray.is_initialized():
-            ray.init(address=self.config["address"] if "address" in config else None)
+            ray.init(
+                address=self.config["ray_address"] if "ray_address" in config else None
+            )
 
     def create_actors(self, num_actors: int) -> List[Any]:
         """

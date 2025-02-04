@@ -2,11 +2,7 @@ import argparse
 
 from murmura.config import OrchestrationConfig
 from murmura.data_processing.dataset import MDataset, DatasetSource
-from murmura.data_processing.partitioner import (
-    DirichletPartitioner,
-    IIDPartitioner,
-    Partitioner,
-)
+from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.orchestration.cluster_manager import ClusterManager
 
 
@@ -14,18 +10,32 @@ def main() -> None:
     """
     Orchestrate Learning Process
     """
-    parser = argparse.ArgumentParser(description="Run federated data distribution")
-    parser.add_argument(
-        "--num_actors", type=int, default=10, help="Number of virtual clients"
+    parser = argparse.ArgumentParser(
+        description="Federated Data Distribution Orchestrator"
     )
     parser.add_argument(
-        "--alpha", type=float, default=0.5, help="Dirichlet alpha parameter"
+        "--num_actors",
+        type=int,
+        default=10,
+        help="Number of virtual clients (default: 10)",
+    )
+    parser.add_argument(
+        "--partition_strategy",
+        choices=["dirichlet", "iid"],
+        default="dirichlet",
+        help="Partitioning strategy (default: dirichlet)",
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.5,
+        help="Dirichlet alpha parameter (default: 0.5)",
     )
     parser.add_argument(
         "--min_partition_size",
         type=int,
         default=100,
-        help="Minimum samples per partition",
+        help="Minimum samples per partition (default: 100)",
     )
     parser.add_argument(
         "--split",
@@ -39,6 +49,8 @@ def main() -> None:
     config = OrchestrationConfig(
         num_actors=args.num_actors,
         alpha=args.alpha,
+        partition_strategy=args.partition_strategy,
+        split=args.split,
         min_partition_size=args.min_partition_size,
     )
 
@@ -47,17 +59,8 @@ def main() -> None:
         DatasetSource.HUGGING_FACE, dataset_name="mnist", split=config.split
     )
 
-    # Create partitions
-    if config.partition_strategy == "dirichlet":
-        partitioner: Partitioner = DirichletPartitioner(
-            num_partitions=config.num_actors,
-            alpha=config.alpha,
-            partition_by="label",
-            min_partition_size=config.min_partition_size,
-        )
-    else:
-        partitioner = IIDPartitioner(num_partitions=config.num_actors)
-
+    # Create appropriate partitioner
+    partitioner = PartitionerFactory.create(config)
     partitioner.partition(dataset, config.split)
 
     # Initialize Ray Cluster
@@ -76,6 +79,10 @@ def main() -> None:
         )
 
         print(f"Data distribution completed: {distribution_result}")
+
+        print(f"\nDistribution Summary ({config.partition_strategy} strategy):")
+        print(f" - Total clients: {config.num_actors}")
+        print(f" - Total partitions: {len(partitions)}")
 
     finally:
         cluster_manager.shutdown()

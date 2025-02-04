@@ -26,6 +26,7 @@ pytest-cov = "^6.0.0"
 
 [tool.pytest.ini_options]
 markers = "integration: marks tests that require external resources (like HuggingFace datasets)"
+filterwarnings = ["ignore:DeprecationWarning"]
 
 [tool.coverage.run]
 relative_files = true
