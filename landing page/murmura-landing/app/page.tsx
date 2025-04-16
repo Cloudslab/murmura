@@ -228,7 +228,7 @@ export default function Home() {
               <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
                 <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">Future Roadmap</h2>
                 <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-                  Our vision for Murmura extends beyond current capabilities. Here's what we're planning for the future.
+                  Our vision for Murmura extends beyond current capabilities. Here&apos;s what we&apos;re planning for the future.
                 </p>
               </div>
               <div className="mx-auto mt-12 max-w-3xl">
@@ -264,7 +264,7 @@ export default function Home() {
               <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
                 <h2 className="text-3xl font-bold leading-[1.1] text-white sm:text-3xl md:text-5xl">Stay Updated</h2>
                 <p className="max-w-[85%] leading-normal text-white/80 sm:text-lg sm:leading-7">
-                  Subscribe to our newsletter to receive updates on Murmura's development and be the first to know about
+                  Subscribe to our newsletter to receive updates on Murmura&apos;s development and be the first to know about
                   new features and releases.
                 </p>
                 <div className="w-full max-w-md space-y-2">
