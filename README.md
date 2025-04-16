@@ -2,7 +2,7 @@
 
 [![Coverage badge](https://github.com/murtazahr/murmura/raw/python-coverage-comment-action-data/badge.svg)](https://github.com/murtazahr/murmura/tree/python-coverage-comment-action-data)
 
-A decentralized/P2P learning framework and simulator.
+A decentralized/P2P learning framework and emulator.
 
 ## Overview
 
