@@ -2,11 +2,11 @@
 
 [![Coverage badge](https://github.com/murtazahr/murmura/raw/python-coverage-comment-action-data/badge.svg)](https://github.com/murtazahr/murmura/tree/python-coverage-comment-action-data)
 
-A decentralized/P2P learning framework and emulator.
+A decentralized/P2P learning framework.
 
 ## Overview
 
-Murmura is a framework designed to facilitate and simulate federated learning in decentralized and peer-to-peer environments. It enables researchers and developers to experiment with distributed machine learning scenarios while maintaining data privacy and reducing central coordination requirements.
+Murmura is a framework designed to facilitate federated learning in decentralized and peer-to-peer environments. It enables researchers and developers to experiment with distributed machine learning scenarios while maintaining data privacy and reducing central coordination requirements.
 
 > ⚠️ **Note**: This project is under active development and not yet ready for production use.
 
