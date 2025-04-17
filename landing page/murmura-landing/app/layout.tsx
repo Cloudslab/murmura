@@ -4,6 +4,7 @@ import React from "react";
 
 export const metadata: Metadata = {
   title: 'Murmura',
+  icons: ['/favicon.png'],
   description: 'Murmura is a framework for federated learning in decentralized/P2P environments. It helps researchers and developers experiment with distributed machine learning while maintaining privacy.',
   generator: 'v0.dev',
 }
