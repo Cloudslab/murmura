@@ -3,7 +3,7 @@ name: Deploy to Vercel
 on:
   push:
     branches:
-      - main # or master, depending on your default branch name
+      - '**' # This will run the workflow on all branches
   workflow_dispatch: # This allows manual triggering of the workflow
 
 env:
@@ -49,17 +49,51 @@ jobs:
       - name: Install Vercel CLI
         run: pnpm add -g vercel
 
+      # Set environment variable to determine if this is production or preview
+      - name: Set deployment environment
+        id: deployment_env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "VERCEL_ENV=production" >> $GITHUB_ENV
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "VERCEL_ENV=preview" >> $GITHUB_ENV
+            echo "environment=preview" >> $GITHUB_OUTPUT
+          fi
+
+      # Pull environment information based on environment type
       - name: Pull Vercel Environment Information
         run: |
           cd 'landing page/murmura-landing'
-          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel pull --yes --environment=${{ env.VERCEL_ENV }} --token=${{ secrets.VERCEL_TOKEN }}
 
+      # Build project (use different flags based on environment)
       - name: Build Project Artifacts
         run: |
           cd 'landing page/murmura-landing'
-          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          if [[ "${{ env.VERCEL_ENV }}" == "production" ]]; then
+            vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          fi
 
+      # Deploy to Vercel (use different flags based on environment)
       - name: Deploy to Vercel
+        id: deploy
         run: |
           cd 'landing page/murmura-landing'
-          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+          if [[ "${{ env.VERCEL_ENV }}" == "production" ]]; then
+            URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          else
+            URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          fi
+          echo "DEPLOYMENT_URL=$URL" >> $GITHUB_ENV
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      # Output the deployment URL in the workflow summary
+      - name: Output Deployment URL
+        run: |
+          echo "## 🚀 Deployment URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: **${{ steps.deployment_env.outputs.environment }}**" >> $GITHUB_STEP_SUMMARY
+          echo "URL: ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
