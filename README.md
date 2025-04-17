@@ -64,4 +64,4 @@ For questions or feedback, [open an issue](https://github.com/murtazahr/murmura/
 
 ## 📰 Stay Updated
 
-Subscribe to our newsletter to receive updates on Murmura's development and be the first to know about new features and releases. Visit our [website](https://github.com/murtazahr/murmura) for more information.
+Subscribe to our newsletter to receive updates on Murmura's development and be the first to know about new features and releases. Visit our [website](https://murmura-landing-page.vercel.app/) for more information.
