@@ -35,8 +35,12 @@ class VirtualClientActor:
         self.metadata = metadata if metadata is not None else {}
         return f"Client {self.client_id} received {len(data_partition)} samples"
 
-    def set_dataset(self, mdataset: MDataset,
-                    feature_columns: Optional[List[str]] = None, label_column: Optional[str] = None) -> None:
+    def set_dataset(
+        self,
+        mdataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
+    ) -> None:
         """
         Set the dataset for the client actor.
 
@@ -77,9 +81,15 @@ class VirtualClientActor:
 
         :return: Tuple of features and labels as numpy arrays
         """
-        if (self.mdataset is None or self.data_partition is None or
-                self.feature_columns is None or self.label_column is None):
-            raise ValueError("Dataset, data partition, feature columns, or label column not set")
+        if (
+            self.mdataset is None
+            or self.data_partition is None
+            or self.feature_columns is None
+            or self.label_column is None
+        ):
+            raise ValueError(
+                "Dataset, data partition, feature columns, or label column not set"
+            )
 
         split_dataset = self.mdataset.get_split(self.split)
 
@@ -88,9 +98,9 @@ class VirtualClientActor:
         if len(self.feature_columns) == 1:
             features = np.array(partition_dataset[self.feature_columns[0]])
         else:
-            features = np.column_stack([
-                np.array(partition_dataset[col]) for col in self.feature_columns
-            ])
+            features = np.column_stack(
+                [np.array(partition_dataset[col]) for col in self.feature_columns]
+            )
 
         labels = np.array(partition_dataset[self.label_column])
 
@@ -139,7 +149,9 @@ class VirtualClientActor:
         # If no specific data is provided, use the client's partition data
         if data is None:
             if self.mdataset is None or self.data_partition is None:
-                raise ValueError("No data provided and client dataset/partition not set")
+                raise ValueError(
+                    "No data provided and client dataset/partition not set"
+                )
             features, _ = self._get_partition_data()
         else:
             features = data

@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Callable, Dict, Any, Tuple
+from typing import Optional, Callable, Dict, Any, Tuple, cast
 
 import numpy as np
 import torch
@@ -25,13 +25,13 @@ class TorchModelWrapper(ModelInterface):
     """
 
     def __init__(
-            self,
-            model: PyTorchModel,
-            loss_fn: Optional[nn.Module] = None,
-            optimizer_class: Optional[Callable] = None,
-            optimizer_kwargs: Optional[Dict[str, Any]] = None,
-            device: Optional[str] = None,
-            input_shape: Optional[Tuple[int, ...]] = None,
+        self,
+        model: PyTorchModel,
+        loss_fn: Optional[nn.Module] = None,
+        optimizer_class: Optional[Callable] = None,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        device: Optional[str] = None,
+        input_shape: Optional[Tuple[int, ...]] = None,
     ):
         """
         Initialize the PyTorch model wrapper.
@@ -51,9 +51,16 @@ class TorchModelWrapper(ModelInterface):
         self.input_shape = input_shape
 
         self.model.to(self.device)
-        self.optimizer = self.optimizer_class(self.model.parameters(), **self.optimizer_kwargs)
+        self.optimizer = self.optimizer_class(
+            self.model.parameters(), **self.optimizer_kwargs
+        )
 
-    def _prepare_data(self, data: np.ndarray, labels: Optional[np.ndarray] = None, batch_size: int = 32) -> DataLoader:
+    def _prepare_data(
+        self,
+        data: np.ndarray,
+        labels: Optional[np.ndarray] = None,
+        batch_size: int = 32,
+    ) -> DataLoader:
         """
         Convert numpy arrays to PyTorch DataLoader.
 
@@ -105,7 +112,10 @@ class TorchModelWrapper(ModelInterface):
             epoch_loss, epoch_correct, epoch_total = 0.0, 0, 0
 
             for batch_data, batch_labels in dataloader:
-                batch_data, batch_labels = batch_data.to(self.device), batch_labels.to(self.device)
+                batch_data, batch_labels = (
+                    batch_data.to(self.device),
+                    batch_labels.to(self.device),
+                )
 
                 # Forward pass
                 self.optimizer.zero_grad()
@@ -120,7 +130,9 @@ class TorchModelWrapper(ModelInterface):
                 epoch_loss += loss.item() * batch_data.size(0)
                 _, predicted = torch.max(outputs.data, 1)
                 epoch_total += batch_labels.size(0)
-                epoch_correct += torch.eq(predicted, batch_labels).sum().item()
+                epoch_correct += cast(
+                    int, torch.eq(predicted, batch_labels).sum().item()
+                )
 
             # Accumulate metrics
             total_loss += epoch_loss
@@ -128,15 +140,19 @@ class TorchModelWrapper(ModelInterface):
             total += epoch_total
 
             if verbose and (epoch + 1) % log_interval == 0:
-                print(f"Epoch [{epoch + 1}/{epochs}], Loss: {epoch_loss / epoch_total:.4f}, "
-                      f"Accuracy: {100 * epoch_correct / epoch_total:.2f}")
+                print(
+                    f"Epoch [{epoch + 1}/{epochs}], Loss: {epoch_loss / epoch_total:.4f}, "
+                    f"Accuracy: {100 * epoch_correct / epoch_total:.2f}"
+                )
 
         return {
             "loss": total_loss / total,
             "accuracy": correct / total,
         }
 
-    def evaluate(self, data: np.ndarray, labels: np.ndarray, **kwargs) -> Dict[str, float]:
+    def evaluate(
+        self, data: np.ndarray, labels: np.ndarray, **kwargs
+    ) -> Dict[str, float]:
         """
         Evaluate the model on the provided data and labels.
 
@@ -155,7 +171,10 @@ class TorchModelWrapper(ModelInterface):
 
         with torch.no_grad():
             for batch_data, batch_labels in dataloader:
-                batch_data, batch_labels = batch_data.to(self.device), batch_labels.to(self.device)
+                batch_data, batch_labels = (
+                    batch_data.to(self.device),
+                    batch_labels.to(self.device),
+                )
 
                 # Forward pass
                 outputs = self.model(batch_data)
@@ -165,7 +184,7 @@ class TorchModelWrapper(ModelInterface):
                 total_loss += loss.item() * batch_data.size(0)
                 _, predicted = torch.max(outputs.data, 1)
                 total += batch_labels.size(0)
-                correct += torch.eq(predicted, batch_labels).sum().item()
+                correct += cast(int, torch.eq(predicted, batch_labels).sum().item())
 
         return {
             "loss": total_loss / total,
@@ -211,7 +230,9 @@ class TorchModelWrapper(ModelInterface):
 
         :return: Dictionary containing model parameters.
         """
-        return {name: param.cpu().numpy() for name, param in self.model.state_dict().items()}
+        return {
+            name: param.cpu().numpy() for name, param in self.model.state_dict().items()
+        }
 
     def set_parameters(self, parameters: Dict[str, Any]) -> None:
         """
@@ -230,11 +251,14 @@ class TorchModelWrapper(ModelInterface):
         if directory:
             os.makedirs(directory, exist_ok=True)
 
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            'input_shape': self.input_shape,
-        }, path)
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "input_shape": self.input_shape,
+            },
+            path,
+        )
 
     def load(self, path: str) -> None:
         """
@@ -243,6 +267,6 @@ class TorchModelWrapper(ModelInterface):
         :param path: Path to load the model from.
         """
         checkpoint = torch.load(path, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.input_shape = checkpoint.get('input_shape', self.input_shape)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        self.input_shape = checkpoint.get("input_shape", self.input_shape)

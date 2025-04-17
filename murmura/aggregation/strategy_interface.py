@@ -10,7 +10,11 @@ class AggregationStrategy(ABC):
     """
 
     @abstractmethod
-    def aggregate(self, parameters_list: List[Dict[str, Any]], weights: Optional[List[float]] = None) -> Dict[str, Any]:
+    def aggregate(
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate model parameters from multiple clients.
 

@@ -1,11 +1,15 @@
 import argparse
 from statistics import mean
+from typing import List, cast
 
 import numpy as np
 import torch
 import torch.nn as nn
 
-from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+from murmura.aggregation.aggregation_config import (
+    AggregationConfig,
+    AggregationStrategyType,
+)
 from murmura.helper import visualize_network_topology
 from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
 from murmura.network_management.topology import TopologyConfig
@@ -28,12 +32,10 @@ class MNISTModel(PyTorchModel):
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
+            nn.MaxPool2d(kernel_size=2, stride=2),
         )
         self.classifier = nn.Sequential(
-            nn.Linear(64 * 7 * 7, 128),
-            nn.ReLU(),
-            nn.Linear(128, 10)
+            nn.Linear(64 * 7 * 7, 128), nn.ReLU(), nn.Linear(128, 10)
         )
 
     def forward(self, x):
@@ -83,13 +85,13 @@ def main() -> None:
         type=str,
         choices=["fedavg", "trimmed_mean"],
         default="fedavg",
-        help="Aggregation strategy to use"
+        help="Aggregation strategy to use",
     )
     parser.add_argument(
         "--trim_ratio",
         type=float,
         default=0.1,
-        help="Trim ratio for trimmed_mean strategy (0.1 = 10% trimmed from each end)"
+        help="Trim ratio for trimmed_mean strategy (0.1 = 10% trimmed from each end)",
     )
 
     # Topology arguments
@@ -114,9 +116,7 @@ def main() -> None:
     parser.add_argument(
         "--batch_size", type=int, default=32, help="Batch size for training"
     )
-    parser.add_argument(
-        "--lr", type=float, default=0.001, help="Learning rate"
-    )
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
 
     args = parser.parse_args()
 
@@ -132,9 +132,11 @@ def main() -> None:
                 topology_type=args.topology, hub_index=args.hub_index
             ),
             aggregation=AggregationConfig(
-                strategy_type=args.aggregation_strategy,
-                params={"trim_ratio": args.trim_ratio} if args.aggregation_strategy == "trimmed_mean" else None
-            )
+                strategy_type=AggregationStrategyType(args.aggregation_strategy),
+                params={"trim_ratio": args.trim_ratio}
+                if args.aggregation_strategy == "trimmed_mean"
+                else None,
+            ),
         )
 
         print("\n=== Loading MNIST Dataset ===")
@@ -173,9 +175,7 @@ def main() -> None:
             print("\n=== Distributing Dataset ===")
             # Distribute the dataset to all clients
             cluster_manager.distribute_dataset(
-                dataset,
-                feature_columns=["image"],
-                label_column="label"
+                dataset, feature_columns=["image"], label_column="label"
             )
 
             print("\n=== Creating and Distributing Model ===")
@@ -188,7 +188,7 @@ def main() -> None:
                 loss_fn=nn.CrossEntropyLoss(),
                 optimizer_class=torch.optim.Adam,
                 optimizer_kwargs={"lr": args.lr},
-                input_shape=input_shape
+                input_shape=input_shape,
             )
 
             # Distribute the model to all clients
@@ -216,9 +216,9 @@ def main() -> None:
                 dataset_name=config.dataset_name,
                 split=args.test_split,
             )
-            test_dataset = test_dataset.get_split(args.test_split)
-            test_images = np.array(test_dataset["image"])
-            test_labels = np.array(test_dataset["label"])
+            test_split = test_dataset.get_split(args.test_split)
+            test_images = np.array(test_split["image"])
+            test_labels = np.array(test_split["label"])
 
             # Evaluate initial model
             initial_metrics = global_model.evaluate(test_images, test_labels)
@@ -231,9 +231,7 @@ def main() -> None:
                 # 1. Local Training
                 print("Training on clients...")
                 train_metrics = cluster_manager.train_models(
-                    epochs=args.epochs,
-                    batch_size=args.batch_size,
-                    verbose=False
+                    epochs=args.epochs, batch_size=args.batch_size, verbose=False
                 )
 
                 # Calculate average training metrics
@@ -251,9 +249,13 @@ def main() -> None:
                 # Only pass weights for fedavg since trimmed_mean ignores them
                 weights = None
                 if config.aggregation.strategy_type == AggregationStrategyType.FEDAVG:
-                    weights = client_data_sizes
+                    weights = cast(
+                        List[float], [float(size) for size in client_data_sizes]
+                    )
 
-                aggregated_params = cluster_manager.aggregate_model_parameters(weights=weights)
+                aggregated_params = cluster_manager.aggregate_model_parameters(
+                    weights=weights
+                )
 
                 # 3. Model Update
                 # Update global model
@@ -266,13 +268,17 @@ def main() -> None:
                 # Evaluate global model on test set
                 test_metrics = global_model.evaluate(test_images, test_labels)
                 print(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
-                print(f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%")
+                print(
+                    f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
+                )
 
             # Final evaluation
             print("\n=== Final Model Evaluation ===")
             final_metrics = global_model.evaluate(test_images, test_labels)
             print(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
-            print(f"Accuracy Improvement: {(final_metrics['accuracy'] - initial_metrics['accuracy']) * 100:.2f}%")
+            print(
+                f"Accuracy Improvement: {(final_metrics['accuracy'] - initial_metrics['accuracy']) * 100:.2f}%"
+            )
 
             # Visualize the network topology
             print("\n=== Network Topology Visualization ===")

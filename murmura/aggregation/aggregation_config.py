@@ -8,6 +8,7 @@ class AggregationStrategyType(str, Enum):
     """
     Enumeration of available aggregation strategies.
     """
+
     FEDAVG = "fedavg"
     TRIMMED_MEAN = "trimmed_mean"
 
@@ -19,11 +20,11 @@ class AggregationConfig(BaseModel):
 
     strategy_type: AggregationStrategyType = Field(
         default=AggregationStrategyType.FEDAVG,
-        description="Type of aggregation strategy to use"
+        description="Type of aggregation strategy to use",
     )
     params: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="Strategy-specific parameters for the aggregation method"
+        description="Strategy-specific parameters for the aggregation method",
     )
 
     @model_validator(mode="after")

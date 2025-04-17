@@ -1,4 +1,7 @@
-from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+from murmura.aggregation.aggregation_config import (
+    AggregationConfig,
+    AggregationStrategyType,
+)
 from murmura.aggregation.strategies.fed_avg import FedAvg
 from murmura.aggregation.strategies.trimmed_mean import TrimmedMean
 from murmura.aggregation.strategy_interface import AggregationStrategy

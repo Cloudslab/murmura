@@ -12,7 +12,11 @@ class FedAvg(AggregationStrategy):
     FedAvg computes the weighted average of model parameters from multiple clients.
     """
 
-    def aggregate(self, parameters_list: List[Dict[str, Any]], weights: Optional[List[float]] = None) -> Dict[str, Any]:
+    def aggregate(
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate model parameters using FedAvg.
 
@@ -34,7 +38,9 @@ class FedAvg(AggregationStrategy):
 
         for key in parameters_list[0].keys():
             try:
-                stacked_params = np.stack([params[key] for params in parameters_list], axis=0)
+                stacked_params = np.stack(
+                    [params[key] for params in parameters_list], axis=0
+                )
                 weighted_params = np.zeros_like(stacked_params[0])
 
                 for i, weight in enumerate(weights):

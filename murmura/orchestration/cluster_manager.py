@@ -50,12 +50,14 @@ class ClusterManager:
 
         :param aggregation_config: Aggregation configuration
         """
-        self.aggregation_strategy = AggregationStrategyFactory.create(aggregation_config)
+        self.aggregation_strategy = AggregationStrategyFactory.create(
+            aggregation_config
+        )
 
     def distribute_data(
-            self,
-            data_partitions: List[List[int]],
-            metadata: Optional[Dict[str, Any]] = None,
+        self,
+        data_partitions: List[List[int]],
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         """
         Distribute data partitions to actors in round-robin fashion
@@ -80,10 +82,10 @@ class ClusterManager:
         return ray.get(results)
 
     def distribute_dataset(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute a dataset to all actors
@@ -93,15 +95,15 @@ class ClusterManager:
         :param label_column: Label column to use
         """
         for actor in self.actors:
-            ray.get(actor.set_dataset.remote(
-                dataset,
-                feature_columns=feature_columns,
-                label_column=label_column
-            ))
+            ray.get(
+                actor.set_dataset.remote(
+                    dataset, feature_columns=feature_columns, label_column=label_column
+                )
+            )
 
     def distribute_model(
-            self,
-            model: ModelInterface,
+        self,
+        model: ModelInterface,
     ) -> None:
         """
         Distribute model structure and parameters to all actors
@@ -142,7 +144,9 @@ class ClusterManager:
             results.append(actor.evaluate_model.remote(**kwargs))
         return ray.get(results)
 
-    def aggregate_model_parameters(self, weights: Optional[List[float]] = None) -> Dict[str, Any]:
+    def aggregate_model_parameters(
+        self, weights: Optional[List[float]] = None
+    ) -> Dict[str, Any]:
         """
         Aggregate model parameters from all actors using the configured aggregation strategy
 
@@ -150,10 +154,14 @@ class ClusterManager:
         :return: Aggregated model parameters
         """
         if self.aggregation_strategy is None:
-            raise ValueError("Aggregation strategy not set. Call set_aggregation_strategy first.")
+            raise ValueError(
+                "Aggregation strategy not set. Call set_aggregation_strategy first."
+            )
 
         # Get parameters from all clients
-        parameter_futures = [actor.get_model_parameters.remote() for actor in self.actors]
+        parameter_futures = [
+            actor.get_model_parameters.remote() for actor in self.actors
+        ]
         all_parameters = ray.get(parameter_futures)
 
         # Use the configured aggregation strategy

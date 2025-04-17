@@ -24,7 +24,9 @@ class ModelInterface(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, data: np.ndarray, labels: np.ndarray, **kwargs) -> Dict[str, float]:
+    def evaluate(
+        self, data: np.ndarray, labels: np.ndarray, **kwargs
+    ) -> Dict[str, float]:
         """
         Evaluate the model on the provided data and labels.
 

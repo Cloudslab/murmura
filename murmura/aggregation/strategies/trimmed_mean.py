@@ -20,11 +20,17 @@ class TrimmedMean(AggregationStrategy):
         :param trim_ratio: The ratio of values to trim from each end (default is 0.1).
         """
         if trim_ratio < 0 or trim_ratio > 0.5:
-            raise ValueError("Trim ratio must be between 0 (inclusive) and 0.5 (exclusive)")
+            raise ValueError(
+                "Trim ratio must be between 0 (inclusive) and 0.5 (exclusive)"
+            )
 
         self.trim_ratio = trim_ratio
 
-    def aggregate(self, parameters_list: List[Dict[str, Any]], weights: Optional[List[float]] = None) -> Dict[str, Any]:
+    def aggregate(
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate parameters using trimmed mean
 
@@ -51,14 +57,16 @@ class TrimmedMean(AggregationStrategy):
         for key in parameters_list[0].keys():
             try:
                 # Stack parameters along a new axis
-                stacked_params = np.stack([params[key] for params in parameters_list], axis=0)
+                stacked_params = np.stack(
+                    [params[key] for params in parameters_list], axis=0
+                )
 
                 # For each parameter element, sort values across clients and trim
                 # We need to sort along axis 0 (client dimension)
                 sorted_params = np.sort(stacked_params, axis=0)
 
                 # Trim k values from each end
-                trimmed_params = sorted_params[k:num_clients-k]
+                trimmed_params = sorted_params[k : num_clients - k]
 
                 # Average the remaining values
                 aggregated_params[key] = np.mean(trimmed_params, axis=0)
@@ -69,7 +77,9 @@ class TrimmedMean(AggregationStrategy):
         return aggregated_params
 
     @staticmethod
-    def _weighted_average(parameters_list: List[Dict[str, Any]], weights: List[float]) -> Dict[str, Any]:
+    def _weighted_average(
+        parameters_list: List[Dict[str, Any]], weights: List[float]
+    ) -> Dict[str, Any]:
         """
         Helper method for weighted average when falling back
         """
@@ -77,7 +87,9 @@ class TrimmedMean(AggregationStrategy):
 
         for key in parameters_list[0].keys():
             try:
-                stacked_params = np.stack([params[key] for params in parameters_list], axis=0)
+                stacked_params = np.stack(
+                    [params[key] for params in parameters_list], axis=0
+                )
                 weighted_params = np.zeros_like(stacked_params[0])
 
                 for i, weight in enumerate(weights):
@@ -89,4 +101,3 @@ class TrimmedMean(AggregationStrategy):
                 raise ValueError(f"Error aggregating parameter {key}: {e}")
 
         return aggregated_params
-
