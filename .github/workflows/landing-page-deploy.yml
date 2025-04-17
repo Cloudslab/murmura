@@ -87,14 +87,13 @@ jobs:
           else
             URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           fi
+          echo "DEPLOYMENT_URL=$URL" >> $GITHUB_ENV
           echo "url=$URL" >> $GITHUB_OUTPUT
 
-      # Output the deployment URL as a comment on the commit
-      - name: Comment on commit
-        uses: peter-evans/commit-comment@v3
-        with:
-          body: |
-            🚀 Deployed to Vercel!
-            
-            Environment: ${{ steps.deployment_env.outputs.environment }}
-            URL: ${{ steps.deploy.outputs.url }}
+      # Output the deployment URL in the workflow summary
+      - name: Output Deployment URL
+        run: |
+          echo "## 🚀 Deployment URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: **${{ steps.deployment_env.outputs.environment }}**" >> $GITHUB_STEP_SUMMARY
+          echo "URL: ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
