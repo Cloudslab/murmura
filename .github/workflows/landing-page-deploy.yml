@@ -11,7 +11,59 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
+  lint:
+    name: ESLint Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'landing page/murmura-landing'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Create lint summary
+        if: always()
+        run: |
+          echo "## ✅ ESLint Results" >> $GITHUB_STEP_SUMMARY
+          if [ $? -eq 0 ]; then
+            echo "✅ Lint check passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Lint check failed. See above for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
   deploy:
+    name: Deploy to Vercel
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
