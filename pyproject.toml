@@ -17,7 +17,8 @@ dependencies = [
     "ray (>=2.41.0,<3.0.0)",
     "pydantic (>=2.10.6,<3.0.0)",
     "networkx (>=3.4.2,<4.0.0)",
-    "matplotlib (>=3.10.0,<4.0.0)"
+    "matplotlib (>=3.10.0,<4.0.0)",
+    "torch (>=2.6.0,<3.0.0)"
 ]
 
 [tool.poetry.group.dev.dependencies]
@@ -32,6 +33,10 @@ filterwarnings = ["ignore:DeprecationWarning"]
 
 [tool.coverage.run]
 relative_files = true
+
+[[tool.mypy.overrides]]
+module = ["torch.*", "torch", "ray.*", "datasets.*", "matplotlib.*", "networkx.*"]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
