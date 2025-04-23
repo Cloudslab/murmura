@@ -5,16 +5,22 @@
 | Name                                             |    Stmts |     Miss |   Cover |   Missing |
 |------------------------------------------------- | -------: | -------: | ------: | --------: |
 | murmura/\_\_init\_\_.py                          |        0 |        0 |    100% |           |
+| murmura/aggregation/aggregation\_config.py       |       19 |        4 |     79% |     42-45 |
+| murmura/aggregation/strategies/fed\_avg.py       |       22 |       17 |     23% |     28-54 |
+| murmura/aggregation/strategies/trimmed\_mean.py  |       39 |       31 |     21% |22-27, 42-77, 86-103 |
+| murmura/aggregation/strategy\_factory.py         |       15 |        8 |     47% |     26-35 |
+| murmura/aggregation/strategy\_interface.py       |        6 |        1 |     83% |        26 |
 | murmura/data\_processing/dataset.py              |      101 |        2 |     98% |  129, 143 |
 | murmura/data\_processing/partitioner.py          |       84 |        7 |     92% |32, 80, 123-124, 133-134, 150 |
 | murmura/data\_processing/partitioner\_factory.py |       10 |        1 |     90% |        32 |
 | murmura/helper.py                                |       18 |        0 |    100% |           |
+| murmura/model/model\_interface.py                |       25 |        7 |     72% |24, 39, 51, 60, 69, 78, 87 |
 | murmura/network\_management/topology.py          |       24 |        0 |    100% |           |
 | murmura/network\_management/topology\_manager.py |       23 |        0 |    100% |           |
-| murmura/node/client\_actor.py                    |       21 |        2 |     90% |    54, 62 |
-| murmura/orchestration/cluster\_manager.py        |       34 |        2 |     94% |    21, 73 |
-| murmura/orchestration/orchestration\_config.py   |       12 |        0 |    100% |           |
-|                                        **TOTAL** |  **327** |   **14** | **96%** |           |
+| murmura/node/client\_actor.py                    |       74 |       39 |     47% |51-55, 63, 84-107, 116-120, 129-133, 146-159, 167-169, 177-179, 195, 203 |
+| murmura/orchestration/cluster\_manager.py        |       71 |       25 |     65% |27, 53, 97-98, 114-121, 130-133, 142-145, 156-168, 176, 184-185, 192 |
+| murmura/orchestration/orchestration\_config.py   |       14 |        0 |    100% |           |
+|                                        **TOTAL** |  **545** |  **142** | **74%** |           |
 
 
 ## Setup coverage badge
