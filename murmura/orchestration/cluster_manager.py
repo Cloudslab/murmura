@@ -273,9 +273,6 @@ class ClusterManager:
             self.topology_manager.config.topology_type
         )
 
-        # Convert class names to strategy type values
-        from murmura.aggregation.aggregation_config import AggregationStrategyType
-
         result = []
         for cls in strategy_classes:
             # Match class name to strategy type

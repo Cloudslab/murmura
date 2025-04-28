@@ -12,8 +12,12 @@ from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
-from murmura.orchestration.learning_process.decentralized_learning_process import DecentralizedLearningProcess
-from murmura.network_management.topology_compatibility import TopologyCompatibilityManager
+from murmura.orchestration.learning_process.decentralized_learning_process import (
+    DecentralizedLearningProcess,
+)
+from murmura.network_management.topology_compatibility import (
+    TopologyCompatibilityManager,
+)
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
 
@@ -51,9 +55,7 @@ def main() -> None:
     """
     Orchestrate Decentralized Learning Process
     """
-    parser = argparse.ArgumentParser(
-        description="Decentralized Learning Orchestrator"
-    )
+    parser = argparse.ArgumentParser(description="Decentralized Learning Orchestrator")
     parser.add_argument(
         "--num_actors", type=int, default=10, help="Number of virtual clients"
     )
@@ -116,7 +118,7 @@ def main() -> None:
         "--save_path",
         type=str,
         default="mnist_decentralized_model.pt",
-        help="Path to save the final model"
+        help="Path to save the final model",
     )
 
     # Visualization arguments
@@ -124,28 +126,25 @@ def main() -> None:
         "--vis_dir",
         type=str,
         default="./visualizations",
-        help="Directory to save visualizations"
+        help="Directory to save visualizations",
     )
     parser.add_argument(
         "--create_animation",
         action="store_true",
-        help="Create animation of the training process"
+        help="Create animation of the training process",
     )
     parser.add_argument(
         "--create_frames",
         action="store_true",
-        help="Create individual frames of the training process"
+        help="Create individual frames of the training process",
     )
     parser.add_argument(
         "--create_summary",
         action="store_true",
-        help="Create summary plot of the training process"
+        help="Create summary plot of the training process",
     )
     parser.add_argument(
-        "--fps",
-        type=int,
-        default=2,
-        help="Frames per second for animation"
+        "--fps", type=int, default=2, help="Frames per second for animation"
     )
 
     args = parser.parse_args()
@@ -156,9 +155,14 @@ def main() -> None:
 
     # Get compatible strategies for the selected topology
     from murmura.aggregation.strategies.gossip_avg import GossipAvg
+
     if not TopologyCompatibilityManager.is_compatible(GossipAvg, topology_type):
-        compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(GossipAvg)
-        print(f"Error: Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}.")
+        compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(
+            GossipAvg
+        )
+        print(
+            f"Error: Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}."
+        )
         print(f"Compatible topologies: {[t.value for t in compatible_topologies]}")
         return
 
@@ -182,15 +186,17 @@ def main() -> None:
 
         # Add additional configuration needed for the learning process
         process_config = config.model_dump()
-        process_config.update({
-            "rounds": args.rounds,
-            "epochs": args.epochs,
-            "batch_size": args.batch_size,
-            "test_split": args.test_split,
-            "feature_columns": ["image"],
-            "label_column": "label",
-            "learning_rate": args.lr,
-        })
+        process_config.update(
+            {
+                "rounds": args.rounds,
+                "epochs": args.epochs,
+                "batch_size": args.batch_size,
+                "test_split": args.test_split,
+                "feature_columns": ["image"],
+                "label_column": "label",
+                "learning_rate": args.lr,
+            }
+        )
 
         print("\n=== Loading MNIST Dataset ===")
         # Load MNIST Dataset for training and testing
@@ -239,7 +245,10 @@ def main() -> None:
         if args.create_animation or args.create_frames or args.create_summary:
             print("\n=== Setting Up Visualization ===")
             # Create visualization directory
-            vis_dir = os.path.join(args.vis_dir, f"decentralized_{args.topology}_{args.aggregation_strategy}")
+            vis_dir = os.path.join(
+                args.vis_dir,
+                f"decentralized_{args.topology}_{args.aggregation_strategy}",
+            )
             os.makedirs(vis_dir, exist_ok=True)
 
             # Create visualizer
@@ -247,8 +256,10 @@ def main() -> None:
 
             # Register visualizer with learning process
             learning_process.register_observer(visualizer)
-            print(f"Registered visualizer with learning process")
-            print(f"Current observers: {len(learning_process.training_monitor.observers)}")
+            print("Registered visualizer with learning process")
+            print(
+                f"Current observers: {len(learning_process.training_monitor.observers)}"
+            )
 
         try:
             # Initialize the learning process
@@ -275,14 +286,16 @@ def main() -> None:
             _ = learning_process.execute()
 
             # Generate visualizations if requested
-            if visualizer and (args.create_animation or args.create_frames or args.create_summary):
+            if visualizer and (
+                args.create_animation or args.create_frames or args.create_summary
+            ):
                 print("\n=== Generating Visualizations ===")
 
                 if args.create_animation:
                     print("Creating animation...")
                     visualizer.render_training_animation(
                         filename=f"decentralized_{args.topology}_{args.aggregation_strategy}_animation.mp4",
-                        fps=args.fps
+                        fps=args.fps,
                     )
 
                 if args.create_frames:

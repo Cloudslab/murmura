@@ -143,7 +143,7 @@ class LearningProcess(ABC):
         distances = []
 
         for node_idx, params in node_params.items():
-            distance = 0
+            distance = 0.0
             for key in params:
                 if key in global_params:
                     # L2 norm of parameter difference

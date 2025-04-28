@@ -86,7 +86,7 @@ class TopologyCoordinator:
                     adjusted_weights.append(weights[i])
             adjusted_weights.append(weights[hub_index])
         else:
-            adjusted_weights = weights
+            adjusted_weights = weights if weights else []
 
         # Perform aggregation
         return self.strategy.aggregate(parameters_list, adjusted_weights)

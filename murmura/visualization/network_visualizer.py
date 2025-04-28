@@ -65,7 +65,7 @@ class NetworkVisualizer(TrainingObserver):
         if self.topology is None and not isinstance(event, InitialStateEvent):
             return  # Can't visualize without topology information
 
-        frame = {
+        frame: Dict[str, Any] = {
             "round": event.round_num,
             "step": event.step_name,
             "timestamp": event.timestamp,
@@ -106,7 +106,10 @@ class NetworkVisualizer(TrainingObserver):
                     self.parameter_history[node].append(1.0)  # Placeholder
 
             frame["node_params"] = event.param_summary
-            description = f"Round {event.round_num}: Parameter transfer from {len(event.source_nodes)} nodes to {len(event.target_nodes)} nodes"
+            description = (
+                f"Round {event.round_num}: Parameter transfer from {len(event.source_nodes)} "
+                f"nodes to {len(event.target_nodes)} nodes"
+            )
 
         elif isinstance(event, AggregationEvent):
             frame["active_nodes"] = event.participating_nodes
@@ -117,7 +120,10 @@ class NetworkVisualizer(TrainingObserver):
                 for node in event.participating_nodes:
                     if node != event.aggregator_node:
                         frame["active_edges"].append((node, event.aggregator_node))
-                description = f"Round {event.round_num}: Aggregation at node {event.aggregator_node} using {event.strategy_name}"
+                description = (
+                    f"Round {event.round_num}: Aggregation at node {event.aggregator_node} "
+                    f"using {event.strategy_name}"
+                )
             else:
                 description = f"Round {event.round_num}: Decentralized aggregation using {event.strategy_name}"
 
@@ -203,9 +209,9 @@ class NetworkVisualizer(TrainingObserver):
         pos = nx.spring_layout(G, seed=42)
 
         # Create text objects for titles and descriptions
-        network_title = ax_network.set_title("Network State", fontsize=14)
-        param_title = ax_params.set_title("Parameter Convergence", fontsize=12)
-        metrics_title = ax_metrics.set_title("Training Metrics", fontsize=12)
+        ax_network.set_title("Network State", fontsize=14)
+        ax_params.set_title("Parameter Convergence", fontsize=12)
+        ax_metrics.set_title("Training Metrics", fontsize=12)
         description_text = fig.text(0.5, 0.01, "", ha="center", fontsize=12)
 
         def update_frame(frame_idx: int) -> List[Artist]:
@@ -365,8 +371,8 @@ class NetworkVisualizer(TrainingObserver):
                 ax_metrics.legend(legend_handles, legend_labels, loc="upper left")
 
             # Set proper limits
-            ax_network.set_xlim([-1.2, 1.2])
-            ax_network.set_ylim([-1.2, 1.2])
+            ax_network.set_xlim((-1.2, 1.2))
+            ax_network.set_ylim((-1.2, 1.2))
             ax_network.axis("off")
 
             # Return updated artists (required for animation)

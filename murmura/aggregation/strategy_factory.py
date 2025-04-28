@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Type
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
@@ -39,6 +39,7 @@ class AggregationStrategyFactory:
         """
         strategy_type = config.strategy_type
         params = config.params or {}
+        strategy_class: Type[AggregationStrategy]
 
         if strategy_type == AggregationStrategyType.FEDAVG:
             strategy_class = FedAvg

@@ -28,6 +28,9 @@ class FederatedLearningProcess(LearningProcess):
         if not self.cluster_manager:
             raise ValueError("Learning process not initialized. Call initialize first.")
 
+        if not self.cluster_manager.topology_manager:
+            raise ValueError("Topology manager not set. Call initialize first.")
+
         # Get configuration parameters
         rounds = self.config.get("rounds", 5)
         epochs = self.config.get("epochs", 1)
