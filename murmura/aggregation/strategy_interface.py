@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, ClassVar
+
+from murmura.aggregation.coordination_mode import CoordinationMode
 
 
 class AggregationStrategy(ABC):
@@ -8,6 +10,8 @@ class AggregationStrategy(ABC):
 
     This interface defines how model parameters are aggregated across multiple clients.
     """
+
+    coordination_mode: ClassVar[CoordinationMode] = CoordinationMode.DECENTRALIZED
 
     @abstractmethod
     def aggregate(

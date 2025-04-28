@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 
 import numpy as np
 
+from murmura.aggregation.coordination_mode import CoordinationMode
 from murmura.aggregation.strategy_interface import AggregationStrategy
 
 
@@ -12,6 +13,8 @@ class TrimmedMean(AggregationStrategy):
     This strategy trims the highest and lowest values of each parameter before averaging,
     which provides robustness against malicious clients that may try to poison the model.
     """
+
+    coordination_mode = CoordinationMode.CENTRALIZED
 
     def __init__(self, trim_ratio: float = 0.1) -> None:
         """

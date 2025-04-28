@@ -12,7 +12,8 @@ from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
-from murmura.orchestration.learning_process.federated_learning_process import FederatedLearningProcess
+from murmura.orchestration.learning_process.decentralized_learning_process import DecentralizedLearningProcess
+from murmura.network_management.topology_compatibility import TopologyCompatibilityManager
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
 
@@ -48,10 +49,10 @@ class MNISTModel(PyTorchModel):
 
 def main() -> None:
     """
-    Orchestrate Learning Process
+    Orchestrate Decentralized Learning Process
     """
     parser = argparse.ArgumentParser(
-        description="Federated Data Distribution Orchestrator"
+        description="Decentralized Learning Orchestrator"
     )
     parser.add_argument(
         "--num_actors", type=int, default=10, help="Number of virtual clients"
@@ -80,32 +81,29 @@ def main() -> None:
     parser.add_argument(
         "--aggregation_strategy",
         type=str,
-        choices=["fedavg", "trimmed_mean"],
-        default="fedavg",
+        choices=["gossip_avg"],  # Only decentralized strategies
+        default="gossip_avg",
         help="Aggregation strategy to use",
     )
     parser.add_argument(
-        "--trim_ratio",
+        "--mixing_parameter",
         type=float,
-        default=0.1,
-        help="Trim ratio for trimmed_mean strategy (0.1 = 10% trimmed from each end)",
+        default=0.5,
+        help="Mixing parameter for gossip_avg strategy (0.5 = equal mixing)",
     )
 
     # Topology arguments
     parser.add_argument(
         "--topology",
         type=str,
-        default="star",  # Changed default to star for compatibility with fedavg/trimmed_mean
+        default="ring",  # Default to ring for decentralized learning
         choices=["star", "ring", "complete", "line", "custom"],
         help="Network topology between clients",
-    )
-    parser.add_argument(
-        "--hub_index", type=int, default=0, help="Hub node index for star topology"
     )
 
     # Training arguments
     parser.add_argument(
-        "--rounds", type=int, default=5, help="Number of federated learning rounds"
+        "--rounds", type=int, default=10, help="Number of learning rounds"
     )
     parser.add_argument(
         "--epochs", type=int, default=1, help="Number of local epochs per round"
@@ -117,7 +115,7 @@ def main() -> None:
     parser.add_argument(
         "--save_path",
         type=str,
-        default="mnist_federated_model.pt",
+        default="mnist_decentralized_model.pt",
         help="Path to save the final model"
     )
 
@@ -143,8 +141,26 @@ def main() -> None:
         action="store_true",
         help="Create summary plot of the training process"
     )
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=2,
+        help="Frames per second for animation"
+    )
 
     args = parser.parse_args()
+
+    # Check compatibility of topology and strategy before proceeding
+    topology_type = TopologyType(args.topology)
+    strategy_type = AggregationStrategyType(args.aggregation_strategy)
+
+    # Get compatible strategies for the selected topology
+    from murmura.aggregation.strategies.gossip_avg import GossipAvg
+    if not TopologyCompatibilityManager.is_compatible(GossipAvg, topology_type):
+        compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(GossipAvg)
+        print(f"Error: Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}.")
+        print(f"Compatible topologies: {[t.value for t in compatible_topologies]}")
+        return
 
     try:
         # Create configuration from command-line arguments
@@ -155,14 +171,12 @@ def main() -> None:
             min_partition_size=args.min_partition_size,
             split=args.split,
             topology=TopologyConfig(
-                topology_type=TopologyType(args.topology),
-                hub_index=args.hub_index
+                topology_type=topology_type,
+                hub_index=0,  # Default hub index (not used for non-star topologies)
             ),
             aggregation=AggregationConfig(
-                strategy_type=AggregationStrategyType(args.aggregation_strategy),
-                params={"trim_ratio": args.trim_ratio}
-                if args.aggregation_strategy == "trimmed_mean"
-                else None,
+                strategy_type=strategy_type,
+                params={"mixing_parameter": args.mixing_parameter},
             ),
         )
 
@@ -212,20 +226,20 @@ def main() -> None:
             input_shape=input_shape,
         )
 
-        print("\n=== Setting Up Learning Process ===")
+        print("\n=== Setting Up Decentralized Learning Process ===")
         # Create learning process
-        learning_process = FederatedLearningProcess(
+        learning_process = DecentralizedLearningProcess(
             config=process_config,
             dataset=train_dataset,
             model=global_model,
         )
 
-        # Set up visualization BEFORE running the learning process
+        # Set up visualization BEFORE executing the learning process
         visualizer = None
         if args.create_animation or args.create_frames or args.create_summary:
             print("\n=== Setting Up Visualization ===")
             # Create visualization directory
-            vis_dir = os.path.join(args.vis_dir, f"mnist_{args.topology}_{args.aggregation_strategy}")
+            vis_dir = os.path.join(args.vis_dir, f"decentralized_{args.topology}_{args.aggregation_strategy}")
             os.makedirs(vis_dir, exist_ok=True)
 
             # Create visualizer
@@ -246,7 +260,7 @@ def main() -> None:
             )
 
             # Print initial summary
-            print("\n=== Federated Learning Setup ===")
+            print("\n=== Decentralized Learning Setup ===")
             print(f"Strategy: {config.partition_strategy}")
             print(f"Clients: {config.num_actors}")
             print(f"Aggregation strategy: {config.aggregation.strategy_type}")
@@ -256,7 +270,7 @@ def main() -> None:
             print(f"Batch size: {args.batch_size}")
             print(f"Learning rate: {args.lr}")
 
-            print("\n=== Starting Federated Learning ===")
+            print("\n=== Starting Decentralized Learning ===")
             # Execute the learning process
             _ = learning_process.execute()
 
@@ -267,20 +281,20 @@ def main() -> None:
                 if args.create_animation:
                     print("Creating animation...")
                     visualizer.render_training_animation(
-                        filename=f"mnist_{args.topology}_{args.aggregation_strategy}_animation.mp4",
-                        fps=2
+                        filename=f"decentralized_{args.topology}_{args.aggregation_strategy}_animation.mp4",
+                        fps=args.fps
                     )
 
                 if args.create_frames:
                     print("Creating frame sequence...")
                     visualizer.render_frame_sequence(
-                        prefix=f"mnist_{args.topology}_{args.aggregation_strategy}_step"
+                        prefix=f"decentralized_{args.topology}_{args.aggregation_strategy}_step"
                     )
 
                 if args.create_summary:
                     print("Creating summary plot...")
                     visualizer.render_summary_plot(
-                        filename=f"mnist_{args.topology}_{args.aggregation_strategy}_summary.png"
+                        filename=f"decentralized_{args.topology}_{args.aggregation_strategy}_summary.png"
                     )
 
             # Save the final model
@@ -294,7 +308,7 @@ def main() -> None:
             learning_process.shutdown()
 
     except Exception as e:
-        print(f"Learning Process orchestration failed: {str(e)}")
+        print(f"Decentralized Learning Process failed: {str(e)}")
         raise
 
 
