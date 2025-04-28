@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 
 import numpy as np
 
+from murmura.aggregation.coordination_mode import CoordinationMode
 from murmura.aggregation.strategy_interface import AggregationStrategy
 
 
@@ -11,6 +12,14 @@ class FedAvg(AggregationStrategy):
 
     FedAvg computes the weighted average of model parameters from multiple clients.
     """
+
+    coordination_mode = CoordinationMode.CENTRALIZED
+
+    def __init__(self):
+        """
+        Initialize the FedAvg strategy.
+        """
+        super().__init__()
 
     def aggregate(
         self,

@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 
 import numpy as np
 
+from murmura.aggregation.coordination_mode import CoordinationMode
 from murmura.aggregation.strategy_interface import AggregationStrategy
 
 
@@ -13,13 +14,15 @@ class TrimmedMean(AggregationStrategy):
     which provides robustness against malicious clients that may try to poison the model.
     """
 
+    coordination_mode = CoordinationMode.CENTRALIZED
+
     def __init__(self, trim_ratio: float = 0.1) -> None:
         """
         Initialize the TrimmedMean strategy.
 
         :param trim_ratio: The ratio of values to trim from each end (default is 0.1).
         """
-        if trim_ratio < 0 or trim_ratio > 0.5:
+        if trim_ratio < 0 or trim_ratio >= 0.5:
             raise ValueError(
                 "Trim ratio must be between 0 (inclusive) and 0.5 (exclusive)"
             )

@@ -189,6 +189,41 @@ class MDataset:
         else:
             self._partitions.clear()
 
+    def merge_split(self, other_dataset: "MDataset", split: str) -> None:
+        """
+        Merge a split from another dataset into this dataset.
+
+        :param other_dataset: The source dataset to copy the split from
+        :param split: The name of the split to merge
+
+        :raises KeyError: If the split is not found in the source dataset
+        """
+        if split not in other_dataset.available_splits:
+            raise KeyError(f"Split '{split}' not found in source dataset")
+
+        # Add the split if it doesn't already exist
+        if split not in self.available_splits:
+            self._splits[split] = other_dataset.get_split(split)
+
+    def merge_splits(
+        self, other_dataset: "MDataset", splits: Optional[List[str]] = None
+    ) -> None:
+        """
+        Merge multiple splits from another dataset into this dataset.
+
+        :param other_dataset: The source dataset to copy the splits from
+        :param splits: List of split names to merge. If None, all splits from the other dataset will be merged.
+        """
+        if splits is None:
+            # Merge all splits from the other dataset
+            splits = other_dataset.available_splits
+
+        for split in splits:
+            try:
+                self.merge_split(other_dataset, split)
+            except KeyError as e:
+                print(f"Warning: {e}")
+
     def __repr__(self) -> str:
         base = f"MDataset(splits={self.available_splits}"
         if self._partitions:

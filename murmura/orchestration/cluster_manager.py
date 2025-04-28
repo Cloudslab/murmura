@@ -2,14 +2,21 @@ from typing import Dict, Any, List, Optional
 
 import ray
 
-from murmura.aggregation.aggregation_config import AggregationConfig
+from murmura.aggregation.aggregation_config import (
+    AggregationConfig,
+    AggregationStrategyType,
+)
 from murmura.aggregation.strategy_factory import AggregationStrategyFactory
 from murmura.aggregation.strategy_interface import AggregationStrategy
 from murmura.data_processing.dataset import MDataset
 from murmura.model.model_interface import ModelInterface
-from murmura.network_management.topology import TopologyConfig
+from murmura.network_management.topology import TopologyConfig, TopologyType
+from murmura.network_management.topology_compatibility import (
+    TopologyCompatibilityManager,
+)
 from murmura.network_management.topology_manager import TopologyManager
 from murmura.node.client_actor import VirtualClientActor
+from murmura.orchestration.topology_coordinator import TopologyCoordinator
 
 
 class ClusterManager:
@@ -22,6 +29,7 @@ class ClusterManager:
         self.actors: List[Any] = []
         self.topology_manager: Optional[TopologyManager] = None
         self.aggregation_strategy: Optional[AggregationStrategy] = None
+        self.topology_coordinator: Optional[TopologyCoordinator] = None
 
         if not ray.is_initialized():
             ray.init(
@@ -42,6 +50,10 @@ class ClusterManager:
             for i in range(num_actors)
         ]
         self._apply_topology()
+
+        if self.aggregation_strategy and self.topology_manager:
+            self._initialize_coordinator()
+
         return self.actors
 
     def set_aggregation_strategy(self, aggregation_config: AggregationConfig) -> None:
@@ -50,9 +62,15 @@ class ClusterManager:
 
         :param aggregation_config: Aggregation configuration
         """
-        self.aggregation_strategy = AggregationStrategyFactory.create(
-            aggregation_config
-        )
+        if self.topology_manager:
+            self.aggregation_strategy = AggregationStrategyFactory.create(
+                aggregation_config, self.topology_manager.config
+            )
+            self._initialize_coordinator()
+        else:
+            self.aggregation_strategy = AggregationStrategyFactory.create(
+                aggregation_config
+            )
 
     def distribute_data(
         self,
@@ -153,27 +171,53 @@ class ClusterManager:
         :param weights: Optional list of weights for each actor's parameters
         :return: Aggregated model parameters
         """
-        if self.aggregation_strategy is None:
+        if not self.aggregation_strategy:
             raise ValueError(
                 "Aggregation strategy not set. Call set_aggregation_strategy first."
             )
 
-        # Get parameters from all clients
-        parameter_futures = [
-            actor.get_model_parameters.remote() for actor in self.actors
-        ]
-        all_parameters = ray.get(parameter_futures)
+        if not self.topology_coordinator:
+            raise ValueError(
+                "Topology coordinator not initialized. Make sure create_actors and set_aggregation_strategy have been "
+                "called."
+            )
 
-        # Use the configured aggregation strategy
-        return self.aggregation_strategy.aggregate(all_parameters, weights)
+        # Use the topology coordinator to perform aggregation
+        return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
-    def update_aggregation_strategy(self, strategy: AggregationStrategy) -> None:
+    def update_aggregation_strategy(
+        self, strategy: AggregationStrategy, topology_check: bool = True
+    ) -> None:
         """
         Update the aggregation strategy for the cluster
 
         :param strategy: New aggregation strategy
+        :param topology_check: Flag to check compatibility with the current topology
+
+        :raises ValueError: If the new strategy is not compatible with the current topology
         """
+        if topology_check and self.topology_manager:
+            strategy_class = strategy.__class__
+            topology_type = self.topology_manager.config.topology_type
+
+            if not TopologyCompatibilityManager.is_compatible(
+                strategy_class, topology_type
+            ):
+                compatible_topologies = (
+                    TopologyCompatibilityManager.get_compatible_topologies(
+                        strategy_class
+                    )
+                )
+                raise ValueError(
+                    f"New strategy {strategy_class.__name__} is not compatible with the current topology {topology_type.value}."
+                    f"Compatible topologies: {compatible_topologies}"
+                )
+
         self.aggregation_strategy = strategy
+
+        # Reinitialize the topology coordinator with the new strategy
+        if self.topology_manager:
+            self._initialize_coordinator()
 
     def update_models(self, parameters: Dict[str, Any]) -> None:
         """
@@ -195,6 +239,66 @@ class ClusterManager:
         for node, neighbours in adjacency.items():
             neighbour_actors = [self.actors[n] for n in neighbours]
             ray.get(self.actors[node].set_neighbours.remote(neighbour_actors))
+
+    def get_topology_information(self) -> Dict[str, Any]:
+        """
+        Get information about the current topology
+
+        :return: Dictionary containing topology information
+        """
+        if not self.topology_manager:
+            return {"initialized": False}
+
+        return {
+            "initialized": True,
+            "type": self.topology_manager.config.topology_type.value,
+            "num_actors": len(self.actors),
+            "hub_index": self.topology_manager.config.hub_index
+            if self.topology_manager.config.topology_type == TopologyType.STAR
+            else None,
+            "adjacency_list": self.topology_manager.adjacency_list,
+        }
+
+    def get_compatible_strategies(self) -> List[str]:
+        """
+        Get list of strategies compatible with the current topology.
+
+        Returns:
+            List of compatible strategy names
+        """
+        if not self.topology_manager:
+            return []
+
+        strategy_classes = TopologyCompatibilityManager.get_compatible_strategies(
+            self.topology_manager.config.topology_type
+        )
+
+        result = []
+        for cls in strategy_classes:
+            # Match class name to strategy type
+            found = False
+            for strategy_type in AggregationStrategyType:
+                if strategy_type.name.lower() == cls.__name__.lower():
+                    result.append(str(strategy_type.value))
+                    found = True
+                    break
+
+            # If no matching enum value, use the lowercase class name
+            if not found:
+                result.append(cls.__name__.lower())
+
+        return result
+
+    def _initialize_coordinator(self) -> None:
+        """
+        Initialize the topology coordinator with the actors and topology manager
+        """
+        if not self.topology_manager or not self.aggregation_strategy:
+            return
+
+        self.topology_coordinator = TopologyCoordinator.create(
+            self.actors, self.topology_manager, self.aggregation_strategy
+        )
 
     @staticmethod
     def shutdown() -> None:
