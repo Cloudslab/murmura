@@ -22,7 +22,7 @@ class TrimmedMean(AggregationStrategy):
 
         :param trim_ratio: The ratio of values to trim from each end (default is 0.1).
         """
-        if trim_ratio < 0 or trim_ratio > 0.5:
+        if trim_ratio < 0 or trim_ratio >= 0.5:
             raise ValueError(
                 "Trim ratio must be between 0 (inclusive) and 0.5 (exclusive)"
             )

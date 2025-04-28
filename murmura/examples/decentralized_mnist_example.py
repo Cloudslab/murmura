@@ -105,7 +105,7 @@ def main() -> None:
 
     # Training arguments
     parser.add_argument(
-        "--rounds", type=int, default=10, help="Number of learning rounds"
+        "--rounds", type=int, default=5, help="Number of learning rounds"
     )
     parser.add_argument(
         "--epochs", type=int, default=1, help="Number of local epochs per round"
