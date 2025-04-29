@@ -43,8 +43,8 @@ def test_initialization(network_visualizer):
     assert network_visualizer.network_type is None
     assert network_visualizer.frames == []
     assert network_visualizer.parameter_history == {}
-    assert network_visualizer.accuracy_history == []
-    assert network_visualizer.loss_history == []
+    assert network_visualizer.accuracy_history == {}
+    assert network_visualizer.loss_history == {}
     assert network_visualizer.frame_descriptions == []
     assert network_visualizer.round_metrics == {}
     assert os.path.isdir(network_visualizer.output_dir)
@@ -214,8 +214,8 @@ def test_on_event_evaluation(network_visualizer, mock_topology_manager):
 
     # Check metrics tracking
     assert network_visualizer.round_metrics[1] == {"loss": 0.3, "accuracy": 0.95}
-    assert network_visualizer.accuracy_history == [0.95]
-    assert network_visualizer.loss_history == [0.3]
+    assert network_visualizer.accuracy_history == {1: 0.95}
+    assert network_visualizer.loss_history == {1: 0.3}
 
     assert "Evaluation" in network_visualizer.frame_descriptions[0]
     assert "0.95" in network_visualizer.frame_descriptions[0]
@@ -278,8 +278,8 @@ def test_render_summary_plot(mock_savefig, network_visualizer, mock_topology_man
     }
 
     # Add metrics history
-    network_visualizer.accuracy_history = [0.7, 0.8, 0.9]
-    network_visualizer.loss_history = [0.5, 0.4, 0.3]
+    network_visualizer.accuracy_history = {1: 0.7, 2: 0.8, 3: 0.9}
+    network_visualizer.loss_history = {1: 0.5, 2: 0.4, 3: 0.3}
 
     # Add some frames (needed for render_summary_plot to work)
     network_visualizer.frames = [
