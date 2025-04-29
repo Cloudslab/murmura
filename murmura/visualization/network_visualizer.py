@@ -46,7 +46,9 @@ class NetworkVisualizer(TrainingObserver):
         self.frame_descriptions: List[str] = []
         self.round_metrics: Dict[int, Dict[str, float]] = {}  # Store metrics by round
         # Track at which frame each parameter update occurs
-        self.parameter_update_frames: Dict[int, Dict[int, int]] = {}  # {node_id: {parameter_idx: frame_idx}}
+        self.parameter_update_frames: Dict[
+            int, Dict[int, int]
+        ] = {}  # {node_id: {parameter_idx: frame_idx}}
 
     def set_topology(self, topology_manager: TopologyManager) -> None:
         """
@@ -109,15 +111,23 @@ class NetworkVisualizer(TrainingObserver):
                     norm_value = summary["norm"]
 
                     # Only add if this is a new round or first update
-                    if not self.parameter_history[node] or current_round > len(self.parameter_history[node]):
+                    if not self.parameter_history[node] or current_round > len(
+                        self.parameter_history[node]
+                    ):
                         self.parameter_history[node].append(norm_value)
                         # Store at which frame this parameter update happened
-                        self.parameter_update_frames[node][len(self.parameter_history[node]) - 1] = len(self.frames)
+                        self.parameter_update_frames[node][
+                            len(self.parameter_history[node]) - 1
+                        ] = len(self.frames)
                 else:
                     # If we just have raw parameters, use a simple norm
-                    if not self.parameter_history[node] or event.round_num > len(self.parameter_history[node]):
+                    if not self.parameter_history[node] or event.round_num > len(
+                        self.parameter_history[node]
+                    ):
                         self.parameter_history[node].append(1.0)  # Placeholder
-                        self.parameter_update_frames[node][len(self.parameter_history[node]) - 1] = len(self.frames)
+                        self.parameter_update_frames[node][
+                            len(self.parameter_history[node]) - 1
+                        ] = len(self.frames)
 
             frame["node_params"] = event.param_summary
             description = (
@@ -174,13 +184,15 @@ class NetworkVisualizer(TrainingObserver):
         # Add current metrics history to each frame for consistent animation
         frame["accuracy_history"] = self.accuracy_history.copy()
         frame["loss_history"] = self.loss_history.copy()
-        frame["parameter_history"] = {node: history.copy() for node, history in self.parameter_history.items()}
+        frame["parameter_history"] = {
+            node: history.copy() for node, history in self.parameter_history.items()
+        }
 
         self.frames.append(frame)
         self.frame_descriptions.append(description)
 
     def render_training_animation(
-            self, filename: str = "training_animation.mp4", fps: int = 1
+        self, filename: str = "training_animation.mp4", fps: int = 1
     ) -> None:
         """
         Creates an animation of the training process.
@@ -347,8 +359,8 @@ class NetworkVisualizer(TrainingObserver):
             available_rounds = sorted([r for r in range(1, current_round + 1)])
 
             # For each round number, get the latest metrics value
-            last_acc = 0
-            last_loss = 0
+            last_acc = 0.0
+            last_loss = 0.0
 
             for round_num in available_rounds:
                 rounds.append(round_num)
