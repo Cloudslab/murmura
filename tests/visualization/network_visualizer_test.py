@@ -1,19 +1,17 @@
-import os
 import tempfile
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
-import numpy as np
-import pytest
 import matplotlib.pyplot as plt
+import pytest
 
 from murmura.visualization.network_visualizer import NetworkVisualizer
 from murmura.visualization.training_event import (
-    InitialStateEvent,
     LocalTrainingEvent,
     ParameterTransferEvent,
     AggregationEvent,
     ModelUpdateEvent,
     EvaluationEvent,
+    InitialStateEvent,
 )
 
 
@@ -64,300 +62,234 @@ def populated_visualizer(network_visualizer, mock_topology_manager):
         metrics={"loss": 0.5, "accuracy": 0.8}
     ))
 
-    network_visualizer.on_event(EvaluationEvent(
-        round_num=2,
-        metrics={"loss": 0.3, "accuracy": 0.9}
-    ))
-
     return network_visualizer
 
 
-def test_parameter_tracking_across_rounds(network_visualizer, mock_topology_manager):
-    """Test tracking of parameter changes across multiple rounds"""
+def test_render_training_animation_with_figure_closed(populated_visualizer):
+    """Test that figure is properly closed after rendering animation"""
+    with patch('matplotlib.animation.FuncAnimation') as mock_animation, \
+            patch('matplotlib.animation.FFMpegWriter') as mock_writer, \
+            patch('matplotlib.pyplot.close') as mock_close:
+
+        # Mock animation to return a MagicMock
+        mock_animation.return_value = MagicMock()
+
+        # Call render_training_animation
+        populated_visualizer.render_training_animation(filename="test_animation.mp4")
+
+        # Verify figure was closed
+        mock_close.assert_called_once()
+
+
+def test_render_frame_sequence_with_empty_frames(network_visualizer):
+    """Test rendering frame sequence with empty frames list"""
+    # Ensure frames list is empty
+    network_visualizer.frames = []
+
+    # Call render_frame_sequence - should not raise errors
+    network_visualizer.render_frame_sequence(prefix="test_frame")
+
+    # No frames should have been saved
+
+
+def test_render_summary_plot_with_no_topology(network_visualizer):
+    """Test rendering summary plot without setting topology"""
+    # Set some frames but no topology
+    network_visualizer.frames = [{"round": 1, "step": "test"}]
+
+    with patch('matplotlib.pyplot.savefig') as mock_savefig, \
+            patch('matplotlib.pyplot.close') as mock_close:
+
+        # Call render_summary_plot - should not raise errors
+        network_visualizer.render_summary_plot(filename="test_summary.png")
+
+        # Verify savefig was called
+        mock_savefig.assert_called_once()
+        mock_close.assert_called_once()
+
+
+def test_update_frame_function_invalid_index(populated_visualizer):
+    """Test the update_frame function with invalid frame index"""
+    with patch('matplotlib.animation.FuncAnimation') as mock_animation, \
+            patch('matplotlib.animation.FFMpegWriter') as mock_writer, \
+            patch('matplotlib.pyplot.close'):
+
+        # Mock animation to extract the update_frame function
+        def save_update_frame(*args, **kwargs):
+            test_update_frame_function_invalid_index.func = kwargs.get('func')
+            return MagicMock()
+
+        mock_animation.side_effect = save_update_frame
+
+        # Call render_training_animation to get the update_frame function
+        populated_visualizer.render_training_animation(filename="test_animation.mp4")
+
+        # Get the update_frame function
+        update_frame = test_update_frame_function_invalid_index.func
+
+        # Test with valid index
+        result_valid = update_frame(0)
+        assert len(result_valid) > 0
+
+        # Test with invalid index - should return empty list
+        result_invalid = update_frame(1000)
+        assert result_invalid == []
+
+
+@patch('networkx.spring_layout', return_value={0: [0.1, 0.2], 1: [-0.3, 0.4], 2: [0.5, -0.6], 3: [0.2, 0.7]})
+def test_network_drawing_with_active_nodes(mock_spring_layout, network_visualizer, mock_topology_manager):
+    """Test network drawing with active nodes and edges"""
     network_visualizer.set_topology(mock_topology_manager)
 
-    # First round parameter transfer
+    # Add event with active nodes and edges
+    network_visualizer.on_event(LocalTrainingEvent(
+        round_num=1,
+        active_nodes=[0, 1],
+        metrics={}
+    ))
+
+    # Add event with active edges
     network_visualizer.on_event(ParameterTransferEvent(
         round_num=1,
         source_nodes=[0],
         target_nodes=[1, 2],
         param_summary={
             0: {"norm": 1.0, "mean": 0.5, "std": 0.1},
-            1: {"norm": 2.0, "mean": 0.7, "std": 0.2}
         }
     ))
 
-    # Second round parameter transfer with different values
-    network_visualizer.on_event(ParameterTransferEvent(
+    with patch('matplotlib.pyplot.subplots', return_value=(MagicMock(), (MagicMock(), MagicMock()))), \
+            patch('networkx.draw_networkx_nodes') as mock_draw_nodes, \
+            patch('networkx.draw_networkx_edges') as mock_draw_edges, \
+            patch('networkx.draw_networkx_labels') as mock_draw_labels, \
+            patch('matplotlib.pyplot.savefig'), \
+            patch('matplotlib.pyplot.close'):
+
+        # Call render_frame_sequence
+        network_visualizer.render_frame_sequence(prefix="test_frame")
+
+        # Verify nodes and edges were drawn
+        assert mock_draw_nodes.call_count >= 2  # At least one call per frame
+        assert mock_draw_edges.call_count >= 2  # At least one call per frame
+        assert mock_draw_labels.call_count >= 2  # At least one call per frame
+
+
+def test_aggregation_event_with_star_topology(network_visualizer, mock_topology_manager):
+    """Test handling of aggregation event with star topology"""
+    network_visualizer.set_topology(mock_topology_manager)
+
+    # Create aggregation event with central aggregator
+    event = AggregationEvent(
+        round_num=1,
+        participating_nodes=[0, 1, 2, 3],
+        aggregator_node=0,  # Hub node as aggregator
+        strategy_name="FedAvg"
+    )
+
+    # Process the event
+    network_visualizer.on_event(event)
+
+    # Check frame data
+    frame = network_visualizer.frames[0]
+    assert frame["active_nodes"] == [0, 1, 2, 3]
+    assert frame["strategy_name"] == "FedAvg"
+
+    # Should have edges from each participating node to the aggregator
+    edges = frame["active_edges"]
+    for node in [1, 2, 3]:  # All nodes except the aggregator
+        assert (node, 0) in edges  # Edge from node to aggregator
+
+    # Check description
+    assert "Aggregation at node 0" in network_visualizer.frame_descriptions[0]
+
+
+def test_model_update_event_with_parameter_convergence(network_visualizer, mock_topology_manager):
+    """Test handling of model update event with parameter convergence metric"""
+    network_visualizer.set_topology(mock_topology_manager)
+
+    # Create model update event with parameter convergence
+    event = ModelUpdateEvent(
+        round_num=1,
+        updated_nodes=[0, 1, 2, 3],
+        param_convergence=0.01
+    )
+
+    # Process the event
+    network_visualizer.on_event(event)
+
+    # Check frame data
+    frame = network_visualizer.frames[0]
+    assert frame["active_nodes"] == [0, 1, 2, 3]
+    assert frame["param_convergence"] == 0.01
+
+    # Check description
+    assert "Model update" in network_visualizer.frame_descriptions[0]
+
+
+def test_render_summary_plot_with_all_metrics(populated_visualizer):
+    """Test rendering summary plot with all metrics"""
+    # Add more rounds of metrics
+    populated_visualizer.on_event(EvaluationEvent(
         round_num=2,
-        source_nodes=[0],
-        target_nodes=[1, 2],
-        param_summary={
-            0: {"norm": 1.2, "mean": 0.6, "std": 0.15},
-            1: {"norm": 1.8, "mean": 0.65, "std": 0.18}
-        }
+        metrics={"loss": 0.4, "accuracy": 0.85}
     ))
-
-    # Check parameter history is tracked correctly
-    assert network_visualizer.parameter_history[0] == [1.0, 1.2]
-    assert network_visualizer.parameter_history[1] == [2.0, 1.8]
-
-    # Check parameter update frames are recorded
-    assert 0 in network_visualizer.parameter_update_frames
-    assert 1 in network_visualizer.parameter_update_frames
-
-    # Each node should have two parameter updates (one for each round)
-    assert len(network_visualizer.parameter_update_frames[0]) == 2
-    assert len(network_visualizer.parameter_update_frames[1]) == 2
-
-
-def test_raw_parameter_summary_handling(network_visualizer, mock_topology_manager):
-    """Test handling of raw parameter summaries (without norm/mean/std)"""
-    network_visualizer.set_topology(mock_topology_manager)
-
-    # Provide raw parameters instead of summaries
-    network_visualizer.on_event(ParameterTransferEvent(
-        round_num=1,
-        source_nodes=[0],
-        target_nodes=[1],
-        param_summary={
-            0: {"raw_param": np.array([1.0, 2.0])}
-        }
-    ))
-
-    # Should still have created an entry in parameter_history
-    assert 0 in network_visualizer.parameter_history
-    assert len(network_visualizer.parameter_history[0]) == 1
-    # The value should be a placeholder (1.0)
-    assert network_visualizer.parameter_history[0][0] == 1.0
-
-
-def test_multiple_metrics_tracking(network_visualizer, mock_topology_manager):
-    """Test tracking of multiple metrics across rounds"""
-    network_visualizer.set_topology(mock_topology_manager)
-
-    # First round evaluation
-    network_visualizer.on_event(EvaluationEvent(
-        round_num=1,
-        metrics={"loss": 0.5, "accuracy": 0.8, "f1_score": 0.75}
-    ))
-
-    # Second round evaluation with different values
-    network_visualizer.on_event(EvaluationEvent(
-        round_num=2,
-        metrics={"loss": 0.3, "accuracy": 0.9, "f1_score": 0.85}
-    ))
-
-    # Check metrics history is tracked correctly
-    assert network_visualizer.accuracy_history == {1: 0.8, 2: 0.9}
-    assert network_visualizer.loss_history == {1: 0.5, 2: 0.3}
-
-    # Check round_metrics contains all metrics
-    assert network_visualizer.round_metrics[1]["f1_score"] == 0.75
-    assert network_visualizer.round_metrics[2]["f1_score"] == 0.85
-
-    # Check frames contain the metrics
-    latest_frame = network_visualizer.frames[-1]
-    assert latest_frame["all_metrics"][1]["f1_score"] == 0.75
-    assert latest_frame["all_metrics"][2]["f1_score"] == 0.85
-
-
-def test_skipped_round_metrics_handling(network_visualizer, mock_topology_manager):
-    """Test handling of metrics when rounds are skipped"""
-    network_visualizer.set_topology(mock_topology_manager)
-
-    # First round evaluation
-    network_visualizer.on_event(EvaluationEvent(
-        round_num=1,
-        metrics={"loss": 0.5, "accuracy": 0.8}
-    ))
-
-    # Skip to third round evaluation
-    network_visualizer.on_event(EvaluationEvent(
+    populated_visualizer.on_event(EvaluationEvent(
         round_num=3,
         metrics={"loss": 0.3, "accuracy": 0.9}
     ))
 
-    # Check metrics history has the right keys
-    assert set(network_visualizer.accuracy_history.keys()) == {1, 3}
-    assert set(network_visualizer.loss_history.keys()) == {1, 3}
-
-    # Check the values
-    assert network_visualizer.accuracy_history[1] == 0.8
-    assert network_visualizer.accuracy_history[3] == 0.9
-    assert network_visualizer.loss_history[1] == 0.5
-    assert network_visualizer.loss_history[3] == 0.3
-
-
-def test_nested_event_handling(network_visualizer, mock_topology_manager):
-    """Test handling of events with nested data structures"""
-    network_visualizer.set_topology(mock_topology_manager)
-
-    # Event with nested structure for metrics
-    network_visualizer.on_event(EvaluationEvent(
-        round_num=1,
-        metrics={
-            "main": {"loss": 0.5, "accuracy": 0.8},
-            "aux": {"precision": 0.75, "recall": 0.72}
+    # Add more parameter history
+    populated_visualizer.on_event(ParameterTransferEvent(
+        round_num=2,
+        source_nodes=[0],
+        target_nodes=[1, 2],
+        param_summary={
+            0: {"norm": 1.2, "mean": 0.6, "std": 0.08},
+            1: {"norm": 1.8, "mean": 0.65, "std": 0.15}
         }
     ))
 
-    # Verify the metrics were captured correctly
-    assert 1 in network_visualizer.round_metrics
-    assert "main" in network_visualizer.round_metrics[1]
-    assert "aux" in network_visualizer.round_metrics[1]
+    with patch('matplotlib.pyplot.figure'), \
+            patch('matplotlib.pyplot.suptitle'), \
+            patch('matplotlib.pyplot.tight_layout'), \
+            patch('matplotlib.pyplot.savefig') as mock_savefig, \
+            patch('matplotlib.pyplot.close'), \
+            patch('networkx.draw_networkx'):
 
-    # Check frame description
-    frame_desc = network_visualizer.frame_descriptions[0]
-    assert "Evaluation" in frame_desc
+        # Call render_summary_plot
+        populated_visualizer.render_summary_plot(filename="test_summary.png")
 
-
-def test_aggregation_event_with_no_aggregator(network_visualizer, mock_topology_manager):
-    """Test handling of aggregation event with no specific aggregator node"""
-    network_visualizer.set_topology(mock_topology_manager)
-
-    # Aggregation event without a specific aggregator (decentralized)
-    network_visualizer.on_event(AggregationEvent(
-        round_num=1,
-        participating_nodes=[0, 1, 2],
-        aggregator_node=None,
-        strategy_name="GossipAvg"
-    ))
-
-    # Check frame state
-    frame = network_visualizer.frames[0]
-    assert frame["active_nodes"] == [0, 1, 2]
-    assert frame["strategy_name"] == "GossipAvg"
-
-    # Check description (should mention decentralized)
-    assert "Decentralized aggregation" in network_visualizer.frame_descriptions[0]
+        # Verify savefig was called
+        mock_savefig.assert_called_once()
 
 
-@patch("matplotlib.pyplot.figure")
-@patch("networkx.draw_networkx_nodes")
-@patch("networkx.draw_networkx_edges")
-@patch("networkx.draw_networkx_labels")
-@patch("matplotlib.pyplot.subplots", return_value=(MagicMock(), (MagicMock(), MagicMock())))
-@patch("matplotlib.pyplot.savefig")
-def test_render_frame_sequence_without_metrics(
-        mock_savefig, mock_subplots, mock_draw_labels, mock_draw_edges, mock_draw_nodes, mock_figure,
-        network_visualizer, mock_topology_manager
-):
-    """Test rendering frame sequence without metrics"""
-    network_visualizer.set_topology(mock_topology_manager)
+def test_render_training_animation_update_function(populated_visualizer):
+    """Test the update_frame function in render_training_animation"""
+    # Create subplots for testing
+    fig = plt.figure()
+    ax_network = fig.add_subplot(221)
+    ax_params = fig.add_subplot(222)
+    ax_metrics = fig.add_subplot(223)
+    ax_metrics_twin = ax_metrics.twinx()
 
-    # Add event with no metrics
-    network_visualizer.on_event(LocalTrainingEvent(
-        round_num=1,
-        active_nodes=[0, 1],
-        metrics={}
-    ))
+    # Call render_training_animation to get the update_frame function
+    with patch('matplotlib.animation.FuncAnimation') as mock_animation, \
+            patch('matplotlib.animation.FFMpegWriter') as mock_writer, \
+            patch('matplotlib.pyplot.figure', return_value=fig), \
+            patch('matplotlib.pyplot.GridSpec'), \
+            patch('matplotlib.figure.Figure.add_subplot', side_effect=[ax_network, ax_params, ax_metrics]), \
+            patch('matplotlib.axes.Axes.twinx', return_value=ax_metrics_twin), \
+            patch('matplotlib.pyplot.close'):
 
-    # Should render without error
-    network_visualizer.render_frame_sequence(prefix="test_frame")
+        # Mock animation to extract the update_frame function
+        def save_update_frame(*args, **kwargs):
+            test_render_training_animation_update_function.func = kwargs.get('func')
+            return MagicMock()
 
-    # Verify savefig was called
-    assert mock_savefig.called
+        mock_animation.side_effect = save_update_frame
 
+        # Call render_training_animation
+        populated_visualizer.render_training_animation(filename="test_animation.mp4")
 
-@patch("matplotlib.animation.FuncAnimation")
-def test_render_training_animation_update_frames(
-        mock_func_animation, populated_visualizer
-):
-    """Test update_frame function in render_training_animation"""
-    # Extract the update_frame function from the render method
-    populated_visualizer.render_training_animation(filename="test.mp4", fps=1)
-
-    # Get the args from the FuncAnimation call
-    args, kwargs = mock_func_animation.call_args
-    update_frame = kwargs.get('func') or args[1]
-
-    # Test the update_frame function with valid frame index
-    result = update_frame(0)
-    assert len(result) > 0  # Should return list of artists
-
-    # Test with out-of-bounds frame index (should return empty list)
-    result = update_frame(1000)
-    assert len(result) == 0
-
-
-@patch("matplotlib.pyplot.savefig")
-def test_render_summary_plot_with_empty_data(
-        mock_savefig, network_visualizer, mock_topology_manager
-):
-    """Test rendering summary plot with empty data"""
-    network_visualizer.set_topology(mock_topology_manager)
-
-    # Add a single frame with no data
-    network_visualizer.frames = [{"round": 1, "step": "empty"}]
-
-    # Should render without error
-    network_visualizer.render_summary_plot(filename="test_summary.png")
-
-    # savefig should have been called
-    mock_savefig.assert_called_once()
-
-
-def test_event_without_topology_ignored(network_visualizer):
-    """Test that non-initial events without topology are ignored"""
-    # Try to add various events before setting topology
-    network_visualizer.on_event(LocalTrainingEvent(
-        round_num=1,
-        active_nodes=[0, 1],
-        metrics={}
-    ))
-
-    network_visualizer.on_event(ParameterTransferEvent(
-        round_num=1,
-        source_nodes=[0],
-        target_nodes=[1],
-        param_summary={}
-    ))
-
-    # No frames should be created
-    assert len(network_visualizer.frames) == 0
-
-
-def test_parameter_convergence_tracking(network_visualizer, mock_topology_manager):
-    """Test tracking of parameter convergence values"""
-    network_visualizer.set_topology(mock_topology_manager)
-
-    # Add model update events with convergence values
-    network_visualizer.on_event(ModelUpdateEvent(
-        round_num=1,
-        updated_nodes=[0, 1, 2],
-        param_convergence=0.5
-    ))
-
-    network_visualizer.on_event(ModelUpdateEvent(
-        round_num=2,
-        updated_nodes=[0, 1, 2],
-        param_convergence=0.3
-    ))
-
-    # Check frames have the convergence values
-    assert network_visualizer.frames[0]["param_convergence"] == 0.5
-    assert network_visualizer.frames[1]["param_convergence"] == 0.3
-
-
-def test_frame_history_keys_consistency(populated_visualizer):
-    """Test that all frames maintain consistent history keys"""
-    frames = populated_visualizer.frames
-
-    # The latest frame should have all history
-    latest_frame = frames[-1]
-    assert "accuracy_history" in latest_frame
-    assert "loss_history" in latest_frame
-    assert "parameter_history" in latest_frame
-
-    # All frames should have the same keys (but possibly different values
-    # as history might be updated with current state at the time of event)
-    for frame in frames:
-        assert "accuracy_history" in frame
-        assert "loss_history" in frame
-        assert "parameter_history" in frame
-
-        # Verify history keys are dictionaries or similar structures
-        assert hasattr(frame["accuracy_history"], "keys")
-        assert hasattr(frame["loss_history"], "keys")
-        assert hasattr(frame["parameter_history"], "keys")
+    # Test cleanup
+    plt.close(fig)

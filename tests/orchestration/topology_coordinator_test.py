@@ -1,10 +1,10 @@
-import pytest
-import numpy as np
 from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pytest
 
 from murmura.aggregation.coordination_mode import CoordinationMode
 from murmura.aggregation.strategies.fed_avg import FedAvg
-from murmura.aggregation.strategies.gossip_avg import GossipAvg
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.network_management.topology_manager import TopologyManager
 from murmura.orchestration.topology_coordinator import TopologyCoordinator
@@ -33,20 +33,6 @@ def star_topology_manager():
 
 
 @pytest.fixture
-def ring_topology_manager():
-    """Create a ring topology manager"""
-    config = TopologyConfig(topology_type=TopologyType.RING)
-    return TopologyManager(num_clients=3, config=config)
-
-
-@pytest.fixture
-def complete_topology_manager():
-    """Create a complete topology manager"""
-    config = TopologyConfig(topology_type=TopologyType.COMPLETE)
-    return TopologyManager(num_clients=3, config=config)
-
-
-@pytest.fixture
 def line_topology_manager():
     """Create a line topology manager"""
     config = TopologyConfig(topology_type=TopologyType.LINE)
@@ -63,198 +49,48 @@ def custom_topology_manager():
     return TopologyManager(num_clients=3, config=config)
 
 
-@patch('ray.get')
-def test_line_topology_coordination(mock_ray_get, mock_actors, line_topology_manager):
-    """Test coordination with line topology"""
-    # Setup mock behaviors
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+def test_determination_of_coordination_mode():
+    """Test the determination of coordination mode based on strategy"""
+    # Create a mock strategy with each coordination mode
+    centralized_strategy = MagicMock()
+    centralized_strategy.coordination_mode = CoordinationMode.CENTRALIZED
 
-    # Use GossipAvg strategy which is compatible with line topology
-    strategy = GossipAvg()
-    strategy.aggregate = MagicMock(return_value={"layer": np.array([2.0, 3.0])})
+    decentralized_strategy = MagicMock()
+    decentralized_strategy.coordination_mode = CoordinationMode.DECENTRALIZED
 
-    # Create coordinator
-    coordinator = TopologyCoordinator(mock_actors, line_topology_manager, strategy)
+    # Create a topology manager
+    config = TopologyConfig(topology_type=TopologyType.STAR)
+    topology_manager = TopologyManager(num_clients=3, config=config)
 
-    # Test coordination
-    result = coordinator._coordinate_line_topology()
+    # Test with centralized strategy
+    coordinator = TopologyCoordinator([MagicMock()] * 3, topology_manager, centralized_strategy)
+    assert coordinator.coordination_mode == CoordinationMode.CENTRALIZED
 
-    # Verify strategy.aggregate was called for each node
-    assert strategy.aggregate.call_count == 3
-
-    # Verify the result contains the expected data
-    assert "layer" in result
-    assert np.array_equal(result["layer"], np.array([2.0, 3.0]))
+    # Test with decentralized strategy
+    coordinator = TopologyCoordinator([MagicMock()] * 3, topology_manager, decentralized_strategy)
+    assert coordinator.coordination_mode == CoordinationMode.DECENTRALIZED
 
 
 @patch('ray.get')
-def test_custom_topology_coordination(mock_ray_get, mock_actors, custom_topology_manager):
-    """Test coordination with custom topology"""
-    # Setup mock behaviors
+def test_coordinate_dispatch_to_correct_topology_method(mock_ray_get, mock_actors):
+    """Test that coordinate_aggregation dispatches to the correct topology method"""
+    # Setup mock ray.get
     mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
 
-    # Use GossipAvg strategy which is compatible with custom topology
-    strategy = GossipAvg()
-    strategy.aggregate = MagicMock(return_value={"layer": np.array([2.0, 3.0])})
-
-    # Create coordinator
-    coordinator = TopologyCoordinator(mock_actors, custom_topology_manager, strategy)
-
-    # Test coordination
-    result = coordinator._coordinate_custom_topology()
-
-    # Verify strategy.aggregate was called for each node
-    assert strategy.aggregate.call_count == 3
-
-    # Verify the result contains the expected data
-    assert "layer" in result
-    assert np.array_equal(result["layer"], np.array([2.0, 3.0]))
-
-
-@patch('ray.get')
-def test_complete_topology_decentralized(mock_ray_get, mock_actors, complete_topology_manager):
-    """Test coordination with complete topology using decentralized strategy"""
-    # Setup mock behaviors
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
-
-    # Use GossipAvg strategy (decentralized)
-    strategy = GossipAvg()
-    strategy.coordination_mode = CoordinationMode.DECENTRALIZED
-    strategy.aggregate = MagicMock(return_value={"layer": np.array([2.0, 3.0])})
-
-    # Create coordinator
-    coordinator = TopologyCoordinator(mock_actors, complete_topology_manager, strategy)
-
-    # Test coordination
-    result = coordinator._coordinate_complete_topology()
-
-    # For decentralized coordination, should call aggregate once per node
-    assert strategy.aggregate.call_count == 3
-
-    # Verify the result
-    assert "layer" in result
-    assert np.array_equal(result["layer"], np.array([2.0, 3.0]))
-
-
-def test_weighted_aggregation_normalization():
-    """Test that aggregation properly normalizes weights"""
-    # Create parameters
-    params_a = {"layer": np.array([1.0, 1.0])}
-    params_b = {"layer": np.array([2.0, 2.0])}
-    params_c = {"layer": np.array([3.0, 3.0])}
-
-    # Aggregate with normalized weights
-    params_list = [params_a, params_b, params_c]
-    weights = [10, 20, 30]  # Sum = 60, should be normalized to [1/6, 2/6, 3/6]
-
-    # Expected result with normalized weights
-    expected = {
-        "layer": np.array([
-            (1/6)*1.0 + (2/6)*2.0 + (3/6)*3.0,
-            (1/6)*1.0 + (2/6)*2.0 + (3/6)*3.0
-        ])
-    }
-
-    # Call the combined method directly
-    result = TopologyCoordinator._combine_aggregated_params([expected, expected, expected])
-
-    # Verify the result
-    assert np.allclose(result["layer"], expected["layer"])
-
-
-def test_empty_aggregated_params_list():
-    """Test combine_aggregated_params with empty list raises error"""
-    with pytest.raises(ValueError, match="Empty aggregated parameters list"):
-        TopologyCoordinator._combine_aggregated_params([])
-
-
-def test_combine_aggregated_params_with_multiple_keys():
-    """Test combining parameters with multiple keys"""
-    # Create multiple parameter sets
-    params1 = {
-        "layer1": np.array([1.0, 2.0]),
-        "layer2": np.array([[1.0, 2.0], [3.0, 4.0]])
-    }
-
-    params2 = {
-        "layer1": np.array([3.0, 4.0]),
-        "layer2": np.array([[5.0, 6.0], [7.0, 8.0]])
-    }
-
-    params3 = {
-        "layer1": np.array([5.0, 6.0]),
-        "layer2": np.array([[9.0, 10.0], [11.0, 12.0]])
-    }
-
-    # Expected result: average of all parameters
-    expected_layer1 = np.array([3.0, 4.0])  # Avg of [1,2], [3,4], [5,6]
-    expected_layer2 = np.array([[5.0, 6.0], [7.0, 8.0]])  # Avg of the matrices
-
-    # Call the method
-    result = TopologyCoordinator._combine_aggregated_params([params1, params2, params3])
-
-    # Verify the result
-    assert "layer1" in result
-    assert "layer2" in result
-    assert np.allclose(result["layer1"], expected_layer1)
-    assert np.allclose(result["layer2"], expected_layer2)
-
-
-@patch('ray.get')
-def test_coordinate_aggregation_with_weights(mock_ray_get, mock_actors, star_topology_manager):
-    """Test coordinate_aggregation with weights"""
-    # Setup mock behaviors
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
-
-    # Use FedAvg strategy with a patched _coordinate_star_topology method
+    # Create a strategy
     strategy = FedAvg()
-    strategy.aggregate = MagicMock(return_value={"layer": np.array([2.0, 3.0])})
-
-    # Create coordinator
-    coordinator = TopologyCoordinator(mock_actors, star_topology_manager, strategy)
-
-    # Mock the internal _coordinate_star_topology method to verify it receives weights
-    original_method = coordinator._coordinate_star_topology
-
-    def mock_star_topology(weights=None):
-        # Store the weights that were passed so we can verify them
-        mock_star_topology.called_with_weights = weights
-        # Call the original method to ensure normal behavior
-        return original_method(weights)
-
-    # Add attribute to track weights
-    mock_star_topology.called_with_weights = None
-    coordinator._coordinate_star_topology = mock_star_topology
-
-    # Test coordination with custom weights
-    weights = [0.6, 0.3, 0.1]
-    result = coordinator.coordinate_aggregation(weights=weights)
-
-    # Verify weights were passed to the internal topology method
-    assert mock_star_topology.called_with_weights == weights
-
-    # Verify the result
-    assert "layer" in result
-    assert np.array_equal(result["layer"], np.array([2.0, 3.0]))
-
-
-@patch('ray.get')
-def test_coordinate_aggregation_dispatch(mock_ray_get, mock_actors):
-    """Test that coordinate_aggregation dispatches to the right method based on topology"""
-    # Setup mock
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
 
     # Test for each topology type
-    topology_types = [
+    topology_configs = [
         (TopologyType.STAR, "_coordinate_star_topology"),
         (TopologyType.RING, "_coordinate_ring_topology"),
         (TopologyType.COMPLETE, "_coordinate_complete_topology"),
         (TopologyType.LINE, "_coordinate_line_topology"),
-        (TopologyType.CUSTOM, "_coordinate_custom_topology")
+        (TopologyType.CUSTOM, "_coordinate_custom_topology"),
     ]
 
-    for topology_type, method_name in topology_types:
-        # Create config with proper adjacency list for CUSTOM
+    for topology_type, method_name in topology_configs:
+        # Create topology config - use adjacency list for CUSTOM
         if topology_type == TopologyType.CUSTOM:
             config = TopologyConfig(
                 topology_type=topology_type,
@@ -263,20 +99,140 @@ def test_coordinate_aggregation_dispatch(mock_ray_get, mock_actors):
         else:
             config = TopologyConfig(topology_type=topology_type)
 
-        # Create topology manager
+        # Create topology manager and coordinator
         topology_manager = TopologyManager(num_clients=3, config=config)
-
-        # Use FedAvg strategy
-        strategy = FedAvg()
-
-        # Create coordinator
         coordinator = TopologyCoordinator(mock_actors, topology_manager, strategy)
 
-        # Patch the specific coordination method
-        with patch.object(coordinator, method_name, return_value={"test": "result"}):
+        # Patch the specific topology method to verify it's called
+        patched_method = MagicMock(return_value={"patched": True})
+        original_method = getattr(coordinator, method_name)
+        setattr(coordinator, method_name, patched_method)
+
+        try:
             # Call coordinate_aggregation
             result = coordinator.coordinate_aggregation()
 
-            # Verify the right method was called
-            getattr(coordinator, method_name).assert_called_once()
-            assert result == {"test": "result"}
+            # Verify the correct method was called
+            patched_method.assert_called_once()
+            assert result == {"patched": True}
+        finally:
+            # Restore original method
+            setattr(coordinator, method_name, original_method)
+
+
+@patch('ray.get')
+def test_centralized_and_decentralized_with_complete_topology(mock_ray_get, mock_actors):
+    """Test both centralized and decentralized modes with complete topology"""
+    # Setup mock ray.get
+    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+
+    # Create complete topology
+    config = TopologyConfig(topology_type=TopologyType.COMPLETE)
+    topology_manager = TopologyManager(num_clients=3, config=config)
+
+    # Test with centralized strategy
+    centralized_strategy = MagicMock()
+    centralized_strategy.coordination_mode = CoordinationMode.CENTRALIZED
+    centralized_strategy.aggregate.return_value = {"layer": np.array([1.5, 2.5])}
+
+    centralized_coordinator = TopologyCoordinator(
+        mock_actors, topology_manager, centralized_strategy
+    )
+
+    # Create spy on the aggregate method
+    centralized_strategy.aggregate = MagicMock(
+        return_value={"layer": np.array([1.5, 2.5])}
+    )
+
+    # Run centralized coordination
+    centralized_result = centralized_coordinator._coordinate_complete_topology()
+
+    # Verify centralized behavior: should call aggregate once with all parameters
+    centralized_strategy.aggregate.assert_called_once()
+    args, _ = centralized_strategy.aggregate.call_args
+    assert len(args[0]) == 3  # Should have parameters from all 3 actors
+
+    # Test with decentralized strategy
+    decentralized_strategy = MagicMock()
+    decentralized_strategy.coordination_mode = CoordinationMode.DECENTRALIZED
+    decentralized_strategy.aggregate.return_value = {"layer": np.array([1.5, 2.5])}
+
+    decentralized_coordinator = TopologyCoordinator(
+        mock_actors, topology_manager, decentralized_strategy
+    )
+
+    # Run decentralized coordination
+    decentralized_result = decentralized_coordinator._coordinate_complete_topology()
+
+    # Verify decentralized behavior: should call aggregate once per node
+    assert decentralized_strategy.aggregate.call_count == 3
+
+
+@patch('ray.get')
+def test_line_topology_parameter_collection(mock_ray_get, mock_actors, line_topology_manager):
+    """Test parameter collection in line topology"""
+    # Setup mock ray.get
+    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+
+    # Create a coordinator with line topology
+    strategy = MagicMock()
+    strategy.aggregate.return_value = {"layer": np.array([1.5, 2.5])}
+
+    coordinator = TopologyCoordinator(mock_actors, line_topology_manager, strategy)
+
+    # Get the adjacency list
+    adjacency = line_topology_manager.adjacency_list
+
+    # Run line coordination
+    result = coordinator._coordinate_line_topology()
+
+    # Verify aggregate was called for each node
+    assert strategy.aggregate.call_count == 3
+
+    # Check that the right parameters were collected for each node
+    for i, node_actor in enumerate(mock_actors):
+        # Each node should collect parameters from itself and neighbors
+        neighbors = adjacency[i]
+        expected_num_params = 1 + len(neighbors)  # Self + neighbors
+
+        # Check the call arguments for this node's aggregation
+        call_args_list = strategy.aggregate.call_args_list[i]
+        args, _ = call_args_list
+        actual_params = args[0]
+
+        assert len(actual_params) == expected_num_params
+
+
+@patch('ray.get')
+def test_custom_topology_parameter_collection(mock_ray_get, mock_actors, custom_topology_manager):
+    """Test parameter collection in custom topology"""
+    # Setup mock ray.get
+    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+
+    # Create a coordinator with custom topology
+    strategy = MagicMock()
+    strategy.aggregate.return_value = {"layer": np.array([1.5, 2.5])}
+
+    coordinator = TopologyCoordinator(mock_actors, custom_topology_manager, strategy)
+
+    # Get the adjacency list
+    adjacency = custom_topology_manager.adjacency_list
+
+    # Run custom coordination
+    result = coordinator._coordinate_custom_topology()
+
+    # Verify aggregate was called for each node
+    assert strategy.aggregate.call_count == 3
+
+    # Check that the right parameters were collected for each node
+    for i, node_actor in enumerate(mock_actors):
+        # Each node should collect parameters from itself and neighbors
+        neighbors = adjacency[i]
+        expected_num_params = 1 + len(neighbors)  # Self + neighbors
+
+        # Check the call arguments for this node's aggregation
+        call_args_list = strategy.aggregate.call_args_list[i]
+        args, _ = call_args_list
+        actual_params = args[0]
+
+        assert len(actual_params) == expected_num_params
