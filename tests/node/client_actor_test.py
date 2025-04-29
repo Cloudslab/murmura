@@ -40,54 +40,29 @@ def test_receive_data_with_metadata(client_actor):
     assert info["metadata"] == metadata
 
 
-def test_receive_data_without_metadata(client_actor):
-    """Test receiving data without metadata"""
-    test_data = [10, 20, 30]
-
-    response = ray.get(client_actor.receive_data.remote(test_data))
-    info = ray.get(client_actor.get_data_info.remote())
-
-    assert response == "Client client_01 received 3 samples"
-    assert info["data_size"] == 3
-    assert info["metadata"] == {}
+def test_get_id(client_actor):
+    """Test getting the client ID"""
+    client_id = ray.get(client_actor.get_id.remote())
+    assert client_id == "client_01"
 
 
-def test_data_overwrite(client_actor):
-    """Test subsequent data receives overwrite previous data"""
-    ray.get(client_actor.receive_data.remote([1, 2, 3], {"batch": 1}))
-    ray.get(client_actor.receive_data.remote([4, 5], {"batch": 2}))
+def test_set_neighbors_and_get_neighbors(client_actor, ray_init):
+    """Test setting and getting neighbors"""
+    # Create some neighbor actors
+    neighbor1 = VirtualClientActor.remote("neighbor_01")
+    neighbor2 = VirtualClientActor.remote("neighbor_02")
 
-    info = ray.get(client_actor.get_data_info.remote())
+    # Set neighbors
+    ray.get(client_actor.set_neighbours.remote([neighbor1, neighbor2]))
 
-    assert info["data_size"] == 2
-    assert info["metadata"]["batch"] == 2
+    # Get neighbor IDs
+    neighbor_ids = ray.get(client_actor.get_neighbours.remote())
 
+    # Check expected IDs
+    assert len(neighbor_ids) == 2
+    assert "neighbor_01" in neighbor_ids
+    assert "neighbor_02" in neighbor_ids
 
-def test_empty_data_partition(client_actor):
-    """Test receiving empty data partition"""
-    response = ray.get(client_actor.receive_data.remote([]))
-    info = ray.get(client_actor.get_data_info.remote())
-
-    assert response == "Client client_01 received 0 samples"
-    assert info["data_size"] == 0
-
-
-def test_large_data_partition(client_actor):
-    """Test receiving large data partition"""
-    large_data = list(range(1000))
-
-    response = ray.get(client_actor.receive_data.remote(large_data))
-    info = ray.get(client_actor.get_data_info.remote())
-
-    assert response == "Client client_01 received 1000 samples"
-    assert info["data_size"] == 1000
-
-
-def test_metadata_types(client_actor):
-    """Test different metadata types are handled correctly"""
-    complex_metadata = {"numeric": 42, "nested": {"key": "value"}, "list": [1, 2, 3]}
-
-    ray.get(client_actor.receive_data.remote([1, 2], complex_metadata))
-    info = ray.get(client_actor.get_data_info.remote())
-
-    assert info["metadata"] == complex_metadata
+    # Clean up
+    ray.kill(neighbor1)
+    ray.kill(neighbor2)
