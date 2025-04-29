@@ -39,11 +39,14 @@ class NetworkVisualizer(TrainingObserver):
         self.topology: Optional[Dict[int, List[int]]] = None
         self.network_type: Optional[str] = None
         self.frames: List[Dict[str, Any]] = []
+        # Use dictionaries instead of lists to store metric history by round number
+        self.accuracy_history: Dict[int, float] = {}
+        self.loss_history: Dict[int, float] = {}
         self.parameter_history: Dict[int, List[float]] = {}
-        self.accuracy_history: List[float] = []
-        self.loss_history: List[float] = []
         self.frame_descriptions: List[str] = []
         self.round_metrics: Dict[int, Dict[str, float]] = {}  # Store metrics by round
+        # Track at which frame each parameter update occurs
+        self.parameter_update_frames: Dict[int, Dict[int, int]] = {}  # {node_id: {parameter_idx: frame_idx}}
 
     def set_topology(self, topology_manager: TopologyManager) -> None:
         """
@@ -98,12 +101,23 @@ class NetworkVisualizer(TrainingObserver):
             for node, summary in event.param_summary.items():
                 if node not in self.parameter_history:
                     self.parameter_history[node] = []
+                    self.parameter_update_frames[node] = {}
 
                 if isinstance(summary, dict) and "norm" in summary:
-                    self.parameter_history[node].append(summary["norm"])
+                    # Store parameter update for this round
+                    current_round = event.round_num
+                    norm_value = summary["norm"]
+
+                    # Only add if this is a new round or first update
+                    if not self.parameter_history[node] or current_round > len(self.parameter_history[node]):
+                        self.parameter_history[node].append(norm_value)
+                        # Store at which frame this parameter update happened
+                        self.parameter_update_frames[node][len(self.parameter_history[node]) - 1] = len(self.frames)
                 else:
                     # If we just have raw parameters, use a simple norm
-                    self.parameter_history[node].append(1.0)  # Placeholder
+                    if not self.parameter_history[node] or event.round_num > len(self.parameter_history[node]):
+                        self.parameter_history[node].append(1.0)  # Placeholder
+                        self.parameter_update_frames[node][len(self.parameter_history[node]) - 1] = len(self.frames)
 
             frame["node_params"] = event.param_summary
             description = (
@@ -138,17 +152,16 @@ class NetworkVisualizer(TrainingObserver):
             # Store metrics by round number
             self.round_metrics[event.round_num] = event.metrics
 
-            # Track metrics for continuous plots
             # Only update global lists if we have valid metrics
             if "accuracy" in event.metrics:
-                # Update the accuracy history for the animation
+                # Store accuracy value by round number
                 accuracy_value = event.metrics["accuracy"]
-                self.accuracy_history.append(accuracy_value)
+                self.accuracy_history[event.round_num] = accuracy_value
 
             if "loss" in event.metrics:
-                # Update the loss history for the animation
+                # Store loss value by round number
                 loss_value = event.metrics["loss"]
-                self.loss_history.append(loss_value)
+                self.loss_history[event.round_num] = loss_value
 
             description = f"Round {event.round_num}: Evaluation - "
             if "accuracy" in event.metrics:
@@ -156,14 +169,18 @@ class NetworkVisualizer(TrainingObserver):
             if "loss" in event.metrics:
                 description += f", Loss: {event.metrics['loss']:.4f}"
 
-        frame["all_metrics"] = (
-            self.round_metrics.copy()
-        )  # Include all metrics in each frame
+        # Ensure all metrics data is available for all frames
+        frame["all_metrics"] = self.round_metrics.copy()
+        # Add current metrics history to each frame for consistent animation
+        frame["accuracy_history"] = self.accuracy_history.copy()
+        frame["loss_history"] = self.loss_history.copy()
+        frame["parameter_history"] = {node: history.copy() for node, history in self.parameter_history.items()}
+
         self.frames.append(frame)
         self.frame_descriptions.append(description)
 
     def render_training_animation(
-        self, filename: str = "training_animation.mp4", fps: int = 1
+            self, filename: str = "training_animation.mp4", fps: int = 1
     ) -> None:
         """
         Creates an animation of the training process.
@@ -227,6 +244,7 @@ class NetworkVisualizer(TrainingObserver):
                 return []
 
             frame = self.frames[frame_idx]
+            current_round = frame["round"]
 
             # Clear previous plots
             ax_network.clear()
@@ -291,56 +309,59 @@ class NetworkVisualizer(TrainingObserver):
                 verticalalignment="bottom",
             )
 
-            # Plot parameter convergence
+            # Plot parameter convergence - show all visible parameters up to current round
             added_legend_entries = False
             for node, history in self.parameter_history.items():
-                if len(history) > 0:
-                    # Only show nodes with data and limit to first 5 to avoid clutter
-                    if node < 5:
-                        # Show all available history up to the current frame
-                        # (we need to account for when parameters are tracked)
-                        display_length = min(frame_idx + 1, len(history))
-                        history_slice = history[:display_length]
-                        rounds = list(range(1, len(history_slice) + 1))
-                        ax_params.plot(rounds, history_slice, label=f"Node {node}")
+                if len(history) > 0:  # Show all nodes with parameter history
+                    # Only show data up to current round
+                    # Use the round number rather than frame index for x-axis
+                    visible_data = []
+                    for i in range(min(current_round, len(history))):
+                        visible_data.append(history[i])
+
+                    if visible_data:
+                        # Create a simple list of integers for the x-axis
+                        rounds = []
+                        for r in range(1, len(visible_data) + 1):
+                            rounds.append(r)
+                        ax_params.plot(rounds, visible_data, label=f"Node {node}")
                         added_legend_entries = True
 
             ax_params.set_xlabel("Round")
             ax_params.set_ylabel("Parameter Norm")
 
+            # Set x-axis ticks to be integers
+            if current_round > 0:
+                ax_params.set_xticks(range(1, current_round + 1))
+
             # Only add legend if we have data
             if added_legend_entries:
                 ax_params.legend(loc="upper right", fontsize=8)
 
-            # Plot metrics
-            # Extract all metrics up to current frame
+            # Plot metrics - show metrics up to current round
+            rounds = []
             accuracy_data = []
             loss_data = []
-            rounds = []
 
-            # Get metrics from stored round_metrics
-            for round_num in sorted(frame["all_metrics"].keys()):
-                if round_num <= frame["round"]:  # Only include up to current round
-                    metrics = frame["all_metrics"][round_num]
-                    rounds.append(round_num)
+            # Find all available round numbers up to the current round
+            available_rounds = sorted([r for r in range(1, current_round + 1)])
 
-                    if "accuracy" in metrics:
-                        accuracy_data.append(metrics["accuracy"])
-                    else:
-                        # Keep consistent length when missing data
-                        if accuracy_data:
-                            accuracy_data.append(accuracy_data[-1])
-                        else:
-                            accuracy_data.append(0)
+            # For each round number, get the latest metrics value
+            last_acc = 0
+            last_loss = 0
 
-                    if "loss" in metrics:
-                        loss_data.append(metrics["loss"])
-                    else:
-                        # Keep consistent length when missing data
-                        if loss_data:
-                            loss_data.append(loss_data[-1])
-                        else:
-                            loss_data.append(0)
+            for round_num in available_rounds:
+                rounds.append(round_num)
+
+                # Get accuracy for this round or use the last known value
+                if round_num in self.accuracy_history:
+                    last_acc = self.accuracy_history[round_num]
+                accuracy_data.append(last_acc)
+
+                # Get loss for this round or use the last known value
+                if round_num in self.loss_history:
+                    last_loss = self.loss_history[round_num]
+                loss_data.append(last_loss)
 
             # Plot metrics if we have data
             legend_handles = []
@@ -365,6 +386,10 @@ class NetworkVisualizer(TrainingObserver):
                 legend_labels.append("Loss")
 
             ax_metrics.set_xlabel("Round")
+
+            # Set x-axis ticks to be integers
+            if rounds:
+                ax_metrics.set_xticks(rounds)
 
             # Add legend if we have data
             if legend_handles:
@@ -597,7 +622,7 @@ class NetworkVisualizer(TrainingObserver):
 
         if self.parameter_history:
             for node, history in self.parameter_history.items():
-                if node < 10 and history:  # Only show first 10 nodes to avoid clutter
+                if history:  # Only show nodes with data
                     rounds = list(range(1, len(history) + 1))
                     ax_params.plot(rounds, history, label=f"Node {node}")
 
@@ -616,22 +641,29 @@ class NetworkVisualizer(TrainingObserver):
         ax_acc = axes[1, 0]
 
         if self.accuracy_history:
-            rounds = list(range(1, len(self.accuracy_history) + 1))
-            ax_acc.plot(rounds, self.accuracy_history, "g-o")
-            ax_acc.set_xlabel("Round")
-            ax_acc.set_ylabel("Accuracy")
-            ax_acc.set_title("Model Accuracy")
+            # Convert dictionary to sorted lists for plotting
+            rounds = sorted(self.accuracy_history.keys())
+            accuracy_values = [self.accuracy_history[r] for r in rounds]
 
-            # Add final accuracy text
-            final_acc = self.accuracy_history[-1]
-            ax_acc.text(
-                0.5,
-                0.1,
-                f"Final accuracy: {final_acc:.4f}",
-                transform=ax_acc.transAxes,
-                ha="center",
-                bbox=dict(facecolor="white", alpha=0.8),
-            )
+            if rounds and accuracy_values:
+                ax_acc.plot(rounds, accuracy_values, "g-o")
+                ax_acc.set_xlabel("Round")
+                ax_acc.set_ylabel("Accuracy")
+                ax_acc.set_title("Model Accuracy")
+
+                # Add final accuracy text
+                final_acc = accuracy_values[-1]
+                ax_acc.text(
+                    0.5,
+                    0.1,
+                    f"Final accuracy: {final_acc:.4f}",
+                    transform=ax_acc.transAxes,
+                    ha="center",
+                    bbox=dict(facecolor="white", alpha=0.8),
+                )
+            else:
+                ax_acc.text(0.5, 0.5, "No accuracy data", ha="center", va="center")
+                ax_acc.set_title("Model Accuracy")
         else:
             ax_acc.text(0.5, 0.5, "No accuracy data", ha="center", va="center")
             ax_acc.set_title("Model Accuracy")
@@ -640,22 +672,29 @@ class NetworkVisualizer(TrainingObserver):
         ax_loss = axes[1, 1]
 
         if self.loss_history:
-            rounds = list(range(1, len(self.loss_history) + 1))
-            ax_loss.plot(rounds, self.loss_history, "r-o")
-            ax_loss.set_xlabel("Round")
-            ax_loss.set_ylabel("Loss")
-            ax_loss.set_title("Model Loss")
+            # Convert dictionary to sorted lists for plotting
+            rounds = sorted(self.loss_history.keys())
+            loss_values = [self.loss_history[r] for r in rounds]
 
-            # Add final loss text
-            final_loss = self.loss_history[-1]
-            ax_loss.text(
-                0.5,
-                0.1,
-                f"Final loss: {final_loss:.4f}",
-                transform=ax_loss.transAxes,
-                ha="center",
-                bbox=dict(facecolor="white", alpha=0.8),
-            )
+            if rounds and loss_values:
+                ax_loss.plot(rounds, loss_values, "r-o")
+                ax_loss.set_xlabel("Round")
+                ax_loss.set_ylabel("Loss")
+                ax_loss.set_title("Model Loss")
+
+                # Add final loss text
+                final_loss = loss_values[-1]
+                ax_loss.text(
+                    0.5,
+                    0.1,
+                    f"Final loss: {final_loss:.4f}",
+                    transform=ax_loss.transAxes,
+                    ha="center",
+                    bbox=dict(facecolor="white", alpha=0.8),
+                )
+            else:
+                ax_loss.text(0.5, 0.5, "No loss data", ha="center", va="center")
+                ax_loss.set_title("Model Loss")
         else:
             ax_loss.text(0.5, 0.5, "No loss data", ha="center", va="center")
             ax_loss.set_title("Model Loss")
