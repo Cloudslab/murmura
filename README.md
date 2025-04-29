@@ -20,17 +20,17 @@
 | murmura/network\_management/topology.py                                     |       24 |        0 |    100% |           |
 | murmura/network\_management/topology\_compatibility.py                      |       20 |        0 |    100% |           |
 | murmura/network\_management/topology\_manager.py                            |       23 |        0 |    100% |           |
-| murmura/node/client\_actor.py                                               |       74 |       39 |     47% |51-55, 63, 84-107, 116-120, 129-133, 146-159, 167-169, 177-179, 195, 203 |
-| murmura/orchestration/cluster\_manager.py                                   |      110 |       57 |     48% |35, 55, 65-71, 115-116, 132-139, 148-151, 160-163, 174-186, 199-220, 228-229, 236, 249-252, 269-290, 296-299 |
+| murmura/node/client\_actor.py                                               |       74 |       37 |     50% |51-55, 63, 84-107, 116-120, 129-133, 146-159, 167-169, 177-179 |
+| murmura/orchestration/cluster\_manager.py                                   |      110 |       46 |     58% |55, 66-69, 115-116, 132-139, 148-151, 160-163, 186, 199-220, 228-229, 236, 252, 272-290, 296-299 |
 | murmura/orchestration/learning\_process/decentralized\_learning\_process.py |       67 |        1 |     99% |       121 |
 | murmura/orchestration/learning\_process/federated\_learning\_process.py     |       67 |        3 |     96% |   118-123 |
 | murmura/orchestration/learning\_process/learning\_process.py                |       73 |        3 |     96% |81-82, 118 |
 | murmura/orchestration/orchestration\_config.py                              |       14 |        0 |    100% |           |
-| murmura/orchestration/topology\_coordinator.py                              |      156 |       68 |     56% |123, 135, 176-220, 233-274, 287-328 |
-| murmura/visualization/network\_visualizer.py                                |      356 |      110 |     69% |124-128, 152, 233-235, 255-416, 466-468, 478-479, 489-490, 512, 625-628, 649-650, 677-681, 708-712 |
+| murmura/orchestration/topology\_coordinator.py                              |      156 |       36 |     77% |52, 89, 105-148, 167-173, 193, 205, 249, 261, 303, 315, 381 |
+| murmura/visualization/network\_visualizer.py                                |      356 |      113 |     68% |144-147, 205-206, 233-235, 281-282, 297-298, 314, 332, 336-340, 347, 351, 366-376, 384-389, 393-398, 404, 408, 466-468, 478-479, 512, 526-565, 568-569, 599-600, 625-628, 636-647, 657-678, 688-709 |
 | murmura/visualization/training\_event.py                                    |       38 |        0 |    100% |           |
 | murmura/visualization/training\_observer.py                                 |       17 |        1 |     94% |        17 |
-|                                                                   **TOTAL** | **1533** |  **316** | **79%** |           |
+|                                                                   **TOTAL** | **1533** |  **274** | **82%** |           |
 
 
 ## Setup coverage badge
