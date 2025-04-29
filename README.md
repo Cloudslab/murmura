@@ -27,10 +27,10 @@
 | murmura/orchestration/learning\_process/learning\_process.py                |       73 |        3 |     96% |81-82, 118 |
 | murmura/orchestration/orchestration\_config.py                              |       14 |        0 |    100% |           |
 | murmura/orchestration/topology\_coordinator.py                              |      156 |       68 |     56% |123, 135, 176-220, 233-274, 287-328 |
-| murmura/visualization/network\_visualizer.py                                |      332 |       99 |     70% |106, 128, 204-206, 226-379, 429-431, 441-442, 452-453, 475, 588-591, 612-613, 636-637, 660-661 |
+| murmura/visualization/network\_visualizer.py                                |      356 |      110 |     69% |124-128, 152, 233-235, 255-416, 466-468, 478-479, 489-490, 512, 625-628, 649-650, 677-681, 708-712 |
 | murmura/visualization/training\_event.py                                    |       38 |        0 |    100% |           |
 | murmura/visualization/training\_observer.py                                 |       17 |        1 |     94% |        17 |
-|                                                                   **TOTAL** | **1509** |  **305** | **80%** |           |
+|                                                                   **TOTAL** | **1533** |  **316** | **79%** |           |
 
 
 ## Setup coverage badge
