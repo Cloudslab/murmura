@@ -1,11 +1,8 @@
-import os
 import tempfile
 from unittest.mock import MagicMock, patch
 
-import pytest
-import numpy as np
 import matplotlib.pyplot as plt
-import networkx as nx
+import pytest
 
 from murmura.visualization.network_visualizer import NetworkVisualizer
 from murmura.visualization.training_event import (
@@ -139,7 +136,7 @@ def test_update_frame_function_invalid_index(populated_visualizer):
         assert result_invalid == []
 
 
-@patch('networkx.spring_layout', return_value={0: [0.1, 0.2], 1: [-0.3, 0.4], 2: [0.5, -0.6]})
+@patch('networkx.spring_layout', return_value={0: [0.1, 0.2], 1: [-0.3, 0.4], 2: [0.5, -0.6], 3: [0.2, 0.7]})
 def test_network_drawing_with_active_nodes(mock_spring_layout, network_visualizer, mock_topology_manager):
     """Test network drawing with active nodes and edges"""
     network_visualizer.set_topology(mock_topology_manager)
@@ -164,6 +161,7 @@ def test_network_drawing_with_active_nodes(mock_spring_layout, network_visualize
     with patch('matplotlib.pyplot.subplots', return_value=(MagicMock(), (MagicMock(), MagicMock()))), \
             patch('networkx.draw_networkx_nodes') as mock_draw_nodes, \
             patch('networkx.draw_networkx_edges') as mock_draw_edges, \
+            patch('networkx.draw_networkx_labels') as mock_draw_labels, \
             patch('matplotlib.pyplot.savefig'), \
             patch('matplotlib.pyplot.close'):
 
@@ -173,6 +171,7 @@ def test_network_drawing_with_active_nodes(mock_spring_layout, network_visualize
         # Verify nodes and edges were drawn
         assert mock_draw_nodes.call_count >= 2  # At least one call per frame
         assert mock_draw_edges.call_count >= 2  # At least one call per frame
+        assert mock_draw_labels.call_count >= 2  # At least one call per frame
 
 
 def test_aggregation_event_with_star_topology(network_visualizer, mock_topology_manager):
