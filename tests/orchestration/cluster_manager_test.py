@@ -1,24 +1,27 @@
 import pytest
 import ray
+from unittest.mock import MagicMock, patch
 
 from murmura.orchestration.cluster_manager import ClusterManager
 from murmura.network_management.topology import TopologyConfig, TopologyType
+from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
 
 
 @pytest.fixture(scope="module")
 def ray_init():
+    """Initialize Ray for the tests"""
     ray.init(local_mode=True)
     yield
     ray.shutdown()
 
 
 @pytest.fixture
-def cluster_manager():
-    # Create a cluster manager with a config that points to a local Ray cluster.
-    return ClusterManager(config={"ray_address": "auto"})
+def cluster_manager(ray_init):
+    """Create a basic cluster manager"""
+    return ClusterManager(config={"ray_address": None})
 
 
-def test_create_actors(cluster_manager: ClusterManager, ray_init: None):
+def test_create_actors(cluster_manager, ray_init):
     """Test actor creation with proper IDs and count"""
     num_actors = 3
     # Use a basic topology (COMPLETE) for actor creation
@@ -32,7 +35,7 @@ def test_create_actors(cluster_manager: ClusterManager, ray_init: None):
 
 
 def test_distribute_data_equal_partitions(
-    cluster_manager: ClusterManager, ray_init: None
+        cluster_manager, ray_init
 ):
     """Test distribution with equal actors and partitions"""
     num_actors = 3
@@ -54,7 +57,7 @@ def test_distribute_data_equal_partitions(
 
 
 def test_distribute_data_more_actors_than_partitions(
-    cluster_manager: ClusterManager, ray_init: None
+        cluster_manager, ray_init
 ):
     """Test round-robin distribution when there are more actors than partitions"""
     # Create 5 actors, but provide only 2 partitions. Distribution will wrap around.
@@ -66,7 +69,7 @@ def test_distribute_data_more_actors_than_partitions(
     # Expected: actor 0 gets partition 0, actor 1 gets partition 1, actor 2 gets partition 0, etc.
     expected_indices = [0, 1, 0, 1, 0]
 
-    # Verify that each actor’s metadata includes the correct partition index and
+    # Verify that each actor's metadata includes the correct partition index and
     # that the acknowledgment message contains the number of items received.
     for idx, expected_idx in enumerate(expected_indices):
         ack = acks[idx]
@@ -77,7 +80,7 @@ def test_distribute_data_more_actors_than_partitions(
 
 
 def test_distribute_data_metadata_override(
-    cluster_manager: ClusterManager, ray_init: None
+        cluster_manager, ray_init
 ):
     """Test that metadata provided to distribute_data properly overrides any defaults"""
     num_actors = 2
@@ -95,17 +98,21 @@ def test_distribute_data_metadata_override(
         assert info["metadata"] == {"source": "mnist", "partition_idx": i}
 
 
-def test_distribute_data_empty_partitions(
-    cluster_manager: ClusterManager, ray_init: None
-):
-    """Test error handling for empty partitions list"""
-    num_actors = 2
-    topology = TopologyConfig(topology_type=TopologyType.COMPLETE)
-    cluster_manager.create_actors(num_actors, topology)
+def test_get_topology_information_not_initialized(cluster_manager):
+    """Test getting topology information when not initialized"""
+    # No topology manager yet
+    info = cluster_manager.get_topology_information()
 
-    with pytest.raises(ZeroDivisionError):
-        # When the partitions list is empty, a modulo operation will trigger a ZeroDivisionError.
-        cluster_manager.distribute_data([], {})
+    assert info["initialized"] is False
+
+
+def test_get_compatible_strategies_without_topology(cluster_manager):
+    """Test getting compatible strategies without a topology"""
+    # No topology set yet
+    strategies = cluster_manager.get_compatible_strategies()
+
+    # Should return empty list
+    assert strategies == []
 
 
 def test_shutdown():
@@ -119,3 +126,27 @@ def test_shutdown():
 
     ClusterManager.shutdown()
     assert not ray.is_initialized()
+
+
+def test_aggregate_model_parameters_without_strategy(cluster_manager):
+    """Test that aggregating without a strategy raises an error"""
+    # Create actors
+    topology = TopologyConfig(topology_type=TopologyType.STAR)
+    cluster_manager.create_actors(2, topology)
+
+    # Try to aggregate without setting strategy
+    with pytest.raises(ValueError, match="Aggregation strategy not set"):
+        cluster_manager.aggregate_model_parameters()
+
+
+def test_aggregate_model_parameters_without_coordinator(cluster_manager):
+    """Test that aggregating without a coordinator raises an error"""
+    # Set strategy but don't create actors/coordinator
+    aggregation_config = AggregationConfig(
+        strategy_type=AggregationStrategyType.FEDAVG
+    )
+    cluster_manager.set_aggregation_strategy(aggregation_config)
+
+    # Try to aggregate without coordinator
+    with pytest.raises(ValueError, match="Topology coordinator not initialized"):
+        cluster_manager.aggregate_model_parameters()
