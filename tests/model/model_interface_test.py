@@ -1,35 +1,39 @@
 import pytest
 import numpy as np
+import os
+import tempfile
 from abc import ABC
 
 from murmura.model.model_interface import ModelInterface
 
 
-class ConcreteModel(ModelInterface):
-    """Concrete implementation of ModelInterface for testing"""
+class SimpleModel(ModelInterface):
+    """Simple concrete implementation of ModelInterface for testing"""
 
     def __init__(self):
-        self.parameters = {"layer1": np.array([1.0, 2.0]), "layer2": np.array([3.0, 4.0])}
-        self.train_called = False
-        self.evaluate_called = False
-        self.predict_called = False
+        self.parameters = {"weight": np.array([1.0, 2.0, 3.0]), "bias": np.array([0.1])}
+        self.trained = False
+        self.evaluated = False
+        self.predicted = False
+        self.saved_path = None
+        self.loaded_path = None
 
     def train(self, data, labels, **kwargs):
-        self.train_called = True
+        self.trained = True
         self.train_data = data
         self.train_labels = labels
         self.train_kwargs = kwargs
         return {"loss": 0.5, "accuracy": 0.8}
 
     def evaluate(self, data, labels, **kwargs):
-        self.evaluate_called = True
-        self.evaluate_data = data
-        self.evaluate_labels = labels
-        self.evaluate_kwargs = kwargs
+        self.evaluated = True
+        self.eval_data = data
+        self.eval_labels = labels
+        self.eval_kwargs = kwargs
         return {"loss": 0.3, "accuracy": 0.9}
 
     def predict(self, data, **kwargs):
-        self.predict_called = True
+        self.predicted = True
         self.predict_data = data
         self.predict_kwargs = kwargs
         return np.array([0, 1, 0])
@@ -41,201 +45,241 @@ class ConcreteModel(ModelInterface):
         self.parameters = parameters
 
     def save(self, path):
-        self.save_path = path
+        self.saved_path = path
+        # Simulate saving by writing a simple file
+        with open(path, 'w') as f:
+            f.write("Test model data")
 
     def load(self, path):
-        self.load_path = path
+        self.loaded_path = path
+        # Simulate loading by checking if file exists
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Model file not found: {path}")
 
 
-def test_model_interface_is_abstract():
-    """Test that ModelInterface is abstract and cannot be instantiated directly"""
+class PartialModel(ABC):
+    """Partial implementation of model interface for testing abstract methods"""
+    def train(self, data, labels, **kwargs):
+        return {"loss": 0.5}
+
+    # Missing other methods
+
+
+def test_abstract_interface_cannot_be_instantiated():
+    """Test that ModelInterface cannot be instantiated directly"""
     with pytest.raises(TypeError):
         ModelInterface()
 
 
-def test_concrete_model_initialization():
-    """Test initialization of a concrete model implementation"""
-    model = ConcreteModel()
-    assert model.parameters is not None
-    assert "layer1" in model.parameters
-    assert "layer2" in model.parameters
-
-
-def test_train_method():
-    """Test the train method"""
-    model = ConcreteModel()
-    data = np.array([[1.0, 2.0], [3.0, 4.0]])
-    labels = np.array([0, 1])
-
-    # Call train with various kwargs
-    metrics = model.train(data, labels, batch_size=32, epochs=5)
-
-    # Verify train was called with correct arguments
-    assert model.train_called
-    assert np.array_equal(model.train_data, data)
-    assert np.array_equal(model.train_labels, labels)
-    assert model.train_kwargs["batch_size"] == 32
-    assert model.train_kwargs["epochs"] == 5
-
-    # Verify return value
-    assert "loss" in metrics
-    assert "accuracy" in metrics
-    assert metrics["loss"] == 0.5
-    assert metrics["accuracy"] == 0.8
-
-
-def test_evaluate_method():
-    """Test the evaluate method"""
-    model = ConcreteModel()
-    data = np.array([[1.0, 2.0], [3.0, 4.0]])
-    labels = np.array([0, 1])
-
-    # Call evaluate with some kwargs
-    metrics = model.evaluate(data, labels, batch_size=16)
-
-    # Verify evaluate was called with correct arguments
-    assert model.evaluate_called
-    assert np.array_equal(model.evaluate_data, data)
-    assert np.array_equal(model.evaluate_labels, labels)
-    assert model.evaluate_kwargs["batch_size"] == 16
-
-    # Verify return value
-    assert "loss" in metrics
-    assert "accuracy" in metrics
-    assert metrics["loss"] == 0.3
-    assert metrics["accuracy"] == 0.9
-
-
-def test_predict_method():
-    """Test the predict method"""
-    model = ConcreteModel()
-    data = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
-
-    # Call predict with some kwargs
-    predictions = model.predict(data, return_probs=True)
-
-    # Verify predict was called with correct arguments
-    assert model.predict_called
-    assert np.array_equal(model.predict_data, data)
-    assert model.predict_kwargs["return_probs"] is True
-
-    # Verify return value
-    assert isinstance(predictions, np.ndarray)
-    assert predictions.shape == (3,)  # Based on implementation
-
-
-def test_get_parameters_method():
-    """Test the get_parameters method"""
-    model = ConcreteModel()
-
-    # Call get_parameters
-    params = model.get_parameters()
-
-    # Verify return value
-    assert "layer1" in params
-    assert "layer2" in params
-    assert np.array_equal(params["layer1"], np.array([1.0, 2.0]))
-    assert np.array_equal(params["layer2"], np.array([3.0, 4.0]))
-
-
-def test_set_parameters_method():
-    """Test the set_parameters method"""
-    model = ConcreteModel()
-
-    # Define new parameters
-    new_params = {
-        "layer1": np.array([5.0, 6.0]),
-        "layer2": np.array([7.0, 8.0])
-    }
-
-    # Call set_parameters
-    model.set_parameters(new_params)
-
-    # Verify parameters were updated
-    updated_params = model.get_parameters()
-    assert np.array_equal(updated_params["layer1"], np.array([5.0, 6.0]))
-    assert np.array_equal(updated_params["layer2"], np.array([7.0, 8.0]))
-
-
-def test_save_method():
-    """Test the save method"""
-    model = ConcreteModel()
-    path = "/tmp/model.pt"
-
-    # Call save
-    model.save(path)
-
-    # Verify save was called with correct path
-    assert model.save_path == path
-
-
-def test_load_method():
-    """Test the load method"""
-    model = ConcreteModel()
-    path = "/tmp/model.pt"
-
-    # Call load
-    model.load(path)
-
-    # Verify load was called with correct path
-    assert model.load_path == path
-
-
-def test_model_interface_methods_defined():
-    """Test that all methods in ModelInterface are properly defined"""
-    # Create a subclass that doesn't implement all methods
+def test_partial_implementation_cannot_be_instantiated():
+    """Test that partial implementation cannot be instantiated"""
     class IncompleteModel(ModelInterface):
         def train(self, data, labels, **kwargs):
-            return {}
-
-        def evaluate(self, data, labels, **kwargs):
-            return {}
+            return {"loss": 0.5}
 
         # Missing other required methods
 
-    # Should raise TypeError when instantiated
     with pytest.raises(TypeError):
         IncompleteModel()
 
 
-def test_method_signatures():
-    """Test that method signatures are consistent with the interface"""
-    # This test is checking implementation understanding, not runtime checks
-    # Python doesn't enforce function signatures at runtime,
-    # so we'll just verify that the abstract method is defined
+def test_train_with_complex_parameters():
+    """Test training with complex parameters"""
+    model = SimpleModel()
 
-    # Create a model with correct method names but wrong signature
-    class IncompleteModel(ModelInterface):
-        def train(self, data, **kwargs):  # Missing labels parameter
-            return {}
+    # Prepare training data
+    data = np.random.randn(10, 5)
+    labels = np.array([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
 
-        def evaluate(self, data, labels, **kwargs):
-            return {}
+    # Additional training parameters
+    kwargs = {
+        "epochs": 10,
+        "batch_size": 2,
+        "learning_rate": 0.01,
+        "verbose": True,
+        "callbacks": [lambda x: None]
+    }
 
-        def predict(self, data, **kwargs):
-            return np.array([])
+    # Train model
+    metrics = model.train(data, labels, **kwargs)
 
-        def get_parameters(self):
-            return {}
+    # Verify function was called with correct parameters
+    assert model.trained is True
+    assert np.array_equal(model.train_data, data)
+    assert np.array_equal(model.train_labels, labels)
 
-        def set_parameters(self, parameters):
-            pass
+    # Verify all kwargs were passed through
+    for key, value in kwargs.items():
+        assert key in model.train_kwargs
+        assert model.train_kwargs[key] == value
 
-        def save(self, path):
-            pass
+    # Check metrics format
+    assert "loss" in metrics
+    assert "accuracy" in metrics
 
-        def load(self, path):
-            pass
 
-    # The issue is that Python doesn't check method signatures at runtime
-    # So we'll just test that an instance can be created with the correct method names
-    model = IncompleteModel()
+def test_evaluate_with_complex_parameters():
+    """Test evaluating with complex parameters"""
+    model = SimpleModel()
 
-    # Verify the methods exist
-    assert hasattr(model, 'train')
-    assert hasattr(model, 'evaluate')
-    assert hasattr(model, 'predict')
-    assert hasattr(model, 'get_parameters')
-    assert hasattr(model, 'set_parameters')
-    assert hasattr(model, 'save')
-    assert hasattr(model, 'load')
+    # Prepare evaluation data
+    data = np.random.randn(5, 5)
+    labels = np.array([0, 1, 0, 1, 0])
+
+    # Additional evaluation parameters
+    kwargs = {
+        "batch_size": 1,
+        "metrics": ["precision", "recall"],
+        "verbose": False
+    }
+
+    # Evaluate model
+    metrics = model.evaluate(data, labels, **kwargs)
+
+    # Verify function was called with correct parameters
+    assert model.evaluated is True
+    assert np.array_equal(model.eval_data, data)
+    assert np.array_equal(model.eval_labels, labels)
+
+    # Verify all kwargs were passed through
+    for key, value in kwargs.items():
+        assert key in model.eval_kwargs
+        assert model.eval_kwargs[key] == value
+
+    # Check metrics format
+    assert "loss" in metrics
+    assert "accuracy" in metrics
+
+
+def test_predict_with_complex_parameters():
+    """Test predicting with complex parameters"""
+    model = SimpleModel()
+
+    # Prepare prediction data
+    data = np.random.randn(3, 5)
+
+    # Additional prediction parameters
+    kwargs = {
+        "batch_size": 1,
+        "return_probs": True,
+        "threshold": 0.5
+    }
+
+    # Make predictions
+    predictions = model.predict(data, **kwargs)
+
+    # Verify function was called with correct parameters
+    assert model.predicted is True
+    assert np.array_equal(model.predict_data, data)
+
+    # Verify all kwargs were passed through
+    for key, value in kwargs.items():
+        assert key in model.predict_kwargs
+        assert model.predict_kwargs[key] == value
+
+    # Check predictions format
+    assert isinstance(predictions, np.ndarray)
+
+
+def test_get_set_parameters():
+    """Test getting and setting parameters"""
+    model = SimpleModel()
+
+    # Get initial parameters
+    initial_params = model.get_parameters()
+    assert "weight" in initial_params
+    assert "bias" in initial_params
+
+    # Define new parameters
+    new_params = {
+        "weight": np.array([4.0, 5.0, 6.0]),
+        "bias": np.array([0.2])
+    }
+
+    # Set new parameters
+    model.set_parameters(new_params)
+
+    # Get updated parameters
+    updated_params = model.get_parameters()
+
+    # Verify parameters were updated
+    assert np.array_equal(updated_params["weight"], new_params["weight"])
+    assert np.array_equal(updated_params["bias"], new_params["bias"])
+
+
+def test_save_and_load():
+    """Test saving and loading models"""
+    model = SimpleModel()
+
+    # Create a temporary file for saving/loading
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_path = temp_file.name
+
+    try:
+        # Save the model
+        model.save(temp_path)
+
+        # Verify the model was saved
+        assert model.saved_path == temp_path
+        assert os.path.exists(temp_path)
+
+        # Load the model
+        model.load(temp_path)
+
+        # Verify the model was loaded
+        assert model.loaded_path == temp_path
+
+        # Test loading from a non-existent path
+        with pytest.raises(FileNotFoundError):
+            model.load("/non/existent/path.model")
+
+    finally:
+        # Clean up
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
+def test_model_interface_structure():
+    """Test the structure of ModelInterface"""
+    # Verify ModelInterface is an abstract class
+    assert issubclass(ModelInterface, ABC)
+
+    # Check if all required methods are defined as abstract methods
+    abstract_methods = [
+        "train",
+        "evaluate",
+        "predict",
+        "get_parameters",
+        "set_parameters",
+        "save",
+        "load"
+    ]
+
+    for method_name in abstract_methods:
+        method = getattr(ModelInterface, method_name)
+        # Abstract methods should have __isabstractmethod__ attribute
+        assert hasattr(method, "__isabstractmethod__")
+        assert method.__isabstractmethod__ is True
+
+
+def test_model_interface_doc_strings():
+    """Test documentation strings in ModelInterface"""
+    # Check class docstring
+    assert ModelInterface.__doc__ is not None
+    assert len(ModelInterface.__doc__) > 0
+
+    # Check method docstrings
+    methods = [
+        "train",
+        "evaluate",
+        "predict",
+        "get_parameters",
+        "set_parameters",
+        "save",
+        "load"
+    ]
+
+    for method_name in methods:
+        method = getattr(ModelInterface, method_name)
+        assert method.__doc__ is not None
+        assert len(method.__doc__) > 0
