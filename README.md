@@ -1,5 +1,5 @@
 # Murmura
-[![Coverage badge](https://github.com/murtazahr/murmura/raw/python-coverage-comment-action-data/badge.svg)](https://github.com/murtazahr/murmura/tree/python-coverage-comment-action-data)
+[![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Cloudslab/murmura/python-coverage-comment-action-data/endpoint.json)](https://htmlpreview.github.io/?https://github.com/Cloudslab/murmura/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
 **Murmura** is a framework for federated learning in decentralized/P2P environments. It helps researchers and developers experiment with distributed machine learning while maintaining privacy.
 
