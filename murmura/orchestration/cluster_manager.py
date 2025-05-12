@@ -76,19 +76,6 @@ class ClusterManager:
                 aggregation_config
             )
 
-    def set_privacy_manager(self, privacy_config: PrivacyConfig) -> None:
-        """
-        Set the privacy manager for the cluster
-
-        :param privacy_config: Privacy configuration
-        """
-        if self.topology_manager:
-            self.privacy_manager = PrivacyFactory.create(
-                privacy_config, self.topology_manager.config
-            )
-        else:
-            self.privacy_manager = PrivacyFactory.create(privacy_config)
-
     def distribute_data(
         self,
         data_partitions: List[List[int]],
@@ -179,11 +166,45 @@ class ClusterManager:
             results.append(actor.evaluate_model.remote(**kwargs))
         return ray.get(results)
 
+    def set_privacy_manager(self, privacy_config: PrivacyConfig) -> None:
+        """
+        Set the privacy manager for the cluster
+
+        :param privacy_config: Privacy configuration
+        """
+        # Store number of actors and local epochs in privacy config params
+        if privacy_config.params is None:
+            privacy_config.params = {}
+
+        # Add actors count for proper noise scaling in local DP
+        privacy_config.params["actors"] = self.actors if hasattr(self, 'actors') else []
+
+        # Add local epochs for proper privacy accounting
+        privacy_config.params["local_epochs"] = self.config.get("epochs", 1)
+
+        # Create privacy manager
+        if self.topology_manager:
+            self.privacy_manager = PrivacyFactory.create(
+                privacy_config, self.topology_manager.config
+            )
+        else:
+            self.privacy_manager = PrivacyFactory.create(privacy_config)
+
+        # Initialize privacy manager with dataset info if available
+        if 'batch_size' in self.config and 'data_partitions' in self.config:
+            batch_size = self.config.get('batch_size', 32)
+            data_partitions = self.config.get('data_partitions', [])
+            total_samples = sum(len(p) for p in data_partitions) if data_partitions else 10000
+
+            if self.privacy_manager and hasattr(self.privacy_manager, 'setup_privacy_accounting'):
+                self.privacy_manager.setup_privacy_accounting(total_samples, batch_size)
+
     def aggregate_model_parameters(
         self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
-        Aggregate model parameters from all actors using the configured aggregation strategy
+        Aggregate model parameters from all actors using the configured aggregation strategy,
+        with privacy guarantees if enabled.
 
         :param weights: Optional list of weights for each actor's parameters
         :return: Aggregated model parameters
@@ -207,15 +228,21 @@ class ClusterManager:
                 params = ray.get(actor.get_model_parameters.remote())
                 all_params.append(params)
 
-            # Update clipping norms based on the collected parameters
+            # Update adaptive clipping norms if needed
             self.privacy_manager.update_clipping_norms(all_params)
 
             # For Local DP, have clients apply privacy before aggregation
             if self.privacy_manager.config.privacy_mode == PrivacyMode.LOCAL:
+                print(
+                    f"Applying Local DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}"
+                )
+                # Apply privacy at the client level before sending to server
                 for i, actor in enumerate(self.actors):
+                    # Apply local differential privacy
                     privatized_params = self.privacy_manager.privatize_parameters(
                         all_params[i], is_client=True
                     )
+                    # Update client with privatized parameters
                     ray.get(actor.set_model_parameters.remote(privatized_params))
 
             # Use the topology coordinator for aggregation
@@ -223,17 +250,21 @@ class ClusterManager:
                 weights=weights
             )
 
+            # For Central DP, apply privacy after aggregation
             if self.privacy_manager.config.privacy_mode == PrivacyMode.CENTRAL:
+                print(
+                    f"Applying Central DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}"
+                )
                 aggregated_params = self.privacy_manager.privatize_parameters(
                     aggregated_params, is_client=False
                 )
 
-            total_samples = sum(len(p) for p in self.config.get("data_partitions", []))
-            batch_size = self.config.get("batch_size", 32)
-            self.privacy_manager.update_privacy_budget(total_samples, batch_size)
+            # Update privacy budget tracking
+            self.privacy_manager.update_privacy_budget()
 
             return aggregated_params
         else:
+            # No privacy, just use the topology coordinator
             return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
     def update_aggregation_strategy(

@@ -78,6 +78,13 @@ class LearningProcess(ABC):
             partitioner.partition(self.dataset, split)
             partitions = list(self.dataset.get_partitions(split).values())
             self.config["data_partitions"] = partitions
+            self.config["batch_size"] = self.config.get("batch_size", 32)
+
+            # Ensure cluster manager config has the dataset info for privacy accounting
+            self.cluster_manager.config["data_partitions"] = partitions
+            self.cluster_manager.config["batch_size"] = self.config.get(
+                "batch_size", 32
+            )
 
             # Emit privacy event
             if privacy_config.enabled:

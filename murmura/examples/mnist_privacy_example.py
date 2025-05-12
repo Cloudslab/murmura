@@ -163,7 +163,7 @@ def main() -> None:
     parser.add_argument(
         "--target_epsilon",
         type=float,
-        default=8.0,
+        default=5.0,
         help="Target privacy budget (epsilon)",
     )
     parser.add_argument(
@@ -175,8 +175,8 @@ def main() -> None:
     parser.add_argument(
         "--noise_multiplier",
         type=float,
-        default=None,
-        help="Noise multiplier (if None, calculated adaptively)",
+        default=0.5,
+        help="Initial noise multiplier (if None, calculated adaptively)",
     )
     parser.add_argument(
         "--adaptive_clipping",
@@ -186,7 +186,7 @@ def main() -> None:
     parser.add_argument(
         "--clipping_norm",
         type=float,
-        default=None,
+        default=1.0,
         help="L2 norm for clipping (if None, adaptive clipping is used)",
     )
     parser.add_argument(
@@ -274,6 +274,9 @@ def main() -> None:
         # Create privacy configuration if enabled
         privacy_config = None
         if args.privacy_enabled:
+            # Determine clipping norm based on arguments
+            clipping_norm = args.clipping_norm if not args.adaptive_clipping else None
+
             privacy_config = PrivacyConfig(
                 enabled=True,
                 mechanism_type=PrivacyMechanismType.GAUSSIAN,
@@ -281,8 +284,10 @@ def main() -> None:
                 target_epsilon=args.target_epsilon,
                 target_delta=args.target_delta,
                 noise_multiplier=args.noise_multiplier,
-                clipping_norm=args.clipping_norm,
+                clipping_norm=clipping_norm,
                 per_layer_clipping=args.per_layer_clipping,
+                max_grad_norm=args.clipping_norm,  # Use the same value for initial max_grad_norm
+                adaptive_clipping_quantile=0.9,  # Use 90th percentile for clipping
             )
 
         # Create configuration

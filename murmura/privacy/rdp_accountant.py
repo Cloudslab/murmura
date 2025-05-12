@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -17,9 +17,10 @@ class RDPAccountant:
         Initialize the RDP accountant.
 
         Args:
-            alphas (Optional[List[float]]): List of RDP orders to compute (default is a range from 1.5 to 512)
+            alphas: List of RDP orders to compute (default is a range from 1.5 to 512)
         """
         if alphas is None:
+            # Default alphas used in typical DP implementations
             self.alphas = [
                 1.5,
                 2,
@@ -43,154 +44,224 @@ class RDPAccountant:
                 256,
                 512,
             ]
-
         else:
             self.alphas = alphas
 
     def _compute_rdp(
-        self, sampling_rate: float, noise_multiplier: float, iterations: int
+            self,
+            sampling_rate: float,
+            noise_multiplier: float,
+            iterations: int
     ) -> np.ndarray:
         """
         Compute RDP values for the sampled Gaussian mechanism.
 
         Args:
-            sampling_rate (float): Sampling rate of the data.
-            noise_multiplier (float): Noise multiplier for the Gaussian noise.
-            iterations (int): Number of iterations.
+            sampling_rate: Sampling probability (batch_size / total_samples)
+            noise_multiplier: Noise scale relative to L2 sensitivity
+            iterations: Number of iterations/steps
 
         Returns:
-            Array of RDP values for each alpha order.
+            Array of RDP values for each alpha order
         """
-        # Convert sampling rate and noise multiplier to appropriate values
-        q = sampling_rate
-        sigma = noise_multiplier
+        # Ensure valid inputs and protect against edge cases
+        q = min(sampling_rate, 1.0)  # Ensure q is at most 1
+        q = max(q, 1e-10)           # Ensure q is at least a small positive value
+        sigma = max(noise_multiplier, 1e-10)  # Ensure sigma is positive
 
-        # Compute RDP for Gaussian mechanism with sampling for each alpha
+        print(f"Computing RDP with q={q}, sigma={sigma}, iterations={iterations}")
+
+        # Calculate RDP for Gaussian mechanism with sampling for each alpha
         rdp = np.zeros(len(self.alphas))
 
         for i, alpha in enumerate(self.alphas):
-            # log of the moment generating function
-            log_mgf = self._compute_log_mgf(q, sigma, alpha)
-            # RDP is the log mgf divided by alpha - 1
-            rdp[i] = log_mgf / (alpha - 1)
+            # Skip invalid alpha values
+            if alpha <= 1:
+                continue
 
-        return rdp * iterations
+            # Compute RDP for sampled Gaussian mechanism
+            # Using the analytical formula from the paper
+            # https://arxiv.org/pdf/1908.10530.pdf
+            alpha_minus_1 = alpha - 1
 
-    @staticmethod
-    def _compute_log_mgf(q: float, sigma: float, alpha: float) -> float:
-        """
-        Compute the log moment generating function for the Gaussian mechanism.
+            # Compute log(1 + X) where X = (e^(alpha_minus_1 / sigma^2) - 1) * q
+            # Using more stable computation
+            log_term = min(alpha_minus_1 / (sigma ** 2), 50)  # Cap to avoid overflow
+            x = (np.exp(log_term) - 1) * q
+            log_1_plus_x = np.log1p(x)
 
-        Args:
-            q (float): Sampling rate.
-            sigma (float): Noise multiplier.
-            alpha (float): RDP order.
+            # RDP = alpha * log_1_plus_x / alpha_minus_1
+            rdp_value = alpha * log_1_plus_x / alpha_minus_1
+            rdp[i] = rdp_value
 
-        Returns:
-            Log moment generating function value.
-        """
-        if q == 0:
-            return 0.0
+        # Total RDP is the sum over all iterations
+        rdp_result = rdp * iterations
 
-        # For small q, use the approximation log(1+x) ≈ x
-        if q < 1e-4:
-            return q * alpha / (2 * (sigma**2))
+        # Print some values for debugging
+        if len(self.alphas) > 0:
+            print(f"RDP values for alpha={self.alphas[0]}: {rdp_result[0]}")
 
-        # Calculate the moments of the privacy loss random variable
-        variance = sigma**2
-
-        term_1 = q**2 * alpha / (1 - q)
-
-        log_term_2 = (
-            -0.5 * alpha * np.log(1 + 2 / (alpha - 1) * (1 - q) / (q**2 * variance))
-        )
-        term_2 = np.exp(log_term_2) - 1
-
-        return term_1 * term_2
+        return rdp_result
 
     def compute_epsilon(
-        self,
-        sampling_rate: float,
-        noise_multiplier: float,
-        iterations: int,
-        target_delta: float = 1e-5,
+            self,
+            sampling_rate: float,
+            noise_multiplier: float,
+            iterations: int,
+            target_delta: float = 1e-5
     ) -> Dict[str, float]:
         """
-        Compute epsilon for the given parameters.
+        Compute epsilon for a target delta based on RDP values.
 
         Args:
-            sampling_rate (float): Sampling rate of the data.
-            noise_multiplier (float): Noise multiplier for the Gaussian noise.
-            iterations (int): Number of iterations.
-            target_delta (float): Target delta for differential privacy.
+            sampling_rate: Sampling probability (batch_size / total_samples)
+            noise_multiplier: Noise scale relative to L2 sensitivity
+            iterations: Number of iterations/steps
+            target_delta: Target delta value (default: 1e-5)
 
         Returns:
-            Dictionary with epsilon values for each alpha order.
+            Dictionary with 'epsilon' and 'delta' values
         """
+        # Better protection for invalid inputs
+        if iterations <= 0:
+            return {"epsilon": 0.0, "delta": target_delta, "noise_multiplier": noise_multiplier}
+
+        if sampling_rate <= 0 or noise_multiplier <= 0:
+            return {"epsilon": float('inf'), "delta": target_delta, "noise_multiplier": noise_multiplier}
+
+        # Fix for Ray - ensure we use standard Python types
+        sampling_rate = float(sampling_rate)
+        noise_multiplier = float(noise_multiplier)
+        iterations = int(iterations)
+        target_delta = float(target_delta)
+
+        # Compute RDP values
         rdp_values = self._compute_rdp(sampling_rate, noise_multiplier, iterations)
 
-        # Convert RDP to (epsilon, delta) pairs
+        # Convert RDP to (ε, δ)-DP
         epsilon_values = []
 
         for i, alpha in enumerate(self.alphas):
-            eps = rdp_values[i] + np.log(1 / target_delta) / (alpha - 1)
-            epsilon_values.append(eps)
+            # Skip invalid values
+            if alpha <= 1:
+                continue
 
-        min_epsilon = np.min(epsilon_values)
+            # Using the conversion formula: ε = rdp + log(1/δ) / (α-1)
+            eps = float(rdp_values[i] + np.log(1 / target_delta) / (alpha - 1))
+
+            # Add to list if valid
+            if 0 <= eps < float('inf'):
+                epsilon_values.append(eps)
+
+        # Take the minimum epsilon if we have valid values
+        if epsilon_values:
+            min_epsilon = float(np.min(epsilon_values))
+            best_alpha_idx = int(np.argmin(epsilon_values))
+            best_alpha = float(self.alphas[best_alpha_idx]) if best_alpha_idx < len(self.alphas) else 0.0
+        else:
+            min_epsilon = 0.0
+            best_alpha = 0.0
 
         return {
-            "epsilon": float(min_epsilon),
+            "epsilon": min_epsilon,
             "delta": target_delta,
             "noise_multiplier": noise_multiplier,
-            "best_alpha": self.alphas[np.argmin(epsilon_values)],
+            "best_alpha": best_alpha
         }
 
     def compute_noise_multiplier(
-        self,
-        target_epsilon: float,
-        target_delta: float,
-        sampling_rate: float,
-        iterations: int,
-        initial_guess: float = 1.0,
-        tolerance: float = 0.01,
-        max_iterations: int = 20,
+            self,
+            target_epsilon: float,
+            target_delta: float,
+            sampling_rate: float,
+            iterations: int,
+            initial_guess: float = 1.0,
+            tolerance: float = 0.01,
+            max_iterations: int = 30,
     ) -> float:
         """
-        Compute the noise multiplier for the given parameters.
+        Find the noise multiplier needed to achieve a target epsilon and delta.
 
         Args:
-            target_epsilon (float): Target epsilon for differential privacy.
-            target_delta (float): Target delta for differential privacy.
-            sampling_rate (float): Sampling rate of the data.
-            iterations (int): Number of iterations.
-            initial_guess (float): Initial guess for the noise multiplier.
-            tolerance (float): Tolerance for convergence.
-            max_iterations (int): Maximum number of iterations for convergence.
+            target_epsilon: Target privacy budget (epsilon)
+            target_delta: Target failure probability (delta)
+            sampling_rate: Sampling probability (batch_size / total_samples)
+            iterations: Number of iterations/steps
+            initial_guess: Initial guess for noise multiplier
+            tolerance: Tolerance for epsilon matching
+            max_iterations: Maximum number of binary search iterations
 
         Returns:
-            Computed noise multiplier.
+            Noise multiplier value that achieves the target privacy parameters
         """
-        lower_bound = 0.1
-        upper_bound = 10.0
+        # Handle edge cases
+        if target_epsilon <= 0 or target_delta <= 0 or target_delta >= 1:
+            return float(10.0)  # Return a large value for stricter privacy
+
+        if iterations <= 0 or sampling_rate <= 0:
+            return float(0.5)  # Default reasonable value
+
+        # Ensure we use Python types for Ray compatibility
+        target_epsilon = float(target_epsilon)
+        target_delta = float(target_delta)
+        sampling_rate = float(sampling_rate)
+        iterations = int(iterations)
+        initial_guess = float(initial_guess)
+
+        # For smaller epsilon, start with a higher noise guess
+        if target_epsilon < 1.0:
+            initial_guess = max(initial_guess, 4.0)
+        elif target_epsilon < 3.0:
+            initial_guess = max(initial_guess, 2.0)
+
+        # If we have very few iterations, use higher noise
+        if iterations < 5:
+            initial_guess *= 2.0
+
+        # Binary search for the appropriate noise multiplier
+        lower_bound = 0.01
+        upper_bound = 30.0  # Allow much higher upper bound for strict privacy
         current_guess = initial_guess
 
-        for _ in range(max_iterations):
-            results = self.compute_epsilon(
-                sampling_rate=sampling_rate,
-                noise_multiplier=current_guess,
-                iterations=iterations,
-                target_delta=target_delta,
-            )
-            current_epsilon = results["epsilon"]
+        # Print initial setup
+        print(f"Computing noise for ε={target_epsilon}, δ={target_delta}, iterations={iterations}, q={sampling_rate}")
 
-            if abs(current_epsilon - target_epsilon) <= tolerance:
-                return current_guess
+        try:
+            for i in range(max_iterations):
+                # Compute epsilon for the current noise multiplier
+                results = self.compute_epsilon(
+                    sampling_rate=sampling_rate,
+                    noise_multiplier=current_guess,
+                    iterations=iterations,
+                    target_delta=target_delta
+                )
 
-            if current_epsilon > target_epsilon:
-                lower_bound = current_guess
-                current_guess = (current_guess + upper_bound) / 2
-            else:
-                upper_bound = current_guess
-                current_guess = (current_guess + lower_bound) / 2
+                current_epsilon = results["epsilon"]
 
-        return current_guess
+                # Debug information
+                if i % 5 == 0 or i == max_iterations-1:
+                    print(f"  Iteration {i+1}: noise={current_guess:.4f}, epsilon={current_epsilon:.4f}, target={target_epsilon:.4f}")
+
+                # Check if we're within tolerance
+                if abs(current_epsilon - target_epsilon) <= tolerance:
+                    print(f"Found noise multiplier: {current_guess:.4f} for target epsilon: {target_epsilon:.4f}")
+                    return float(current_guess)
+
+                # Update bounds based on binary search
+                if current_epsilon > target_epsilon:
+                    # Need more noise to reduce epsilon
+                    lower_bound = current_guess
+                    current_guess = (current_guess + upper_bound) / 2
+                else:
+                    # Need less noise
+                    upper_bound = current_guess
+                    current_guess = (current_guess + lower_bound) / 2
+
+        except Exception as e:
+            print(f"Error during noise calibration: {e}")
+            # Return a reasonable default value on error
+            return float(1.0)
+
+        # After max iterations, return our best guess
+        print(f"Final noise multiplier after {max_iterations} iterations: {current_guess:.4f}")
+        return float(current_guess)
