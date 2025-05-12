@@ -146,11 +146,11 @@ class GaussianMechanism(PrivacyMechanism):
         return clipped_parameters
 
     def get_privacy_spent(
-            self,
-            num_iterations: int,
-            noise_multiplier: float,
-            batch_size: int,
-            total_samples: int,
+        self,
+        num_iterations: int,
+        noise_multiplier: float,
+        batch_size: int,
+        total_samples: int,
     ) -> Dict[str, float]:
         """
         Calculate privacy spent using the RDP accountant.
@@ -173,18 +173,22 @@ class GaussianMechanism(PrivacyMechanism):
 
         sampling_rate = min(1.0, batch_size / max(1, total_samples))
 
-        print(f"  Computing privacy with sampling_rate={sampling_rate}, " +
-              f"noise={noise_multiplier}, iterations={num_iterations}")
+        print(
+            f"  Computing privacy with sampling_rate={sampling_rate}, "
+            + f"noise={noise_multiplier}, iterations={num_iterations}"
+        )
 
         # Compute epsilon
         result = self.accountant.compute_epsilon(
             sampling_rate=sampling_rate,
             noise_multiplier=noise_multiplier,
-            iterations=num_iterations
+            iterations=num_iterations,
         )
 
-        print(f"  Privacy result: epsilon={result.get('epsilon', 0.0):.6f}, " +
-              f"best_alpha={result.get('best_alpha', 0.0):.1f}")
+        print(
+            f"  Privacy result: epsilon={result.get('epsilon', 0.0):.6f}, "
+            + f"best_alpha={result.get('best_alpha', 0.0):.1f}"
+        )
 
         return result
 

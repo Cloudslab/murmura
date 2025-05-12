@@ -69,22 +69,56 @@ class LearningProcess(ABC):
         print("Setting up aggregation strategy...")
         self.cluster_manager.set_aggregation_strategy(aggregation_config)
 
+        # Partition the dataset and get data information before initializing privacy
+        print("Partitioning dataset...")
+        split = self.config.get("split", "train")
+        partitioner.partition(self.dataset, split)
+        partitions = list(self.dataset.get_partitions(split).values())
+        self.config["data_partitions"] = partitions
+        self.config["batch_size"] = self.config.get("batch_size", 32)
+
+        # Calculate total samples and batch size for privacy accounting
+        total_samples = sum(len(p) for p in partitions)
+        batch_size = self.config.get("batch_size", 32)
+
+        # Pass this information to the cluster manager config
+        self.cluster_manager.config["data_partitions"] = partitions
+        self.cluster_manager.config["batch_size"] = batch_size
+        self.cluster_manager.config["total_samples"] = total_samples
+        self.cluster_manager.config["epochs"] = self.config.get("epochs", 1)
+
+        # Create the actors first so privacy manager has client count
+        print(
+            f"Creating {num_actors} virtual clients with {topology_config.topology_type.value} topology..."
+        )
+        self.cluster_manager.create_actors(num_actors, topology_config)
+
+        # Set up privacy after creating actors but before data distribution
         if privacy_config:
             print("Setting up privacy manager...")
+            # Update privacy config with dataset information
+            if privacy_config.params is None:
+                privacy_config.params = {}
+
+            privacy_config.params["total_samples"] = total_samples
+            privacy_config.params["batch_size"] = batch_size
+            privacy_config.params["num_actors"] = num_actors
+            privacy_config.params["epochs"] = self.config.get("epochs", 1)
+
+            # Initialize privacy manager
             self.cluster_manager.set_privacy_manager(privacy_config)
 
-            # Store data partitions size in config for privacy budget tracking
-            split = self.config.get("split", "train")
-            partitioner.partition(self.dataset, split)
-            partitions = list(self.dataset.get_partitions(split).values())
-            self.config["data_partitions"] = partitions
-            self.config["batch_size"] = self.config.get("batch_size", 32)
-
-            # Ensure cluster manager config has the dataset info for privacy accounting
-            self.cluster_manager.config["data_partitions"] = partitions
-            self.cluster_manager.config["batch_size"] = self.config.get(
-                "batch_size", 32
-            )
+            # Explicitly call setup_privacy_accounting
+            if (
+                hasattr(self.cluster_manager, "privacy_manager")
+                and self.cluster_manager.privacy_manager
+            ):
+                privacy_manager = self.cluster_manager.privacy_manager
+                if hasattr(privacy_manager, "setup_privacy_accounting"):
+                    print(
+                        f"Initializing privacy accounting with {total_samples} samples and batch size {batch_size}"
+                    )
+                    privacy_manager.setup_privacy_accounting(total_samples, batch_size)
 
             # Emit privacy event
             if privacy_config.enabled:
@@ -103,11 +137,6 @@ class LearningProcess(ABC):
                     )
                 )
 
-        print(
-            f"Creating {num_actors} virtual clients with {topology_config.topology_type.value} topology..."
-        )
-        self.cluster_manager.create_actors(num_actors, topology_config)
-
         self.training_monitor.emit_event(
             InitialStateEvent(
                 topology_type=topology_config.topology_type.value, num_nodes=num_actors
@@ -117,15 +146,6 @@ class LearningProcess(ABC):
         for observer in self.training_monitor.observers:
             if hasattr(observer, "set_topology"):
                 observer.set_topology(self.cluster_manager.topology_manager)
-
-        print("Partitioning dataset...")
-        split = self.config.get("split", "train")
-        if "data_partitions" not in self.config:
-            partitioner.partition(self.dataset, split)
-            partitions = list(self.dataset.get_partitions(split).values())
-            self.config["data_partitions"] = partitions
-        else:
-            partitions = self.config["data_partitions"]
 
         print("Distributing data partitions...")
         self.cluster_manager.distribute_data(

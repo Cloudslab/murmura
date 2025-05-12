@@ -125,9 +125,7 @@ class PrivacyManager:
         return False
 
     def privatize_parameters(
-            self,
-            parameters: Dict[str, Any],
-            is_client: bool = True
+        self, parameters: Dict[str, Any], is_client: bool = True
     ) -> Dict[str, Any]:
         """
         Apply privacy mechanism to parameters based on configuration.
@@ -146,7 +144,7 @@ class PrivacyManager:
         param_copy = {}
         for key, param in parameters.items():
             # Handle different parameter types safely
-            if hasattr(param, 'copy'):
+            if hasattr(param, "copy"):
                 param_copy[key] = param.copy()
             else:
                 # For non-numpy arrays, convert to numpy for consistent handling
@@ -155,7 +153,9 @@ class PrivacyManager:
         # Apply the appropriate privacy based on mode and caller
         if self.config.privacy_mode == PrivacyMode.LOCAL and is_client:
             # Local DP: Clip and add noise before sending
-            print(f"Local DP: Clipping with norm {list(self.clipping_norms.values())[0]:.4f} and adding noise")
+            print(
+                f"Local DP: Clipping with norm {list(self.clipping_norms.values())[0]:.4f} and adding noise"
+            )
             clipped_params = self.privacy_mechanism.clip_parameters(
                 param_copy, self.clipping_norms
             )
@@ -166,26 +166,36 @@ class PrivacyManager:
             if self.config.noise_multiplier > 0.5:
                 # Scale down noise by num_actors since it accumulates
                 num_actors = len(self.config.params.get("actors", [])) or 10
-                effective_noise = self.config.noise_multiplier / np.sqrt(max(1, num_actors))
-                print(f"  Adjusted noise for local DP: {effective_noise:.4f} (original: {self.config.noise_multiplier:.4f})")
+                effective_noise = self.config.noise_multiplier / np.sqrt(
+                    max(1, num_actors)
+                )
+                print(
+                    f"  Adjusted noise for local DP: {effective_noise:.4f} (original: {self.config.noise_multiplier:.4f})"
+                )
 
             noised_params = {}
             for key, param in clipped_params.items():
                 # Get appropriate clipping norm for this parameter
-                clip_norm = self.clipping_norms.get(key, self.clipping_norms.get("__default__", 1.0))
+                clip_norm = self.clipping_norms.get(
+                    key, self.clipping_norms.get("__default__", 1.0)
+                )
 
                 # Calculate noise scale based on L2 sensitivity and noise multiplier
                 noise_scale = clip_norm * effective_noise / np.sqrt(2)
 
                 # Generate and add noise
-                noise = np.random.normal(0, noise_scale, param.shape).astype(param.dtype)
+                noise = np.random.normal(0, noise_scale, param.shape).astype(
+                    param.dtype
+                )
                 noised_params[key] = param + noise
 
             return noised_params
 
         elif self.config.privacy_mode == PrivacyMode.CENTRAL and not is_client:
             # Central DP: Add noise after aggregation
-            print(f"Central DP: Clipping with norm {list(self.clipping_norms.values())[0]:.4f} and adding noise")
+            print(
+                f"Central DP: Clipping with norm {list(self.clipping_norms.values())[0]:.4f} and adding noise"
+            )
             clipped_params = self.privacy_mechanism.clip_parameters(
                 param_copy, self.clipping_norms
             )
@@ -194,13 +204,17 @@ class PrivacyManager:
             noised_params = {}
             for key, param in clipped_params.items():
                 # Get appropriate clipping norm for this parameter
-                clip_norm = self.clipping_norms.get(key, self.clipping_norms.get("__default__", 1.0))
+                clip_norm = self.clipping_norms.get(
+                    key, self.clipping_norms.get("__default__", 1.0)
+                )
 
                 # Calculate noise scale based on L2 sensitivity and noise multiplier
                 noise_scale = clip_norm * self.config.noise_multiplier / np.sqrt(2)
 
                 # Generate and add noise
-                noise = np.random.normal(0, noise_scale, param.shape).astype(param.dtype)
+                noise = np.random.normal(0, noise_scale, param.shape).astype(
+                    param.dtype
+                )
                 noised_params[key] = param + noise
 
             return noised_params
@@ -251,11 +265,7 @@ class PrivacyManager:
                 )
                 self.clipping_norms = {"__default__": global_norm}
 
-    def setup_privacy_accounting(
-            self,
-            sample_count: int,
-            batch_size: int
-    ) -> None:
+    def setup_privacy_accounting(self, sample_count: int, batch_size: int) -> None:
         """
         Set up initial privacy accounting parameters.
 
@@ -270,7 +280,9 @@ class PrivacyManager:
         self.total_samples = max(1, sample_count)
         self.batch_size = max(1, batch_size)
 
-        print(f"Setting up privacy accounting with {self.total_samples} samples, batch size {self.batch_size}")
+        print(
+            f"Setting up privacy accounting with {self.total_samples} samples, batch size {self.batch_size}"
+        )
 
         # Calculate initial sampling rate
         sampling_rate = self.batch_size / self.total_samples
@@ -297,7 +309,9 @@ class PrivacyManager:
             print(f"Calculated initial noise multiplier: {noise_multiplier}")
 
         # Update the noise multiplier
-        if self.privacy_mechanism and isinstance(self.privacy_mechanism, GaussianMechanism):
+        if self.privacy_mechanism and isinstance(
+            self.privacy_mechanism, GaussianMechanism
+        ):
             self.privacy_mechanism.noise_multiplier = noise_multiplier
 
         # Update the config
@@ -318,31 +332,53 @@ class PrivacyManager:
         # Increment round counter
         self.current_round += 1
 
-        # Ensure initial setup is done
+        # If not initialized, try to initialize from config params
         if not self.initial_setup_done or self.total_samples == 0:
-            print("Warning: Privacy accounting not properly initialized.")
-            return self.privacy_spent
+            # Try to get values from config params
+            if self.config.params:
+                total_samples = self.config.params.get("total_samples", 0)
+                batch_size = self.config.params.get("batch_size", 32)
+
+                if total_samples > 0 and batch_size > 0:
+                    print(
+                        f"Late initialization of privacy accounting with {total_samples} samples and {batch_size} batch size"
+                    )
+                    self.setup_privacy_accounting(total_samples, batch_size)
+                else:
+                    print(
+                        "Warning: Privacy accounting not properly initialized. Missing total_samples or batch_size."
+                    )
+                    return self.privacy_spent
+            else:
+                print(
+                    "Warning: Privacy accounting not properly initialized. No config params available."
+                )
+                return self.privacy_spent
 
         # Calculate privacy spent based on current state
         # Calculate effective iterations for a federated setting
         # In federated learning, each round involves multiple local updates
-        local_epochs = max(1, self.config.params.get("local_epochs", 1))
+        local_epochs = self.config.params.get("epochs", 1) if self.config.params else 1
         batches_per_epoch = max(1, self.total_samples // self.batch_size)
         effective_iterations = self.current_round * local_epochs  # Simplified model
 
-        print(f"Computing privacy for round {self.current_round}, " +
-              f"effective iterations: {effective_iterations}, " +
-              f"noise multiplier: {self.config.noise_multiplier}")
+        print(
+            f"Computing privacy for round {self.current_round}, "
+            + f"effective iterations: {effective_iterations}, "
+            + f"noise multiplier: {self.config.noise_multiplier}"
+        )
 
         # Compute privacy spent
         self.privacy_spent = self.privacy_mechanism.get_privacy_spent(
             num_iterations=effective_iterations,
             noise_multiplier=self.config.noise_multiplier,
             batch_size=self.batch_size,
-            total_samples=self.total_samples
+            total_samples=self.total_samples,
         )
 
-        print(f"Updated privacy budget: ε = {self.privacy_spent.get('epsilon', 0.0):.6f}")
+        print(
+            f"Updated privacy budget: ε = {self.privacy_spent.get('epsilon', 0.0):.6f}"
+        )
 
         return self.privacy_spent
 

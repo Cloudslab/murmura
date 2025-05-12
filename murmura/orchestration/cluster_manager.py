@@ -177,7 +177,7 @@ class ClusterManager:
             privacy_config.params = {}
 
         # Add actors count for proper noise scaling in local DP
-        privacy_config.params["actors"] = self.actors if hasattr(self, 'actors') else []
+        privacy_config.params["actors"] = self.actors if hasattr(self, "actors") else []
 
         # Add local epochs for proper privacy accounting
         privacy_config.params["local_epochs"] = self.config.get("epochs", 1)
@@ -191,12 +191,16 @@ class ClusterManager:
             self.privacy_manager = PrivacyFactory.create(privacy_config)
 
         # Initialize privacy manager with dataset info if available
-        if 'batch_size' in self.config and 'data_partitions' in self.config:
-            batch_size = self.config.get('batch_size', 32)
-            data_partitions = self.config.get('data_partitions', [])
-            total_samples = sum(len(p) for p in data_partitions) if data_partitions else 10000
+        if "batch_size" in self.config and "data_partitions" in self.config:
+            batch_size = self.config.get("batch_size", 32)
+            data_partitions = self.config.get("data_partitions", [])
+            total_samples = (
+                sum(len(p) for p in data_partitions) if data_partitions else 10000
+            )
 
-            if self.privacy_manager and hasattr(self.privacy_manager, 'setup_privacy_accounting'):
+            if self.privacy_manager and hasattr(
+                self.privacy_manager, "setup_privacy_accounting"
+            ):
                 self.privacy_manager.setup_privacy_accounting(total_samples, batch_size)
 
     def aggregate_model_parameters(
