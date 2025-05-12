@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.network_management.topology import TopologyConfig
+from murmura.privacy.privacy_config import PrivacyConfig
 
 
 class OrchestrationConfig(BaseModel):
@@ -14,6 +15,7 @@ class OrchestrationConfig(BaseModel):
     num_actors: int = Field(default=10, gt=0, description="Number of virtual clients")
     topology: TopologyConfig = Field(default_factory=TopologyConfig)
     aggregation: AggregationConfig = Field(default_factory=AggregationConfig)
+    privacy: PrivacyConfig = Field(default_factory=PrivacyConfig)
     ray_address: Optional[str] = Field(default=None, description="Ray cluster address")
     dataset_name: str = Field(default="mnist", description="Dataset name")
     partition_strategy: Literal["dirichlet", "iid"] = Field(

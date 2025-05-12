@@ -17,6 +17,9 @@ from murmura.network_management.topology_compatibility import (
 from murmura.network_management.topology_manager import TopologyManager
 from murmura.node.client_actor import VirtualClientActor
 from murmura.orchestration.topology_coordinator import TopologyCoordinator
+from murmura.privacy.privacy_config import PrivacyConfig, PrivacyMode
+from murmura.privacy.privacy_factory import PrivacyFactory
+from murmura.privacy.privacy_manager import PrivacyManager
 
 
 class ClusterManager:
@@ -30,6 +33,7 @@ class ClusterManager:
         self.topology_manager: Optional[TopologyManager] = None
         self.aggregation_strategy: Optional[AggregationStrategy] = None
         self.topology_coordinator: Optional[TopologyCoordinator] = None
+        self.privacy_manager: Optional[PrivacyManager] = None
 
         if not ray.is_initialized():
             ray.init(
@@ -71,6 +75,19 @@ class ClusterManager:
             self.aggregation_strategy = AggregationStrategyFactory.create(
                 aggregation_config
             )
+
+    def set_privacy_manager(self, privacy_config: PrivacyConfig) -> None:
+        """
+        Set the privacy manager for the cluster
+
+        :param privacy_config: Privacy configuration
+        """
+        if self.topology_manager:
+            self.privacy_manager = PrivacyFactory.create(
+                privacy_config, self.topology_manager.config
+            )
+        else:
+            self.privacy_manager = PrivacyFactory.create(privacy_config)
 
     def distribute_data(
         self,
@@ -182,8 +199,42 @@ class ClusterManager:
                 "called."
             )
 
-        # Use the topology coordinator to perform aggregation
-        return self.topology_coordinator.coordinate_aggregation(weights=weights)
+        # If privacy is enabled, get all client parameters first to allow adaptive clipping
+        if self.privacy_manager and self.privacy_manager.config.enabled:
+            # Collect parameters from all actors
+            all_params = []
+            for actor in self.actors:
+                params = ray.get(actor.get_model_parameters.remote())
+                all_params.append(params)
+
+            # Update clipping norms based on the collected parameters
+            self.privacy_manager.update_clipping_norms(all_params)
+
+            # For Local DP, have clients apply privacy before aggregation
+            if self.privacy_manager.config.privacy_mode == PrivacyMode.LOCAL:
+                for i, actor in enumerate(self.actors):
+                    privatized_params = self.privacy_manager.privatize_parameters(
+                        all_params[i], is_client=True
+                    )
+                    ray.get(actor.set_model_parameters.remote(privatized_params))
+
+            # Use the topology coordinator for aggregation
+            aggregated_params = self.topology_coordinator.coordinate_aggregation(
+                weights=weights
+            )
+
+            if self.privacy_manager.config.privacy_mode == PrivacyMode.CENTRAL:
+                aggregated_params = self.privacy_manager.privatize_parameters(
+                    aggregated_params, is_client=False
+                )
+
+            total_samples = sum(len(p) for p in self.config.get("data_partitions", []))
+            batch_size = self.config.get("batch_size", 32)
+            self.privacy_manager.update_privacy_budget(total_samples, batch_size)
+
+            return aggregated_params
+        else:
+            return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
     def update_aggregation_strategy(
         self, strategy: AggregationStrategy, topology_check: bool = True
@@ -259,6 +310,26 @@ class ClusterManager:
             "adjacency_list": self.topology_manager.adjacency_list,
         }
 
+    def get_privacy_information(self) -> Dict[str, Any]:
+        """
+        Get information about the current privacy configuration
+
+        :return: Dictionary containing privacy information
+        """
+        if not self.privacy_manager:
+            return {"enabled": False}
+
+        privacy_spent = self.privacy_manager.get_current_privacy_spent()
+
+        return {
+            "enabled": self.privacy_manager.config.enabled,
+            "mode": self.privacy_manager.config.privacy_mode.value,
+            "mechanism": self.privacy_manager.config.mechanism_type.value,
+            "epsilon": privacy_spent.get("epsilon", 0.0),
+            "delta": privacy_spent.get("delta", 0.0),
+            "noise_multiplier": self.privacy_manager.config.noise_multiplier,
+        }
+
     def get_compatible_strategies(self) -> List[str]:
         """
         Get list of strategies compatible with the current topology.
@@ -286,6 +357,26 @@ class ClusterManager:
             # If no matching enum value, use the lowercase class name
             if not found:
                 result.append(cls.__name__.lower())
+
+        return result
+
+    def get_compatible_privacy_modes(self) -> List[str]:
+        """
+        Get list of privacy modes compatible with the current topology.
+
+        Returns:
+            List of compatible privacy modes
+        """
+        if not self.topology_manager:
+            return []
+
+        result = ["LOCAL"]
+
+        if self.topology_manager.config.topology_type in [
+            TopologyType.STAR,
+            TopologyType.COMPLETE,
+        ]:
+            result.append("CENTRAL")
 
         return result
 

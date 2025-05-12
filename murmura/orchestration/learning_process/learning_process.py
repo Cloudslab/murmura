@@ -9,7 +9,8 @@ from murmura.data_processing.partitioner import Partitioner
 from murmura.model.model_interface import ModelInterface
 from murmura.network_management.topology import TopologyConfig
 from murmura.orchestration.cluster_manager import ClusterManager
-from murmura.visualization.training_event import InitialStateEvent
+from murmura.privacy.privacy_config import PrivacyConfig
+from murmura.visualization.training_event import InitialStateEvent, PrivacyEvent
 from murmura.visualization.training_observer import TrainingMonitor
 
 
@@ -49,6 +50,7 @@ class LearningProcess(ABC):
         topology_config: TopologyConfig,
         aggregation_config: AggregationConfig,
         partitioner: Partitioner,
+        privacy_config: Optional[PrivacyConfig] = None,
     ) -> None:
         """
         Initialize the learning process by setting up the cluster, creating actors, and distributing data and models.
@@ -57,6 +59,7 @@ class LearningProcess(ABC):
         :param topology_config: Topology configuration
         :param aggregation_config: Aggregation configuration
         :param partitioner: Partitioner instance
+        :param privacy_config: Optional privacy configuration
         """
         print("\n=== Initializing Learning Process ===")
 
@@ -65,6 +68,33 @@ class LearningProcess(ABC):
 
         print("Setting up aggregation strategy...")
         self.cluster_manager.set_aggregation_strategy(aggregation_config)
+
+        if privacy_config:
+            print("Setting up privacy manager...")
+            self.cluster_manager.set_privacy_manager(privacy_config)
+
+            # Store data partitions size in config for privacy budget tracking
+            split = self.config.get("split", "train")
+            partitioner.partition(self.dataset, split)
+            partitions = list(self.dataset.get_partitions(split).values())
+            self.config["data_partitions"] = partitions
+
+            # Emit privacy event
+            if privacy_config.enabled:
+                privacy_info = {
+                    "enabled": privacy_config.enabled,
+                    "mode": privacy_config.privacy_mode.value,
+                    "mechanism": privacy_config.mechanism_type.value,
+                    "target_epsilon": privacy_config.target_epsilon,
+                    "target_delta": privacy_config.target_delta,
+                    "noise_multiplier": privacy_config.noise_multiplier or 1.0,
+                }
+                self.training_monitor.emit_event(
+                    PrivacyEvent(
+                        round_num=0,
+                        privacy_info=privacy_info,
+                    )
+                )
 
         print(
             f"Creating {num_actors} virtual clients with {topology_config.topology_type.value} topology..."
@@ -83,10 +113,14 @@ class LearningProcess(ABC):
 
         print("Partitioning dataset...")
         split = self.config.get("split", "train")
-        partitioner.partition(self.dataset, split)
+        if "data_partitions" not in self.config:
+            partitioner.partition(self.dataset, split)
+            partitions = list(self.dataset.get_partitions(split).values())
+            self.config["data_partitions"] = partitions
+        else:
+            partitions = self.config["data_partitions"]
 
         print("Distributing data partitions...")
-        partitions = list(self.dataset.get_partitions(split).values())
         self.cluster_manager.distribute_data(
             partitions,
             metadata={

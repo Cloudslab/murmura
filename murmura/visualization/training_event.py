@@ -107,6 +107,19 @@ class EvaluationEvent(TrainingEvent):
         self.metrics = metrics
 
 
+class PrivacyEvent(TrainingEvent):
+    """Event for privacy budget tracking"""
+
+    def __init__(self, round_num: int, privacy_info: Dict):
+        """
+        Args:
+            round_num (int): The current round number.
+            privacy_info (Dict): Dictionary containing privacy information.
+        """
+        super().__init__(round_num, "privacy_update")
+        self.privacy_info = privacy_info
+
+
 class InitialStateEvent(TrainingEvent):
     """Event for initial state process"""
 

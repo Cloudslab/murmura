@@ -11,6 +11,7 @@ from murmura.visualization.training_event import (
     AggregationEvent,
     ParameterTransferEvent,
     LocalTrainingEvent,
+    PrivacyEvent,
 )
 
 
@@ -59,6 +60,14 @@ class FederatedLearningProcess(LearningProcess):
         hub_index = None
         if self.cluster_manager.topology_manager.config.topology_type.value == "star":
             hub_index = self.cluster_manager.topology_manager.config.hub_index
+
+        # Check if privacy is enabled
+        privacy_enabled = False
+        if (
+            hasattr(self.cluster_manager, "privacy_manager")
+            and self.cluster_manager.privacy_manager
+        ):
+            privacy_enabled = self.cluster_manager.privacy_manager.config.enabled
 
         # Training rounds
         for round_num in range(1, rounds + 1):
@@ -149,10 +158,31 @@ class FederatedLearningProcess(LearningProcess):
             # Use data size as weights for aggregation
             weights = [float(size) for size in client_data_sizes]
 
-            # Aggregate parameters
+            # Aggregate parameters with privacy if enabled
             aggregated_params = self.cluster_manager.aggregate_model_parameters(
                 weights=weights
             )
+
+            # If privacy is enabled, emit privacy event with updated privacy budget
+            if (
+                privacy_enabled
+                and hasattr(self.cluster_manager, "privacy_manager")
+                and self.cluster_manager.privacy_manager
+            ):
+                privacy_info = self.cluster_manager.get_privacy_information()
+                self.training_monitor.emit_event(
+                    PrivacyEvent(
+                        round_num=round_num,
+                        privacy_info=privacy_info,
+                    )
+                )
+                # Log privacy budget usage
+                print(
+                    f"Privacy Budget: ε = {privacy_info.get('epsilon', 0.0):.4f}, δ = {privacy_info.get('delta', 0.0):.6f}"
+                )
+                print(
+                    f"Noise Multiplier: {privacy_info.get('noise_multiplier', 0.0):.4f}"
+                )
 
             # 3. Model Update
             # Update global model
@@ -205,10 +235,28 @@ class FederatedLearningProcess(LearningProcess):
         print(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
         print(f"Accuracy Improvement: {improvement * 100:.2f}%")
 
+        # Get final privacy spending if privacy is enabled
+        privacy_result = {}
+        if (
+            privacy_enabled
+            and hasattr(self.cluster_manager, "privacy_manager")
+            and self.cluster_manager.privacy_manager
+        ):
+            privacy_result = self.cluster_manager.get_privacy_information()
+            print("\n=== Final Privacy Budget ===")
+            print(f"Epsilon: {privacy_result.get('epsilon', 0.0):.4f}")
+            print(f"Delta: {privacy_result.get('delta', 0.0):.6f}")
+
         # Return results
-        return {
+        result = {
             "initial_metrics": initial_metrics,
             "final_metrics": final_metrics,
             "accuracy_improvement": improvement,
             "round_metrics": round_metrics,
         }
+
+        # Add privacy results if available
+        if privacy_result:
+            result["privacy"] = privacy_result
+
+        return result

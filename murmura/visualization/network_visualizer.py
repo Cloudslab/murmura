@@ -15,6 +15,7 @@ from murmura.visualization.training_event import (
     ModelUpdateEvent,
     EvaluationEvent,
     InitialStateEvent,
+    PrivacyEvent,
 )
 from murmura.visualization.training_observer import TrainingObserver
 
@@ -49,6 +50,11 @@ class NetworkVisualizer(TrainingObserver):
         self.parameter_update_frames: Dict[
             int, Dict[int, int]
         ] = {}  # {node_id: {parameter_idx: frame_idx}}
+        # Privacy metrics tracking
+        self.privacy_enabled = False
+        self.privacy_mode = "none"
+        self.epsilon_history: Dict[int, float] = {}
+        self.noise_multiplier_history: Dict[int, float] = {}
 
     def set_topology(self, topology_manager: TopologyManager) -> None:
         """
@@ -179,6 +185,34 @@ class NetworkVisualizer(TrainingObserver):
             if "loss" in event.metrics:
                 description += f", Loss: {event.metrics['loss']:.4f}"
 
+        elif isinstance(event, PrivacyEvent):
+            # Privacy budget update event
+            privacy_info = event.privacy_info
+
+            # Store privacy information
+            self.privacy_enabled = privacy_info.get("enabled", False)
+            self.privacy_mode = privacy_info.get("mode", "none")
+
+            # Update epsilon history
+            if "epsilon" in privacy_info:
+                self.epsilon_history[event.round_num] = privacy_info["epsilon"]
+
+            # Update noise multiplier history
+            if "noise_multiplier" in privacy_info:
+                self.noise_multiplier_history[event.round_num] = privacy_info[
+                    "noise_multiplier"
+                ]
+
+            frame["privacy_info"] = privacy_info
+
+            description = f"Round {event.round_num}: Privacy Budget Update - "
+            if "epsilon" in privacy_info:
+                description += f"ε: {privacy_info['epsilon']:.4f}"
+            if "delta" in privacy_info:
+                description += f", δ: {privacy_info['delta']:.6f}"
+            if "noise_multiplier" in privacy_info:
+                description += f", Noise Scale: {privacy_info['noise_multiplier']:.4f}"
+
         # Ensure all metrics data is available for all frames
         frame["all_metrics"] = self.round_metrics.copy()
         # Add current metrics history to each frame for consistent animation
@@ -188,8 +222,113 @@ class NetworkVisualizer(TrainingObserver):
             node: history.copy() for node, history in self.parameter_history.items()
         }
 
+        # Add privacy history if available
+        if self.privacy_enabled:
+            frame["privacy_enabled"] = self.privacy_enabled
+            frame["privacy_mode"] = self.privacy_mode
+            frame["epsilon_history"] = self.epsilon_history.copy()
+            frame["noise_multiplier_history"] = self.noise_multiplier_history.copy()
+
         self.frames.append(frame)
         self.frame_descriptions.append(description)
+
+    def render_privacy_plot(self, filename: str = "privacy_summary.png") -> None:
+        """
+        Creates a plot focusing on privacy budget and noise multiplier.
+
+        Args:
+            filename: Output filename for the privacy plot
+        """
+        if not self.frames or not self.privacy_enabled:
+            print("No privacy data available.")
+            return
+
+        # Create figure with 2 subplots
+        fig, axes = plt.subplots(2, 1, figsize=(10, 12))
+
+        # 1. Epsilon (Privacy Budget) Plot
+        ax_epsilon = axes[0]
+        if self.epsilon_history:
+            rounds = sorted(self.epsilon_history.keys())
+            epsilon_values = [self.epsilon_history[r] for r in rounds]
+
+            ax_epsilon.plot(rounds, epsilon_values, "b-o")
+            ax_epsilon.set_xlabel("Round")
+            ax_epsilon.set_ylabel("Epsilon (ε)")
+            ax_epsilon.set_title("Privacy Budget Consumption")
+
+            # Add target epsilon line if it's in the last frame
+            last_frame = self.frames[-1]
+            if (
+                "privacy_info" in last_frame
+                and "target_epsilon" in last_frame["privacy_info"]
+            ):
+                target_epsilon = last_frame["privacy_info"]["target_epsilon"]
+                ax_epsilon.axhline(
+                    y=target_epsilon,
+                    color="r",
+                    linestyle="--",
+                    label=f"Target ε: {target_epsilon}",
+                )
+                ax_epsilon.legend()
+
+            # Add final epsilon value text
+            if epsilon_values:
+                final_epsilon = epsilon_values[-1]
+                ax_epsilon.text(
+                    0.5,
+                    0.9,
+                    f"Final ε: {final_epsilon:.4f}",
+                    transform=ax_epsilon.transAxes,
+                    ha="center",
+                    bbox=dict(facecolor="white", alpha=0.8),
+                )
+        else:
+            ax_epsilon.text(
+                0.5, 0.5, "No epsilon data available", ha="center", va="center"
+            )
+
+        # 2. Noise Multiplier Plot
+        ax_noise = axes[1]
+        if self.noise_multiplier_history:
+            rounds = sorted(self.noise_multiplier_history.keys())
+            noise_values = [self.noise_multiplier_history[r] for r in rounds]
+
+            ax_noise.plot(rounds, noise_values, "g-o")
+            ax_noise.set_xlabel("Round")
+            ax_noise.set_ylabel("Noise Multiplier")
+            ax_noise.set_title("Adaptive Noise Multiplier")
+
+            # Add final noise multiplier text
+            if noise_values:
+                final_noise = noise_values[-1]
+                ax_noise.text(
+                    0.5,
+                    0.9,
+                    f"Final Noise Multiplier: {final_noise:.4f}",
+                    transform=ax_noise.transAxes,
+                    ha="center",
+                    bbox=dict(facecolor="white", alpha=0.8),
+                )
+        else:
+            ax_noise.text(
+                0.5, 0.5, "No noise multiplier data available", ha="center", va="center"
+            )
+
+        # Set overall title
+        plt.suptitle(
+            f"Differential Privacy Summary ({self.privacy_mode.upper()} mode)",
+            fontsize=16,
+        )
+
+        # Adjust layout
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
+        plt.savefig(
+            os.path.join(self.output_dir, filename), dpi=100, bbox_inches="tight"
+        )
+        plt.close(fig)
+
+        print(f"Privacy plot saved to {os.path.join(self.output_dir, filename)}")
 
     def render_training_animation(
         self, filename: str = "training_animation.mp4", fps: int = 1
@@ -599,8 +738,13 @@ class NetworkVisualizer(TrainingObserver):
             print("No frames captured. Run training first.")
             return
 
-        # Create figure with multiple subplots
-        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        # Determine number of subplots based on whether privacy is enabled
+        if self.privacy_enabled:
+            fig, axes = plt.subplots(
+                3, 2, figsize=(15, 15)
+            )  # Add row for privacy metrics
+        else:
+            fig, axes = plt.subplots(2, 2, figsize=(15, 10))
 
         # 1. Network topology (top left)
         ax_network = axes[0, 0]
@@ -711,8 +855,77 @@ class NetworkVisualizer(TrainingObserver):
             ax_loss.text(0.5, 0.5, "No loss data", ha="center", va="center")
             ax_loss.set_title("Model Loss")
 
+        # Add privacy plots if privacy is enabled
+        if self.privacy_enabled:
+            # 5. Epsilon (Privacy Budget) Plot (bottom left)
+            ax_privacy = axes[2, 0]
+
+            if self.epsilon_history:
+                # Convert dictionary to sorted lists for plotting
+                rounds = sorted(self.epsilon_history.keys())
+                epsilon_values = [self.epsilon_history[r] for r in rounds]
+
+                if rounds and epsilon_values:
+                    ax_privacy.plot(rounds, epsilon_values, "b-o")
+                    ax_privacy.set_xlabel("Round")
+                    ax_privacy.set_ylabel("Epsilon (ε)")
+                    ax_privacy.set_title("Privacy Budget Consumption")
+
+                    # Add final value text
+                    final_epsilon = epsilon_values[-1]
+                    ax_privacy.text(
+                        0.5,
+                        0.1,
+                        f"Final ε: {final_epsilon:.4f}",
+                        transform=ax_privacy.transAxes,
+                        ha="center",
+                        bbox=dict(facecolor="white", alpha=0.8),
+                    )
+                else:
+                    ax_privacy.text(
+                        0.5, 0.5, "No epsilon data", ha="center", va="center"
+                    )
+                    ax_privacy.set_title("Privacy Budget")
+            else:
+                ax_privacy.text(0.5, 0.5, "No privacy data", ha="center", va="center")
+                ax_privacy.set_title("Privacy Budget")
+
+            # 6. Noise Multiplier Plot (bottom right)
+            ax_noise = axes[2, 1]
+
+            if self.noise_multiplier_history:
+                # Convert dictionary to sorted lists for plotting
+                rounds = sorted(self.noise_multiplier_history.keys())
+                noise_values = [self.noise_multiplier_history[r] for r in rounds]
+
+                if rounds and noise_values:
+                    ax_noise.plot(rounds, noise_values, "g-o")
+                    ax_noise.set_xlabel("Round")
+                    ax_noise.set_ylabel("Noise Multiplier")
+                    ax_noise.set_title("Noise Scale")
+
+                    # Add final value text
+                    final_noise = noise_values[-1]
+                    ax_noise.text(
+                        0.5,
+                        0.1,
+                        f"Final Noise: {final_noise:.4f}",
+                        transform=ax_noise.transAxes,
+                        ha="center",
+                        bbox=dict(facecolor="white", alpha=0.8),
+                    )
+                else:
+                    ax_noise.text(0.5, 0.5, "No noise data", ha="center", va="center")
+                    ax_noise.set_title("Noise Scale")
+            else:
+                ax_noise.text(0.5, 0.5, "No noise data", ha="center", va="center")
+                ax_noise.set_title("Noise Scale")
+
         # Add overall title
-        plt.suptitle("Training Summary", fontsize=16)
+        title = "Training Summary"
+        if self.privacy_enabled:
+            title += f" with {self.privacy_mode.capitalize()} Differential Privacy"
+        plt.suptitle(title, fontsize=16)
 
         # Save figure - fix the rect parameter to be a tuple
         rect = (0, 0, 1, 0.97)  # left, bottom, right, top
@@ -723,3 +936,7 @@ class NetworkVisualizer(TrainingObserver):
         plt.close(fig)
 
         print(f"Summary plot saved to {os.path.join(self.output_dir, filename)}")
+
+        # If privacy is enabled, also generate a privacy-specific plot
+        if self.privacy_enabled:
+            self.render_privacy_plot(filename.replace(".png", "_privacy.png"))
