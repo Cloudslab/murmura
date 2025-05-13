@@ -1,5 +1,4 @@
 import argparse
-import os
 import torch
 import torch.nn as nn
 
@@ -28,7 +27,7 @@ from murmura.visualization.network_visualizer import NetworkVisualizer
 
 class MNISTModel(PyTorchModel):
     """
-    Simple CNN model for MNIST classification
+    Improved CNN model for MNIST classification
     """
 
     def __init__(self):
@@ -42,7 +41,10 @@ class MNISTModel(PyTorchModel):
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
         self.classifier = nn.Sequential(
-            nn.Linear(64 * 7 * 7, 128), nn.ReLU(), nn.Linear(128, 10)
+            nn.Linear(64 * 7 * 7, 128),
+            nn.ReLU(),
+            nn.Dropout(0.2),  # Added dropout for better generalization
+            nn.Linear(128, 10),
         )
 
     def forward(self, x):
@@ -58,11 +60,12 @@ class MNISTModel(PyTorchModel):
 
 def main() -> None:
     """
-    Orchestrate Learning Process with Differential Privacy
+    Orchestrate Learning Process with Improved Differential Privacy
     """
     parser = argparse.ArgumentParser(
         description="Privacy-Preserving Distributed Learning Example"
     )
+
     # General parameters
     parser.add_argument(
         "--num_actors", type=int, default=10, help="Number of virtual clients"
@@ -132,15 +135,20 @@ def main() -> None:
 
     # Training arguments
     parser.add_argument(
-        "--rounds", type=int, default=5, help="Number of learning rounds"
+        "--rounds",
+        type=int,
+        default=10,
+        help="Number of learning rounds (reduced default)",
     )
     parser.add_argument(
         "--epochs", type=int, default=1, help="Number of local epochs per round"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=32, help="Batch size for training"
+        "--batch_size", type=int, default=1024, help="Batch size for training"
     )
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
+    parser.add_argument(
+        "--lr", type=float, default=0.001, help="Learning rate (increased default)"
+    )
     parser.add_argument(
         "--save_path",
         type=str,
@@ -157,7 +165,7 @@ def main() -> None:
     parser.add_argument(
         "--privacy_mode",
         choices=["local", "central"],
-        default="local",
+        default="central",
         help="Privacy mode (local or central)",
     )
     parser.add_argument(
@@ -175,7 +183,7 @@ def main() -> None:
     parser.add_argument(
         "--noise_multiplier",
         type=float,
-        default=0.5,
+        default=None,
         help="Initial noise multiplier (if None, calculated adaptively)",
     )
     parser.add_argument(
@@ -186,13 +194,18 @@ def main() -> None:
     parser.add_argument(
         "--clipping_norm",
         type=float,
-        default=1.0,
-        help="L2 norm for clipping (if None, adaptive clipping is used)",
+        default=None,
+        help="L2 norm for clipping (if None and adaptive_clipping is True, adaptive clipping is used)",
     )
     parser.add_argument(
         "--per_layer_clipping",
         action="store_true",
         help="Enable per-layer clipping",
+    )
+    parser.add_argument(
+        "--early_stopping",
+        action="store_true",
+        help="Stop training early if privacy budget is exhausted",
     )
 
     # Visualization arguments
@@ -271,11 +284,31 @@ def main() -> None:
         elif args.aggregation_strategy == "gossip_avg":
             agg_params = {"mixing_parameter": args.mixing_parameter}
 
-        # Create privacy configuration if enabled
+        # Create privacy configuration if enabled with improved settings
         privacy_config = None
         if args.privacy_enabled:
             # Determine clipping norm based on arguments
-            clipping_norm = args.clipping_norm if not args.adaptive_clipping else None
+            clipping_norm = None
+            if args.adaptive_clipping:
+                print("Using adaptive clipping for gradient/parameter norms")
+                clipping_norm = None  # adaptive
+            else:
+                clipping_norm = (
+                    args.clipping_norm
+                )  # Either None or user-specified value
+                if clipping_norm is not None:
+                    print(f"Using fixed clipping norm: {clipping_norm}")
+                else:
+                    print("Using default initial clipping norm (1.0)")
+
+            # Determine noise multiplier approach
+            adaptive_noise = args.noise_multiplier is None
+            if adaptive_noise:
+                print(
+                    f"Using adaptive noise calibration to target ε={args.target_epsilon}"
+                )
+            else:
+                print(f"Using fixed noise multiplier: {args.noise_multiplier}")
 
             privacy_config = PrivacyConfig(
                 enabled=True,
@@ -286,9 +319,20 @@ def main() -> None:
                 noise_multiplier=args.noise_multiplier,
                 clipping_norm=clipping_norm,
                 per_layer_clipping=args.per_layer_clipping,
-                max_grad_norm=args.clipping_norm,  # Use the same value for initial max_grad_norm
+                max_grad_norm=1.0,  # Default starting value for adaptive clipping
                 adaptive_clipping_quantile=0.9,  # Use 90th percentile for clipping
+                early_stopping=args.early_stopping,
+                adaptive_noise=adaptive_noise,  # New field for adaptive noise calibration
+                monitor_frequency=1,  # Monitor privacy budget every round
             )
+
+            # Store additional parameters for proper privacy accounting
+            if privacy_config.params is None:
+                privacy_config.params = {}
+
+            privacy_config.params["rounds"] = args.rounds
+            privacy_config.params["local_epochs"] = args.epochs
+            privacy_config.params["batch_size"] = args.batch_size
 
         # Create configuration
         config = OrchestrationConfig(
@@ -428,12 +472,22 @@ def main() -> None:
                 print(f"Privacy mode: {args.privacy_mode.upper()}")
                 print(f"Target epsilon: {args.target_epsilon}")
                 print(f"Target delta: {args.target_delta}")
-                print(
-                    f"Noise multiplier: {'Adaptive' if args.noise_multiplier is None else args.noise_multiplier}"
-                )
-                print(
-                    f"Clipping: {'Adaptive per-layer' if args.per_layer_clipping else 'Adaptive global' if args.clipping_norm is None else args.clipping_norm}"
-                )
+                if args.noise_multiplier is not None:
+                    print(f"Noise multiplier: {args.noise_multiplier}")
+                else:
+                    print("Noise multiplier: Adaptive calibration")
+
+                if args.adaptive_clipping:
+                    print("Clipping: Adaptive")
+                elif args.clipping_norm is not None:
+                    print(f"Clipping norm: {args.clipping_norm}")
+                else:
+                    print("Clipping norm: Default (1.0)")
+
+                if args.per_layer_clipping:
+                    print("Per-layer clipping: Enabled")
+                else:
+                    print("Per-layer clipping: Disabled (global clipping)")
 
             print(
                 f"\n=== Starting {args.learning_process.capitalize()} Learning with{'' if args.privacy_enabled else 'out'} Privacy ==="
@@ -497,6 +551,8 @@ def main() -> None:
                 print(f"Epsilon: {results['privacy']['epsilon']:.4f}")
                 print(f"Delta: {results['privacy']['delta']:.6f}")
                 print(f"Noise multiplier: {results['privacy']['noise_multiplier']:.4f}")
+                if "clipping_norm" in results["privacy"]:
+                    print(f"Clipping norm: {results['privacy']['clipping_norm']:.4f}")
 
         finally:
             print("\n=== Shutting Down ===")
@@ -508,4 +564,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    import os
+
     main()

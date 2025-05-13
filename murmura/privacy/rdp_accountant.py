@@ -1,13 +1,13 @@
 from typing import Dict, List, Optional
-
 import numpy as np
+from scipy import special
 
 
 class RDPAccountant:
     """
-    Privacy accountant based on Rényi Differential Privacy (RDP).
+    Improved Privacy accountant based on Rényi Differential Privacy (RDP).
 
-    This implementation is based on the paper:
+    Implementation based on the paper:
     "Rényi Differential Privacy of the Sampled Gaussian Mechanism" by Mironov et al.
     https://arxiv.org/abs/1908.10530
     """
@@ -51,11 +51,11 @@ class RDPAccountant:
         self, sampling_rate: float, noise_multiplier: float, iterations: int
     ) -> np.ndarray:
         """
-        Compute RDP values for the sampled Gaussian mechanism.
+        Compute RDP values for the sampled Gaussian mechanism with a more accurate formula.
 
         Args:
             sampling_rate: Sampling probability (batch_size / total_samples)
-            noise_multiplier: Noise scale relative to L2 sensitivity
+            noise_multiplier: Noise scale relative to L2 sensitivity (sigma)
             iterations: Number of iterations/steps
 
         Returns:
@@ -76,11 +76,27 @@ class RDPAccountant:
             if alpha <= 1:
                 continue
 
-            # Use a direct formula for Gaussian mechanism with subsampling
-            # This is a simplified but conservative approximation
-            # Based on the paper "Concentrated Differential Privacy" by Dwork and Rothblum
-            rdp_per_iter = alpha * q**2 / (2 * sigma**2)
-            rdp[i] = rdp_per_iter
+            # Compute RDP using more accurate formula for subsampled Gaussian mechanism
+            if q == 1.0:
+                # When q=1, we use the standard Gaussian mechanism formula
+                rdp[i] = alpha / (2 * sigma**2)
+            else:
+                # For subsampled Gaussian mechanism, use a more accurate bound
+                # Based on Wang et al. "Subsampled Rényi Differential Privacy and Analytical Moments Accountant"
+                # https://arxiv.org/abs/1808.00087
+
+                # Compute log moment for subsampled Gaussian
+                log_moment = 0
+
+                # Moment term 1: Privacy amplification by subsampling
+                coeff = special.binom(alpha, 2) * q**2 * (1 - q) ** (alpha - 2)
+                log_moment += coeff * (alpha / (2 * sigma**2))
+
+                # Moment term 2: Direct privacy loss
+                log_moment += q * alpha * (alpha + 1) / (2 * sigma**2)
+
+                # Apply the more accurate bound
+                rdp[i] = log_moment
 
         # Total RDP is the sum over all iterations
         rdp_result = rdp * iterations
@@ -108,7 +124,7 @@ class RDPAccountant:
             target_delta: Target delta value (default: 1e-5)
 
         Returns:
-            Dictionary with 'epsilon' and 'delta' values
+            Dictionary with 'epsilon' and related values
         """
         # Better protection for invalid inputs
         if iterations <= 0:

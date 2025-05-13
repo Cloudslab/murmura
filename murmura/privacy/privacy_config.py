@@ -25,7 +25,7 @@ class PrivacyMode(str, Enum):
 
 class PrivacyConfig(BaseModel):
     """
-    Configuration object for differential privacy in distributed learning.
+    Improved configuration object for differential privacy in distributed learning.
     """
 
     enabled: bool = Field(
@@ -57,7 +57,7 @@ class PrivacyConfig(BaseModel):
 
     noise_multiplier: Optional[float] = Field(
         default=None,
-        description="Noise multiplier for the differential privacy mechanism.",
+        description="Noise multiplier for the differential privacy mechanism. If None, calculated adaptively.",
     )
 
     clipping_norm: Optional[float] = Field(
@@ -94,6 +94,25 @@ class PrivacyConfig(BaseModel):
         gt=0,
     )
 
+    # Flag for adaptive noise multiplier
+    adaptive_noise: bool = Field(
+        default=True,
+        description="Whether to adaptively calibrate noise to meet target epsilon",
+    )
+
+    # Early stopping when privacy budget reached
+    early_stopping: bool = Field(
+        default=False,
+        description="Whether to stop training early if privacy budget is exhausted",
+    )
+
+    # New field for privacy monitoring frequency
+    monitor_frequency: int = Field(
+        default=1,
+        description="How often to recompute privacy budget (in rounds)",
+        ge=1,
+    )
+
     params: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Mechanism-specific parameters for differential privacy.",
@@ -102,7 +121,7 @@ class PrivacyConfig(BaseModel):
     @model_validator(mode="after")
     def validate_privacy_config(self) -> "PrivacyConfig":
         """
-        Validate the privacy configuration.
+        Validate the privacy configuration with improved checks for parameter compatibility.
         """
         if self.params is None:
             self.params = {}
@@ -116,8 +135,47 @@ class PrivacyConfig(BaseModel):
                     "Privacy mode must be specified when differential privacy is enabled."
                 )
 
+            # Check noise and clipping norm compatibility
+            if self.noise_multiplier is not None:
+                # If noise is specified, validate it's in a reasonable range
+                if self.noise_multiplier < 0.1:
+                    print(
+                        f"WARNING: Very low noise multiplier ({self.noise_multiplier}) may provide insufficient privacy."
+                    )
+
+                # If both noise and clipping are specified, check sensible ratio
+                if self.clipping_norm is not None:
+                    noise_clip_ratio = self.noise_multiplier / self.clipping_norm
+                    if noise_clip_ratio < 0.1:
+                        print(
+                            f"WARNING: Noise-to-clipping ratio ({noise_clip_ratio:.4f}) is very low. "
+                            + "This may not provide enough privacy relative to utility."
+                        )
+                    elif noise_clip_ratio > 10:
+                        print(
+                            f"WARNING: Noise-to-clipping ratio ({noise_clip_ratio:.4f}) is very high. "
+                            + "This may destroy utility without providing meaningful additional privacy."
+                        )
+
         if self.mechanism_type == PrivacyMechanismType.GAUSSIAN:
-            if self.noise_multiplier is None:
-                self.noise_multiplier = 1.0
+            # If no specific noise multiplier, set a reasonable default
+            if self.noise_multiplier is None and not self.adaptive_noise:
+                # Default to a reasonable value based on target epsilon
+                if self.target_epsilon <= 1.0:
+                    self.noise_multiplier = 2.0
+                elif self.target_epsilon <= 3.0:
+                    self.noise_multiplier = 1.2
+                elif self.target_epsilon <= 8.0:
+                    self.noise_multiplier = 0.8
+                else:
+                    self.noise_multiplier = 0.5
+
+                print(
+                    f"Setting default noise multiplier to {self.noise_multiplier} for target ε={self.target_epsilon}"
+                )
+
+        # Store rounds and epochs for proper accounting
+        if "rounds" in self.params:
+            print(f"Privacy config includes {self.params['rounds']} rounds")
 
         return self
