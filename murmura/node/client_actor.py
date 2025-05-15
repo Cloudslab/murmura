@@ -27,9 +27,13 @@ class VirtualClientActor:
         self.device_info = {
             "cuda_available": torch.cuda.is_available(),
             "device": "cuda" if torch.cuda.is_available() else "cpu",
-            "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+            "cuda_device_count": torch.cuda.device_count()
+            if torch.cuda.is_available()
+            else 0,
         }
-        print(f"Actor {client_id} initialized with device: {self.device_info['device']}")
+        print(
+            f"Actor {client_id} initialized with device: {self.device_info['device']}"
+        )
 
     def receive_data(
         self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
@@ -72,7 +76,7 @@ class VirtualClientActor:
         self.model = model
 
         # If the model has device detection capability, use it
-        if hasattr(self.model, 'detect_and_set_device'):
+        if hasattr(self.model, "detect_and_set_device"):
             self.model.detect_and_set_device()
             print(f"Actor {self.client_id} model set to device: {self.model.device}")
 

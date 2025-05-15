@@ -13,7 +13,12 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 from PIL import Image
 from datasets import load_dataset
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_recall_fscore_support
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    accuracy_score,
+    precision_recall_fscore_support,
+)
 from tqdm import tqdm
 
 
@@ -23,16 +28,28 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu1 = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(out_planes)
         self.relu2 = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(out_planes, out_planes, kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            out_planes, out_planes, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.droprate = dropRate
-        self.equalInOut = (in_planes == out_planes)
-        self.convShortcut = (not self.equalInOut) and nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride,
-                                                                padding=0, bias=False) or None
+        self.equalInOut = in_planes == out_planes
+        self.convShortcut = (
+            (not self.equalInOut)
+            and nn.Conv2d(
+                in_planes,
+                out_planes,
+                kernel_size=1,
+                stride=stride,
+                padding=0,
+                bias=False,
+            )
+            or None
+        )
 
     def forward(self, x):
         if not self.equalInOut:
@@ -49,12 +66,21 @@ class BasicBlock(nn.Module):
 class NetworkBlock(nn.Module):
     def __init__(self, nb_layers, in_planes, out_planes, block, stride, dropRate=0.0):
         super(NetworkBlock, self).__init__()
-        self.layer = self._make_layer(block, in_planes, out_planes, nb_layers, stride, dropRate)
+        self.layer = self._make_layer(
+            block, in_planes, out_planes, nb_layers, stride, dropRate
+        )
 
     def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate):
         layers = []
         for i in range(int(nb_layers)):
-            layers.append(block(i == 0 and in_planes or out_planes, out_planes, i == 0 and stride or 1, dropRate))
+            layers.append(
+                block(
+                    i == 0 and in_planes or out_planes,
+                    out_planes,
+                    i == 0 and stride or 1,
+                    dropRate,
+                )
+            )
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -64,13 +90,14 @@ class NetworkBlock(nn.Module):
 class WideResNet(nn.Module):
     def __init__(self, depth=16, num_classes=7, widen_factor=8, dropRate=0.3):
         super(WideResNet, self).__init__()
-        n_channels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
-        assert((depth - 4) % 6 == 0)
+        n_channels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]
+        assert (depth - 4) % 6 == 0
         n = (depth - 4) // 6
         block = BasicBlock
         # 1st conv before any network block
-        self.conv1 = nn.Conv2d(3, n_channels[0], kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            3, n_channels[0], kernel_size=3, stride=1, padding=1, bias=False
+        )
         # 1st block
         self.block1 = NetworkBlock(n, n_channels[0], n_channels[1], block, 1, dropRate)
         # 2nd block
@@ -85,7 +112,7 @@ class WideResNet(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -106,13 +133,15 @@ class WideResNet(nn.Module):
         out = self.block2(out)
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-        out = F.adaptive_avg_pool2d(out, 1)  # Use adaptive pooling for variable input sizes
+        out = F.adaptive_avg_pool2d(
+            out, 1
+        )  # Use adaptive pooling for variable input sizes
         out = out.view(-1, self.nChannels)
         out = self.fc(out)
         return out
 
 
-def load_model(model_path, device='cuda' if torch.cuda.is_available() else 'cpu'):
+def load_model(model_path, device="cuda" if torch.cuda.is_available() else "cpu"):
     """
     Load a trained WideResNet model from checkpoint.
 
@@ -130,20 +159,20 @@ def load_model(model_path, device='cuda' if torch.cuda.is_available() else 'cpu'
     checkpoint = torch.load(model_path, map_location=torch.device(device))
 
     # Extract model configuration
-    if 'config' in checkpoint:
-        config = checkpoint['config']
+    if "config" in checkpoint:
+        config = checkpoint["config"]
     else:
         # Create default configuration if not available
         config = {
-            'depth': checkpoint.get('depth', 16),
-            'widen_factor': checkpoint.get('widen_factor', 8),
-            'dropout': checkpoint.get('dropout', 0.3),
-            'num_classes': checkpoint.get('num_classes', 7),
+            "depth": checkpoint.get("depth", 16),
+            "widen_factor": checkpoint.get("widen_factor", 8),
+            "dropout": checkpoint.get("dropout", 0.3),
+            "num_classes": checkpoint.get("num_classes", 7),
         }
 
     # Extract class labels (diagnostic categories)
-    dx_categories = checkpoint.get('dx_categories', None)
-    num_classes = checkpoint.get('num_classes', 7)
+    dx_categories = checkpoint.get("dx_categories", None)
+    num_classes = checkpoint.get("num_classes", 7)
 
     # Print model configuration
     print(f"Model configuration:")
@@ -157,15 +186,15 @@ def load_model(model_path, device='cuda' if torch.cuda.is_available() else 'cpu'
 
     # Initialize model
     model = WideResNet(
-        depth=config.get('depth', 16),
+        depth=config.get("depth", 16),
         num_classes=num_classes,
-        widen_factor=config.get('widen_factor', 8),
-        dropRate=config.get('dropout', 0.3)
+        widen_factor=config.get("widen_factor", 8),
+        dropRate=config.get("dropout", 0.3),
     )
 
     # Load model state dict
-    if 'model_state_dict' in checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
+    if "model_state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["model_state_dict"])
     else:
         model.load_state_dict(checkpoint)
 
@@ -186,16 +215,24 @@ def get_transforms(image_size=224):
         transforms: Transformation pipeline for preprocessing images
     """
     # Define image transforms for evaluation
-    transform = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
 
     return transform
 
 
-def predict_image(image_path, model, transform, device='cuda' if torch.cuda.is_available() else 'cpu', dx_categories=None):
+def predict_image(
+    image_path,
+    model,
+    transform,
+    device="cuda" if torch.cuda.is_available() else "cpu",
+    dx_categories=None,
+):
     """
     Make prediction for a single image.
 
@@ -210,7 +247,7 @@ def predict_image(image_path, model, transform, device='cuda' if torch.cuda.is_a
         dict: Dictionary containing prediction results
     """
     # Load and preprocess image
-    img = Image.open(image_path).convert('RGB')
+    img = Image.open(image_path).convert("RGB")
     img_tensor = transform(img).unsqueeze(0).to(device)
 
     # Make prediction
@@ -228,15 +265,22 @@ def predict_image(image_path, model, transform, device='cuda' if torch.cuda.is_a
 
     # Return prediction results
     return {
-        'predicted_class': predicted_class,
-        'class_label': class_label,
-        'confidence': confidence,
-        'probabilities': probs[0].cpu().numpy()
+        "predicted_class": predicted_class,
+        "class_label": class_label,
+        "confidence": confidence,
+        "probabilities": probs[0].cpu().numpy(),
     }
 
 
-def evaluate_model(model, test_dataset, transform, device='cuda' if torch.cuda.is_available() else 'cpu',
-                   dx_categories=None, batch_size=32, preprocess_tensor_available=False):
+def evaluate_model(
+    model,
+    test_dataset,
+    transform,
+    device="cuda" if torch.cuda.is_available() else "cpu",
+    dx_categories=None,
+    batch_size=32,
+    preprocess_tensor_available=False,
+):
     """
     Evaluate model on a test dataset.
 
@@ -274,17 +318,19 @@ def evaluate_model(model, test_dataset, transform, device='cuda' if torch.cuda.i
             # Prepare a batch of samples
             for idx in batch_indices:
                 sample = test_dataset[idx]
-                label = sample['label']
+                label = sample["label"]
                 batch_labels.append(label)
 
                 # Check if preprocessed tensor is available
-                if preprocess_tensor_available and 'image_tensor' in sample:
+                if preprocess_tensor_available and "image_tensor" in sample:
                     # Use the preprocessed tensor
-                    image_tensor = torch.tensor(sample['image_tensor'], dtype=torch.float32)
+                    image_tensor = torch.tensor(
+                        sample["image_tensor"], dtype=torch.float32
+                    )
                     batch_images.append(image_tensor)
                 else:
                     # Use the original image and apply transformation
-                    image = sample['image']
+                    image = sample["image"]
                     image_tensor = transform(image)
                     batch_images.append(image_tensor)
 
@@ -308,7 +354,9 @@ def evaluate_model(model, test_dataset, transform, device='cuda' if torch.cuda.i
 
     # Calculate metrics
     accuracy = accuracy_score(all_labels, all_preds)
-    precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted')
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        all_labels, all_preds, average="weighted"
+    )
 
     print(f"Evaluation results:")
     print(f"  Accuracy: {accuracy:.4f}")
@@ -317,22 +365,24 @@ def evaluate_model(model, test_dataset, transform, device='cuda' if torch.cuda.i
     print(f"  F1 Score: {f1:.4f}")
 
     # Generate classification report
-    report = classification_report(all_labels, all_preds, target_names=dx_categories, output_dict=True)
+    report = classification_report(
+        all_labels, all_preds, target_names=dx_categories, output_dict=True
+    )
 
     # Create confusion matrix
     cm = confusion_matrix(all_labels, all_preds)
 
     # Return evaluation results
     return {
-        'accuracy': accuracy,
-        'precision': precision,
-        'recall': recall,
-        'f1': f1,
-        'labels': all_labels,
-        'predictions': all_preds,
-        'probabilities': all_probs,
-        'classification_report': report,
-        'confusion_matrix': cm
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "labels": all_labels,
+        "predictions": all_preds,
+        "probabilities": all_probs,
+        "classification_report": report,
+        "confusion_matrix": cm,
     }
 
 
@@ -354,29 +404,26 @@ def preprocess_dataset(dataset, transform, dx_categories=None):
     # Define preprocessing function
     def preprocess_example(example):
         # Convert dx to label if not already present
-        if 'label' not in example and 'dx' in example and dx_categories:
+        if "label" not in example and "dx" in example and dx_categories:
             dx_to_label = {dx: i for i, dx in enumerate(dx_categories)}
-            example['label'] = dx_to_label[example['dx']]
+            example["label"] = dx_to_label[example["dx"]]
 
         # Apply transform to get tensor
-        pil_image = example['image']
+        pil_image = example["image"]
         transformed_tensor = transform(pil_image)
 
         # Store the tensor in CHW format
-        example['image_tensor'] = transformed_tensor.numpy()
+        example["image_tensor"] = transformed_tensor.numpy()
 
         return example
 
     # Apply preprocessing to dataset
-    processed_dataset = dataset.map(
-        preprocess_example,
-        desc="Preprocessing images"
-    )
+    processed_dataset = dataset.map(preprocess_example, desc="Preprocessing images")
 
     return processed_dataset
 
 
-def visualize_results(results, dx_categories, output_dir='./results'):
+def visualize_results(results, dx_categories, output_dir="./results"):
     """
     Visualize evaluation results.
 
@@ -389,16 +436,22 @@ def visualize_results(results, dx_categories, output_dir='./results'):
 
     # Create confusion matrix plot
     plt.figure(figsize=(10, 8))
-    cm = results['confusion_matrix']
-    cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    cm = results["confusion_matrix"]
+    cm_norm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
-    sns.heatmap(cm_norm, annot=True, fmt='.2f', cmap='Blues',
-                xticklabels=dx_categories, yticklabels=dx_categories)
-    plt.xlabel('Predicted Label')
-    plt.ylabel('True Label')
-    plt.title('Normalized Confusion Matrix')
+    sns.heatmap(
+        cm_norm,
+        annot=True,
+        fmt=".2f",
+        cmap="Blues",
+        xticklabels=dx_categories,
+        yticklabels=dx_categories,
+    )
+    plt.xlabel("Predicted Label")
+    plt.ylabel("True Label")
+    plt.title("Normalized Confusion Matrix")
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'), dpi=300)
+    plt.savefig(os.path.join(output_dir, "confusion_matrix.png"), dpi=300)
 
     # Create precision, recall, f1 plot for each class
     plt.figure(figsize=(12, 6))
@@ -406,18 +459,20 @@ def visualize_results(results, dx_categories, output_dir='./results'):
     # Extract metrics for each class
     metrics = []
     for i, class_name in enumerate(dx_categories):
-        if str(i) in results['classification_report']:
-            class_report = results['classification_report'][str(i)]
+        if str(i) in results["classification_report"]:
+            class_report = results["classification_report"][str(i)]
         else:
-            class_report = results['classification_report'][class_name]
+            class_report = results["classification_report"][class_name]
 
-        metrics.append({
-            'class': class_name,
-            'precision': class_report['precision'],
-            'recall': class_report['recall'],
-            'f1-score': class_report['f1-score'],
-            'support': class_report['support']
-        })
+        metrics.append(
+            {
+                "class": class_name,
+                "precision": class_report["precision"],
+                "recall": class_report["recall"],
+                "f1-score": class_report["f1-score"],
+                "support": class_report["support"],
+            }
+        )
 
     # Convert to DataFrame for easier plotting
     df = pd.DataFrame(metrics)
@@ -426,34 +481,38 @@ def visualize_results(results, dx_categories, output_dir='./results'):
     plt.figure(figsize=(14, 7))
 
     plt.subplot(1, 2, 1)
-    df_plot = df.set_index('class')
-    df_plot[['precision', 'recall', 'f1-score']].plot(kind='bar', ax=plt.gca())
-    plt.title('Precision, Recall, and F1-Score by Class')
-    plt.ylabel('Score')
+    df_plot = df.set_index("class")
+    df_plot[["precision", "recall", "f1-score"]].plot(kind="bar", ax=plt.gca())
+    plt.title("Precision, Recall, and F1-Score by Class")
+    plt.ylabel("Score")
     plt.ylim(0, 1)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.xticks(rotation=45)
 
     plt.subplot(1, 2, 2)
-    df.plot(kind='bar', x='class', y='support', ax=plt.gca())
-    plt.title('Class Distribution in Test Set')
-    plt.ylabel('Number of Samples')
-    plt.xlabel('Class')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    df.plot(kind="bar", x="class", y="support", ax=plt.gca())
+    plt.title("Class Distribution in Test Set")
+    plt.ylabel("Number of Samples")
+    plt.xlabel("Class")
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.xticks(rotation=45)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'class_metrics.png'), dpi=300)
+    plt.savefig(os.path.join(output_dir, "class_metrics.png"), dpi=300)
 
     # Save metrics as JSON
-    with open(os.path.join(output_dir, 'metrics.json'), 'w') as f:
-        json.dump({
-            'accuracy': float(results['accuracy']),
-            'precision': float(results['precision']),
-            'recall': float(results['recall']),
-            'f1': float(results['f1']),
-            'classification_report': results['classification_report']
-        }, f, indent=4)
+    with open(os.path.join(output_dir, "metrics.json"), "w") as f:
+        json.dump(
+            {
+                "accuracy": float(results["accuracy"]),
+                "precision": float(results["precision"]),
+                "recall": float(results["recall"]),
+                "f1": float(results["f1"]),
+                "classification_report": results["classification_report"],
+            },
+            f,
+            indent=4,
+        )
 
     print(f"Visualizations saved to {output_dir}")
 
@@ -464,25 +523,47 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Skin Cancer Classification Inference")
 
-    parser.add_argument("--model_path", type=str, required=True,
-                        help="Path to the trained model checkpoint")
-    parser.add_argument("--output_dir", type=str, default="./results",
-                        help="Directory to save results")
-    parser.add_argument("--dataset_name", type=str, default="marmal88/skin_cancer",
-                        help="Name of the HuggingFace dataset to evaluate on")
-    parser.add_argument("--split", type=str, default="test",
-                        help="Dataset split to evaluate on")
-    parser.add_argument("--batch_size", type=int, default=32,
-                        help="Batch size for evaluation")
-    parser.add_argument("--image_size", type=int, default=224,
-                        help="Size to resize images to")
-    parser.add_argument("--device", type=str,
-                        default="cuda" if torch.cuda.is_available() else "cpu",
-                        help="Device to use for evaluation")
-    parser.add_argument("--sample_images", type=int, default=5,
-                        help="Number of sample images to visualize per class")
-    parser.add_argument("--preprocess", action="store_true",
-                        help="Preprocess the dataset to add image_tensor field")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        required=True,
+        help="Path to the trained model checkpoint",
+    )
+    parser.add_argument(
+        "--output_dir", type=str, default="./results", help="Directory to save results"
+    )
+    parser.add_argument(
+        "--dataset_name",
+        type=str,
+        default="marmal88/skin_cancer",
+        help="Name of the HuggingFace dataset to evaluate on",
+    )
+    parser.add_argument(
+        "--split", type=str, default="test", help="Dataset split to evaluate on"
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=32, help="Batch size for evaluation"
+    )
+    parser.add_argument(
+        "--image_size", type=int, default=224, help="Size to resize images to"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda" if torch.cuda.is_available() else "cpu",
+        help="Device to use for evaluation",
+    )
+    parser.add_argument(
+        "--sample_images",
+        type=int,
+        default=5,
+        help="Number of sample images to visualize per class",
+    )
+    parser.add_argument(
+        "--preprocess",
+        action="store_true",
+        help="Preprocess the dataset to add image_tensor field",
+    )
 
     # Parse command line arguments
     args = parser.parse_args()
@@ -503,7 +584,7 @@ def main():
         has_preprocessed_tensors = True
     else:
         # Check if the dataset already has preprocessed tensors
-        has_preprocessed_tensors = 'image_tensor' in dataset[0]
+        has_preprocessed_tensors = "image_tensor" in dataset[0]
 
     if has_preprocessed_tensors:
         print("Using preprocessed image tensors for evaluation")
@@ -513,9 +594,13 @@ def main():
     # Evaluate model
     print("Evaluating model...")
     results = evaluate_model(
-        model, dataset, transform, device=args.device,
-        dx_categories=dx_categories, batch_size=args.batch_size,
-        preprocess_tensor_available=has_preprocessed_tensors
+        model,
+        dataset,
+        transform,
+        device=args.device,
+        dx_categories=dx_categories,
+        batch_size=args.batch_size,
+        preprocess_tensor_available=has_preprocessed_tensors,
     )
 
     # Visualize results
@@ -524,14 +609,16 @@ def main():
 
     # Sample inference on random images
     if args.sample_images > 0:
-        print(f"Generating predictions for {args.sample_images} sample images per class...")
+        print(
+            f"Generating predictions for {args.sample_images} sample images per class..."
+        )
         sample_output_dir = os.path.join(args.output_dir, "samples")
         os.makedirs(sample_output_dir, exist_ok=True)
 
         # Group examples by class
         examples_by_class = {}
         for i, example in enumerate(dataset):
-            label = example['label']
+            label = example["label"]
             if label not in examples_by_class:
                 examples_by_class[label] = []
             examples_by_class[label].append(i)
@@ -539,7 +626,9 @@ def main():
         # Sample images from each class
         for class_idx, indices in examples_by_class.items():
             # Get class name
-            class_name = dx_categories[class_idx] if dx_categories else f"Class {class_idx}"
+            class_name = (
+                dx_categories[class_idx] if dx_categories else f"Class {class_idx}"
+            )
 
             # Create output directory for this class
             class_output_dir = os.path.join(sample_output_dir, class_name)
@@ -553,51 +642,65 @@ def main():
                 example = dataset[idx]
 
                 # Save original image
-                image = example['image']
-                image_id = example.get('image_id', f"img_{idx}")
-                original_path = os.path.join(class_output_dir, f"{image_id}_original.png")
+                image = example["image"]
+                image_id = example.get("image_id", f"img_{idx}")
+                original_path = os.path.join(
+                    class_output_dir, f"{image_id}_original.png"
+                )
                 image.save(original_path)
 
                 # Make prediction
-                prediction = predict_image(original_path, model, transform,
-                                           device=args.device, dx_categories=dx_categories)
+                prediction = predict_image(
+                    original_path,
+                    model,
+                    transform,
+                    device=args.device,
+                    dx_categories=dx_categories,
+                )
 
                 # Create visualization with prediction
                 plt.figure(figsize=(8, 6))
                 plt.imshow(image)
-                plt.axis('off')
+                plt.axis("off")
 
                 # Get ground truth and prediction
                 true_label = class_name
-                pred_label = prediction['class_label']
-                confidence = prediction['confidence']
+                pred_label = prediction["class_label"]
+                confidence = prediction["confidence"]
 
                 # Set title color based on correctness
-                color = 'green' if true_label == pred_label else 'red'
+                color = "green" if true_label == pred_label else "red"
 
-                plt.title(f"True: {true_label}\nPredicted: {pred_label} ({confidence:.2f})",
-                          color=color, fontsize=12)
+                plt.title(
+                    f"True: {true_label}\nPredicted: {pred_label} ({confidence:.2f})",
+                    color=color,
+                    fontsize=12,
+                )
 
                 # Save visualization
-                result_path = os.path.join(class_output_dir, f"{image_id}_prediction.png")
-                plt.savefig(result_path, bbox_inches='tight', dpi=150)
+                result_path = os.path.join(
+                    class_output_dir, f"{image_id}_prediction.png"
+                )
+                plt.savefig(result_path, bbox_inches="tight", dpi=150)
                 plt.close()
 
                 # Also save prediction details as JSON
                 metadata = {
-                    'image_id': image_id,
-                    'true_class': int(class_idx),
-                    'true_label': true_label,
-                    'predicted_class': prediction['predicted_class'],
-                    'predicted_label': pred_label,
-                    'confidence': float(confidence),
-                    'probabilities': {
+                    "image_id": image_id,
+                    "true_class": int(class_idx),
+                    "true_label": true_label,
+                    "predicted_class": prediction["predicted_class"],
+                    "predicted_label": pred_label,
+                    "confidence": float(confidence),
+                    "probabilities": {
                         dx_categories[i] if dx_categories else f"Class {i}": float(p)
-                        for i, p in enumerate(prediction['probabilities'])
-                    }
+                        for i, p in enumerate(prediction["probabilities"])
+                    },
                 }
 
-                with open(os.path.join(class_output_dir, f"{image_id}_metadata.json"), 'w') as f:
+                with open(
+                    os.path.join(class_output_dir, f"{image_id}_metadata.json"), "w"
+                ) as f:
                     json.dump(metadata, f, indent=4)
 
     print(f"All results saved to {args.output_dir}")

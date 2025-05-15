@@ -27,16 +27,28 @@ class BasicBlock(PyTorchModel):
         super(BasicBlock, self).__init__()
         self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu1 = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(out_planes)
         self.relu2 = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(out_planes, out_planes, kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            out_planes, out_planes, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.droprate = dropRate
-        self.equalInOut = (in_planes == out_planes)
-        self.convShortcut = (not self.equalInOut) and nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride,
-                                                                padding=0, bias=False) or None
+        self.equalInOut = in_planes == out_planes
+        self.convShortcut = (
+            (not self.equalInOut)
+            and nn.Conv2d(
+                in_planes,
+                out_planes,
+                kernel_size=1,
+                stride=stride,
+                padding=0,
+                bias=False,
+            )
+            or None
+        )
 
     def forward(self, x):
         if not self.equalInOut:
@@ -53,12 +65,21 @@ class BasicBlock(PyTorchModel):
 class NetworkBlock(PyTorchModel):
     def __init__(self, nb_layers, in_planes, out_planes, block, stride, dropRate=0.0):
         super(NetworkBlock, self).__init__()
-        self.layer = self._make_layer(block, in_planes, out_planes, nb_layers, stride, dropRate)
+        self.layer = self._make_layer(
+            block, in_planes, out_planes, nb_layers, stride, dropRate
+        )
 
     def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate):
         layers = []
         for i in range(int(nb_layers)):
-            layers.append(block(i == 0 and in_planes or out_planes, out_planes, i == 0 and stride or 1, dropRate))
+            layers.append(
+                block(
+                    i == 0 and in_planes or out_planes,
+                    out_planes,
+                    i == 0 and stride or 1,
+                    dropRate,
+                )
+            )
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -70,16 +91,18 @@ class WideResNet(PyTorchModel):
     WideResNet model with adjustable depth, width, and number of classes.
     Default configuration is optimized for skin lesion classification (7 classes for HAM10000).
     """
+
     def __init__(self, depth=16, num_classes=7, widen_factor=8, dropRate=0.3):
         super(WideResNet, self).__init__()
-        n_channels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
-        assert((depth - 4) % 6 == 0)
+        n_channels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]
+        assert (depth - 4) % 6 == 0
         n = (depth - 4) // 6
         block = BasicBlock
 
         # 1st conv before any network block
-        self.conv1 = nn.Conv2d(3, n_channels[0], kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            3, n_channels[0], kernel_size=3, stride=1, padding=1, bias=False
+        )
         # 1st block
         self.block1 = NetworkBlock(n, n_channels[0], n_channels[1], block, 1, dropRate)
         # 2nd block
@@ -95,7 +118,7 @@ class WideResNet(PyTorchModel):
         # Weight initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -108,7 +131,9 @@ class WideResNet(PyTorchModel):
         out = self.block2(out)
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-        out = F.adaptive_avg_pool2d(out, 1)  # Use adaptive pooling for variable input sizes
+        out = F.adaptive_avg_pool2d(
+            out, 1
+        )  # Use adaptive pooling for variable input sizes
         out = out.view(-1, self.nChannels)
         out = self.fc(out)
         return out
@@ -116,6 +141,7 @@ class WideResNet(PyTorchModel):
 
 class CustomDatasetWrapper:
     """Custom utility to preprocess and adapt the HAM10000 dataset"""
+
     @staticmethod
     def prepare_dataset(dataset_name="marmal88/skin_cancer", image_size=224):
         # Load the HAM10000 dataset
@@ -131,11 +157,16 @@ class CustomDatasetWrapper:
 
         # Define image transformation
         from torchvision import transforms
-        transform = transforms.Compose([
-            transforms.Resize((image_size, image_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+
+        transform = transforms.Compose(
+            [
+                transforms.Resize((image_size, image_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
 
         # Define preprocessing function to convert dx categories to numeric labels
         # and preprocess images to standard size and format
@@ -161,8 +192,7 @@ class CustomDatasetWrapper:
         for split in raw_dataset.keys():
             print(f"Processing {split} split...")
             processed_dataset[split] = raw_dataset[split].map(
-                preprocess_example,
-                desc=f"Processing {split}"
+                preprocess_example, desc=f"Processing {split}"
             )
 
         # Convert to DatasetDict for compatibility
@@ -201,7 +231,7 @@ def select_device(device_arg="auto"):
     if device_arg == "auto":
         if torch.cuda.is_available():
             return "cuda"
-        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return "mps"
         else:
             return "cpu"
@@ -240,7 +270,10 @@ def main() -> None:
         "--test_split", type=str, default="test", help="Test split to use"
     )
     parser.add_argument(
-        "--validation_split", type=str, default="validation", help="Validation split to use"
+        "--validation_split",
+        type=str,
+        default="validation",
+        help="Validation split to use",
     )
     parser.add_argument(
         "--aggregation_strategy",
@@ -278,11 +311,12 @@ def main() -> None:
     parser.add_argument(
         "--batch_size", type=int, default=16, help="Batch size for training"
     )
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument(
-        "--lr", type=float, default=0.001, help="Learning rate"
-    )
-    parser.add_argument(
-        "--weight_decay", type=float, default=1e-4, help="Weight decay for regularization"
+        "--weight_decay",
+        type=float,
+        default=1e-4,
+        help="Weight decay for regularization",
     )
     parser.add_argument(
         "--dropout", type=float, default=0.3, help="Dropout rate in WideResNet"
@@ -302,13 +336,13 @@ def main() -> None:
     parser.add_argument(
         "--widen_factor", type=int, default=8, help="WideResNet widen factor"
     )
+    parser.add_argument("--depth", type=int, default=16, help="WideResNet depth")
     parser.add_argument(
-        "--depth", type=int, default=16, help="WideResNet depth"
-    )
-    parser.add_argument(
-        "--device", type=str, default="auto",
+        "--device",
+        type=str,
+        default="auto",
         choices=["auto", "cuda", "mps", "cpu"],
-        help="Device to use for training (auto selects best available)"
+        help="Device to use for training (auto selects best available)",
     )
 
     # Visualization arguments
@@ -368,7 +402,7 @@ def main() -> None:
                 if args.aggregation_strategy == "trimmed_mean"
                 else None,
             ),
-            dataset_name=args.dataset_name  # Set the dataset name
+            dataset_name=args.dataset_name,  # Set the dataset name
         )
 
         # Add additional configuration needed for the learning process
@@ -405,7 +439,9 @@ def main() -> None:
         # Create Murmura datasets
         train_dataset = MDataset(DatasetDict({config.split: train_split}))
         test_dataset = MDataset(DatasetDict({args.test_split: test_split}))
-        validation_dataset = MDataset(DatasetDict({args.validation_split: validation_split}))
+        validation_dataset = MDataset(
+            DatasetDict({args.validation_split: validation_split})
+        )
 
         # Merge datasets to have all splits available
         train_dataset.merge_splits(test_dataset)
@@ -421,11 +457,13 @@ def main() -> None:
             depth=args.depth,
             num_classes=num_classes,
             widen_factor=args.widen_factor,
-            dropRate=args.dropout
+            dropRate=args.dropout,
         )
 
-        print(f"Created WideResNet with depth={args.depth}, widen_factor={args.widen_factor}, "
-              f"num_classes={num_classes}, dropout={args.dropout}")
+        print(
+            f"Created WideResNet with depth={args.depth}, widen_factor={args.widen_factor}, "
+            f"num_classes={num_classes}, dropout={args.dropout}"
+        )
 
         # Create a custom TorchModelWrapper extension that handles our preprocessed tensors properly
         class PreprocessedTensorModelWrapper(TorchModelWrapper):
@@ -458,10 +496,7 @@ def main() -> None:
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.Adam,
-            optimizer_kwargs={
-                "lr": args.lr,
-                "weight_decay": args.weight_decay
-            },
+            optimizer_kwargs={"lr": args.lr, "weight_decay": args.weight_decay},
             input_shape=input_shape,
             device=device,
         )
@@ -525,7 +560,7 @@ def main() -> None:
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 print("\n=== Generating Visualizations ===")
 
@@ -554,20 +589,24 @@ def main() -> None:
 
             # Save model with additional metadata
             checkpoint = {
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': global_model.optimizer.state_dict(),
-                'dx_categories': dx_categories,
-                'num_classes': num_classes,
-                'depth': args.depth,
-                'widen_factor': args.widen_factor,
-                'dropout': args.dropout,
-                'image_size': args.image_size,
-                'input_shape': input_shape,
-                'device': device,
-                'config': {k: v for k, v in vars(args).items() if not k.startswith('_')}
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": global_model.optimizer.state_dict(),
+                "dx_categories": dx_categories,
+                "num_classes": num_classes,
+                "depth": args.depth,
+                "widen_factor": args.widen_factor,
+                "dropout": args.dropout,
+                "image_size": args.image_size,
+                "input_shape": input_shape,
+                "device": device,
+                "config": {
+                    k: v for k, v in vars(args).items() if not k.startswith("_")
+                },
             }
 
-            os.makedirs(os.path.dirname(os.path.abspath(save_path)) or '.', exist_ok=True)
+            os.makedirs(
+                os.path.dirname(os.path.abspath(save_path)) or ".", exist_ok=True
+            )
             torch.save(checkpoint, save_path)
             print(f"Model saved to '{save_path}'")
 
@@ -579,15 +618,19 @@ def main() -> None:
             print(f"Training device: {device}")
 
             # Display detailed metrics if available
-            if 'round_metrics' in results:
+            if "round_metrics" in results:
                 print("\n--- Detailed Round Metrics ---")
-                for round_data in results['round_metrics']:
-                    round_num = round_data['round']
+                for round_data in results["round_metrics"]:
+                    round_num = round_data["round"]
                     print(f"Round {round_num}:")
                     print(f"  Train Loss: {round_data.get('train_loss', 'N/A'):.4f}")
-                    print(f"  Train Accuracy: {round_data.get('train_accuracy', 'N/A'):.4f}")
+                    print(
+                        f"  Train Accuracy: {round_data.get('train_accuracy', 'N/A'):.4f}"
+                    )
                     print(f"  Test Loss: {round_data.get('test_loss', 'N/A'):.4f}")
-                    print(f"  Test Accuracy: {round_data.get('test_accuracy', 'N/A'):.4f}")
+                    print(
+                        f"  Test Accuracy: {round_data.get('test_accuracy', 'N/A'):.4f}"
+                    )
 
         finally:
             print("\n=== Shutting Down ===")
@@ -596,6 +639,7 @@ def main() -> None:
     except Exception as e:
         print(f"Learning Process orchestration failed: {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise
 

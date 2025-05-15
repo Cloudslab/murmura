@@ -58,13 +58,17 @@ class ClusterManager:
         num_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
         gpus_per_actor = num_gpus / num_actors if num_gpus > 0 else 0
 
-        print(f"Creating {num_actors} virtual clients with {gpus_per_actor:.2f} GPUs each")
+        print(
+            f"Creating {num_actors} virtual clients with {gpus_per_actor:.2f} GPUs each"
+        )
 
         self.actors = []
         for i in range(num_actors):
             if gpus_per_actor > 0:
                 # Create actor with GPU resources
-                actor = VirtualClientActor.options(num_gpus=gpus_per_actor).remote(f"client_{i}")
+                actor = VirtualClientActor.options(num_gpus=gpus_per_actor).remote(
+                    f"client_{i}"
+                )
             else:
                 # Create actor without GPU resources
                 actor = VirtualClientActor.remote(f"client_{i}")
@@ -151,14 +155,14 @@ class ClusterManager:
 
         # Make sure the model is on CPU for serialization
         original_device = None
-        if hasattr(model, 'model') and hasattr(model.model, 'to'):
+        if hasattr(model, "model") and hasattr(model.model, "to"):
             # Remember the original device
-            if hasattr(model, 'device'):
+            if hasattr(model, "device"):
                 original_device = model.device
             # Move to CPU temporarily for serialization
-            model.model.to('cpu')
-            if hasattr(model, 'device'):
-                model.device = 'cpu'
+            model.model.to("cpu")
+            if hasattr(model, "device"):
+                model.device = "cpu"
 
         # Get model parameters on CPU to distribute
         parameters = model.get_parameters()
@@ -175,9 +179,13 @@ class ClusterManager:
                 raise
 
         # Move the model back to its original device if needed
-        if hasattr(model, 'model') and hasattr(model.model, 'to') and original_device is not None:
+        if (
+            hasattr(model, "model")
+            and hasattr(model.model, "to")
+            and original_device is not None
+        ):
             model.model.to(original_device)
-            if hasattr(model, 'device'):
+            if hasattr(model, "device"):
                 model.device = original_device
 
     def train_models(self, **kwargs) -> List[Dict[str, float]]:

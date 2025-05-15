@@ -255,7 +255,7 @@ class TorchModelWrapper(ModelInterface):
             name: param.cpu().numpy() for name, param in self.model.state_dict().items()
         }
         # Move back to the original device if set
-        if hasattr(self, 'device') and self.device != "cpu":
+        if hasattr(self, "device") and self.device != "cpu":
             self.model.to(self.device)
         return params
 
@@ -266,7 +266,7 @@ class TorchModelWrapper(ModelInterface):
         self.model.load_state_dict(state_dict)
 
         # Then move to the target device if needed
-        if hasattr(self, 'device') and self.device != "cpu":
+        if hasattr(self, "device") and self.device != "cpu":
             self.model.to(self.device)
 
     def save(self, path: str) -> None:
@@ -299,7 +299,9 @@ class TorchModelWrapper(ModelInterface):
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.input_shape = checkpoint.get("input_shape", self.input_shape)
-        self.requested_device = checkpoint.get("requested_device", self.requested_device)
+        self.requested_device = checkpoint.get(
+            "requested_device", self.requested_device
+        )
 
         # Then detect and set the proper device
         self.detect_and_set_device()
