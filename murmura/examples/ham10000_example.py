@@ -238,6 +238,49 @@ def select_device(device_arg="auto"):
     return device_arg
 
 
+def find_optimal_batch_size(model, input_size, max_batch_size=64, min_batch_size=1):
+    """Find the largest batch size that fits in GPU memory"""
+    device = next(model.parameters()).device
+    if device.type != "cuda":
+        # If not using CUDA, just return the max batch size
+        return max_batch_size
+
+    # Start with max batch size and reduce until it fits
+    batch_size = max_batch_size
+    while batch_size > min_batch_size:
+        try:
+            # Create a dummy input tensor
+            dummy_input = torch.randn(batch_size, *input_size, device=device)
+
+            # Try a forward and backward pass
+            output = model(dummy_input)
+            if isinstance(output, tuple):
+                output = output[0]
+            loss = output.sum()
+            loss.backward()
+
+            # Clean up
+            del dummy_input, output, loss
+            torch.cuda.empty_cache()
+
+            # If we get here, the batch size fits
+            print(f"Found optimal batch size: {batch_size}")
+            return batch_size
+        except RuntimeError as e:
+            if "out of memory" in str(e):
+                # Reduce batch size and try again
+                torch.cuda.empty_cache()
+                batch_size //= 2
+                print(f"Reducing batch size to {batch_size}")
+            else:
+                # Re-raise if it's not an OOM error
+                raise
+
+    # If we get here, even the minimum batch size doesn't fit
+    print(f"Warning: Using minimum batch size {min_batch_size}")
+    return min_batch_size
+
+
 def main() -> None:
     """
     Orchestrate Learning Process for skin cancer classification
@@ -452,13 +495,26 @@ def main() -> None:
         partitioner = PartitionerFactory.create(config)
 
         print("\n=== Creating and Initializing Model ===")
-        # Create the WideResNet model with PyTorch wrapper
+        # Create the model
         model = WideResNet(
             depth=args.depth,
             num_classes=num_classes,
             widen_factor=args.widen_factor,
             dropRate=args.dropout,
         )
+
+        # Find optimal batch size if using GPU
+        if device == "cuda":
+            optimal_batch_size = find_optimal_batch_size(
+                model,
+                input_size=(3, args.image_size, args.image_size),
+                max_batch_size=args.batch_size,
+            )
+            if optimal_batch_size != args.batch_size:
+                print(
+                    f"Auto-adjusting batch size from {args.batch_size} to {optimal_batch_size}"
+                )
+                args.batch_size = optimal_batch_size
 
         print(
             f"Created WideResNet with depth={args.depth}, widen_factor={args.widen_factor}, "
