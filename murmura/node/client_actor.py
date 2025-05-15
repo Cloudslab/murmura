@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional, List, Tuple
 
 import numpy as np
 import ray
+import torch
 
 from murmura.data_processing.dataset import MDataset
 from murmura.model.model_interface import ModelInterface
@@ -21,6 +22,14 @@ class VirtualClientActor:
         self.split: str = "train"
         self.feature_columns: Optional[List[str]] = None
         self.label_column: Optional[str] = None
+
+        # Initialize device info
+        self.device_info = {
+            "cuda_available": torch.cuda.is_available(),
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
+            "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        }
+        print(f"Actor {client_id} initialized with device: {self.device_info['device']}")
 
     def receive_data(
         self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
@@ -56,11 +65,16 @@ class VirtualClientActor:
 
     def set_model(self, model: ModelInterface) -> None:
         """
-        Set the model for the client actor.
+        Set the model for the client actor with proper device handling.
 
         :param model: Model instance
         """
         self.model = model
+
+        # If the model has device detection capability, use it
+        if hasattr(self.model, 'detect_and_set_device'):
+            self.model.detect_and_set_device()
+            print(f"Actor {self.client_id} model set to device: {self.model.device}")
 
     def get_data_info(self) -> Dict[str, Any]:
         """

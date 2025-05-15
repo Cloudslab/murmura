@@ -47,10 +47,16 @@ class TorchModelWrapper(ModelInterface):
         self.loss_fn = loss_fn or nn.CrossEntropyLoss()
         self.optimizer_class = optimizer_class or optim.Adam
         self.optimizer_kwargs = optimizer_kwargs or {"lr": 0.001}
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.input_shape = input_shape
+        self.requested_device = device
+        if device is None:
+            # We'll detect the actual device when the model is used
+            self.device = "cpu"  # Initialize to CPU for safe serialization
+        else:
+            self.device = device
 
-        self.model.to(self.device)
+        # Initialize model on CPU first for serialization safety
+        self.model.to("cpu")
         self.optimizer = self.optimizer_class(
             self.model.parameters(), **self.optimizer_kwargs
         )
@@ -83,6 +89,23 @@ class TorchModelWrapper(ModelInterface):
             dataset = TensorDataset(tensor_data)
 
         return DataLoader(dataset, batch_size=batch_size, shuffle=(labels is not None))
+
+    def detect_and_set_device(self) -> None:
+        """
+        Detect and set the best available device, respecting the requested device.
+        Should be called by any method that uses the model.
+        """
+        # If user explicitly requested a device, use that
+        if self.requested_device is not None:
+            self.device = self.requested_device
+        else:
+            # Otherwise, auto-detect the best device
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Ensure the model and loss function are on the correct device
+        self.model.to(self.device)
+        if hasattr(self.loss_fn, "to"):
+            self.loss_fn.to(self.device)
 
     def train(self, data: np.ndarray, labels: np.ndarray, **kwargs) -> Dict[str, float]:
         """
@@ -225,48 +248,58 @@ class TorchModelWrapper(ModelInterface):
         return np.concatenate(all_outputs)
 
     def get_parameters(self) -> Dict[str, Any]:
-        """
-        Get the current model parameters.
-
-        :return: Dictionary containing model parameters.
-        """
-        return {
+        """Get parameters as CPU tensors for safe serialization."""
+        # Move model to CPU temporarily for serialization safety
+        self.model.to("cpu")
+        params = {
             name: param.cpu().numpy() for name, param in self.model.state_dict().items()
         }
+        # Move back to the original device if set
+        if hasattr(self, 'device') and self.device != "cpu":
+            self.model.to(self.device)
+        return params
 
     def set_parameters(self, parameters: Dict[str, Any]) -> None:
-        """
-        Set the model parameters.
-
-        :param parameters: Dictionary containing model parameters to set.
-        """
+        """Set parameters safely regardless of device."""
+        # Always load to CPU first
         state_dict = {name: torch.tensor(param) for name, param in parameters.items()}
         self.model.load_state_dict(state_dict)
 
+        # Then move to the target device if needed
+        if hasattr(self, 'device') and self.device != "cpu":
+            self.model.to(self.device)
+
     def save(self, path: str) -> None:
-        """
-        Save the model to the specified path.
-        """
+        """Save the model safely to disk."""
         directory = os.path.dirname(path)
         if directory:
             os.makedirs(directory, exist_ok=True)
+
+        # Move to CPU for safe serialization
+        self.model.to("cpu")
 
         torch.save(
             {
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
                 "input_shape": self.input_shape,
+                "requested_device": self.requested_device,
             },
             path,
         )
 
-    def load(self, path: str) -> None:
-        """
-        Load the model from the specified path.
+        # Move back to the original device if needed
+        if self.device != "cpu":
+            self.model.to(self.device)
 
-        :param path: Path to load the model from.
-        """
-        checkpoint = torch.load(path, map_location=self.device)
+    def load(self, path: str) -> None:
+        """Load the model with proper device mapping."""
+        # Always load to CPU first for safety
+        checkpoint = torch.load(path, map_location="cpu")
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.input_shape = checkpoint.get("input_shape", self.input_shape)
+        self.requested_device = checkpoint.get("requested_device", self.requested_device)
+
+        # Then detect and set the proper device
+        self.detect_and_set_device()
