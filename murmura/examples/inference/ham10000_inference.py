@@ -545,7 +545,7 @@ def main():
         "--batch_size", type=int, default=32, help="Batch size for evaluation"
     )
     parser.add_argument(
-        "--image_size", type=int, default=224, help="Size to resize images to"
+        "--image_size", type=int, default=128, help="Size to resize images to"
     )
     parser.add_argument(
         "--device",
