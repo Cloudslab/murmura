@@ -503,18 +503,16 @@ def main() -> None:
             dropRate=args.dropout,
         )
 
-        # Find optimal batch size if using GPU
-        if device == "cuda":
-            optimal_batch_size = find_optimal_batch_size(
-                model,
-                input_size=(3, args.image_size, args.image_size),
-                max_batch_size=args.batch_size,
+        optimal_batch_size = find_optimal_batch_size(
+            model,
+            input_size=(3, args.image_size, args.image_size),
+            max_batch_size=args.batch_size,
+        )
+        if optimal_batch_size != args.batch_size:
+            print(
+                f"Auto-adjusting batch size from {args.batch_size} to {optimal_batch_size}"
             )
-            if optimal_batch_size != args.batch_size:
-                print(
-                    f"Auto-adjusting batch size from {args.batch_size} to {optimal_batch_size}"
-                )
-                args.batch_size = optimal_batch_size
+            args.batch_size = optimal_batch_size
 
         print(
             f"Created WideResNet with depth={args.depth}, widen_factor={args.widen_factor}, "
