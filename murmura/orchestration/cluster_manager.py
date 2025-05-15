@@ -41,7 +41,6 @@ class ClusterManager:
                 address=self.config["ray_address"] if "ray_address" in config else None,
                 num_gpus=num_gpus,
                 include_dashboard=False,
-                _redis_max_memory=500000000,
             )
 
     def create_actors(self, num_actors: int, topology: TopologyConfig) -> List[Any]:
