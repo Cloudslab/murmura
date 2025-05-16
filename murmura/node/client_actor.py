@@ -134,6 +134,20 @@ class VirtualClientActor:
         if self.model is None:
             raise ValueError("Model is not set")
 
+        # Extract callback if provided
+        client_id = self.client_id
+        orig_verbose = kwargs.get("verbose", False)
+
+        # Create a callback for epoch logging
+        def log_epoch_callback(epoch, total_epochs, metrics):
+            if orig_verbose:
+                print(f"Client {client_id} - Epoch [{epoch}/{total_epochs}], "
+                      f"Loss: {metrics['loss']:.4f}, "
+                      f"Accuracy: {metrics['accuracy']:.4f}")
+
+        # Add callback to kwargs
+        kwargs["log_epoch_callback"] = log_epoch_callback
+
         features, labels = self._get_partition_data()
         return self.model.train(features, labels, **kwargs)
 

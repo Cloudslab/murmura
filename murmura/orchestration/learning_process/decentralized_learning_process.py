@@ -63,19 +63,22 @@ class DecentralizedLearningProcess(LearningProcess):
             print(f"\n--- Round {round_num}/{rounds} ---")
 
             # 1. Local Training
-            print("Training on clients...")
+            print(f"Training on clients for {epochs} epochs...")
 
-            # Emit local training event
+            # Emit local training event with epoch info
             self.training_monitor.emit_event(
                 LocalTrainingEvent(
                     round_num=round_num,
                     active_nodes=list(range(len(self.cluster_manager.actors))),
                     metrics={},
+                    total_epochs=epochs
                 )
             )
 
+            # Training with epoch progress logging
+            print(f"Local training progress (each client trains for {epochs} epochs):")
             train_metrics = self.cluster_manager.train_models(
-                epochs=epochs, batch_size=batch_size, verbose=False
+                epochs=epochs, batch_size=batch_size, verbose=True
             )
 
             # Calculate average training metrics
