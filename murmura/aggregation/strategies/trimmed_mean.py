@@ -30,9 +30,9 @@ class TrimmedMean(AggregationStrategy):
         self.trim_ratio = trim_ratio
 
     def aggregate(
-        self,
-        parameters_list: List[Dict[str, Any]],
-        weights: Optional[List[float]] = None,
+            self,
+            parameters_list: List[Dict[str, Any]],
+            weights: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """
         Aggregate parameters using trimmed mean
@@ -44,6 +44,10 @@ class TrimmedMean(AggregationStrategy):
         """
         if not parameters_list:
             raise ValueError("Empty parameters list")
+
+        # Special case: If there's only one client, just return its parameters
+        if len(parameters_list) == 1:
+            return parameters_list[0].copy()
 
         num_clients = len(parameters_list)
         if num_clients <= 2:
@@ -59,20 +63,31 @@ class TrimmedMean(AggregationStrategy):
 
         for key in parameters_list[0].keys():
             try:
-                # Stack parameters along a new axis
-                stacked_params = np.stack(
-                    [params[key] for params in parameters_list], axis=0
-                )
+                # Handle 'num_batches_tracked' and other integer parameters specially
+                if 'num_batches_tracked' in key or any(
+                        np.issubdtype(params[key].dtype, np.integer)
+                        for params in parameters_list
+                ):
+                    # For integer parameters, we'll use the maximum value
+                    # This is especially appropriate for 'num_batches_tracked'
+                    aggregated_params[key] = np.max([
+                        params[key] for params in parameters_list
+                    ])
+                else:
+                    # Stack parameters along a new axis
+                    stacked_params = np.stack(
+                        [params[key] for params in parameters_list], axis=0
+                    )
 
-                # For each parameter element, sort values across clients and trim
-                # We need to sort along axis 0 (client dimension)
-                sorted_params = np.sort(stacked_params, axis=0)
+                    # For each parameter element, sort values across clients and trim
+                    # We need to sort along axis 0 (client dimension)
+                    sorted_params = np.sort(stacked_params, axis=0)
 
-                # Trim k values from each end
-                trimmed_params = sorted_params[k : num_clients - k]
+                    # Trim k values from each end
+                    trimmed_params = sorted_params[k : num_clients - k]
 
-                # Average the remaining values
-                aggregated_params[key] = np.mean(trimmed_params, axis=0)
+                    # Average the remaining values
+                    aggregated_params[key] = np.mean(trimmed_params, axis=0)
 
             except Exception as e:
                 raise ValueError(f"Error aggregating parameter {key}: {e}")
@@ -81,7 +96,7 @@ class TrimmedMean(AggregationStrategy):
 
     @staticmethod
     def _weighted_average(
-        parameters_list: List[Dict[str, Any]], weights: List[float]
+            parameters_list: List[Dict[str, Any]], weights: List[float]
     ) -> Dict[str, Any]:
         """
         Helper method for weighted average when falling back
@@ -90,15 +105,25 @@ class TrimmedMean(AggregationStrategy):
 
         for key in parameters_list[0].keys():
             try:
-                stacked_params = np.stack(
-                    [params[key] for params in parameters_list], axis=0
-                )
-                weighted_params = np.zeros_like(stacked_params[0])
+                # Handle 'num_batches_tracked' and other integer parameters specially
+                if 'num_batches_tracked' in key or any(
+                        np.issubdtype(params[key].dtype, np.integer)
+                        for params in parameters_list
+                ):
+                    # For integer parameters, we'll use the maximum value
+                    aggregated_params[key] = np.max([
+                        params[key] for params in parameters_list
+                    ])
+                else:
+                    stacked_params = np.stack(
+                        [params[key] for params in parameters_list], axis=0
+                    )
+                    weighted_params = np.zeros_like(stacked_params[0])
 
-                for i, weight in enumerate(weights):
-                    weighted_params += weight * stacked_params[i]
+                    for i, weight in enumerate(weights):
+                        weighted_params += weight * stacked_params[i]
 
-                aggregated_params[key] = weighted_params
+                    aggregated_params[key] = weighted_params
 
             except Exception as e:
                 raise ValueError(f"Error aggregating parameter {key}: {e}")
