@@ -15,11 +15,26 @@ class FedAvg(AggregationStrategy):
 
     coordination_mode = CoordinationMode.CENTRALIZED
 
-    def __init__(self):
+    def __init__(self, central_privacy_config=None):
         """
         Initialize the FedAvg strategy.
         """
         super().__init__()
+        self.central_privacy_mechanism = None
+        self.central_privacy_epsilon = None
+        self.central_privacy_delta = None
+        if central_privacy_config:
+            mechanism = central_privacy_config.get("mechanism", "gaussian")
+            epsilon = central_privacy_config.get("epsilon", 1.0)
+            delta = central_privacy_config.get("delta", 1e-5)
+            if mechanism == "laplace":
+                from murmura.privacy.central.laplace import LaplaceMechanismCDP
+                self.central_privacy_mechanism = LaplaceMechanismCDP()
+            elif mechanism == "gaussian":
+                from murmura.privacy.central.gaussian import GaussianMechanismCDP
+                self.central_privacy_mechanism = GaussianMechanismCDP()
+            self.central_privacy_epsilon = epsilon
+            self.central_privacy_delta = delta
 
     def aggregate(
         self,
@@ -59,5 +74,12 @@ class FedAvg(AggregationStrategy):
 
             except Exception as e:
                 raise ValueError(f"Error aggregating parameter {key}: {e}")
+
+        # Add central DP noise if enabled
+        if self.central_privacy_mechanism:
+            for k, v in aggregated_params.items():
+                aggregated_params[k] = self.central_privacy_mechanism.add_noise(
+                    v, self.central_privacy_epsilon, self.central_privacy_delta
+                )
 
         return aggregated_params

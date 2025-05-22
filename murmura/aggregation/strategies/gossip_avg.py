@@ -16,17 +16,36 @@ class GossipAvg(AggregationStrategy):
 
     coordination_mode = CoordinationMode.DECENTRALIZED
 
-    def __init__(self, mixing_parameter: float = 0.5) -> None:
+    def __init__(self, mixing_parameter: float = 0.5, central_privacy_config=None) -> None:
         """
         Initialize the GossipAvg strategy with a mixing parameter.
 
         :param mixing_parameter: Controls how much weight to give to neighbours versus local model (default is 0.5
         for equal weighting)
+        :param central_privacy_config: Optional configuration for central differential privacy
         """
         if mixing_parameter < 0 or mixing_parameter > 1:
             raise ValueError("Mixing parameter must be between 0 and 1.")
 
         self.mixing_parameter = mixing_parameter
+        self.central_privacy_mechanism = None
+        self.central_privacy_epsilon = None
+        self.central_privacy_delta = None
+
+        if central_privacy_config:
+            mechanism = central_privacy_config.get("mechanism", "gaussian")
+            epsilon = central_privacy_config.get("epsilon", 1.0)
+            delta = central_privacy_config.get("delta", 1e-5)
+
+            if mechanism == "laplace":
+                from murmura.privacy.central.laplace import LaplaceMechanismCDP
+                self.central_privacy_mechanism = LaplaceMechanismCDP()
+            elif mechanism == "gaussian":
+                from murmura.privacy.central.gaussian import GaussianMechanismCDP
+                self.central_privacy_mechanism = GaussianMechanismCDP()
+
+            self.central_privacy_epsilon = epsilon
+            self.central_privacy_delta = delta
 
     def aggregate(
         self,
@@ -69,5 +88,12 @@ class GossipAvg(AggregationStrategy):
 
             except ValueError as e:
                 raise ValueError(f"Error stacking parameters for key '{key}': {e}")
+
+        # Add central DP noise if enabled
+        if self.central_privacy_mechanism:
+            for k, v in aggregated_params.items():
+                aggregated_params[k] = self.central_privacy_mechanism.add_noise(
+                    v, self.central_privacy_epsilon, self.central_privacy_delta
+                )
 
         return aggregated_params

@@ -20,6 +20,23 @@ class DecentralizedLearningProcess(LearningProcess):
     information directly with their neighbors without a central coordinator.
     """
 
+    def __init__(self, config, dataset, model):
+        super().__init__(config, dataset, model)
+        self.privacy_mechanism = None
+        self.privacy_config = config.get("privacy", None)
+        if self.privacy_config:
+            mechanism = self.privacy_config.get("mechanism", "gaussian")
+            epsilon = self.privacy_config.get("epsilon", 1.0)
+            delta = self.privacy_config.get("delta", 1e-5)
+            if mechanism == "laplace":
+                from murmura.privacy.local.laplace import LaplaceMechanismLDP
+                self.privacy_mechanism = LaplaceMechanismLDP()
+            elif mechanism == "gaussian":
+                from murmura.privacy.local.gaussian import GaussianMechanismLDP
+                self.privacy_mechanism = GaussianMechanismLDP()
+            self.privacy_epsilon = epsilon
+            self.privacy_delta = delta
+
     def execute(self) -> Dict[str, Any]:
         """
         Execute the decentralized learning process.
@@ -93,6 +110,12 @@ class DecentralizedLearningProcess(LearningProcess):
             node_params = {}
             for i, actor in enumerate(self.cluster_manager.actors):
                 params = ray.get(actor.get_model_parameters.remote())
+                # Apply LDP if enabled
+                if self.privacy_mechanism:
+                    for k, v in params.items():
+                        params[k] = self.privacy_mechanism.add_noise(
+                            v, self.privacy_epsilon, self.privacy_delta
+                        )
                 node_params[i] = params
 
             # Create parameter summaries for visualization
