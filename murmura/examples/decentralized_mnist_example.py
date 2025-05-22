@@ -147,6 +147,46 @@ def main() -> None:
         "--fps", type=int, default=2, help="Frames per second for animation"
     )
 
+    parser.add_argument(
+        "--dp_mechanism",
+        type=str,
+        choices=["laplace", "gaussian"],
+        default=None,
+        help="Differential privacy mechanism (laplace or gaussian)",
+    )
+    parser.add_argument(
+        "--dp_epsilon",
+        type=float,
+        default=None,
+        help="Differential privacy epsilon (privacy budget)",
+    )
+    parser.add_argument(
+        "--dp_delta",
+        type=float,
+        default=None,
+        help="Differential privacy delta (for (epsilon, delta)-DP)",
+    )
+    parser.add_argument(
+        "--dp_clipping",
+        type=float,
+        default=None,
+        help="Gradient clipping threshold for DP",
+    )
+    parser.add_argument(
+        "--dp_accountant",
+        type=str,
+        choices=["rdp", "gdp"],
+        default=None,
+        help="Privacy accounting method (rdp or gdp)",
+    )
+    parser.add_argument(
+        "--dp_scope",
+        type=str,
+        choices=["local", "central"],
+        default=None,
+        help="Apply DP locally (LDP) or centrally (CDP)",
+    )
+
     args = parser.parse_args()
 
     # Check compatibility of topology and strategy before proceeding
@@ -197,6 +237,25 @@ def main() -> None:
                 "learning_rate": args.lr,
             }
         )
+        # Add DP config if any DP argument is set
+        if any([
+            args.dp_mechanism,
+            args.dp_epsilon,
+            args.dp_delta,
+            args.dp_clipping,
+            args.dp_accountant,
+            args.dp_scope
+        ]):
+            process_config["privacy"] = {
+                k: v for k, v in {
+                    "mechanism": args.dp_mechanism,
+                    "epsilon": args.dp_epsilon,
+                    "delta": args.dp_delta,
+                    "clipping": args.dp_clipping,
+                    "accountant": args.dp_accountant,
+                    "scope": args.dp_scope
+                }.items() if v is not None
+            }
 
         print("\n=== Loading MNIST Dataset ===")
         # Load MNIST Dataset for training and testing

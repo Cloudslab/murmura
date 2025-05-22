@@ -16,6 +16,7 @@ from murmura.orchestration.learning_process.federated_learning_process import (
     FederatedLearningProcess,
 )
 from murmura.visualization.network_visualizer import NetworkVisualizer
+from murmura.privacy.accounting.privacy_meter import PrivacyMeter
 
 
 class MNISTModel(PyTorchModel):
@@ -146,7 +147,74 @@ def main() -> None:
         help="Create summary plot of the training process",
     )
 
+    # Differential Privacy arguments
+    parser.add_argument(
+        "--dp_mechanism",
+        type=str,
+        choices=["laplace", "gaussian"],
+        default=None,
+        help="Differential privacy mechanism (laplace or gaussian)",
+    )
+    parser.add_argument(
+        "--dp_epsilon",
+        type=float,
+        default=None,
+        help="Differential privacy epsilon (privacy budget)",
+    )
+    parser.add_argument(
+        "--dp_delta",
+        type=float,
+        default=None,
+        help="Differential privacy delta (for (epsilon, delta)-DP)",
+    )
+    parser.add_argument(
+        "--dp_clipping",
+        type=float,
+        default=None,
+        help="Gradient clipping threshold for DP",
+    )
+    parser.add_argument(
+        "--dp_accountant",
+        type=str,
+        choices=["rdp", "gdp"],
+        default=None,
+        help="Privacy accounting method (rdp or gdp)",
+    )
+    parser.add_argument(
+        "--dp_scope",
+        type=str,
+        choices=["local", "central"],
+        default=None,
+        help="Apply DP locally (LDP) or centrally (CDP)",
+    )
+
     args = parser.parse_args()
+
+    # Add DP config if any DP argument is set
+    dp_enabled = any([
+        args.dp_mechanism,
+        args.dp_epsilon,
+        args.dp_delta,
+        args.dp_clipping,
+        args.dp_accountant,
+        args.dp_scope
+    ])
+    if dp_enabled:
+        process_config["privacy"] = {
+            k: v for k, v in {
+                "mechanism": args.dp_mechanism,
+                "epsilon": args.dp_epsilon,
+                "delta": args.dp_delta,
+                "clipping": args.dp_clipping,
+                "accountant": args.dp_accountant,
+                "scope": args.dp_scope
+            }.items() if v is not None
+        }
+
+    # Set up privacy accounting if DP is enabled
+    privacy_meter = None
+    if dp_enabled and args.dp_epsilon is not None:
+        privacy_meter = PrivacyMeter(epsilon=args.dp_epsilon, delta=args.dp_delta, accountant=args.dp_accountant or 'rdp')
 
     try:
         # Create configuration from command-line arguments
@@ -180,6 +248,25 @@ def main() -> None:
                 "learning_rate": args.lr,
             }
         )
+        # Add DP config if any DP argument is set
+        if any([
+            args.dp_mechanism,
+            args.dp_epsilon,
+            args.dp_delta,
+            args.dp_clipping,
+            args.dp_accountant,
+            args.dp_scope
+        ]):
+            process_config["privacy"] = {
+                k: v for k, v in {
+                    "mechanism": args.dp_mechanism,
+                    "epsilon": args.dp_epsilon,
+                    "delta": args.dp_delta,
+                    "clipping": args.dp_clipping,
+                    "accountant": args.dp_accountant,
+                    "scope": args.dp_scope
+                }.items() if v is not None
+            }
 
         print("\n=== Loading MNIST Dataset ===")
         # Load MNIST Dataset for training and testing
@@ -264,7 +351,23 @@ def main() -> None:
             print(f"Learning rate: {args.lr}")
 
             print("\n=== Starting Federated Learning ===")
-            # Execute the learning process
+            # Execute the learning process, tracking privacy budget if enabled
+            if privacy_meter:
+                # Monkey-patch the learning process to log epsilon spend after each round
+                orig_execute = learning_process.execute
+                def execute_with_privacy_accounting(*a, **kw):
+                    results = orig_execute(*a, **kw)
+                    rounds = process_config.get("rounds", 5)
+                    eps_per_round = args.dp_epsilon / rounds if rounds > 0 else args.dp_epsilon
+                    for r in range(rounds):
+                        privacy_meter.consume(eps_per_round)
+                        print(f"[DP] Privacy budget after round {r+1}: ε = {privacy_meter.get_usage()[0]:.4f}")
+                    if privacy_meter.is_exceeded():
+                        print(f"[DP] WARNING: Privacy budget exceeded! ε = {privacy_meter.get_usage()[0]:.4f}")
+                    else:
+                        print(f"[DP] Final privacy budget: ε = {privacy_meter.get_usage()[0]:.4f}")
+                    return results
+                learning_process.execute = execute_with_privacy_accounting
             _ = learning_process.execute()
 
             # Generate visualizations if requested
