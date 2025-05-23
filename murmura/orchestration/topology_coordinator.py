@@ -16,10 +16,10 @@ class TopologyCoordinator:
     """
 
     def __init__(
-        self,
-        actors: List[Any],
-        topology_manager: TopologyManager,
-        strategy: AggregationStrategy,
+            self,
+            actors: List[Any],
+            topology_manager: TopologyManager,
+            strategy: AggregationStrategy,
     ):
         self.actors = actors
         self.topology_manager = topology_manager
@@ -29,15 +29,22 @@ class TopologyCoordinator:
         self.coordination_mode = self._determine_coordination_mode()
 
     def coordinate_aggregation(
-        self, weights: Optional[List[float]] = None
+            self,
+            weights: Optional[List[float]] = None,
+            pre_collected_params: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate the aggregation of model parameters based on the topology.
 
         :param weights: Optional list of weights for each actor's parameters
+        :param pre_collected_params: Optional pre-collected parameters (for privacy)
         :return: Aggregated model parameters
         """
-        # Dispatch to the appropriate coordinator method based of topology
+        # If we have pre-collected parameters (e.g., for privacy), use them
+        if pre_collected_params is not None:
+            return self._aggregate_pre_collected(pre_collected_params, weights)
+
+        # Otherwise, dispatch to the appropriate coordinator method
         if self.topology_type == TopologyType.STAR:
             return self._coordinate_star_topology(weights)
         elif self.topology_type == TopologyType.RING:
@@ -50,6 +57,20 @@ class TopologyCoordinator:
             return self._coordinate_custom_topology(weights)
         else:
             raise ValueError(f"Unsupported topology type: {self.topology_type}")
+
+    def _aggregate_pre_collected(
+            self,
+            parameters_list: List[Dict[str, Any]],
+            weights: Optional[List[float]] = None
+    ) -> Dict[str, Any]:
+        """
+        Aggregate pre-collected parameters.
+
+        :param parameters_list: List of parameter dictionaries
+        :param weights: Optional weights for aggregation
+        :return: Aggregated parameters
+        """
+        return self.strategy.aggregate(parameters_list, weights)
 
     def _coordinate_star_topology(
         self, weights: Optional[List[float]] = None

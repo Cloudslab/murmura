@@ -1,9 +1,149 @@
 from typing import Dict, Any, Optional
 
 import numpy as np
+from scipy.special import comb
+from scipy.special import logsumexp
 
 from murmura.privacy.privacy_mechanism import PrivacyMechanism
-from murmura.privacy.moments_accountant import MomentsAccountant
+
+
+class MomentsAccountant:
+    """
+    Implements the Moments Accountant for privacy accounting.
+    Based on Abadi et al. "Deep Learning with Differential Privacy"
+    """
+
+    def __init__(self, moments_orders: Optional[list] = None):
+        """Initialize the Moments Accountant."""
+        if moments_orders is None:
+            # Default moment orders that provide good privacy estimates
+            self.moments_orders = list(range(1, 33)) + list(range(34, 64, 2))
+        else:
+            self.moments_orders = moments_orders
+
+    def _compute_log_moment(self, q: float, sigma: float, order: int) -> float:
+        """
+        Compute log moment of the privacy loss for Gaussian mechanism.
+
+        Args:
+            q: Sampling probability
+            sigma: Noise multiplier
+            order: Moment order
+
+        Returns:
+            Log moment value
+        """
+        if sigma <= 0:
+            return float('inf')
+
+        if q == 0:
+            return 0.0
+
+        if order == 1:
+            return 0.0
+
+        # For numerical stability, compute in log space
+        # Using the formula from Abadi et al.
+        def _compute_log_a(i):
+            """Compute log(A_i) for i-th term in the sum."""
+            # Binomial coefficient in log space
+            try:
+                log_binom = np.log(comb(order, i, exact=True))
+            except (ValueError, OverflowError):
+                return float('-inf')
+
+            # q^i * (1-q)^(order-i) in log space
+            if q == 1:
+                # Special case when q = 1
+                log_qi = 0.0 if i == order else float('-inf')
+            else:
+                if i == 0:
+                    log_qi = (order - i) * np.log(1 - q)
+                elif i == order:
+                    log_qi = i * np.log(q)
+                else:
+                    log_qi = i * np.log(q) + (order - i) * np.log(1 - q)
+
+            # The Gaussian moment
+            s = 2 * i - order
+            log_e = s * (s - 1) / (2 * sigma**2)
+
+            return log_binom + log_qi + log_e
+
+        # Compute all terms, handling -inf values
+        log_terms = []
+        for i in range(order + 1):
+            term = _compute_log_a(i)
+            if np.isfinite(term):  # Only include finite terms
+                log_terms.append(term)
+
+        # Handle edge cases
+        if not log_terms:
+            return float('-inf')
+
+        if len(log_terms) == 1:
+            return float(log_terms[0])
+
+        # Convert to numpy array and use logsumexp
+        log_terms_array = np.array(log_terms, dtype=np.float64)
+        result = logsumexp(log_terms_array)
+
+        # Ensure we return a scalar float
+        if isinstance(result, np.ndarray):
+            result = result.item()
+
+        return float(result)
+
+    def compute_epsilon(self, q: float, sigma: float, steps: int,
+                        delta: float = 1e-5) -> Dict[str, float]:
+        """
+        Compute epsilon given the Gaussian mechanism parameters.
+
+        Args:
+            q: Sampling probability
+            sigma: Noise multiplier
+            steps: Number of steps
+            delta: Target delta
+
+        Returns:
+            Dictionary with epsilon and related values
+        """
+        if steps == 0:
+            return {"epsilon": 0.0, "delta": delta}
+
+        if sigma <= 0:
+            return {"epsilon": float('inf'), "delta": delta}
+
+        # Compute log moments for all orders
+        log_moments = []
+        for order in self.moments_orders:
+            log_moment = self._compute_log_moment(q, sigma, order)
+            # Accumulate over steps
+            log_moments.append(log_moment * steps)
+
+        # Convert to (epsilon, delta)-DP
+        min_epsilon = float('inf')
+        best_order = 1
+
+        for i, order in enumerate(self.moments_orders):
+            if order == 1:
+                continue
+
+            # Compute epsilon for this order
+            if log_moments[i] == float('inf'):
+                continue
+
+            epsilon = (log_moments[i] - np.log(delta)) / (order - 1)
+
+            if epsilon < min_epsilon:
+                min_epsilon = epsilon
+                best_order = order
+
+        return {
+            "epsilon": min_epsilon,
+            "delta": delta,
+            "best_order": best_order
+        }
 
 
 class GaussianMechanism(PrivacyMechanism):
@@ -31,7 +171,7 @@ class GaussianMechanism(PrivacyMechanism):
     ) -> Dict[str, Any]:
         """
         Add Gaussian noise to model parameters.
-        
+
         IMPORTANT: This assumes parameters have already been clipped!
         """
         if clipping_norms is None:

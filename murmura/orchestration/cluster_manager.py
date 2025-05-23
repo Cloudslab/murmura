@@ -34,6 +34,8 @@ class ClusterManager:
         self.aggregation_strategy: Optional[AggregationStrategy] = None
         self.topology_coordinator: Optional[TopologyCoordinator] = None
         self.privacy_manager: Optional[PrivacyManager] = None
+        # Store the previous global parameters for computing updates
+        self.previous_global_params: Optional[Dict[str, Any]] = None
 
         if not ray.is_initialized():
             ray.init(
@@ -77,9 +79,9 @@ class ClusterManager:
             )
 
     def distribute_data(
-        self,
-        data_partitions: List[List[int]],
-        metadata: Optional[Dict[str, Any]] = None,
+            self,
+            data_partitions: List[List[int]],
+            metadata: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         """
         Distribute data partitions to actors in round-robin fashion
@@ -104,10 +106,10 @@ class ClusterManager:
         return ray.get(results)
 
     def distribute_dataset(
-        self,
-        dataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute a dataset to all actors
@@ -124,8 +126,8 @@ class ClusterManager:
             )
 
     def distribute_model(
-        self,
-        model: ModelInterface,
+            self,
+            model: ModelInterface,
     ) -> None:
         """
         Distribute model structure and parameters to all actors
@@ -134,6 +136,9 @@ class ClusterManager:
         """
         # Get model parameters to distribute
         parameters = model.get_parameters()
+
+        # Store as initial global parameters
+        self.previous_global_params = {k: v.copy() for k, v in parameters.items()}
 
         # Set the model on each actor
         for actor in self.actors:
@@ -199,19 +204,16 @@ class ClusterManager:
             )
 
             if self.privacy_manager and hasattr(
-                self.privacy_manager, "setup_privacy_accounting"
+                    self.privacy_manager, "setup_privacy_accounting"
             ):
                 self.privacy_manager.setup_privacy_accounting(total_samples, batch_size)
 
     def aggregate_model_parameters(
-        self, weights: Optional[List[float]] = None
+            self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Aggregate model parameters from all actors using the configured aggregation strategy,
         with privacy guarantees if enabled.
-
-        :param weights: Optional list of weights for each actor's parameters
-        :return: Aggregated model parameters
         """
         if not self.aggregation_strategy:
             raise ValueError(
@@ -220,59 +222,98 @@ class ClusterManager:
 
         if not self.topology_coordinator:
             raise ValueError(
-                "Topology coordinator not initialized. Make sure create_actors and set_aggregation_strategy have been "
-                "called."
+                "Topology coordinator not initialized."
             )
 
-        # If privacy is enabled, get all client parameters first to allow adaptive clipping
+        # Collect parameters from all actors
+        all_params = []
+        for actor in self.actors:
+            params = ray.get(actor.get_model_parameters.remote())
+            all_params.append(params)
+
+        # If privacy is enabled
         if self.privacy_manager and self.privacy_manager.config.enabled:
-            # Collect parameters from all actors
-            all_params = []
-            for actor in self.actors:
-                params = ray.get(actor.get_model_parameters.remote())
-                all_params.append(params)
+            if self.privacy_manager.config.privacy_mode == PrivacyMode.CENTRAL:
+                # For Central DP, we need to work with updates
+                if self.previous_global_params is not None:
+                    # Compute updates
+                    all_updates = []
+                    for client_params in all_params:
+                        updates = {}
+                        for key in client_params.keys():
+                            updates[key] = client_params[key] - self.previous_global_params[key]
+                        all_updates.append(updates)
 
-            # Update adaptive clipping norms if needed
-            self.privacy_manager.update_clipping_norms(all_params)
+                    # Update clipping norms based on updates
+                    self.privacy_manager.update_clipping_norms(all_updates)
 
-            # For Local DP, have clients apply privacy before aggregation
-            if self.privacy_manager.config.privacy_mode == PrivacyMode.LOCAL:
-                print(
-                    f"Applying Local DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}"
-                )
-                # Apply privacy at the client level before sending to server
-                for i, actor in enumerate(self.actors):
-                    # Apply local differential privacy
-                    privatized_params = self.privacy_manager.privatize_parameters(
-                        all_params[i], is_client=True
+                    # Aggregate the updates
+                    aggregated_updates = self.topology_coordinator.coordinate_aggregation(
+                        weights=weights,
+                        pre_collected_params=all_updates
                     )
-                    # Update client with privatized parameters
-                    ray.get(actor.set_model_parameters.remote(privatized_params))
 
-            # Use the topology coordinator for aggregation
+                    # Apply privacy to aggregated updates
+                    print(f"Applying Central DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
+                    privatized_updates = self.privacy_manager.privatize_parameters(
+                        aggregated_updates, is_client=False
+                    )
+
+                    # Add back to global model
+                    aggregated_params = {}
+                    for key in privatized_updates.keys():
+                        aggregated_params[key] = self.previous_global_params[key] + privatized_updates[key]
+                else:
+                    # First round - no previous params, use parameters directly
+                    self.privacy_manager.update_clipping_norms(all_params)
+
+                    # Aggregate parameters
+                    aggregated_params = self.topology_coordinator.coordinate_aggregation(
+                        weights=weights,
+                        pre_collected_params=all_params
+                    )
+
+                    # Apply privacy
+                    print(f"Applying Central DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
+                    aggregated_params = self.privacy_manager.privatize_parameters(
+                        aggregated_params, is_client=False
+                    )
+
+            elif self.privacy_manager.config.privacy_mode == PrivacyMode.LOCAL:
+                # For Local DP, apply privacy before aggregation
+                print(f"Applying Local DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
+
+                # Update clipping norms
+                self.privacy_manager.update_clipping_norms(all_params)
+
+                # Apply privacy to each client's parameters
+                privatized_params = []
+                for params in all_params:
+                    private_p = self.privacy_manager.privatize_parameters(params, is_client=True)
+                    privatized_params.append(private_p)
+
+                # Aggregate privatized parameters
+                aggregated_params = self.topology_coordinator.coordinate_aggregation(
+                    weights=weights,
+                    pre_collected_params=privatized_params
+                )
+
+            # Update privacy budget
+            self.privacy_manager.update_privacy_budget()
+        else:
+            # No privacy, aggregate normally
             aggregated_params = self.topology_coordinator.coordinate_aggregation(
-                weights=weights
+                weights=weights,
+                pre_collected_params=all_params
             )
 
-            # For Central DP, apply privacy after aggregation
-            if self.privacy_manager.config.privacy_mode == PrivacyMode.CENTRAL:
-                print(
-                    f"Applying Central DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}"
-                )
-                aggregated_params = self.privacy_manager.privatize_parameters(
-                    aggregated_params, is_client=False
-                )
+        # Store for next round
+        self.previous_global_params = {k: v.copy() for k, v in aggregated_params.items()}
 
-            # Update privacy budget tracking
-            self.privacy_manager.update_privacy_budget()
-
-            return aggregated_params
-        else:
-            # No privacy, just use the topology coordinator
-            return self.topology_coordinator.coordinate_aggregation(weights=weights)
+        return aggregated_params
 
     def update_aggregation_strategy(
-        self, strategy: AggregationStrategy, topology_check: bool = True
+            self, strategy: AggregationStrategy, topology_check: bool = True
     ) -> None:
         """
         Update the aggregation strategy for the cluster
@@ -287,7 +328,7 @@ class ClusterManager:
             topology_type = self.topology_manager.config.topology_type
 
             if not TopologyCompatibilityManager.is_compatible(
-                strategy_class, topology_type
+                    strategy_class, topology_type
             ):
                 compatible_topologies = (
                     TopologyCompatibilityManager.get_compatible_topologies(
