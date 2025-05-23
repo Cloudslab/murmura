@@ -320,7 +320,7 @@ def main() -> None:
                 clipping_norm=clipping_norm,
                 per_layer_clipping=args.per_layer_clipping,
                 max_grad_norm=1.0,  # Default starting value for adaptive clipping
-                adaptive_clipping_quantile=0.9,  # Use 90th percentile for clipping
+                adaptive_clipping_quantile=0.8,  # Use 90th percentile for clipping
                 early_stopping=args.early_stopping,
                 adaptive_noise=adaptive_noise,  # New field for adaptive noise calibration
                 monitor_frequency=1,  # Monitor privacy budget every round

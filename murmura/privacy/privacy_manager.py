@@ -2,6 +2,8 @@ from typing import Dict, Any, List, Optional
 
 import numpy as np
 
+from murmura.aggregation.coordination_mode import CoordinationMode
+from murmura.network_management.topology import TopologyType
 from murmura.privacy.privacy_config import (
     PrivacyConfig,
     PrivacyMode,
@@ -410,6 +412,56 @@ class PrivacyManager:
         result["privacy_mode"] = self.config.privacy_mode.value
 
         return result
+
+    def is_compatible_with_topology(self, topology_type: TopologyType) -> bool:
+        """
+        Check if the privacy configuration is compatible with the topology.
+
+        Args:
+            topology_type: Topology type to check compatibility with
+
+        Returns:
+            True if compatible, False otherwise
+        """
+        if not self.config.enabled:
+            return True
+
+        if self.config.privacy_mode == PrivacyMode.CENTRAL:
+            # Central DP is only compatible with star/centralized topologies
+            return topology_type in [TopologyType.STAR, TopologyType.COMPLETE]
+
+        if self.config.privacy_mode == PrivacyMode.LOCAL:
+            # Local DP is compatible with all topologies
+            return True
+
+        # Default: not compatible
+        return False
+
+    def is_compatible_with_coordination_mode(
+            self, coordination_mode: CoordinationMode
+    ) -> bool:
+        """
+        Check if the privacy configuration is compatible with the coordination mode.
+
+        Args:
+            coordination_mode: Coordination mode to check compatibility with
+
+        Returns:
+            True if compatible, False otherwise
+        """
+        if not self.config.enabled:
+            return True
+
+        if self.config.privacy_mode == PrivacyMode.CENTRAL:
+            # Central DP requires centralized coordination
+            return coordination_mode == CoordinationMode.CENTRALIZED
+
+        if self.config.privacy_mode == PrivacyMode.LOCAL:
+            # Local DP is compatible with all coordination modes
+            return True
+
+        # Default: not compatible
+        return False
 
     def reset(self) -> None:
         """Reset the privacy manager state."""
