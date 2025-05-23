@@ -86,6 +86,7 @@ class LearningProcess(ABC):
         self.cluster_manager.config["batch_size"] = batch_size
         self.cluster_manager.config["total_samples"] = total_samples
         self.cluster_manager.config["epochs"] = self.config.get("epochs", 1)
+        self.cluster_manager.config['learning_rate'] = self.config.get('learning_rate', 0.001)
 
         # Create the actors first so privacy manager has client count
         print(
@@ -104,6 +105,7 @@ class LearningProcess(ABC):
             privacy_config.params["batch_size"] = batch_size
             privacy_config.params["num_actors"] = num_actors
             privacy_config.params["epochs"] = self.config.get("epochs", 1)
+            privacy_config.params["learning_rate"] = self.config.get('learning_rate', 0.001)
 
             # Initialize privacy manager
             self.cluster_manager.set_privacy_manager(privacy_config)

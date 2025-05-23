@@ -13,7 +13,7 @@ from murmura.privacy.privacy_config import (
 
 class PrivacyManager:
     """
-    Fixed manager for differential privacy operations that properly handles updates.
+    Fixed manager for differential privacy operations with smart initialization.
     """
 
     def __init__(self, privacy_config: PrivacyConfig):
@@ -26,15 +26,19 @@ class PrivacyManager:
         self.clipping_norm_history = []
         self.noise_multiplier_history = []
         self.parameter_norm_cache = {}
-        self.update_norm_history = []  # Track update norms over time
+        self.update_norm_history = []
 
+        # Initialize with temporary defaults - will be updated when we see model
         self._initialize_clipping_norms()
+
         self.current_round = 0
         self.privacy_spent = {"epsilon": 0.0, "delta": self.config.target_delta}
         self.total_samples = 0
         self.batch_size = 0
         self.num_actors = 1
         self.initial_setup_done = False
+        self.model_initialized = False
+        self.learning_rate = None
 
     def _create_mechanism(self) -> Optional[Any]:
         """Create the privacy mechanism based on configuration."""
@@ -56,22 +60,116 @@ class PrivacyManager:
         raise ValueError(f"Unsupported privacy mechanism: {self.config.mechanism_type}")
 
     def _initialize_clipping_norms(self) -> None:
-        """Initialize clipping norms."""
+        """Initialize clipping norms with temporary defaults."""
         if self.config.clipping_norm is not None:
             # Use provided explicit clipping norm
             self.clipping_norms = {"__default__": self.config.clipping_norm}
         else:
-            # For adaptive clipping, start with a conservative default
-            default_norm = 0.1  # Start small for updates
+            # Temporary default - will be updated when we see the model
+            default_norm = 0.1
             self.clipping_norms = {"__default__": default_norm}
             self.clipping_norm_history.append(default_norm)
+
+    def initialize_from_model(self, model_params: Dict[str, Any],
+                              learning_rate: float) -> None:
+        """
+        Initialize clipping norms based on actual model parameters.
+        This should be called after the model is distributed to actors.
+
+        Args:
+            model_params: Initial model parameters
+            learning_rate: Learning rate being used
+        """
+        if self.model_initialized or self.config.clipping_norm is not None:
+            return  # Already initialized or using fixed clipping
+
+        self.learning_rate = learning_rate
+
+        # Calculate smart initial clipping norm
+        initial_clip = self._estimate_initial_clipping_norm(
+            model_params, learning_rate
+        )
+
+        if self.config.per_layer_clipping:
+            # Initialize per-layer clipping based on layer sizes
+            new_norms = {}
+            for key, param in model_params.items():
+                # Estimate layer-specific clipping
+                layer_size = param.size
+                layer_norm = float(np.linalg.norm(param))
+
+                # Smaller layers might need different clipping
+                size_factor = np.sqrt(layer_size / 1000)  # Normalize to 1000 params
+                layer_clip = initial_clip * size_factor
+
+                # Ensure reasonable bounds
+                layer_clip = np.clip(layer_clip, 0.01, 2.0)
+                new_norms[key] = layer_clip
+
+            self.clipping_norms = new_norms
+            print(f"Initialized per-layer clipping norms based on model structure")
+        else:
+            # Global clipping
+            self.clipping_norms = {"__default__": initial_clip}
+            print(f"Initialized global clipping norm: {initial_clip:.6f}")
+
+        # Update mechanism if needed
+        if hasattr(self.privacy_mechanism, "max_grad_norm"):
+            self.privacy_mechanism.max_grad_norm = initial_clip
+
+        self.clipping_norm_history.append(initial_clip)
+        self.model_initialized = True
+
+    def _estimate_initial_clipping_norm(self, model_params: Dict[str, Any],
+                                        learning_rate: float) -> float:
+        """
+        Estimate a reasonable initial clipping norm based on model size and learning rate.
+
+        Args:
+            model_params: Initial model parameters
+            learning_rate: Learning rate being used
+
+        Returns:
+            Estimated initial clipping norm for updates
+        """
+        # Calculate model size and average parameter magnitude
+        total_params = 0
+        total_norm = 0.0
+
+        for param in model_params.values():
+            total_params += param.size
+            total_norm += float(np.sum(np.square(param)))
+
+        avg_param_magnitude = np.sqrt(total_norm / total_params)
+
+        # Estimate expected update magnitude
+        # Updates are typically learning_rate * gradient
+        # Gradients are often 1-10x parameter magnitude for neural nets
+        gradient_scale = 2.0  # Conservative estimate
+        expected_update_magnitude = learning_rate * avg_param_magnitude * gradient_scale
+
+        # For safety, multiply by a factor to avoid over-clipping initially
+        safety_factor = 5.0 if self.config.privacy_mode == PrivacyMode.CENTRAL else 3.0
+
+        initial_clip = expected_update_magnitude * safety_factor
+
+        # Ensure reasonable bounds for updates
+        initial_clip = np.clip(initial_clip, 0.01, 1.0)
+
+        print(f"Model statistics for clipping norm estimation:")
+        print(f"  Total parameters: {total_params:,}")
+        print(f"  Avg parameter magnitude: {avg_param_magnitude:.6f}")
+        print(f"  Learning rate: {learning_rate}")
+        print(f"  Expected update magnitude: {expected_update_magnitude:.6f}")
+        print(f"  Initial clipping norm: {initial_clip:.6f}")
+
+        return initial_clip
 
     def compute_adaptive_clipping_for_updates(
             self, updates_list: List[Dict[str, Any]]
     ) -> Dict[str, float]:
         """
         Compute adaptive clipping norms specifically for updates.
-        This is crucial for stable DP training.
         """
         if not updates_list:
             return self.clipping_norms
@@ -81,45 +179,89 @@ class PrivacyManager:
         per_layer_norms = {}
 
         for updates in updates_list:
+            # Skip if updates are all zeros
+            if all(np.allclose(update, 0) for update in updates.values()):
+                continue
+
             # Compute global norm of this client's update
             global_norm_sq = 0.0
             for key, update in updates.items():
                 if self.config.per_layer_clipping:
-                    # Track per-layer norms
                     if key not in per_layer_norms:
                         per_layer_norms[key] = []
                     layer_norm = float(np.linalg.norm(update.flatten()))
-                    per_layer_norms[key].append(layer_norm)
+                    if layer_norm > 0:
+                        per_layer_norms[key].append(layer_norm)
 
                 global_norm_sq += float(np.sum(np.square(update)))
 
             global_norm = np.sqrt(global_norm_sq)
-            all_norms.append(global_norm)
+            if global_norm > 0:
+                all_norms.append(global_norm)
 
-        # Use a percentile-based approach for robustness
+        # If we have no valid norms, keep current clipping
+        if not all_norms and not any(per_layer_norms.values()):
+            return self.clipping_norms
+
+        # Use a percentile-based approach
         target_quantile = self.config.adaptive_clipping_quantile
 
         if self.config.per_layer_clipping:
-            # Set per-layer clipping norms
             new_norms = {}
-            for key, norms in per_layer_norms.items():
-                if norms:
-                    # Use percentile of observed norms
-                    clip_value = float(np.quantile(norms, target_quantile))
-                    # Add some headroom to avoid clipping too many updates
-                    clip_value *= 1.5
-                    # But ensure it's not too small
-                    new_norms[key] = max(clip_value, 0.001)
+            for key in updates_list[0].keys():
+                if key in per_layer_norms and per_layer_norms[key]:
+                    observed_norm = float(np.quantile(per_layer_norms[key], target_quantile))
+
+                    if key in self.clipping_norms:
+                        # Smooth update with momentum
+                        momentum = 0.9
+                        old_value = self.clipping_norms[key]
+                        new_value = momentum * old_value + (1 - momentum) * observed_norm
+                    else:
+                        new_value = observed_norm * 0.5
+
+                    # Bounds based on expected update size
+                    if self.learning_rate:
+                        # Scale bounds with learning rate
+                        max_expected = self.learning_rate * 100  # Generous upper bound
+                        min_expected = self.learning_rate * 0.1   # Lower bound
+                    else:
+                        max_expected = 1.0
+                        min_expected = 0.001
+
+                    new_norms[key] = np.clip(new_value, min_expected, max_expected)
+                else:
+                    if key in self.clipping_norms:
+                        new_norms[key] = self.clipping_norms[key]
+                    else:
+                        new_norms[key] = 0.1
+
             return new_norms
         else:
             # Global clipping
             if all_norms:
-                clip_value = float(np.quantile(all_norms, target_quantile))
-                # Add some headroom
-                clip_value *= 1.5
-                # But ensure it's not too small
-                clip_value = max(clip_value, 0.001)
-                return {"__default__": clip_value}
+                observed_norm = float(np.quantile(all_norms, target_quantile))
+
+                if "__default__" in self.clipping_norms:
+                    momentum = 0.9
+                    old_value = self.clipping_norms["__default__"]
+                    new_value = momentum * old_value + (1 - momentum) * observed_norm
+                else:
+                    new_value = observed_norm * 0.5
+
+                # Learning rate aware bounds
+                if self.learning_rate:
+                    max_expected = self.learning_rate * 100
+                    min_expected = self.learning_rate * 0.1
+                else:
+                    max_expected = 1.0
+                    min_expected = 0.001
+
+                new_value = np.clip(new_value, min_expected, max_expected)
+
+                print(f"Adaptive clipping: {new_value:.6f} (from {self.clipping_norms.get('__default__', 0.1):.6f})")
+
+                return {"__default__": new_value}
 
         return self.clipping_norms
 

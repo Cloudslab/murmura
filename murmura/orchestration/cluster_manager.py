@@ -130,7 +130,8 @@ class ClusterManager:
             model: ModelInterface,
     ) -> None:
         """
-        Distribute model structure and parameters to all actors
+        Distribute model structure and parameters to all actors.
+        Also initializes privacy manager with model information.
 
         :param model: Model to distribute
         """
@@ -139,6 +140,15 @@ class ClusterManager:
 
         # Store as initial global parameters
         self.previous_global_params = {k: v.copy() for k, v in parameters.items()}
+
+        # Initialize privacy manager with model information if privacy is enabled
+        if hasattr(self, 'privacy_manager') and self.privacy_manager:
+            if hasattr(self.privacy_manager, 'initialize_from_model'):
+                # Get learning rate from config
+                learning_rate = self.config.get('learning_rate', 0.001)
+
+                print("Initializing privacy manager with model information...")
+                self.privacy_manager.initialize_from_model(parameters, learning_rate)
 
         # Set the model on each actor
         for actor in self.actors:
@@ -236,6 +246,95 @@ class ClusterManager:
             if self.privacy_manager.config.privacy_mode == PrivacyMode.CENTRAL:
                 # For Central DP, we need to work with updates
                 if self.previous_global_params is not None:
+                    # Compute updates from each client
+                    all_updates = []
+                    for client_params in all_params:
+                        updates = {}
+                        for key in client_params.keys():
+                            updates[key] = client_params[key] - self.previous_global_params[key]
+                        all_updates.append(updates)
+
+                    # CRITICAL: Update clipping norms based on the RAW updates before clipping
+                    self.privacy_manager.update_clipping_norms(all_updates)
+
+                    # Clip each client's update individually
+                    clipped_updates = []
+                    for updates in all_updates:
+                        clipped = self.privacy_manager.privacy_mechanism.clip_parameters(
+                            updates, self.privacy_manager.clipping_norms
+                        )
+                        clipped_updates.append(clipped)
+
+                    # Aggregate the clipped updates (this computes the average)
+                    aggregated_updates = self.topology_coordinator.coordinate_aggregation(
+                        weights=weights,
+                        pre_collected_params=clipped_updates
+                    )
+
+                    # CRITICAL FIX: For Central DP, the sensitivity is C/n where:
+                    # C = clipping norm, n = number of clients
+                    # The noise should be calibrated for this sensitivity
+                    num_clients = len(self.actors)
+
+                    # Create adjusted clipping norms for the aggregated update
+                    # This accounts for the averaging in aggregation
+                    aggregated_clipping_norms = {}
+                    for key, norm in self.privacy_manager.clipping_norms.items():
+                        # After averaging n clipped updates, the max norm is C/n
+                        aggregated_clipping_norms[key] = norm / num_clients
+
+                    print(f"Applying Central DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
+                    print(f"Number of clients: {num_clients}")
+                    if "__default__" in aggregated_clipping_norms:
+                        print(f"Aggregated clipping norm: {aggregated_clipping_norms['__default__']:.6f}")
+
+                    # Add noise scaled to the aggregated sensitivity
+                    privatized_updates = self.privacy_manager.privacy_mechanism.add_noise(
+                        aggregated_updates, aggregated_clipping_norms
+                    )
+
+                    # Add privatized updates back to global model
+                    aggregated_params = {}
+                    for key in privatized_updates.keys():
+                        aggregated_params[key] = self.previous_global_params[key] + privatized_updates[key]
+                else:
+                    # First round - no previous params, work with full parameters
+                    # This is less ideal but necessary for the first round
+                    print("First round - using full parameter clipping and aggregation")
+
+                    # Update clipping norms based on full parameters
+                    self.privacy_manager.update_clipping_norms(all_params)
+
+                    # Clip parameters individually
+                    clipped_params = []
+                    for params in all_params:
+                        clipped = self.privacy_manager.privacy_mechanism.clip_parameters(
+                            params, self.privacy_manager.clipping_norms
+                        )
+                        clipped_params.append(clipped)
+
+                    # Aggregate clipped parameters
+                    aggregated_params = self.topology_coordinator.coordinate_aggregation(
+                        weights=weights,
+                        pre_collected_params=clipped_params
+                    )
+
+                    # Add noise with sensitivity adjusted for aggregation
+                    num_clients = len(self.actors)
+                    aggregated_clipping_norms = {}
+                    for key, norm in self.privacy_manager.clipping_norms.items():
+                        aggregated_clipping_norms[key] = norm / num_clients
+
+                    aggregated_params = self.privacy_manager.privacy_mechanism.add_noise(
+                        aggregated_params, aggregated_clipping_norms
+                    )
+
+            elif self.privacy_manager.config.privacy_mode == PrivacyMode.LOCAL:
+                # For Local DP, each client adds noise independently
+                print(f"Applying Local DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
+
+                # For local DP, we should work with updates when possible
+                if self.previous_global_params is not None:
                     # Compute updates
                     all_updates = []
                     for client_params in all_params:
@@ -247,56 +346,49 @@ class ClusterManager:
                     # Update clipping norms based on updates
                     self.privacy_manager.update_clipping_norms(all_updates)
 
-                    # Aggregate the updates
+                    # Each client clips and adds noise to their update
+                    privatized_updates = []
+                    for updates in all_updates:
+                        # Clip first
+                        clipped = self.privacy_manager.privacy_mechanism.clip_parameters(
+                            updates, self.privacy_manager.clipping_norms
+                        )
+                        # Then add noise (each client adds full noise)
+                        private_u = self.privacy_manager.privacy_mechanism.add_noise(
+                            clipped, self.privacy_manager.clipping_norms
+                        )
+                        privatized_updates.append(private_u)
+
+                    # Aggregate privatized updates
                     aggregated_updates = self.topology_coordinator.coordinate_aggregation(
                         weights=weights,
-                        pre_collected_params=all_updates
+                        pre_collected_params=privatized_updates
                     )
 
-                    # Apply privacy to aggregated updates
-                    print(f"Applying Central DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
-                    privatized_updates = self.privacy_manager.privatize_parameters(
-                        aggregated_updates, is_client=False
-                    )
-
-                    # Add back to global model
+                    # Add back to get parameters
                     aggregated_params = {}
-                    for key in privatized_updates.keys():
-                        aggregated_params[key] = self.previous_global_params[key] + privatized_updates[key]
+                    for key in aggregated_updates.keys():
+                        aggregated_params[key] = self.previous_global_params[key] + aggregated_updates[key]
                 else:
-                    # First round - no previous params, use parameters directly
+                    # First round - work with full parameters
                     self.privacy_manager.update_clipping_norms(all_params)
 
-                    # Aggregate parameters
+                    # Apply privacy to each client's parameters
+                    privatized_params = []
+                    for params in all_params:
+                        clipped = self.privacy_manager.privacy_mechanism.clip_parameters(
+                            params, self.privacy_manager.clipping_norms
+                        )
+                        private_p = self.privacy_manager.privacy_mechanism.add_noise(
+                            clipped, self.privacy_manager.clipping_norms
+                        )
+                        privatized_params.append(private_p)
+
+                    # Aggregate privatized parameters
                     aggregated_params = self.topology_coordinator.coordinate_aggregation(
                         weights=weights,
-                        pre_collected_params=all_params
+                        pre_collected_params=privatized_params
                     )
-
-                    # Apply privacy
-                    print(f"Applying Central DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
-                    aggregated_params = self.privacy_manager.privatize_parameters(
-                        aggregated_params, is_client=False
-                    )
-
-            elif self.privacy_manager.config.privacy_mode == PrivacyMode.LOCAL:
-                # For Local DP, apply privacy before aggregation
-                print(f"Applying Local DP with noise multiplier: {self.privacy_manager.config.noise_multiplier:.4f}")
-
-                # Update clipping norms
-                self.privacy_manager.update_clipping_norms(all_params)
-
-                # Apply privacy to each client's parameters
-                privatized_params = []
-                for params in all_params:
-                    private_p = self.privacy_manager.privatize_parameters(params, is_client=True)
-                    privatized_params.append(private_p)
-
-                # Aggregate privatized parameters
-                aggregated_params = self.topology_coordinator.coordinate_aggregation(
-                    weights=weights,
-                    pre_collected_params=privatized_params
-                )
 
             # Update privacy budget
             self.privacy_manager.update_privacy_budget()

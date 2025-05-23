@@ -312,7 +312,7 @@ class GaussianMechanism(PrivacyMechanism):
             max_iterations: int = 50,
     ) -> float:
         """
-        Calibrate noise multiplier to achieve target epsilon.
+        Calibrate noise multiplier to achieve target epsilon with better bounds.
         """
         if iterations <= 0 or batch_size <= 0 or total_samples <= 0:
             print("Invalid parameters for noise calibration")
@@ -327,39 +327,49 @@ class GaussianMechanism(PrivacyMechanism):
             )
             return result["epsilon"]
 
-        # Binary search for the right noise multiplier
-        # Start with reasonable bounds based on target epsilon
+        # CRITICAL FIX: Better initial bounds based on target epsilon
+        # These bounds are calibrated for typical federated learning scenarios
         if target_epsilon < 1.0:
-            lower, upper = 2.0, 20.0
-        elif target_epsilon < 3.0:
-            lower, upper = 1.0, 10.0
+            lower, upper = 5.0, 50.0  # Very high noise for strong privacy
+        elif target_epsilon < 5.0:
+            lower, upper = 2.0, 20.0  # Moderate noise
+        elif target_epsilon < 10.0:
+            lower, upper = 1.0, 10.0  # Lower noise for better utility
+        elif target_epsilon < 50.0:
+            lower, upper = 0.5, 5.0   # Much lower noise for high epsilon
         else:
-            lower, upper = 0.5, 5.0
+            lower, upper = 0.1, 2.0   # Minimal noise for very high epsilon
 
         # Ensure bounds bracket the solution
         eps_lower = compute_epsilon_for_sigma(lower)
         eps_upper = compute_epsilon_for_sigma(upper)
 
         # Adjust bounds if necessary
-        while eps_lower < target_epsilon:
+        while eps_lower < target_epsilon and lower > 0.01:
             lower /= 2
             eps_lower = compute_epsilon_for_sigma(lower)
-            if lower < 0.01:
-                break
 
-        while eps_upper > target_epsilon:
+        while eps_upper > target_epsilon and upper < 100:
             upper *= 2
             eps_upper = compute_epsilon_for_sigma(upper)
-            if upper > 100:
-                break
 
-        # Binary search
+        # Binary search with better convergence
+        best_sigma = (lower + upper) / 2
+        best_epsilon_diff = float('inf')
+
         for i in range(max_iterations):
             mid = (lower + upper) / 2
             eps_mid = compute_epsilon_for_sigma(mid)
 
-            if abs(eps_mid - target_epsilon) < tolerance:
+            # Track best result
+            epsilon_diff = abs(eps_mid - target_epsilon)
+            if epsilon_diff < best_epsilon_diff:
+                best_epsilon_diff = epsilon_diff
+                best_sigma = mid
+
+            if epsilon_diff < tolerance:
                 print(f"Found noise multiplier: {mid:.4f} for target ε={target_epsilon}")
+                print(f"  Actual ε: {eps_mid:.4f} (difference: {epsilon_diff:.4f})")
                 return mid
 
             if eps_mid > target_epsilon:
@@ -369,7 +379,8 @@ class GaussianMechanism(PrivacyMechanism):
                 # Need less noise
                 upper = mid
 
-        # Return the final estimate
-        final = (lower + upper) / 2
-        print(f"Noise calibration: σ={final:.4f} for target ε={target_epsilon}")
-        return final
+        # Return the best estimate found
+        final_eps = compute_epsilon_for_sigma(best_sigma)
+        print(f"Noise calibration: σ={best_sigma:.4f} for target ε={target_epsilon}")
+        print(f"  Achieved ε: {final_eps:.4f} (target: {target_epsilon})")
+        return best_sigma
