@@ -174,6 +174,9 @@ class VirtualClientActor:
             metadata = dataset_info["metadata"]
             partitions = dataset_info["partitions"]
 
+            # Import MDataset here to avoid UnboundLocalError
+            from murmura.data_processing.dataset import MDataset
+
             # Reconstruct the dataset
             reconstructed_dataset = MDataset.reconstruct_from_metadata(metadata, partitions)
 
@@ -192,13 +195,22 @@ class VirtualClientActor:
         except Exception as e:
             self.logger.error(f"Failed to reconstruct dataset: {e}")
             # Create a fallback empty dataset to prevent crashes
-            from murmura.data_processing.dataset import MDataset, DatasetSource
-            from datasets import DatasetDict, Dataset
+            try:
+                from murmura.data_processing.dataset import MDataset
+                from datasets import DatasetDict, Dataset
 
-            empty_splits = DatasetDict({"train": Dataset.from_dict({"dummy": [0]})})
-            self.mdataset = MDataset(empty_splits)
-            self.feature_columns = feature_columns
-            self.label_column = label_column
+                empty_splits = DatasetDict({"train": Dataset.from_dict({"dummy": [0]})})
+                self.mdataset = MDataset(empty_splits)
+                self.feature_columns = feature_columns
+                self.label_column = label_column
+
+                self.logger.warning("Created fallback empty dataset due to reconstruction failure")
+
+            except Exception as fallback_error:
+                self.logger.error(f"Even fallback dataset creation failed: {fallback_error}")
+                self.mdataset = None
+                self.feature_columns = feature_columns
+                self.label_column = label_column
 
             raise RuntimeError(f"Dataset reconstruction failed on node {self.node_info['node_id']}: {e}")
 

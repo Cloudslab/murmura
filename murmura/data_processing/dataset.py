@@ -225,7 +225,11 @@ class MDataset:
         try:
             if split is None:
                 raise ValueError("split is not specified")
-            dataset = load_dataset(dataset_name, split=split, **kwargs)
+
+            # Remove dataset_name from kwargs if it exists to avoid duplicate parameter error
+            load_kwargs = {k: v for k, v in kwargs.items() if k != 'dataset_name'}
+
+            dataset = load_dataset(dataset_name, split=split, **load_kwargs)
             if isinstance(dataset, list) and isinstance(split, list):
                 dataset_dict = DatasetDict()
                 for i, s in enumerate(split):
@@ -239,19 +243,21 @@ class MDataset:
                 "source": DatasetSource.HUGGING_FACE,
                 "dataset_name": dataset_name,
                 "split": split,
-                "kwargs": kwargs
+                "kwargs": load_kwargs  # Use filtered kwargs
             }
 
             return result
         except ValueError as e:
             if "split" in str(e):
-                full_dataset = load_dataset(dataset_name, **kwargs)
+                # Remove dataset_name from kwargs if it exists
+                load_kwargs = {k: v for k, v in kwargs.items() if k != 'dataset_name'}
+                full_dataset = load_dataset(dataset_name, **load_kwargs)
                 result = cls(full_dataset)
                 result._dataset_metadata = {
                     "source": DatasetSource.HUGGING_FACE,
                     "dataset_name": dataset_name,
                     "split": None,
-                    "kwargs": kwargs
+                    "kwargs": load_kwargs  # Use filtered kwargs
                 }
                 return result
             raise
@@ -384,18 +390,21 @@ class MDataset:
                 split = metadata["split"]
                 kwargs = metadata.get("kwargs", {})
 
+                # Ensure no duplicate dataset_name parameter
+                load_kwargs = {k: v for k, v in kwargs.items() if k != 'dataset_name'}
+
                 if split is None:
-                    full_dataset = load_dataset(dataset_name, **kwargs)
-                    dataset = MDataset(full_dataset, metadata)
+                    full_dataset = load_dataset(dataset_name, **load_kwargs)
+                    dataset = cls(full_dataset, metadata)
                 else:
-                    hf_dataset = load_dataset(dataset_name, split=split, **kwargs)
+                    hf_dataset = load_dataset(dataset_name, split=split, **load_kwargs)
                     if isinstance(hf_dataset, list) and isinstance(split, list):
                         dataset_dict = DatasetDict()
                         for i, s in enumerate(split):
                             dataset_dict[s] = hf_dataset[i]
-                        dataset = MDataset(dataset_dict, metadata)
+                        dataset = cls(dataset_dict, metadata)
                     else:
-                        dataset = MDataset(DatasetDict({split or "train": hf_dataset}), metadata)
+                        dataset = cls(DatasetDict({split or "train": hf_dataset}), metadata)
 
                 # Restore partitions
                 dataset._partitions = partitions
@@ -413,7 +422,7 @@ class MDataset:
             logger.error(f"Failed to reconstruct dataset on remote node: {e}")
             # Fallback: create empty dataset
             empty_splits = DatasetDict()
-            return MDataset(empty_splits, metadata)
+            return cls(empty_splits, metadata)
 
     def __setstate__(self, state):
         """Custom deserialization state restoration"""
