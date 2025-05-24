@@ -288,13 +288,13 @@ def main() -> None:
 
         logger.info("=== Loading MNIST Dataset ===")
         # Load MNIST Dataset for training and testing
-        train_dataset = MDataset.load(
+        train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=config.dataset_name,
             split=config.split,
         )
 
-        test_dataset = MDataset.load(
+        test_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=config.dataset_name,
             split=args.test_split,

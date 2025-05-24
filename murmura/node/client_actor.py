@@ -151,6 +151,57 @@ class VirtualClientActor:
 
         self.logger.debug(f"Dataset set with features: {feature_columns}, label: {label_column}")
 
+    def reconstruct_and_set_dataset(
+            self,
+            dataset_info: Dict[str, Any],
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
+    ) -> None:
+        """
+        Reconstruct dataset from metadata on this node and set it.
+
+        This method is used in multi-node environments to avoid transferring
+        large dataset files across the network.
+
+        :param dataset_info: Dataset metadata and reconstruction information
+        :param feature_columns: List of feature column names
+        :param label_column: Name of the label column
+        """
+        try:
+            self.logger.info("Reconstructing dataset from metadata on this node...")
+
+            # Extract metadata
+            metadata = dataset_info["metadata"]
+            partitions = dataset_info["partitions"]
+
+            # Reconstruct the dataset
+            reconstructed_dataset = MDataset.reconstruct_from_metadata(metadata, partitions)
+
+            # Set the reconstructed dataset
+            self.mdataset = reconstructed_dataset
+            if feature_columns:
+                self.feature_columns = feature_columns
+            if label_column:
+                self.label_column = label_column
+
+            self.logger.info(
+                f"Dataset reconstructed successfully with {len(reconstructed_dataset.available_splits)} splits"
+            )
+            self.logger.debug(f"Features: {feature_columns}, Label: {label_column}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to reconstruct dataset: {e}")
+            # Create a fallback empty dataset to prevent crashes
+            from murmura.data_processing.dataset import MDataset, DatasetSource
+            from datasets import DatasetDict, Dataset
+
+            empty_splits = DatasetDict({"train": Dataset.from_dict({"dummy": [0]})})
+            self.mdataset = MDataset(empty_splits)
+            self.feature_columns = feature_columns
+            self.label_column = label_column
+
+            raise RuntimeError(f"Dataset reconstruction failed on node {self.node_info['node_id']}: {e}")
+
     def set_model(self, model: ModelInterface) -> None:
         """
         Set the model for the client actor with proper device handling.

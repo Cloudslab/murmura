@@ -10,7 +10,7 @@ from murmura.aggregation.aggregation_config import (
 )
 from murmura.aggregation.strategy_factory import AggregationStrategyFactory
 from murmura.aggregation.strategy_interface import AggregationStrategy
-from murmura.data_processing.dataset import MDataset
+from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.model.model_interface import ModelInterface
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.network_management.topology_compatibility import (
@@ -308,7 +308,91 @@ class ClusterManager:
             feature_columns: Optional[List[str]] = None,
             label_column: Optional[str] = None,
     ) -> None:
-        """Distribute dataset to all actors with batched processing"""
+        """
+        Distribute dataset to all actors with smart multi-node handling.
+
+        This method automatically detects multi-node clusters and handles dataset
+        distribution appropriately:
+        - Single node: Direct dataset distribution
+        - Multi-node: Converts datasets to serializable format or uses reconstruction
+        """
+        # Check if we're in a multi-node environment
+        is_multinode = self.cluster_info.get("is_multinode", False)
+
+        if is_multinode:
+            logging.getLogger("murmura").info("Multi-node cluster detected - using smart dataset distribution")
+
+            # Check if dataset is already multi-node compatible
+            if not dataset.is_serializable_for_multinode():
+                logging.getLogger("murmura").info("Converting dataset for multi-node compatibility...")
+                dataset = dataset.prepare_for_multinode_distribution()
+
+            # For HuggingFace datasets, we'll use the reconstruction approach
+            if dataset.dataset_metadata.get("source") == DatasetSource.HUGGING_FACE:
+                logging.getLogger("murmura").info("Using HuggingFace dataset reconstruction for multi-node distribution")
+                self._distribute_hf_dataset_metadata(dataset, feature_columns, label_column)
+            else:
+                logging.getLogger("murmura").info("Using direct serialization for multi-node distribution")
+                self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+        else:
+            logging.getLogger("murmura").info("Single-node cluster detected - using direct dataset distribution")
+            self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+
+    def _distribute_hf_dataset_metadata(
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
+    ) -> None:
+        """
+        Distribute HuggingFace dataset using metadata reconstruction approach.
+        This avoids serializing large memory-mapped files across the network.
+        """
+        batch_size = 20
+
+        # Create a lightweight metadata package
+        dataset_metadata = {
+            "metadata": dataset.dataset_metadata,
+            "partitions": dataset.partitions,
+            "available_splits": dataset.available_splits
+        }
+
+        for i in range(0, len(self.actors), batch_size):
+            batch_actors = self.actors[i:i + batch_size]
+            batch_tasks = []
+
+            for actor in batch_actors:
+                # Send reconstruction instruction instead of full dataset
+                batch_tasks.append(
+                    actor.reconstruct_and_set_dataset.remote(
+                        dataset_metadata,
+                        feature_columns=feature_columns,
+                        label_column=label_column
+                    )
+                )
+
+            try:
+                ray.get(batch_tasks, timeout=120)  # Longer timeout for reconstruction
+                logging.getLogger("murmura").info(
+                    f"Distributed dataset metadata to actors {i+1}-{min(i+batch_size, len(self.actors))}"
+                )
+            except Exception as e:
+                logging.getLogger("murmura").error(f"Failed to distribute dataset metadata batch {i//batch_size}: {e}")
+                # Fallback to direct distribution
+                logging.getLogger("murmura").info("Falling back to direct dataset distribution...")
+                self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+                return
+
+    def _distribute_serializable_dataset(
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
+    ) -> None:
+        """
+        Distribute dataset using direct serialization (original method).
+        Used for single-node clusters or already-serializable datasets.
+        """
         batch_size = 20
 
         for i in range(0, len(self.actors), batch_size):
