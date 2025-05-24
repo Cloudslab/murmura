@@ -9,6 +9,46 @@ import torch
 from murmura.data_processing.dataset import MDataset
 from murmura.model.model_interface import ModelInterface
 
+def get_node_id() -> str:
+    """Get the node ID this actor is running on - standalone function for serialization"""
+    try:
+        # Use the new Ray API
+        return ray.get_runtime_context().get_node_id()[:8]  # Shortened for readability
+    except Exception:
+        return "unknown"
+
+
+def get_node_info() -> Dict[str, Any]:
+    """Get detailed node information - standalone function for serialization"""
+    try:
+        # Use new Ray API methods
+        runtime_context = ray.get_runtime_context()
+        node_id = runtime_context.get_node_id()[:8]
+
+        # Get worker info safely
+        worker_id = "unknown"
+        try:
+            # Try to get worker ID if available
+            worker_info = ray.runtime_context.get_runtime_context().get_worker_id()
+            if worker_info:
+                worker_id = str(worker_info)[:8]
+        except (AttributeError, Exception):
+            pass
+
+        return {
+            "node_id": node_id,
+            "worker_id": worker_id,
+            "hostname": os.environ.get("HOSTNAME", "unknown"),
+            "ip": os.environ.get("RAY_NODE_IP", "unknown")
+        }
+    except Exception as e:
+        return {
+            "node_id": "unknown",
+            "worker_id": "unknown",
+            "hostname": "unknown",
+            "ip": "unknown",
+            "error": str(e)
+        }
 
 @ray.remote
 class VirtualClientActor:
@@ -37,8 +77,8 @@ class VirtualClientActor:
             else 0,
         }
 
-        # Get node information
-        self.node_info = self._get_node_info()
+        # Get node information using standalone function
+        self.node_info = get_node_info()
 
         self.logger.info(
             f"Actor {client_id} initialized on node {self.node_info['node_id']} "
@@ -52,9 +92,12 @@ class VirtualClientActor:
 
         # Don't add handlers if they already exist (avoid duplication)
         if not self.logger.handlers:
+            # Get current node ID for logging
+            current_node_id = get_node_id()
+
             # Create formatter that includes node and actor information
             formatter = logging.Formatter(
-                f"%(asctime)s - %(name)s - [Node:{self._get_node_id()}] - [Actor:{self.client_id}] - %(levelname)s - %(message)s"
+                f'%(asctime)s - %(name)s - [Node:{current_node_id}] - [Actor:{self.client_id}] - %(levelname)s - %(message)s'
             )
 
             # Add console handler
@@ -66,45 +109,12 @@ class VirtualClientActor:
             log_level = os.environ.get("MURMURA_LOG_LEVEL", "INFO")
             self.logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
 
-    @staticmethod
-    def _get_node_id() -> str:
-        """Get the node ID this actor is running on"""
-        try:
-            return ray.get_runtime_context().node_id.hex()[
-                :8
-            ]  # Shortened for readability
-        except:
-            return "unknown"
-
-    def _get_node_info(self) -> Dict[str, Any]:
-        """Get detailed node information"""
-        try:
-            node_id = self._get_node_id()
-            worker_id = ray.get_runtime_context().worker_id.hex()[:8]
-
-            return {
-                "node_id": node_id,
-                "worker_id": worker_id,
-                "actor_id": self.client_id,
-                "hostname": os.environ.get("HOSTNAME", "unknown"),
-                "ip": os.environ.get("RAY_NODE_IP", "unknown"),
-            }
-        except Exception as e:
-            self.logger.warning(f"Could not get node info: {e}")
-            return {
-                "node_id": "unknown",
-                "worker_id": "unknown",
-                "actor_id": self.client_id,
-                "hostname": "unknown",
-                "ip": "unknown",
-            }
-
     def get_node_info(self) -> Dict[str, Any]:
         """Return node information for this actor"""
         return self.node_info
 
     def receive_data(
-        self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
+            self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Receive a data partition and metadata dictionary.
@@ -121,10 +131,10 @@ class VirtualClientActor:
         return message
 
     def set_dataset(
-        self,
-        mdataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            mdataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Set the dataset for the client actor.
@@ -139,9 +149,7 @@ class VirtualClientActor:
         if label_column:
             self.label_column = label_column
 
-        self.logger.debug(
-            f"Dataset set with features: {feature_columns}, label: {label_column}"
-        )
+        self.logger.debug(f"Dataset set with features: {feature_columns}, label: {label_column}")
 
     def set_model(self, model: ModelInterface) -> None:
         """
@@ -152,12 +160,10 @@ class VirtualClientActor:
         self.model = model
 
         # Ensure model uses proper device detection in multi-node environment
-        if hasattr(self.model, "detect_and_set_device"):
+        if hasattr(self.model, 'detect_and_set_device'):
             self.model.detect_and_set_device()
 
-        self.logger.debug(
-            f"Model set on device: {getattr(self.model, 'device', 'unknown')}"
-        )
+        self.logger.debug(f"Model set on device: {getattr(self.model, 'device', 'unknown')}")
 
     def get_data_info(self) -> Dict[str, Any]:
         """
@@ -170,7 +176,7 @@ class VirtualClientActor:
             "has_model": self.model is not None,
             "has_dataset": self.mdataset is not None,
             "node_info": self.node_info,
-            "device_info": self.device_info,
+            "device_info": self.device_info
         }
 
         self.logger.debug(f"Data info requested: {info['data_size']} samples")
@@ -183,10 +189,10 @@ class VirtualClientActor:
         :return: Tuple of features and labels as numpy arrays
         """
         if (
-            self.mdataset is None
-            or self.data_partition is None
-            or self.feature_columns is None
-            or self.label_column is None
+                self.mdataset is None
+                or self.data_partition is None
+                or self.feature_columns is None
+                or self.label_column is None
         ):
             raise ValueError(
                 "Dataset, data partition, feature columns, or label column not set"
@@ -217,9 +223,7 @@ class VirtualClientActor:
             raise ValueError("Model is not set")
 
         try:
-            self.logger.debug(
-                f"Starting training with {len(self.data_partition)} samples"
-            )
+            self.logger.debug(f"Starting training with {len(self.data_partition)} samples")
 
             # Extract callback if provided
             client_id = self.client_id
@@ -240,7 +244,7 @@ class VirtualClientActor:
             features, labels = self._get_partition_data()
 
             # Ensure model is on correct device for multi-node environment
-            if hasattr(self.model, "detect_and_set_device"):
+            if hasattr(self.model, 'detect_and_set_device'):
                 self.model.detect_and_set_device()
 
             result = self.model.train(features, labels, **kwargs)
@@ -267,14 +271,12 @@ class VirtualClientActor:
             raise ValueError("Model is not set")
 
         try:
-            self.logger.debug(
-                f"Starting evaluation with {len(self.data_partition)} samples"
-            )
+            self.logger.debug(f"Starting evaluation with {len(self.data_partition)} samples")
 
             features, labels = self._get_partition_data()
 
             # Ensure model is on correct device
-            if hasattr(self.model, "detect_and_set_device"):
+            if hasattr(self.model, 'detect_and_set_device'):
                 self.model.detect_and_set_device()
 
             result = self.model.evaluate(features, labels, **kwargs)
@@ -316,7 +318,7 @@ class VirtualClientActor:
                 features = data
 
             # Ensure model is on correct device
-            if hasattr(self.model, "detect_and_set_device"):
+            if hasattr(self.model, 'detect_and_set_device'):
                 self.model.detect_and_set_device()
 
             result = self.model.predict(features, **kwargs)
@@ -402,25 +404,21 @@ class VirtualClientActor:
             # Memory usage
             memory_info = {}
             if torch.cuda.is_available():
-                memory_info.update(
-                    {
-                        "gpu_memory_allocated": torch.cuda.memory_allocated(),
-                        "gpu_memory_cached": torch.cuda.memory_reserved(),
-                        "gpu_max_memory_allocated": torch.cuda.max_memory_allocated(),
-                    }
-                )
+                memory_info.update({
+                    "gpu_memory_allocated": torch.cuda.memory_allocated(),
+                    "gpu_memory_cached": torch.cuda.memory_reserved(),
+                    "gpu_max_memory_allocated": torch.cuda.max_memory_allocated()
+                })
 
             return {
                 "client_id": self.client_id,
                 "node_info": self.node_info,
                 "device_info": self.device_info,
                 "memory_info": memory_info,
-                "data_partition_size": len(self.data_partition)
-                if self.data_partition
-                else 0,
+                "data_partition_size": len(self.data_partition) if self.data_partition else 0,
                 "has_model": self.model is not None,
                 "has_dataset": self.mdataset is not None,
-                "num_neighbours": len(self.neighbours),
+                "num_neighbours": len(self.neighbours)
             }
         except Exception as e:
             self.logger.error(f"Failed to get system info: {e}")
@@ -433,26 +431,29 @@ class VirtualClientActor:
         :return: Health status dictionary
         """
         try:
+            # Get current timestamp using Ray utility
+            try:
+                timestamp = ray.util.get_current_time_ms()
+            except:
+                import time
+                timestamp = int(time.time() * 1000)
+
             status = {
                 "client_id": self.client_id,
                 "node_id": self.node_info["node_id"],
                 "status": "healthy",
-                "timestamp": ray.util.get_current_time_ms(),
-                "checks": {},
+                "timestamp": timestamp,
+                "checks": {}
             }
 
             # Check model
             status["checks"]["model"] = "ok" if self.model is not None else "missing"
 
             # Check dataset
-            status["checks"]["dataset"] = (
-                "ok" if self.mdataset is not None else "missing"
-            )
+            status["checks"]["dataset"] = "ok" if self.mdataset is not None else "missing"
 
             # Check data partition
-            status["checks"]["data_partition"] = (
-                "ok" if self.data_partition is not None else "missing"
-            )
+            status["checks"]["data_partition"] = "ok" if self.data_partition is not None else "missing"
 
             # Check GPU if available
             if torch.cuda.is_available():
@@ -476,5 +477,5 @@ class VirtualClientActor:
                 "client_id": self.client_id,
                 "status": "error",
                 "error": str(e),
-                "timestamp": ray.util.get_current_time_ms(),
+                "timestamp": 0
             }
