@@ -1,5 +1,6 @@
 import argparse
 import os
+import logging
 import torch
 import torch.nn as nn
 
@@ -9,15 +10,16 @@ from murmura.aggregation.aggregation_config import (
 )
 from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
 from murmura.network_management.topology import TopologyConfig, TopologyType
-from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
+from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 from murmura.orchestration.learning_process.decentralized_learning_process import (
     DecentralizedLearningProcess,
 )
 from murmura.network_management.topology_compatibility import (
     TopologyCompatibilityManager,
 )
+from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
 
@@ -51,13 +53,29 @@ class MNISTModel(PyTorchModel):
         return x
 
 
+def setup_logging(log_level: str = "INFO") -> None:
+    """Set up logging configuration"""
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler("decentralized_mnist.log"),
+        ],
+    )
+
+
 def main() -> None:
     """
-    Orchestrate Decentralized Learning Process
+    Enhanced Decentralized Learning Orchestrator with Multi-Node Support
     """
-    parser = argparse.ArgumentParser(description="Decentralized Learning Orchestrator")
+    parser = argparse.ArgumentParser(
+        description="Enhanced Decentralized Learning Orchestrator with Multi-Node Support"
+    )
+
+    # Core learning arguments
     parser.add_argument(
-        "--num_actors", type=int, default=10, help="Number of virtual clients"
+        "--num_actors", type=int, default=10, help="Total number of virtual clients"
     )
     parser.add_argument(
         "--partition_strategy",
@@ -94,13 +112,13 @@ def main() -> None:
         help="Mixing parameter for gossip_avg strategy (0.5 = equal mixing)",
     )
 
-    # Topology arguments
+    # Topology arguments (only decentralized-compatible topologies)
     parser.add_argument(
         "--topology",
         type=str,
         default="ring",  # Default to ring for decentralized learning
-        choices=["star", "ring", "complete", "line", "custom"],
-        help="Network topology between clients",
+        choices=["ring", "complete", "line", "custom"],
+        help="Network topology between clients (decentralized-compatible only)",
     )
 
     # Training arguments
@@ -119,6 +137,76 @@ def main() -> None:
         type=str,
         default="mnist_decentralized_model.pt",
         help="Path to save the final model",
+    )
+
+    # Multi-node Ray cluster arguments
+    parser.add_argument(
+        "--ray_address",
+        type=str,
+        default=None,
+        help="Ray cluster address (e.g., 'ray://head-node-ip:10001'). If None, uses local cluster.",
+    )
+    parser.add_argument(
+        "--ray_namespace",
+        type=str,
+        default="murmura_decentralized",
+        help="Ray namespace for isolation",
+    )
+    parser.add_argument(
+        "--actors_per_node",
+        type=int,
+        default=None,
+        help="Number of actors per physical node. If None, distributes evenly.",
+    )
+    parser.add_argument(
+        "--cpus_per_actor",
+        type=float,
+        default=1.0,
+        help="CPU resources per actor",
+    )
+    parser.add_argument(
+        "--gpus_per_actor",
+        type=float,
+        default=None,
+        help="GPU resources per actor. If None, auto-calculated.",
+    )
+    parser.add_argument(
+        "--memory_per_actor",
+        type=int,
+        default=None,
+        help="Memory (MB) per actor",
+    )
+    parser.add_argument(
+        "--placement_strategy",
+        type=str,
+        choices=["spread", "pack", "strict_spread", "strict_pack"],
+        default="spread",
+        help="Actor placement strategy across nodes",
+    )
+    parser.add_argument(
+        "--auto_detect_cluster",
+        action="store_true",
+        help="Auto-detect Ray cluster from environment variables",
+    )
+
+    # Logging and monitoring arguments
+    parser.add_argument(
+        "--log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="INFO",
+        help="Logging level",
+    )
+    parser.add_argument(
+        "--monitor_resources",
+        action="store_true",
+        help="Monitor and log resource usage during training",
+    )
+    parser.add_argument(
+        "--health_check_interval",
+        type=int,
+        default=5,
+        help="Interval (rounds) for actor health checks",
     )
 
     # Visualization arguments
@@ -149,6 +237,10 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    # Set up logging
+    setup_logging(args.log_level)
+    logger = logging.getLogger("murmura.decentralized_mnist_example")
+
     # Check compatibility of topology and strategy before proceeding
     topology_type = TopologyType(args.topology)
     strategy_type = AggregationStrategyType(args.aggregation_strategy)
@@ -160,14 +252,31 @@ def main() -> None:
         compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(
             GossipAvg
         )
-        print(
-            f"Error: Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}."
+        logger.error(
+            f"Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}."
         )
-        print(f"Compatible topologies: {[t.value for t in compatible_topologies]}")
+        logger.error(
+            f"Compatible topologies: {[t.value for t in compatible_topologies]}"
+        )
         return
 
     try:
-        # Create configuration from command-line arguments
+        # Create enhanced configuration with multi-node support
+        ray_cluster_config = RayClusterConfig(
+            address=args.ray_address,
+            namespace=args.ray_namespace,
+            logging_level=args.log_level,
+            auto_detect_cluster=args.auto_detect_cluster,
+        )
+
+        resource_config = ResourceConfig(
+            actors_per_node=args.actors_per_node,
+            cpus_per_actor=args.cpus_per_actor,
+            gpus_per_actor=args.gpus_per_actor,
+            memory_per_actor=args.memory_per_actor,
+            placement_strategy=args.placement_strategy,
+        )
+
         config = OrchestrationConfig(
             num_actors=args.num_actors,
             partition_strategy=args.partition_strategy,
@@ -176,12 +285,15 @@ def main() -> None:
             split=args.split,
             topology=TopologyConfig(
                 topology_type=topology_type,
-                hub_index=0,  # Default hub index (not used for non-star topologies)
+                hub_index=0,  # Not used for decentralized topologies
             ),
             aggregation=AggregationConfig(
                 strategy_type=strategy_type,
                 params={"mixing_parameter": args.mixing_parameter},
             ),
+            dataset_name="mnist",
+            ray_cluster=ray_cluster_config,
+            resources=resource_config,
         )
 
         # Add additional configuration needed for the learning process
@@ -198,7 +310,7 @@ def main() -> None:
             }
         )
 
-        print("\n=== Loading MNIST Dataset ===")
+        logger.info("=== Loading MNIST Dataset ===")
         # Load MNIST Dataset for training and testing
         train_dataset = MDataset.load(
             DatasetSource.HUGGING_FACE,
@@ -215,11 +327,11 @@ def main() -> None:
         # Merge datasets to have both splits available
         train_dataset.merge_splits(test_dataset)
 
-        print("\n=== Creating Data Partitions ===")
+        logger.info("=== Creating Data Partitions ===")
         # Create partitioner
         partitioner = PartitionerFactory.create(config)
 
-        print("\n=== Creating and Initializing Model ===")
+        logger.info("=== Creating and Initializing Model ===")
         # Create the MNIST model with PyTorch wrapper
         model = MNISTModel()
         input_shape = (1, 28, 28)  # (channels, height, width)
@@ -232,10 +344,10 @@ def main() -> None:
             input_shape=input_shape,
         )
 
-        print("\n=== Setting Up Decentralized Learning Process ===")
-        # Create learning process
+        logger.info("=== Setting Up Enhanced Decentralized Learning Process ===")
+        # Create learning process with enhanced config
         learning_process = DecentralizedLearningProcess(
-            config=process_config,
+            config=config,  # Pass the OrchestrationConfig directly
             dataset=train_dataset,
             model=global_model,
         )
@@ -243,7 +355,7 @@ def main() -> None:
         # Set up visualization BEFORE executing the learning process
         visualizer = None
         if args.create_animation or args.create_frames or args.create_summary:
-            print("\n=== Setting Up Visualization ===")
+            logger.info("=== Setting Up Visualization ===")
             # Create visualization directory
             vis_dir = os.path.join(
                 args.vis_dir,
@@ -256,10 +368,7 @@ def main() -> None:
 
             # Register visualizer with learning process
             learning_process.register_observer(visualizer)
-            print("Registered visualizer with learning process")
-            print(
-                f"Current observers: {len(learning_process.training_monitor.observers)}"
-            )
+            logger.info("Registered visualizer with learning process")
 
         try:
             # Initialize the learning process
@@ -270,58 +379,131 @@ def main() -> None:
                 partitioner=partitioner,
             )
 
-            # Print initial summary
-            print("\n=== Decentralized Learning Setup ===")
-            print(f"Strategy: {config.partition_strategy}")
-            print(f"Clients: {config.num_actors}")
-            print(f"Aggregation strategy: {config.aggregation.strategy_type}")
-            print(f"Topology: {config.topology.topology_type}")
-            print(f"Rounds: {args.rounds}")
-            print(f"Local epochs: {args.epochs}")
-            print(f"Batch size: {args.batch_size}")
-            print(f"Learning rate: {args.lr}")
+            # Get and log cluster information
+            cluster_summary = learning_process.get_cluster_summary()
+            logger.info("=== Enhanced Cluster Summary ===")
+            logger.info(
+                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+            )
+            logger.info(f"Total nodes: {cluster_summary.get('total_nodes', 'unknown')}")
+            logger.info(
+                f"Total actors: {cluster_summary.get('total_actors', 'unknown')}"
+            )
+            logger.info(f"Topology: {cluster_summary.get('topology', 'unknown')}")
+            logger.info(
+                f"Placement strategy: {cluster_summary.get('placement_strategy', 'unknown')}"
+            )
+            logger.info(
+                f"Has placement group: {cluster_summary.get('has_placement_group', False)}"
+            )
 
-            print("\n=== Starting Decentralized Learning ===")
-            # Execute the learning process
-            _ = learning_process.execute()
+            # Print initial summary
+            logger.info("=== Decentralized Learning Setup ===")
+            logger.info(f"Strategy: {config.partition_strategy}")
+            logger.info(f"Clients: {config.num_actors}")
+            logger.info(f"Aggregation strategy: {config.aggregation.strategy_type}")
+            logger.info(f"Topology: {config.topology.topology_type}")
+            logger.info(f"Rounds: {args.rounds}")
+            logger.info(f"Local epochs: {args.epochs}")
+            logger.info(f"Batch size: {args.batch_size}")
+            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Mixing parameter: {args.mixing_parameter}")
+
+            logger.info("=== Starting Enhanced Decentralized Learning ===")
+
+            # Monitor initial resource usage
+            if args.monitor_resources:
+                initial_resources = learning_process.monitor_resource_usage()
+                logger.info(
+                    f"Initial resource usage: {initial_resources.get('resource_utilization', {})}"
+                )
+
+            # Execute the learning process with enhanced monitoring
+            results = learning_process.execute()
+
+            # Perform periodic health checks and resource monitoring during training
+            if args.monitor_resources:
+                final_resources = learning_process.monitor_resource_usage()
+                logger.info(
+                    f"Final resource usage: {final_resources.get('resource_utilization', {})}"
+                )
+
+            # Get final health status
+            health_status = learning_process.get_actor_health_status()
+            if "error" not in health_status:
+                logger.info(
+                    f"Final actor health: {health_status['healthy']}/{health_status['sampled_actors']} healthy"
+                )
+                if health_status["degraded"] > 0:
+                    logger.warning(f"Degraded actors: {health_status['degraded']}")
+                if health_status["error"] > 0:
+                    logger.error(f"Error actors: {health_status['error']}")
 
             # Generate visualizations if requested
             if visualizer and (
                 args.create_animation or args.create_frames or args.create_summary
             ):
-                print("\n=== Generating Visualizations ===")
+                logger.info("=== Generating Visualizations ===")
 
                 if args.create_animation:
-                    print("Creating animation...")
+                    logger.info("Creating animation...")
                     visualizer.render_training_animation(
                         filename=f"decentralized_{args.topology}_{args.aggregation_strategy}_animation.mp4",
                         fps=args.fps,
                     )
 
                 if args.create_frames:
-                    print("Creating frame sequence...")
+                    logger.info("Creating frame sequence...")
                     visualizer.render_frame_sequence(
                         prefix=f"decentralized_{args.topology}_{args.aggregation_strategy}_step"
                     )
 
                 if args.create_summary:
-                    print("Creating summary plot...")
+                    logger.info("Creating summary plot...")
                     visualizer.render_summary_plot(
                         filename=f"decentralized_{args.topology}_{args.aggregation_strategy}_summary.png"
                     )
 
             # Save the final model
-            print("\n=== Saving Final Model ===")
+            logger.info("=== Saving Final Model ===")
             save_path = args.save_path
             global_model.save(save_path)
-            print(f"Model saved to '{save_path}'")
+            logger.info(f"Model saved to '{save_path}'")
+
+            # Print final results with enhanced cluster context
+            logger.info("=== Enhanced Training Results ===")
+            logger.info(
+                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+            )
+            logger.info(
+                f"Total physical nodes: {cluster_summary.get('total_nodes', 'unknown')}"
+            )
+            logger.info(
+                f"Total virtual actors: {cluster_summary.get('total_actors', 'unknown')}"
+            )
+            logger.info(f"Topology used: {cluster_summary.get('topology', 'unknown')}")
+            logger.info(
+                f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
+            )
+            logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
+            logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
+
+            # Log topology-specific results
+            if "topology" in results:
+                topology_info = results["topology"]
+                logger.info(
+                    f"Network adjacency: {len(topology_info.get('adjacency_list', {}))} connections"
+                )
 
         finally:
-            print("\n=== Shutting Down ===")
+            logger.info("=== Shutting Down Enhanced System ===")
             learning_process.shutdown()
 
     except Exception as e:
-        print(f"Decentralized Learning Process failed: {str(e)}")
+        logger.error(f"Enhanced Decentralized Learning Process failed: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
         raise
 
 
