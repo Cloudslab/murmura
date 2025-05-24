@@ -65,12 +65,12 @@ class ClusterManager:
         for i in range(num_actors):
             if gpus_per_actor > 0:
                 # Create actor with GPU resources
-                actor = VirtualClientActor.options(num_gpus=gpus_per_actor).remote(
+                actor = VirtualClientActor.options(num_gpus=gpus_per_actor).remote(  # type: ignore
                     f"client_{i}"
                 )
             else:
                 # Create actor without GPU resources
-                actor = VirtualClientActor.remote(f"client_{i}")
+                actor = VirtualClientActor.remote(f"client_{i}")  # type: ignore
 
             self.actors.append(actor)
 

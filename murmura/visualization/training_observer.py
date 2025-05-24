@@ -24,7 +24,7 @@ class TrainingMonitor:
     This class collects events from the learning process and distributes them to registered observers.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:  # Added return type
         """Initialize the Training Monitor."""
         self.observers: List[TrainingObserver] = []
         self.events: List[TrainingEvent] = []

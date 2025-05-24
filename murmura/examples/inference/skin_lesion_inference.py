@@ -10,10 +10,10 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
-import torchvision.transforms as transforms
 from PIL import Image
 from datasets import load_dataset
-from sklearn.metrics import (
+import torchvision.transforms as transforms  # type: ignore
+from sklearn.metrics import (  # type: ignore
     classification_report,
     confusion_matrix,
     accuracy_score,

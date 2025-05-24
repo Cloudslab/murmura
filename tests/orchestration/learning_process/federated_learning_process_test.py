@@ -173,7 +173,7 @@ def test_execute_training_rounds(federated_learning_process, mock_cluster_manage
     assert mock_cluster_manager.train_models.call_count == 2
 
     # Verify each training call had the correct parameters
-    expected_call = call(epochs=1, batch_size=32, verbose=False)
+    expected_call = call(epochs=1, batch_size=32, verbose=True)
     mock_cluster_manager.train_models.assert_has_calls([expected_call, expected_call])
 
 

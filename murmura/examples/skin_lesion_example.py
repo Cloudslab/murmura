@@ -4,6 +4,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
+from torchvision import transforms  # type: ignore
 from datasets import load_dataset, DatasetDict
 
 from murmura.aggregation.aggregation_config import (
@@ -156,9 +157,6 @@ class CustomDatasetWrapper:
 
         print(f"Diagnostic categories: {dx_categories}")
         print(f"Label mapping: {dx_to_label}")
-
-        # Define image transformation
-        from torchvision import transforms
 
         transform = transforms.Compose(
             [

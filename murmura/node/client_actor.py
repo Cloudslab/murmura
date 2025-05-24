@@ -75,11 +75,6 @@ class VirtualClientActor:
         """
         self.model = model
 
-        # If the model has device detection capability, use it
-        if hasattr(self.model, "detect_and_set_device"):
-            self.model.detect_and_set_device()
-            print(f"Actor {self.client_id} model set to device: {self.model.device}")
-
     def get_data_info(self) -> Dict[str, Any]:
         """
         Return Information about stored data partition.
