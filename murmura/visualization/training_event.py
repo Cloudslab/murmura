@@ -19,16 +19,27 @@ class TrainingEvent:
 class LocalTrainingEvent(TrainingEvent):
     """Event for local training process"""
 
-    def __init__(self, round_num: int, active_nodes: List[int], metrics: Dict):
+    def __init__(
+        self,
+        round_num: int,
+        active_nodes: List[int],
+        metrics: Dict,
+        current_epoch: Optional[int] = None,
+        total_epochs: Optional[int] = None,
+    ):
         """
         Args:
             round_num (int): The current round number.
             active_nodes (List[int]): List of active nodes.
             metrics (Dict): Dictionary containing training metrics.
+            current_epoch (Optional[int]): Current epoch in training.
+            total_epochs (Optional[int]): Total number of epochs per round.
         """
         super().__init__(round_num, "local_training")
         self.active_nodes = active_nodes
         self.metrics = metrics
+        self.current_epoch = current_epoch
+        self.total_epochs = total_epochs
 
 
 class ParameterTransferEvent(TrainingEvent):

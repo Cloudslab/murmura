@@ -1,10 +1,12 @@
 import pytest
 import ray
-from unittest.mock import MagicMock, patch
 
-from murmura.orchestration.cluster_manager import ClusterManager
+from murmura.aggregation.aggregation_config import (
+    AggregationConfig,
+    AggregationStrategyType,
+)
 from murmura.network_management.topology import TopologyConfig, TopologyType
-from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+from murmura.orchestration.cluster_manager import ClusterManager
 
 
 @pytest.fixture(scope="module")
@@ -34,9 +36,7 @@ def test_create_actors(cluster_manager, ray_init):
         assert info["client_id"] == f"client_{i}"
 
 
-def test_distribute_data_equal_partitions(
-        cluster_manager, ray_init
-):
+def test_distribute_data_equal_partitions(cluster_manager, ray_init):
     """Test distribution with equal actors and partitions"""
     num_actors = 3
     topology = TopologyConfig(topology_type=TopologyType.COMPLETE)
@@ -56,9 +56,7 @@ def test_distribute_data_equal_partitions(
         assert info["metadata"] == {"split": "train", "partition_idx": i}
 
 
-def test_distribute_data_more_actors_than_partitions(
-        cluster_manager, ray_init
-):
+def test_distribute_data_more_actors_than_partitions(cluster_manager, ray_init):
     """Test round-robin distribution when there are more actors than partitions"""
     # Create 5 actors, but provide only 2 partitions. Distribution will wrap around.
     num_actors = 5
@@ -79,9 +77,7 @@ def test_distribute_data_more_actors_than_partitions(
         assert info["metadata"]["partition_idx"] == expected_idx
 
 
-def test_distribute_data_metadata_override(
-        cluster_manager, ray_init
-):
+def test_distribute_data_metadata_override(cluster_manager, ray_init):
     """Test that metadata provided to distribute_data properly overrides any defaults"""
     num_actors = 2
     topology = TopologyConfig(topology_type=TopologyType.COMPLETE)
@@ -142,9 +138,7 @@ def test_aggregate_model_parameters_without_strategy(cluster_manager):
 def test_aggregate_model_parameters_without_coordinator(cluster_manager):
     """Test that aggregating without a coordinator raises an error"""
     # Set strategy but don't create actors/coordinator
-    aggregation_config = AggregationConfig(
-        strategy_type=AggregationStrategyType.FEDAVG
-    )
+    aggregation_config = AggregationConfig(strategy_type=AggregationStrategyType.FEDAVG)
     cluster_manager.set_aggregation_strategy(aggregation_config)
 
     # Try to aggregate without coordinator

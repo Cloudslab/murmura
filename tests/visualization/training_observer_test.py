@@ -6,6 +6,7 @@ from murmura.visualization.training_observer import TrainingMonitor, TrainingObs
 
 class MockObserver(TrainingObserver):
     """Mock observer for testing"""
+
     def __init__(self):
         self.events = []
 
@@ -102,6 +103,7 @@ def test_abstract_observer_implementation():
 
     # Creating a subclass without implementing on_event should fail
     with pytest.raises(TypeError):
+
         class InvalidObserver(TrainingObserver):
             pass
 

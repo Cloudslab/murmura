@@ -10,6 +10,7 @@ from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
 
 class SimpleModel(PyTorchModel):
     """A simple PyTorch model for testing"""
+
     def __init__(self):
         super().__init__()
         self.fc1 = nn.Linear(10, 5)
@@ -31,7 +32,7 @@ def model_wrapper():
         optimizer_class=torch.optim.SGD,
         optimizer_kwargs={"lr": 0.01},
         device="cpu",
-        input_shape=(10,)
+        input_shape=(10,),
     )
     return wrapper
 
@@ -54,7 +55,7 @@ def test_initialization():
         optimizer_class=torch.optim.SGD,
         optimizer_kwargs={"lr": 0.1},
         device="cpu",
-        input_shape=(10,)
+        input_shape=(10,),
     )
     assert isinstance(wrapper.loss_fn, nn.MSELoss)
     assert isinstance(wrapper.optimizer, torch.optim.SGD)
@@ -188,12 +189,14 @@ def test_save_load(model_wrapper):
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.SGD,
             optimizer_kwargs={"lr": 0.01},
-            device="cpu"
+            device="cpu",
         )
 
         # Verify parameters are different
         new_params = new_wrapper.get_parameters()
-        assert not np.array_equal(new_params["fc1.weight"], original_params["fc1.weight"])
+        assert not np.array_equal(
+            new_params["fc1.weight"], original_params["fc1.weight"]
+        )
 
         # Load saved model
         new_wrapper.load(temp_path)
@@ -212,10 +215,7 @@ def test_save_load(model_wrapper):
 def test_input_shape_handling():
     """Test handling of input shapes"""
     model = SimpleModel()
-    wrapper = TorchModelWrapper(
-        model=model,
-        input_shape=(10,)
-    )
+    wrapper = TorchModelWrapper(model=model, input_shape=(10,))
 
     # Create data with different shape that needs reshaping
     data = np.random.rand(5, 2, 5).astype(np.float32)  # Shape doesn't match input_shape

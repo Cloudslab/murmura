@@ -1,5 +1,3 @@
-import pytest
-
 from murmura.aggregation.coordination_mode import CoordinationMode
 
 

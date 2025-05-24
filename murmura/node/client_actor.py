@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional, List, Tuple
 
 import numpy as np
 import ray
+import torch
 
 from murmura.data_processing.dataset import MDataset
 from murmura.model.model_interface import ModelInterface
@@ -21,6 +22,18 @@ class VirtualClientActor:
         self.split: str = "train"
         self.feature_columns: Optional[List[str]] = None
         self.label_column: Optional[str] = None
+
+        # Initialize device info
+        self.device_info = {
+            "cuda_available": torch.cuda.is_available(),
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
+            "cuda_device_count": torch.cuda.device_count()
+            if torch.cuda.is_available()
+            else 0,
+        }
+        print(
+            f"Actor {client_id} initialized with device: {self.device_info['device']}"
+        )
 
     def receive_data(
         self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
@@ -56,7 +69,7 @@ class VirtualClientActor:
 
     def set_model(self, model: ModelInterface) -> None:
         """
-        Set the model for the client actor.
+        Set the model for the client actor with proper device handling.
 
         :param model: Model instance
         """
@@ -115,6 +128,22 @@ class VirtualClientActor:
         """
         if self.model is None:
             raise ValueError("Model is not set")
+
+        # Extract callback if provided
+        client_id = self.client_id
+        orig_verbose = kwargs.get("verbose", False)
+
+        # Create a callback for epoch logging
+        def log_epoch_callback(epoch, total_epochs, metrics):
+            if orig_verbose:
+                print(
+                    f"Client {client_id} - Epoch [{epoch}/{total_epochs}], "
+                    f"Loss: {metrics['loss']:.4f}, "
+                    f"Accuracy: {metrics['accuracy']:.4f}"
+                )
+
+        # Add callback to kwargs
+        kwargs["log_epoch_callback"] = log_epoch_callback
 
         features, labels = self._get_partition_data()
         return self.model.train(features, labels, **kwargs)

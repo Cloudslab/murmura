@@ -27,12 +27,7 @@ def network_visualizer():
 def mock_topology_manager():
     """Create a mock topology manager for testing"""
     topology_manager = MagicMock()
-    topology_manager.adjacency_list = {
-        0: [1, 2],
-        1: [0, 3],
-        2: [0, 3],
-        3: [1, 2]
-    }
+    topology_manager.adjacency_list = {0: [1, 2], 1: [0, 3], 2: [0, 3], 3: [1, 2]}
     topology_manager.config.topology_type.value = "star"
     return topology_manager
 
@@ -46,31 +41,33 @@ def populated_visualizer(network_visualizer, mock_topology_manager):
     network_visualizer.on_event(InitialStateEvent(topology_type="star", num_nodes=4))
 
     # Add parameter transfer with parameter history
-    network_visualizer.on_event(ParameterTransferEvent(
-        round_num=1,
-        source_nodes=[0],
-        target_nodes=[1, 2],
-        param_summary={
-            0: {"norm": 1.0, "mean": 0.5, "std": 0.1},
-            1: {"norm": 2.0, "mean": 0.7, "std": 0.2}
-        }
-    ))
+    network_visualizer.on_event(
+        ParameterTransferEvent(
+            round_num=1,
+            source_nodes=[0],
+            target_nodes=[1, 2],
+            param_summary={
+                0: {"norm": 1.0, "mean": 0.5, "std": 0.1},
+                1: {"norm": 2.0, "mean": 0.7, "std": 0.2},
+            },
+        )
+    )
 
     # Add evaluation events with metrics
-    network_visualizer.on_event(EvaluationEvent(
-        round_num=1,
-        metrics={"loss": 0.5, "accuracy": 0.8}
-    ))
+    network_visualizer.on_event(
+        EvaluationEvent(round_num=1, metrics={"loss": 0.5, "accuracy": 0.8})
+    )
 
     return network_visualizer
 
 
 def test_render_training_animation_with_figure_closed(populated_visualizer):
     """Test that figure is properly closed after rendering animation"""
-    with patch('matplotlib.animation.FuncAnimation') as mock_animation, \
-            patch('matplotlib.animation.FFMpegWriter') as mock_writer, \
-            patch('matplotlib.pyplot.close') as mock_close:
-
+    with (
+        patch("matplotlib.animation.FuncAnimation") as mock_animation,
+        patch("matplotlib.animation.FFMpegWriter"),
+        patch("matplotlib.pyplot.close") as mock_close,
+    ):
         # Mock animation to return a MagicMock
         mock_animation.return_value = MagicMock()
 
@@ -97,9 +94,10 @@ def test_render_summary_plot_with_no_topology(network_visualizer):
     # Set some frames but no topology
     network_visualizer.frames = [{"round": 1, "step": "test"}]
 
-    with patch('matplotlib.pyplot.savefig') as mock_savefig, \
-            patch('matplotlib.pyplot.close') as mock_close:
-
+    with (
+        patch("matplotlib.pyplot.savefig") as mock_savefig,
+        patch("matplotlib.pyplot.close") as mock_close,
+    ):
         # Call render_summary_plot - should not raise errors
         network_visualizer.render_summary_plot(filename="test_summary.png")
 
@@ -110,13 +108,14 @@ def test_render_summary_plot_with_no_topology(network_visualizer):
 
 def test_update_frame_function_invalid_index(populated_visualizer):
     """Test the update_frame function with invalid frame index"""
-    with patch('matplotlib.animation.FuncAnimation') as mock_animation, \
-            patch('matplotlib.animation.FFMpegWriter') as mock_writer, \
-            patch('matplotlib.pyplot.close'):
-
+    with (
+        patch("matplotlib.animation.FuncAnimation") as mock_animation,
+        patch("matplotlib.animation.FFMpegWriter"),
+        patch("matplotlib.pyplot.close"),
+    ):
         # Mock animation to extract the update_frame function
         def save_update_frame(*args, **kwargs):
-            test_update_frame_function_invalid_index.func = kwargs.get('func')
+            test_update_frame_function_invalid_index.func = kwargs.get("func")
             return MagicMock()
 
         mock_animation.side_effect = save_update_frame
@@ -136,35 +135,44 @@ def test_update_frame_function_invalid_index(populated_visualizer):
         assert result_invalid == []
 
 
-@patch('networkx.spring_layout', return_value={0: [0.1, 0.2], 1: [-0.3, 0.4], 2: [0.5, -0.6], 3: [0.2, 0.7]})
-def test_network_drawing_with_active_nodes(mock_spring_layout, network_visualizer, mock_topology_manager):
+@patch(
+    "networkx.spring_layout",
+    return_value={0: [0.1, 0.2], 1: [-0.3, 0.4], 2: [0.5, -0.6], 3: [0.2, 0.7]},
+)
+def test_network_drawing_with_active_nodes(
+    mock_spring_layout, network_visualizer, mock_topology_manager
+):
     """Test network drawing with active nodes and edges"""
     network_visualizer.set_topology(mock_topology_manager)
 
     # Add event with active nodes and edges
-    network_visualizer.on_event(LocalTrainingEvent(
-        round_num=1,
-        active_nodes=[0, 1],
-        metrics={}
-    ))
+    network_visualizer.on_event(
+        LocalTrainingEvent(round_num=1, active_nodes=[0, 1], metrics={})
+    )
 
     # Add event with active edges
-    network_visualizer.on_event(ParameterTransferEvent(
-        round_num=1,
-        source_nodes=[0],
-        target_nodes=[1, 2],
-        param_summary={
-            0: {"norm": 1.0, "mean": 0.5, "std": 0.1},
-        }
-    ))
+    network_visualizer.on_event(
+        ParameterTransferEvent(
+            round_num=1,
+            source_nodes=[0],
+            target_nodes=[1, 2],
+            param_summary={
+                0: {"norm": 1.0, "mean": 0.5, "std": 0.1},
+            },
+        )
+    )
 
-    with patch('matplotlib.pyplot.subplots', return_value=(MagicMock(), (MagicMock(), MagicMock()))), \
-            patch('networkx.draw_networkx_nodes') as mock_draw_nodes, \
-            patch('networkx.draw_networkx_edges') as mock_draw_edges, \
-            patch('networkx.draw_networkx_labels') as mock_draw_labels, \
-            patch('matplotlib.pyplot.savefig'), \
-            patch('matplotlib.pyplot.close'):
-
+    with (
+        patch(
+            "matplotlib.pyplot.subplots",
+            return_value=(MagicMock(), (MagicMock(), MagicMock())),
+        ),
+        patch("networkx.draw_networkx_nodes") as mock_draw_nodes,
+        patch("networkx.draw_networkx_edges") as mock_draw_edges,
+        patch("networkx.draw_networkx_labels") as mock_draw_labels,
+        patch("matplotlib.pyplot.savefig"),
+        patch("matplotlib.pyplot.close"),
+    ):
         # Call render_frame_sequence
         network_visualizer.render_frame_sequence(prefix="test_frame")
 
@@ -174,7 +182,9 @@ def test_network_drawing_with_active_nodes(mock_spring_layout, network_visualize
         assert mock_draw_labels.call_count >= 2  # At least one call per frame
 
 
-def test_aggregation_event_with_star_topology(network_visualizer, mock_topology_manager):
+def test_aggregation_event_with_star_topology(
+    network_visualizer, mock_topology_manager
+):
     """Test handling of aggregation event with star topology"""
     network_visualizer.set_topology(mock_topology_manager)
 
@@ -183,7 +193,7 @@ def test_aggregation_event_with_star_topology(network_visualizer, mock_topology_
         round_num=1,
         participating_nodes=[0, 1, 2, 3],
         aggregator_node=0,  # Hub node as aggregator
-        strategy_name="FedAvg"
+        strategy_name="FedAvg",
     )
 
     # Process the event
@@ -203,15 +213,15 @@ def test_aggregation_event_with_star_topology(network_visualizer, mock_topology_
     assert "Aggregation at node 0" in network_visualizer.frame_descriptions[0]
 
 
-def test_model_update_event_with_parameter_convergence(network_visualizer, mock_topology_manager):
+def test_model_update_event_with_parameter_convergence(
+    network_visualizer, mock_topology_manager
+):
     """Test handling of model update event with parameter convergence metric"""
     network_visualizer.set_topology(mock_topology_manager)
 
     # Create model update event with parameter convergence
     event = ModelUpdateEvent(
-        round_num=1,
-        updated_nodes=[0, 1, 2, 3],
-        param_convergence=0.01
+        round_num=1, updated_nodes=[0, 1, 2, 3], param_convergence=0.01
     )
 
     # Process the event
@@ -229,33 +239,34 @@ def test_model_update_event_with_parameter_convergence(network_visualizer, mock_
 def test_render_summary_plot_with_all_metrics(populated_visualizer):
     """Test rendering summary plot with all metrics"""
     # Add more rounds of metrics
-    populated_visualizer.on_event(EvaluationEvent(
-        round_num=2,
-        metrics={"loss": 0.4, "accuracy": 0.85}
-    ))
-    populated_visualizer.on_event(EvaluationEvent(
-        round_num=3,
-        metrics={"loss": 0.3, "accuracy": 0.9}
-    ))
+    populated_visualizer.on_event(
+        EvaluationEvent(round_num=2, metrics={"loss": 0.4, "accuracy": 0.85})
+    )
+    populated_visualizer.on_event(
+        EvaluationEvent(round_num=3, metrics={"loss": 0.3, "accuracy": 0.9})
+    )
 
     # Add more parameter history
-    populated_visualizer.on_event(ParameterTransferEvent(
-        round_num=2,
-        source_nodes=[0],
-        target_nodes=[1, 2],
-        param_summary={
-            0: {"norm": 1.2, "mean": 0.6, "std": 0.08},
-            1: {"norm": 1.8, "mean": 0.65, "std": 0.15}
-        }
-    ))
+    populated_visualizer.on_event(
+        ParameterTransferEvent(
+            round_num=2,
+            source_nodes=[0],
+            target_nodes=[1, 2],
+            param_summary={
+                0: {"norm": 1.2, "mean": 0.6, "std": 0.08},
+                1: {"norm": 1.8, "mean": 0.65, "std": 0.15},
+            },
+        )
+    )
 
-    with patch('matplotlib.pyplot.figure'), \
-            patch('matplotlib.pyplot.suptitle'), \
-            patch('matplotlib.pyplot.tight_layout'), \
-            patch('matplotlib.pyplot.savefig') as mock_savefig, \
-            patch('matplotlib.pyplot.close'), \
-            patch('networkx.draw_networkx'):
-
+    with (
+        patch("matplotlib.pyplot.figure"),
+        patch("matplotlib.pyplot.suptitle"),
+        patch("matplotlib.pyplot.tight_layout"),
+        patch("matplotlib.pyplot.savefig") as mock_savefig,
+        patch("matplotlib.pyplot.close"),
+        patch("networkx.draw_networkx"),
+    ):
         # Call render_summary_plot
         populated_visualizer.render_summary_plot(filename="test_summary.png")
 
@@ -273,17 +284,21 @@ def test_render_training_animation_update_function(populated_visualizer):
     ax_metrics_twin = ax_metrics.twinx()
 
     # Call render_training_animation to get the update_frame function
-    with patch('matplotlib.animation.FuncAnimation') as mock_animation, \
-            patch('matplotlib.animation.FFMpegWriter') as mock_writer, \
-            patch('matplotlib.pyplot.figure', return_value=fig), \
-            patch('matplotlib.pyplot.GridSpec'), \
-            patch('matplotlib.figure.Figure.add_subplot', side_effect=[ax_network, ax_params, ax_metrics]), \
-            patch('matplotlib.axes.Axes.twinx', return_value=ax_metrics_twin), \
-            patch('matplotlib.pyplot.close'):
-
+    with (
+        patch("matplotlib.animation.FuncAnimation") as mock_animation,
+        patch("matplotlib.animation.FFMpegWriter"),
+        patch("matplotlib.pyplot.figure", return_value=fig),
+        patch("matplotlib.pyplot.GridSpec"),
+        patch(
+            "matplotlib.figure.Figure.add_subplot",
+            side_effect=[ax_network, ax_params, ax_metrics],
+        ),
+        patch("matplotlib.axes.Axes.twinx", return_value=ax_metrics_twin),
+        patch("matplotlib.pyplot.close"),
+    ):
         # Mock animation to extract the update_frame function
         def save_update_frame(*args, **kwargs):
-            test_render_training_animation_update_function.func = kwargs.get('func')
+            test_render_training_animation_update_function.func = kwargs.get("func")
             return MagicMock()
 
         mock_animation.side_effect = save_update_frame

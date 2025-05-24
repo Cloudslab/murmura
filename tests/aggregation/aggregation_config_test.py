@@ -29,8 +29,7 @@ def test_initialization_with_strategy():
 def test_initialization_with_params():
     """Test initialization with custom parameters"""
     config = AggregationConfig(
-        strategy_type=AggregationStrategyType.TRIMMED_MEAN,
-        params={"trim_ratio": 0.2}
+        strategy_type=AggregationStrategyType.TRIMMED_MEAN, params={"trim_ratio": 0.2}
     )
 
     assert config.strategy_type == AggregationStrategyType.TRIMMED_MEAN
@@ -41,8 +40,7 @@ def test_param_validation_trimmed_mean():
     """Test validation of parameters for TrimmedMean strategy"""
     # Valid parameter
     config = AggregationConfig(
-        strategy_type=AggregationStrategyType.TRIMMED_MEAN,
-        params={"trim_ratio": 0.3}
+        strategy_type=AggregationStrategyType.TRIMMED_MEAN, params={"trim_ratio": 0.3}
     )
     assert config.params["trim_ratio"] == 0.3
 
@@ -50,14 +48,14 @@ def test_param_validation_trimmed_mean():
     with pytest.raises(ValidationError):
         AggregationConfig(
             strategy_type=AggregationStrategyType.TRIMMED_MEAN,
-            params={"trim_ratio": -0.1}
+            params={"trim_ratio": -0.1},
         )
 
     # Invalid parameter - too high
     with pytest.raises(ValidationError):
         AggregationConfig(
             strategy_type=AggregationStrategyType.TRIMMED_MEAN,
-            params={"trim_ratio": 0.5}
+            params={"trim_ratio": 0.5},
         )
 
 
@@ -66,7 +64,7 @@ def test_param_validation_gossip_avg():
     # Valid parameter
     config = AggregationConfig(
         strategy_type=AggregationStrategyType.GOSSIP_AVG,
-        params={"mixing_parameter": 0.3}
+        params={"mixing_parameter": 0.3},
     )
     assert config.params["mixing_parameter"] == 0.3
 
@@ -74,14 +72,14 @@ def test_param_validation_gossip_avg():
     with pytest.raises(ValidationError):
         AggregationConfig(
             strategy_type=AggregationStrategyType.GOSSIP_AVG,
-            params={"mixing_parameter": -0.1}
+            params={"mixing_parameter": -0.1},
         )
 
     # Invalid parameter - too high
     with pytest.raises(ValidationError):
         AggregationConfig(
             strategy_type=AggregationStrategyType.GOSSIP_AVG,
-            params={"mixing_parameter": 1.1}
+            params={"mixing_parameter": 1.1},
         )
 
 
@@ -99,8 +97,7 @@ def test_defaults_for_missing_params():
 def test_unknown_params_preserved():
     """Test that unknown parameters are preserved"""
     config = AggregationConfig(
-        strategy_type=AggregationStrategyType.FEDAVG,
-        params={"custom_param": "value"}
+        strategy_type=AggregationStrategyType.FEDAVG, params={"custom_param": "value"}
     )
 
     assert "custom_param" in config.params

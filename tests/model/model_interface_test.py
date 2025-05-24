@@ -47,7 +47,7 @@ class SimpleModel(ModelInterface):
     def save(self, path):
         self.saved_path = path
         # Simulate saving by writing a simple file
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write("Test model data")
 
     def load(self, path):
@@ -59,6 +59,7 @@ class SimpleModel(ModelInterface):
 
 class PartialModel(ABC):
     """Partial implementation of model interface for testing abstract methods"""
+
     def train(self, data, labels, **kwargs):
         return {"loss": 0.5}
 
@@ -73,6 +74,7 @@ def test_abstract_interface_cannot_be_instantiated():
 
 def test_partial_implementation_cannot_be_instantiated():
     """Test that partial implementation cannot be instantiated"""
+
     class IncompleteModel(ModelInterface):
         def train(self, data, labels, **kwargs):
             return {"loss": 0.5}
@@ -97,7 +99,7 @@ def test_train_with_complex_parameters():
         "batch_size": 2,
         "learning_rate": 0.01,
         "verbose": True,
-        "callbacks": [lambda x: None]
+        "callbacks": [lambda x: None],
     }
 
     # Train model
@@ -127,11 +129,7 @@ def test_evaluate_with_complex_parameters():
     labels = np.array([0, 1, 0, 1, 0])
 
     # Additional evaluation parameters
-    kwargs = {
-        "batch_size": 1,
-        "metrics": ["precision", "recall"],
-        "verbose": False
-    }
+    kwargs = {"batch_size": 1, "metrics": ["precision", "recall"], "verbose": False}
 
     # Evaluate model
     metrics = model.evaluate(data, labels, **kwargs)
@@ -159,11 +157,7 @@ def test_predict_with_complex_parameters():
     data = np.random.randn(3, 5)
 
     # Additional prediction parameters
-    kwargs = {
-        "batch_size": 1,
-        "return_probs": True,
-        "threshold": 0.5
-    }
+    kwargs = {"batch_size": 1, "return_probs": True, "threshold": 0.5}
 
     # Make predictions
     predictions = model.predict(data, **kwargs)
@@ -191,10 +185,7 @@ def test_get_set_parameters():
     assert "bias" in initial_params
 
     # Define new parameters
-    new_params = {
-        "weight": np.array([4.0, 5.0, 6.0]),
-        "bias": np.array([0.2])
-    }
+    new_params = {"weight": np.array([4.0, 5.0, 6.0]), "bias": np.array([0.2])}
 
     # Set new parameters
     model.set_parameters(new_params)
@@ -252,7 +243,7 @@ def test_model_interface_structure():
         "get_parameters",
         "set_parameters",
         "save",
-        "load"
+        "load",
     ]
 
     for method_name in abstract_methods:
@@ -276,7 +267,7 @@ def test_model_interface_doc_strings():
         "get_parameters",
         "set_parameters",
         "save",
-        "load"
+        "load",
     ]
 
     for method_name in methods:

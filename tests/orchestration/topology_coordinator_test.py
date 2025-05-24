@@ -43,8 +43,7 @@ def line_topology_manager():
 def custom_topology_manager():
     """Create a custom topology manager"""
     config = TopologyConfig(
-        topology_type=TopologyType.CUSTOM,
-        adjacency_list={0: [1, 2], 1: [0], 2: [0]}
+        topology_type=TopologyType.CUSTOM, adjacency_list={0: [1, 2], 1: [0], 2: [0]}
     )
     return TopologyManager(num_clients=3, config=config)
 
@@ -63,15 +62,19 @@ def test_determination_of_coordination_mode():
     topology_manager = TopologyManager(num_clients=3, config=config)
 
     # Test with centralized strategy
-    coordinator = TopologyCoordinator([MagicMock()] * 3, topology_manager, centralized_strategy)
+    coordinator = TopologyCoordinator(
+        [MagicMock()] * 3, topology_manager, centralized_strategy
+    )
     assert coordinator.coordination_mode == CoordinationMode.CENTRALIZED
 
     # Test with decentralized strategy
-    coordinator = TopologyCoordinator([MagicMock()] * 3, topology_manager, decentralized_strategy)
+    coordinator = TopologyCoordinator(
+        [MagicMock()] * 3, topology_manager, decentralized_strategy
+    )
     assert coordinator.coordination_mode == CoordinationMode.DECENTRALIZED
 
 
-@patch('ray.get')
+@patch("ray.get")
 def test_coordinate_dispatch_to_correct_topology_method(mock_ray_get, mock_actors):
     """Test that coordinate_aggregation dispatches to the correct topology method"""
     # Setup mock ray.get
@@ -93,8 +96,7 @@ def test_coordinate_dispatch_to_correct_topology_method(mock_ray_get, mock_actor
         # Create topology config - use adjacency list for CUSTOM
         if topology_type == TopologyType.CUSTOM:
             config = TopologyConfig(
-                topology_type=topology_type,
-                adjacency_list={0: [1, 2], 1: [0], 2: [0]}
+                topology_type=topology_type, adjacency_list={0: [1, 2], 1: [0], 2: [0]}
             )
         else:
             config = TopologyConfig(topology_type=topology_type)
@@ -120,8 +122,10 @@ def test_coordinate_dispatch_to_correct_topology_method(mock_ray_get, mock_actor
             setattr(coordinator, method_name, original_method)
 
 
-@patch('ray.get')
-def test_centralized_and_decentralized_with_complete_topology(mock_ray_get, mock_actors):
+@patch("ray.get")
+def test_centralized_and_decentralized_with_complete_topology(
+    mock_ray_get, mock_actors
+):
     """Test both centralized and decentralized modes with complete topology"""
     # Setup mock ray.get
     mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
@@ -145,7 +149,7 @@ def test_centralized_and_decentralized_with_complete_topology(mock_ray_get, mock
     )
 
     # Run centralized coordination
-    centralized_result = centralized_coordinator._coordinate_complete_topology()
+    centralized_coordinator._coordinate_complete_topology()
 
     # Verify centralized behavior: should call aggregate once with all parameters
     centralized_strategy.aggregate.assert_called_once()
@@ -162,14 +166,16 @@ def test_centralized_and_decentralized_with_complete_topology(mock_ray_get, mock
     )
 
     # Run decentralized coordination
-    decentralized_result = decentralized_coordinator._coordinate_complete_topology()
+    decentralized_coordinator._coordinate_complete_topology()
 
     # Verify decentralized behavior: should call aggregate once per node
     assert decentralized_strategy.aggregate.call_count == 3
 
 
-@patch('ray.get')
-def test_line_topology_parameter_collection(mock_ray_get, mock_actors, line_topology_manager):
+@patch("ray.get")
+def test_line_topology_parameter_collection(
+    mock_ray_get, mock_actors, line_topology_manager
+):
     """Test parameter collection in line topology"""
     # Setup mock ray.get
     mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
@@ -184,7 +190,7 @@ def test_line_topology_parameter_collection(mock_ray_get, mock_actors, line_topo
     adjacency = line_topology_manager.adjacency_list
 
     # Run line coordination
-    result = coordinator._coordinate_line_topology()
+    coordinator._coordinate_line_topology()
 
     # Verify aggregate was called for each node
     assert strategy.aggregate.call_count == 3
@@ -203,8 +209,10 @@ def test_line_topology_parameter_collection(mock_ray_get, mock_actors, line_topo
         assert len(actual_params) == expected_num_params
 
 
-@patch('ray.get')
-def test_custom_topology_parameter_collection(mock_ray_get, mock_actors, custom_topology_manager):
+@patch("ray.get")
+def test_custom_topology_parameter_collection(
+    mock_ray_get, mock_actors, custom_topology_manager
+):
     """Test parameter collection in custom topology"""
     # Setup mock ray.get
     mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
@@ -219,7 +227,7 @@ def test_custom_topology_parameter_collection(mock_ray_get, mock_actors, custom_
     adjacency = custom_topology_manager.adjacency_list
 
     # Run custom coordination
-    result = coordinator._coordinate_custom_topology()
+    coordinator._coordinate_custom_topology()
 
     # Verify aggregate was called for each node
     assert strategy.aggregate.call_count == 3

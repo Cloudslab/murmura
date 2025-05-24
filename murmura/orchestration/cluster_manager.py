@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Optional
 
 import ray
+import torch
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
@@ -32,23 +33,47 @@ class ClusterManager:
         self.topology_coordinator: Optional[TopologyCoordinator] = None
 
         if not ray.is_initialized():
+            # Auto-detect GPU resources
+            num_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+            print(f"Detected {num_gpus} GPUs for Ray initialization")
+
             ray.init(
-                address=self.config["ray_address"] if "ray_address" in config else None
+                address=self.config["ray_address"] if "ray_address" in config else None,
+                num_gpus=num_gpus,
+                include_dashboard=False,
             )
 
     def create_actors(self, num_actors: int, topology: TopologyConfig) -> List[Any]:
         """
-        Create pool of virtual client actors
+        Create pool of virtual client actors with proper resource allocation
 
         :param topology: topology config
         :param num_actors: Number of actors to create
         :return: List of actors
         """
         self.topology_manager = TopologyManager(num_actors, topology)
-        self.actors = [
-            VirtualClientActor.remote(f"client_{i}")  # type: ignore[attr-defined]
-            for i in range(num_actors)
-        ]
+
+        # Determine GPU resources to allocate per actor
+        num_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+        gpus_per_actor = num_gpus / num_actors if num_gpus > 0 else 0
+
+        print(
+            f"Creating {num_actors} virtual clients with {gpus_per_actor:.2f} GPUs each"
+        )
+
+        self.actors = []
+        for i in range(num_actors):
+            if gpus_per_actor > 0:
+                # Create actor with GPU resources
+                actor = VirtualClientActor.options(num_gpus=gpus_per_actor).remote(  # type: ignore
+                    f"client_{i}"
+                )
+            else:
+                # Create actor without GPU resources
+                actor = VirtualClientActor.remote(f"client_{i}")  # type: ignore
+
+            self.actors.append(actor)
+
         self._apply_topology()
 
         if self.aggregation_strategy and self.topology_manager:
@@ -119,24 +144,48 @@ class ClusterManager:
                 )
             )
 
-    def distribute_model(
-        self,
-        model: ModelInterface,
-    ) -> None:
+    def distribute_model(self, model: ModelInterface) -> None:
         """
-        Distribute model structure and parameters to all actors
+        Distribute model structure and parameters to all actors with proper device handling.
 
         :param model: Model to distribute
         """
-        # Get model parameters to distribute
+        print("Distributing model to client actors...")
+
+        # Make sure the model is on CPU for serialization
+        original_device = None
+        if hasattr(model, "model") and hasattr(model.model, "to"):
+            # Remember the original device
+            if hasattr(model, "device"):
+                original_device = model.device
+            # Move to CPU temporarily for serialization
+            model.model.to("cpu")
+            if hasattr(model, "device"):
+                model.device = "cpu"
+
+        # Get model parameters on CPU to distribute
         parameters = model.get_parameters()
 
         # Set the model on each actor
         for actor in self.actors:
-            # First set the model structure
-            ray.get(actor.set_model.remote(model))
-            # Then set the parameters
-            ray.get(actor.set_model_parameters.remote(parameters))
+            try:
+                # First set the model structure (CPU version for safe transfer)
+                ray.get(actor.set_model.remote(model))
+                # Then set the parameters
+                ray.get(actor.set_model_parameters.remote(parameters))
+            except Exception as e:
+                print(f"Error distributing model to actor: {e}")
+                raise
+
+        # Move the model back to its original device if needed
+        if (
+            hasattr(model, "model")
+            and hasattr(model.model, "to")
+            and original_device is not None
+        ):
+            model.model.to(original_device)
+            if hasattr(model, "device"):
+                model.device = original_device
 
     def train_models(self, **kwargs) -> List[Dict[str, float]]:
         """

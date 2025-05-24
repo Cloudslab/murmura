@@ -37,6 +37,10 @@ class FedAvg(AggregationStrategy):
         if not parameters_list:
             raise ValueError("Empty parameters list")
 
+        # Special case: If there's only one client, just return its parameters
+        if len(parameters_list) == 1:
+            return parameters_list[0].copy()
+
         if weights is None:
             weights = [1.0 / len(parameters_list)] * len(parameters_list)
         else:
@@ -47,15 +51,27 @@ class FedAvg(AggregationStrategy):
 
         for key in parameters_list[0].keys():
             try:
-                stacked_params = np.stack(
-                    [params[key] for params in parameters_list], axis=0
-                )
-                weighted_params = np.zeros_like(stacked_params[0])
+                # Handle 'num_batches_tracked' and other integer parameters specially
+                if "num_batches_tracked" in key or any(
+                    np.issubdtype(params[key].dtype, np.integer)
+                    for params in parameters_list
+                ):
+                    # For integer parameters, we'll use the maximum value
+                    # This is especially appropriate for 'num_batches_tracked'
+                    aggregated_params[key] = np.max(
+                        [params[key] for params in parameters_list]
+                    )
+                else:
+                    # Normal floating-point parameters use weighted average
+                    stacked_params = np.stack(
+                        [params[key] for params in parameters_list], axis=0
+                    )
+                    weighted_params = np.zeros_like(stacked_params[0])
 
-                for i, weight in enumerate(weights):
-                    weighted_params += weight * stacked_params[i]
+                    for i, weight in enumerate(weights):
+                        weighted_params += weight * stacked_params[i]
 
-                aggregated_params[key] = weighted_params
+                    aggregated_params[key] = weighted_params
 
             except Exception as e:
                 raise ValueError(f"Error aggregating parameter {key}: {e}")

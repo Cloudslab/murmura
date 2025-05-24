@@ -3,7 +3,9 @@ from unittest.mock import MagicMock, patch, call
 import numpy as np
 import pytest
 
-from murmura.orchestration.learning_process.decentralized_learning_process import DecentralizedLearningProcess
+from murmura.orchestration.learning_process.decentralized_learning_process import (
+    DecentralizedLearningProcess,
+)
 from murmura.visualization.training_event import (
     ParameterTransferEvent,
     AggregationEvent,
@@ -25,7 +27,9 @@ def mock_dataset():
     test_split.__getitem__.return_value = np.array([[1.0]] * 50)
 
     # Mock get_split method
-    dataset.get_split.side_effect = lambda x: train_split if x == "train" else test_split
+    dataset.get_split.side_effect = (
+        lambda x: train_split if x == "train" else test_split
+    )
 
     # Mock get_partitions method
     dataset.get_partitions.return_value = {0: list(range(50)), 1: list(range(50, 100))}
@@ -47,11 +51,7 @@ def mock_topology_manager():
     """Create a mock topology manager for testing"""
     topology_manager = MagicMock()
     topology_manager.config.topology_type.value = "ring"
-    topology_manager.adjacency_list = {
-        0: [2, 1],
-        1: [0, 2],
-        2: [1, 0]
-    }
+    topology_manager.adjacency_list = {0: [2, 1], 1: [0, 2], 2: [1, 0]}
     return topology_manager
 
 
@@ -82,22 +82,20 @@ def mock_cluster_manager(mock_topology_manager):
     cluster_manager.train_models.return_value = [
         {"loss": 0.5, "accuracy": 0.7},
         {"loss": 0.6, "accuracy": 0.8},
-        {"loss": 0.4, "accuracy": 0.9}
+        {"loss": 0.4, "accuracy": 0.9},
     ]
 
     # Mock aggregate_model_parameters method
-    cluster_manager.aggregate_model_parameters.return_value = {"layer1": np.array([2.0, 3.0])}
+    cluster_manager.aggregate_model_parameters.return_value = {
+        "layer1": np.array([2.0, 3.0])
+    }
 
     # Mock get_topology_information method
     cluster_manager.get_topology_information.return_value = {
         "initialized": True,
         "type": "ring",
         "num_actors": 3,
-        "adjacency_list": {
-            0: [2, 1],
-            1: [0, 2],
-            2: [1, 0]
-        }
+        "adjacency_list": {0: [2, 1], 1: [0, 2], 2: [1, 0]},
     }
 
     return cluster_manager
@@ -113,7 +111,7 @@ def decentralized_learning_process(mock_dataset, mock_model, mock_cluster_manage
         "test_split": "test",
         "feature_columns": ["image"],
         "label_column": "label",
-        "split": "train"
+        "split": "train",
     }
 
     process = DecentralizedLearningProcess(config, mock_dataset, mock_model)
@@ -128,7 +126,7 @@ def decentralized_learning_process(mock_dataset, mock_model, mock_cluster_manage
 @pytest.fixture(autouse=True)
 def ray_patch():
     """Patch ray.get to handle MagicMock objects"""
-    with patch('ray.get') as mock_ray_get:
+    with patch("ray.get") as mock_ray_get:
         # Configure mock to return a fixed parameter value for any input
         mock_ray_get.return_value = {"layer1": np.array([1.0, 2.0])}
         yield mock_ray_get
@@ -142,7 +140,9 @@ def test_execute_without_initialization_raises_error():
         process.execute()
 
 
-def test_execute_evaluation_setup(decentralized_learning_process, mock_dataset, mock_model):
+def test_execute_evaluation_setup(
+    decentralized_learning_process, mock_dataset, mock_model
+):
     """Test the initial evaluation setup in execute method"""
     # Execute the learning process
     decentralized_learning_process.execute()
@@ -155,14 +155,21 @@ def test_execute_evaluation_setup(decentralized_learning_process, mock_dataset, 
 
     # Verify evaluation event was emitted
     # Get all emitted events
-    emitted_events = [call.args[0] for call in decentralized_learning_process.training_monitor.emit_event.call_args_list]
+    emitted_events = [
+        call.args[0]
+        for call in decentralized_learning_process.training_monitor.emit_event.call_args_list
+    ]
     # Find EvaluationEvent with round_num=0
-    eval_events = [e for e in emitted_events if isinstance(e, EvaluationEvent) and e.round_num == 0]
+    eval_events = [
+        e for e in emitted_events if isinstance(e, EvaluationEvent) and e.round_num == 0
+    ]
     assert len(eval_events) > 0, "No initial evaluation event found"
     assert set(eval_events[0].metrics.keys()) == {"loss", "accuracy"}
 
 
-def test_execute_topology_information(decentralized_learning_process, mock_cluster_manager):
+def test_execute_topology_information(
+    decentralized_learning_process, mock_cluster_manager
+):
     """Test that topology information is retrieved"""
     # Execute the learning process
     decentralized_learning_process.execute()
@@ -180,7 +187,7 @@ def test_execute_training_rounds(decentralized_learning_process, mock_cluster_ma
     assert mock_cluster_manager.train_models.call_count == 2
 
     # Verify each training call had the correct parameters
-    expected_call = call(epochs=1, batch_size=32, verbose=False)
+    expected_call = call(epochs=1, batch_size=32, verbose=True)
     mock_cluster_manager.train_models.assert_has_calls([expected_call, expected_call])
 
 
@@ -190,9 +197,12 @@ def test_execute_parameter_transfer_events(decentralized_learning_process):
     decentralized_learning_process.execute()
 
     # Get all parameter transfer events
-    event_calls = decentralized_learning_process.training_monitor.emit_event.call_args_list
+    event_calls = (
+        decentralized_learning_process.training_monitor.emit_event.call_args_list
+    )
     transfer_events = [
-        call.args[0] for call in event_calls
+        call.args[0]
+        for call in event_calls
         if isinstance(call.args[0], ParameterTransferEvent)
     ]
 
@@ -202,9 +212,9 @@ def test_execute_parameter_transfer_events(decentralized_learning_process):
 
     # Check the structure of the first event
     event = transfer_events[0]
-    assert hasattr(event, 'source_nodes')
-    assert hasattr(event, 'target_nodes')
-    assert hasattr(event, 'param_summary')
+    assert hasattr(event, "source_nodes")
+    assert hasattr(event, "target_nodes")
+    assert hasattr(event, "param_summary")
 
 
 def test_execute_aggregation_events(decentralized_learning_process):
@@ -213,9 +223,12 @@ def test_execute_aggregation_events(decentralized_learning_process):
     decentralized_learning_process.execute()
 
     # Get all aggregation events
-    event_calls = decentralized_learning_process.training_monitor.emit_event.call_args_list
+    event_calls = (
+        decentralized_learning_process.training_monitor.emit_event.call_args_list
+    )
     aggregation_events = [
-        call.args[0] for call in event_calls
+        call.args[0]
+        for call in event_calls
         if isinstance(call.args[0], AggregationEvent)
     ]
 
@@ -225,13 +238,15 @@ def test_execute_aggregation_events(decentralized_learning_process):
 
     # Check structure of an event
     event = aggregation_events[0]
-    assert hasattr(event, 'participating_nodes')
-    assert hasattr(event, 'aggregator_node')
-    assert hasattr(event, 'strategy_name')
+    assert hasattr(event, "participating_nodes")
+    assert hasattr(event, "aggregator_node")
+    assert hasattr(event, "strategy_name")
     assert event.strategy_name == "GossipAvg"
 
 
-def test_execute_weighted_aggregation(decentralized_learning_process, mock_cluster_manager):
+def test_execute_weighted_aggregation(
+    decentralized_learning_process, mock_cluster_manager
+):
     """Test that weighted aggregation is used based on data size"""
     # Execute the learning process
     decentralized_learning_process.execute()
@@ -241,8 +256,8 @@ def test_execute_weighted_aggregation(decentralized_learning_process, mock_clust
 
     # Check that weights parameter was provided
     _, kwargs = mock_cluster_manager.aggregate_model_parameters.call_args
-    assert 'weights' in kwargs
-    weights = kwargs['weights']
+    assert "weights" in kwargs
+    weights = kwargs["weights"]
 
     # Should have weights (exact number depends on mock_dataset.get_partitions)
     assert len(weights) >= 1
@@ -250,10 +265,14 @@ def test_execute_weighted_aggregation(decentralized_learning_process, mock_clust
     assert all(isinstance(w, float) and w > 0 for w in weights)
 
 
-def test_execute_model_update(decentralized_learning_process, mock_cluster_manager, mock_model):
+def test_execute_model_update(
+    decentralized_learning_process, mock_cluster_manager, mock_model
+):
     """Test the model update process in execute method"""
     # Set the expected return value for aggregate_model_parameters
-    mock_cluster_manager.aggregate_model_parameters.return_value = {"layer1": np.array([2.0, 3.0])}
+    mock_cluster_manager.aggregate_model_parameters.return_value = {
+        "layer1": np.array([2.0, 3.0])
+    }
 
     # Execute the learning process
     decentralized_learning_process.execute()
@@ -262,7 +281,9 @@ def test_execute_model_update(decentralized_learning_process, mock_cluster_manag
     assert mock_model.set_parameters.call_count >= 1
 
     # Get the actual parameters passed to set_parameters
-    call_args = mock_model.set_parameters.call_args_list[-1][0][0]  # Last call, first positional arg
+    call_args = mock_model.set_parameters.call_args_list[-1][0][
+        0
+    ]  # Last call, first positional arg
 
     # Verify the parameters
     assert "layer1" in call_args
@@ -292,7 +313,7 @@ def test_execute_return_value(decentralized_learning_process, mock_model):
         {"loss": 0.5, "accuracy": 0.8},  # Round 1
         {"loss": 0.5, "accuracy": 0.8},  # Round 2
         {"loss": 0.3, "accuracy": 0.9},  # Final
-        {"loss": 0.3, "accuracy": 0.9}   # Extra in case we need it
+        {"loss": 0.3, "accuracy": 0.9},  # Extra in case we need it
     ]
 
     # Execute the learning process
@@ -308,5 +329,7 @@ def test_execute_return_value(decentralized_learning_process, mock_model):
     # Verify values
     assert result["initial_metrics"]["accuracy"] == 0.7
     assert result["final_metrics"]["accuracy"] == 0.9
-    assert pytest.approx(result["accuracy_improvement"]) == 0.2  # 0.9 - 0.7, using approx for floating point
+    assert (
+        pytest.approx(result["accuracy_improvement"]) == 0.2
+    )  # 0.9 - 0.7, using approx for floating point
     assert len(result["round_metrics"]) == 2
