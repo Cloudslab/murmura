@@ -169,21 +169,19 @@ class PrivacyManager:
             self, updates_list: List[Dict[str, Any]]
     ) -> Dict[str, float]:
         """
-        Compute adaptive clipping norms specifically for updates.
+        Compute adaptive clipping norms with proper adaptation.
         """
         if not updates_list:
             return self.clipping_norms
 
-        # Compute norms of updates
+        # Compute actual update norms
         all_norms = []
         per_layer_norms = {}
 
         for updates in updates_list:
-            # Skip if updates are all zeros
             if all(np.allclose(update, 0) for update in updates.values()):
                 continue
 
-            # Compute global norm of this client's update
             global_norm_sq = 0.0
             for key, update in updates.items():
                 if self.config.per_layer_clipping:
@@ -192,18 +190,21 @@ class PrivacyManager:
                     layer_norm = float(np.linalg.norm(update.flatten()))
                     if layer_norm > 0:
                         per_layer_norms[key].append(layer_norm)
-
                 global_norm_sq += float(np.sum(np.square(update)))
 
             global_norm = np.sqrt(global_norm_sq)
             if global_norm > 0:
                 all_norms.append(global_norm)
 
-        # If we have no valid norms, keep current clipping
         if not all_norms and not any(per_layer_norms.values()):
             return self.clipping_norms
 
-        # Use a percentile-based approach
+        # CRITICAL: Log the actual observed norms
+        if all_norms:
+            print(f"Update norms - Min: {min(all_norms):.6f}, "
+                  f"Median: {np.median(all_norms):.6f}, "
+                  f"Max: {max(all_norms):.6f}")
+
         target_quantile = self.config.adaptive_clipping_quantile
 
         if self.config.per_layer_clipping:
@@ -212,29 +213,41 @@ class PrivacyManager:
                 if key in per_layer_norms and per_layer_norms[key]:
                     observed_norm = float(np.quantile(per_layer_norms[key], target_quantile))
 
+                    # CRITICAL FIX: Less aggressive momentum and better bounds
                     if key in self.clipping_norms:
-                        # Smooth update with momentum
-                        momentum = 0.9
                         old_value = self.clipping_norms[key]
-                        new_value = momentum * old_value + (1 - momentum) * observed_norm
-                    else:
-                        new_value = observed_norm * 0.5
 
-                    # Bounds based on expected update size
-                    if self.learning_rate:
-                        # Scale bounds with learning rate
-                        max_expected = self.learning_rate * 100  # Generous upper bound
-                        min_expected = self.learning_rate * 0.1   # Lower bound
+                        # Only update if the change is significant (>10%)
+                        if abs(observed_norm - old_value) / old_value > 0.1:
+                            # Less momentum (0.7 instead of 0.9)
+                            momentum = 0.7
+                            new_value = momentum * old_value + (1 - momentum) * observed_norm
+                        else:
+                            new_value = old_value  # Keep current if change is small
                     else:
-                        max_expected = 1.0
-                        min_expected = 0.001
+                        # Start conservatively
+                        new_value = observed_norm * 0.8
 
-                    new_norms[key] = np.clip(new_value, min_expected, max_expected)
+                    # Dynamic bounds based on observed norms
+                    min_observed = min(per_layer_norms[key]) * 0.5
+                    max_observed = max(per_layer_norms[key]) * 2.0
+
+                    # But still enforce absolute bounds
+                    min_clip = max(0.001, min_observed)
+                    max_clip = min(1.0, max_observed)  # Reduced from 2.0
+
+                    new_norms[key] = np.clip(new_value, min_clip, max_clip)
                 else:
                     if key in self.clipping_norms:
                         new_norms[key] = self.clipping_norms[key]
                     else:
                         new_norms[key] = 0.1
+
+            # Log changes
+            avg_old = np.mean(list(self.clipping_norms.values()))
+            avg_new = np.mean(list(new_norms.values()))
+            if abs(avg_new - avg_old) / avg_old > 0.01:  # Only log significant changes
+                print(f"Clipping norm updated: {avg_old:.6f} → {avg_new:.6f}")
 
             return new_norms
         else:
@@ -243,23 +256,31 @@ class PrivacyManager:
                 observed_norm = float(np.quantile(all_norms, target_quantile))
 
                 if "__default__" in self.clipping_norms:
-                    momentum = 0.9
                     old_value = self.clipping_norms["__default__"]
-                    new_value = momentum * old_value + (1 - momentum) * observed_norm
+
+                    # Log what we're seeing
+                    print(f"Observed {target_quantile:.0%} quantile: {observed_norm:.6f}, "
+                          f"Current clip: {old_value:.6f}")
+
+                    # Only update if change is significant
+                    if abs(observed_norm - old_value) / old_value > 0.1:
+                        momentum = 0.7
+                        new_value = momentum * old_value + (1 - momentum) * observed_norm
+                    else:
+                        new_value = old_value
                 else:
-                    new_value = observed_norm * 0.5
+                    new_value = observed_norm * 0.8
 
-                # Learning rate aware bounds
-                if self.learning_rate:
-                    max_expected = self.learning_rate * 100
-                    min_expected = self.learning_rate * 0.1
-                else:
-                    max_expected = 1.0
-                    min_expected = 0.001
+                # Dynamic bounds
+                min_observed = min(all_norms) * 0.5
+                max_observed = max(all_norms) * 2.0
+                min_clip = max(0.001, min_observed)
+                max_clip = min(1.0, max_observed)
 
-                new_value = np.clip(new_value, min_expected, max_expected)
+                new_value = np.clip(new_value, min_clip, max_clip)
 
-                print(f"Adaptive clipping: {new_value:.6f} (from {self.clipping_norms.get('__default__', 0.1):.6f})")
+                if abs(new_value - self.clipping_norms.get("__default__", 0)) > 0.001:
+                    print(f"Clipping norm: {self.clipping_norms.get('__default__', 0):.6f} → {new_value:.6f}")
 
                 return {"__default__": new_value}
 
