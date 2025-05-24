@@ -15,6 +15,7 @@ def ray_init():
 
 class MockRayActor:
     """Mock Ray actor that can store data without serialization issues"""
+
     def __init__(self, actor_id):
         self.actor_id = actor_id
         self.data_partition = None
@@ -89,7 +90,9 @@ class MockRayActor:
         if data is None:
             # If no data is provided, should attempt to use partitioned data
             if self._dataset is None or self.data_partition is None:
-                raise ValueError("No data provided and client dataset/partition not set")
+                raise ValueError(
+                    "No data provided and client dataset/partition not set"
+                )
         return np.array([0, 1]) if data is not None else np.array([0, 1, 0])
 
     def get_model_parameters(self):
@@ -107,9 +110,15 @@ class MockRayActor:
 
     def _get_partition_data(self):
         """Mock internal method to get partition data"""
-        if (self._dataset is None or self.data_partition is None or
-                self.feature_columns is None or self.label_column is None):
-            raise ValueError("Dataset, data partition, feature columns, or label column not set")
+        if (
+            self._dataset is None
+            or self.data_partition is None
+            or self.feature_columns is None
+            or self.label_column is None
+        ):
+            raise ValueError(
+                "Dataset, data partition, feature columns, or label column not set"
+            )
         # Mock implementation
         return np.array([[1.0, 2.0], [3.0, 4.0]]), np.array([0, 1])
 
@@ -126,7 +135,7 @@ def test_predict_with_data(ray_init):
     test_data = np.array([[1.0, 2.0], [3.0, 4.0]])
 
     # Call predict with explicit data
-    with patch.object(actor._model, 'predict', return_value=np.array([0, 1])):
+    with patch.object(actor._model, "predict", return_value=np.array([0, 1])):
         predictions = actor.predict(data=test_data)
 
     # Verify output format

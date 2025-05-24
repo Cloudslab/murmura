@@ -22,9 +22,9 @@ class FedAvg(AggregationStrategy):
         super().__init__()
 
     def aggregate(
-            self,
-            parameters_list: List[Dict[str, Any]],
-            weights: Optional[List[float]] = None,
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """
         Aggregate model parameters using FedAvg.
@@ -52,15 +52,15 @@ class FedAvg(AggregationStrategy):
         for key in parameters_list[0].keys():
             try:
                 # Handle 'num_batches_tracked' and other integer parameters specially
-                if 'num_batches_tracked' in key or any(
-                        np.issubdtype(params[key].dtype, np.integer)
-                        for params in parameters_list
+                if "num_batches_tracked" in key or any(
+                    np.issubdtype(params[key].dtype, np.integer)
+                    for params in parameters_list
                 ):
                     # For integer parameters, we'll use the maximum value
                     # This is especially appropriate for 'num_batches_tracked'
-                    aggregated_params[key] = np.max([
-                        params[key] for params in parameters_list
-                    ])
+                    aggregated_params[key] = np.max(
+                        [params[key] for params in parameters_list]
+                    )
                 else:
                     # Normal floating-point parameters use weighted average
                     stacked_params = np.stack(

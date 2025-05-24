@@ -71,7 +71,7 @@ class DecentralizedLearningProcess(LearningProcess):
                     round_num=round_num,
                     active_nodes=list(range(len(self.cluster_manager.actors))),
                     metrics={},
-                    total_epochs=epochs
+                    total_epochs=epochs,
                 )
             )
 

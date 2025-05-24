@@ -141,9 +141,11 @@ class VirtualClientActor:
         # Create a callback for epoch logging
         def log_epoch_callback(epoch, total_epochs, metrics):
             if orig_verbose:
-                print(f"Client {client_id} - Epoch [{epoch}/{total_epochs}], "
-                      f"Loss: {metrics['loss']:.4f}, "
-                      f"Accuracy: {metrics['accuracy']:.4f}")
+                print(
+                    f"Client {client_id} - Epoch [{epoch}/{total_epochs}], "
+                    f"Loss: {metrics['loss']:.4f}, "
+                    f"Accuracy: {metrics['accuracy']:.4f}"
+                )
 
         # Add callback to kwargs
         kwargs["log_epoch_callback"] = log_epoch_callback

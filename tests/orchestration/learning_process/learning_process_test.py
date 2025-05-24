@@ -10,6 +10,7 @@ from murmura.visualization.training_observer import TrainingObserver
 
 class MockObserver(TrainingObserver):
     """Mock observer for testing"""
+
     def __init__(self):
         self.events = []
 
@@ -22,6 +23,7 @@ class MockObserver(TrainingObserver):
 
 class ConcreteLearningProcess(LearningProcess):
     """Concrete implementation of LearningProcess for testing"""
+
     def execute(self):
         return {"status": "executed"}
 
@@ -83,14 +85,16 @@ def test_initialize(mock_cluster_manager_class, learning_process, mock_dataset):
         num_actors=3,
         topology_config=mock_topology_config,
         aggregation_config=mock_aggregation_config,
-        partitioner=mock_partitioner
+        partitioner=mock_partitioner,
     )
 
     # Verify ClusterManager was created and configured
     mock_cluster_manager_class.assert_called_once_with({"key": "value"})
 
     # Verify aggregation strategy was set
-    mock_cluster_manager.set_aggregation_strategy.assert_called_once_with(mock_aggregation_config)
+    mock_cluster_manager.set_aggregation_strategy.assert_called_once_with(
+        mock_aggregation_config
+    )
 
     # Verify actors were created
     mock_cluster_manager.create_actors.assert_called_once_with(3, mock_topology_config)
@@ -132,12 +136,14 @@ def test_parameter_convergence_calculation():
     node_params = {
         0: {"layer": np.array([1.0, 2.0, 3.0])},
         1: {"layer": np.array([1.1, 2.1, 3.1])},
-        2: {"layer": np.array([0.9, 1.9, 2.9])}
+        2: {"layer": np.array([0.9, 1.9, 2.9])},
     }
 
     global_params = {"layer": np.array([1.0, 2.0, 3.0])}
 
-    convergence = LearningProcess._calculate_parameter_convergence(node_params, global_params)
+    convergence = LearningProcess._calculate_parameter_convergence(
+        node_params, global_params
+    )
 
     # Convergence should be the average L2 norm of parameter differences
     assert isinstance(convergence, float)
@@ -148,7 +154,7 @@ def test_parameter_summaries():
     """Test the _create_parameter_summaries static method"""
     node_params = {
         0: {"layer": np.array([1.0, 2.0, 3.0])},
-        1: {"layer": np.array([4.0, 5.0, 6.0])}
+        1: {"layer": np.array([4.0, 5.0, 6.0])},
     }
 
     summaries = LearningProcess._create_parameter_summaries(node_params)
@@ -169,10 +175,7 @@ def test_parameter_summaries():
 
 def test_parameter_summaries_empty():
     """Test parameter summaries with empty parameters"""
-    node_params = {
-        0: {},
-        1: {"layer": np.array([1.0, 2.0])}
-    }
+    node_params = {0: {}, 1: {"layer": np.array([1.0, 2.0])}}
 
     summaries = LearningProcess._create_parameter_summaries(node_params)
 

@@ -9,7 +9,7 @@ import pandas as pd
 import seaborn as sns
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as func
 import torchvision.transforms as transforms
 from PIL import Image
 from datasets import load_dataset
@@ -24,7 +24,7 @@ from tqdm import tqdm
 
 # Define the same WideResNet model architecture for consistency
 class BasicBlock(nn.Module):
-    def __init__(self, in_planes, out_planes, stride, dropRate=0.0):
+    def __init__(self, in_planes, out_planes, stride, drop_rate=0.0):
         super(BasicBlock, self).__init__()
         self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu1 = nn.ReLU(inplace=True)
@@ -36,7 +36,7 @@ class BasicBlock(nn.Module):
         self.conv2 = nn.Conv2d(
             out_planes, out_planes, kernel_size=3, stride=1, padding=1, bias=False
         )
-        self.droprate = dropRate
+        self.drop_rate = drop_rate
         self.equalInOut = in_planes == out_planes
         self.convShortcut = (
             (not self.equalInOut)
@@ -52,25 +52,27 @@ class BasicBlock(nn.Module):
         )
 
     def forward(self, x):
+        out = None
         if not self.equalInOut:
             x = self.relu1(self.bn1(x))
         else:
             out = self.relu1(self.bn1(x))
         out = self.relu2(self.bn2(self.conv1(out if self.equalInOut else x)))
-        if self.droprate > 0:
-            out = F.dropout(out, p=self.droprate, training=self.training)
+        if self.drop_rate > 0:
+            out = func.dropout(out, p=self.drop_rate, training=self.training)
         out = self.conv2(out)
         return torch.add(x if self.equalInOut else self.convShortcut(x), out)
 
 
 class NetworkBlock(nn.Module):
-    def __init__(self, nb_layers, in_planes, out_planes, block, stride, dropRate=0.0):
+    def __init__(self, nb_layers, in_planes, out_planes, block, stride, drop_rate=0.0):
         super(NetworkBlock, self).__init__()
-        self.layer = self._make_layer(
-            block, in_planes, out_planes, nb_layers, stride, dropRate
+        self.layer = self.make_layer(
+            block, in_planes, out_planes, nb_layers, stride, drop_rate
         )
 
-    def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate):
+    @staticmethod
+    def make_layer(block, in_planes, out_planes, nb_layers, stride, drop_rate):
         layers = []
         for i in range(int(nb_layers)):
             layers.append(
@@ -78,7 +80,7 @@ class NetworkBlock(nn.Module):
                     i == 0 and in_planes or out_planes,
                     out_planes,
                     i == 0 and stride or 1,
-                    dropRate,
+                    drop_rate,
                 )
             )
         return nn.Sequential(*layers)
@@ -88,7 +90,7 @@ class NetworkBlock(nn.Module):
 
 
 class WideResNet(nn.Module):
-    def __init__(self, depth=16, num_classes=7, widen_factor=8, dropRate=0.3):
+    def __init__(self, depth=16, num_classes=7, widen_factor=8, drop_rate=0.3):
         super(WideResNet, self).__init__()
         n_channels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]
         assert (depth - 4) % 6 == 0
@@ -99,11 +101,11 @@ class WideResNet(nn.Module):
             3, n_channels[0], kernel_size=3, stride=1, padding=1, bias=False
         )
         # 1st block
-        self.block1 = NetworkBlock(n, n_channels[0], n_channels[1], block, 1, dropRate)
+        self.block1 = NetworkBlock(n, n_channels[0], n_channels[1], block, 1, drop_rate)
         # 2nd block
-        self.block2 = NetworkBlock(n, n_channels[1], n_channels[2], block, 2, dropRate)
+        self.block2 = NetworkBlock(n, n_channels[1], n_channels[2], block, 2, drop_rate)
         # 3rd block
-        self.block3 = NetworkBlock(n, n_channels[2], n_channels[3], block, 2, dropRate)
+        self.block3 = NetworkBlock(n, n_channels[2], n_channels[3], block, 2, drop_rate)
         # global average pooling and classifier
         self.bn1 = nn.BatchNorm2d(n_channels[3])
         self.relu = nn.ReLU(inplace=True)
@@ -133,7 +135,7 @@ class WideResNet(nn.Module):
         out = self.block2(out)
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-        out = F.adaptive_avg_pool2d(
+        out = func.adaptive_avg_pool2d(
             out, 1
         )  # Use adaptive pooling for variable input sizes
         out = out.view(-1, self.nChannels)
@@ -175,7 +177,7 @@ def load_model(model_path, device="cuda" if torch.cuda.is_available() else "cpu"
     num_classes = checkpoint.get("num_classes", 7)
 
     # Print model configuration
-    print(f"Model configuration:")
+    print("Model configuration:")
     print(f"  Depth: {config.get('depth', 16)}")
     print(f"  Widen factor: {config.get('widen_factor', 8)}")
     print(f"  Dropout: {config.get('dropout', 0.3)}")
@@ -189,7 +191,7 @@ def load_model(model_path, device="cuda" if torch.cuda.is_available() else "cpu"
         depth=config.get("depth", 16),
         num_classes=num_classes,
         widen_factor=config.get("widen_factor", 8),
-        dropRate=config.get("dropout", 0.3),
+        drop_rate=config.get("dropout", 0.3),
     )
 
     # Load model state dict
@@ -253,7 +255,7 @@ def predict_image(
     # Make prediction
     with torch.no_grad():
         outputs = model(img_tensor)
-        probs = F.softmax(outputs, dim=1)
+        probs = func.softmax(outputs, dim=1)
         predicted_class = torch.argmax(probs, dim=1).item()
         confidence = probs[0][predicted_class].item()
 
@@ -339,7 +341,7 @@ def evaluate_model(
 
             # Make predictions for the batch
             outputs = model(batch_images)
-            probs = F.softmax(outputs, dim=1)
+            probs = func.softmax(outputs, dim=1)
             preds = torch.argmax(probs, dim=1)
 
             # Save results
@@ -358,7 +360,7 @@ def evaluate_model(
         all_labels, all_preds, average="weighted"
     )
 
-    print(f"Evaluation results:")
+    print("Evaluation results:")
     print(f"  Accuracy: {accuracy:.4f}")
     print(f"  Precision: {precision:.4f}")
     print(f"  Recall: {recall:.4f}")

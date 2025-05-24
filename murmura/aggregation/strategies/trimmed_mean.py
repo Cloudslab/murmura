@@ -30,9 +30,9 @@ class TrimmedMean(AggregationStrategy):
         self.trim_ratio = trim_ratio
 
     def aggregate(
-            self,
-            parameters_list: List[Dict[str, Any]],
-            weights: Optional[List[float]] = None,
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """
         Aggregate parameters using trimmed mean
@@ -64,15 +64,15 @@ class TrimmedMean(AggregationStrategy):
         for key in parameters_list[0].keys():
             try:
                 # Handle 'num_batches_tracked' and other integer parameters specially
-                if 'num_batches_tracked' in key or any(
-                        np.issubdtype(params[key].dtype, np.integer)
-                        for params in parameters_list
+                if "num_batches_tracked" in key or any(
+                    np.issubdtype(params[key].dtype, np.integer)
+                    for params in parameters_list
                 ):
                     # For integer parameters, we'll use the maximum value
                     # This is especially appropriate for 'num_batches_tracked'
-                    aggregated_params[key] = np.max([
-                        params[key] for params in parameters_list
-                    ])
+                    aggregated_params[key] = np.max(
+                        [params[key] for params in parameters_list]
+                    )
                 else:
                     # Stack parameters along a new axis
                     stacked_params = np.stack(
@@ -96,7 +96,7 @@ class TrimmedMean(AggregationStrategy):
 
     @staticmethod
     def _weighted_average(
-            parameters_list: List[Dict[str, Any]], weights: List[float]
+        parameters_list: List[Dict[str, Any]], weights: List[float]
     ) -> Dict[str, Any]:
         """
         Helper method for weighted average when falling back
@@ -106,14 +106,14 @@ class TrimmedMean(AggregationStrategy):
         for key in parameters_list[0].keys():
             try:
                 # Handle 'num_batches_tracked' and other integer parameters specially
-                if 'num_batches_tracked' in key or any(
-                        np.issubdtype(params[key].dtype, np.integer)
-                        for params in parameters_list
+                if "num_batches_tracked" in key or any(
+                    np.issubdtype(params[key].dtype, np.integer)
+                    for params in parameters_list
                 ):
                     # For integer parameters, we'll use the maximum value
-                    aggregated_params[key] = np.max([
-                        params[key] for params in parameters_list
-                    ])
+                    aggregated_params[key] = np.max(
+                        [params[key] for params in parameters_list]
+                    )
                 else:
                     stacked_params = np.stack(
                         [params[key] for params in parameters_list], axis=0

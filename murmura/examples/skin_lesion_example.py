@@ -3,7 +3,7 @@ import os
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as func
 from datasets import load_dataset, DatasetDict
 
 from murmura.aggregation.aggregation_config import (
@@ -23,7 +23,7 @@ from murmura.visualization.network_visualizer import NetworkVisualizer
 
 # Define the WideResNet model
 class BasicBlock(PyTorchModel):
-    def __init__(self, in_planes, out_planes, stride, dropRate=0.0):
+    def __init__(self, in_planes, out_planes, stride, drop_rate=0.0):
         super(BasicBlock, self).__init__()
         self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu1 = nn.ReLU(inplace=True)
@@ -35,7 +35,7 @@ class BasicBlock(PyTorchModel):
         self.conv2 = nn.Conv2d(
             out_planes, out_planes, kernel_size=3, stride=1, padding=1, bias=False
         )
-        self.droprate = dropRate
+        self.drop_rate = drop_rate
         self.equalInOut = in_planes == out_planes
         self.convShortcut = (
             (not self.equalInOut)
@@ -51,25 +51,27 @@ class BasicBlock(PyTorchModel):
         )
 
     def forward(self, x):
+        out = None
         if not self.equalInOut:
             x = self.relu1(self.bn1(x))
         else:
             out = self.relu1(self.bn1(x))
         out = self.relu2(self.bn2(self.conv1(out if self.equalInOut else x)))
-        if self.droprate > 0:
-            out = F.dropout(out, p=self.droprate, training=self.training)
+        if self.drop_rate > 0:
+            out = func.dropout(out, p=self.drop_rate, training=self.training)
         out = self.conv2(out)
         return torch.add(x if self.equalInOut else self.convShortcut(x), out)
 
 
 class NetworkBlock(PyTorchModel):
-    def __init__(self, nb_layers, in_planes, out_planes, block, stride, dropRate=0.0):
+    def __init__(self, nb_layers, in_planes, out_planes, block, stride, drop_rate=0.0):
         super(NetworkBlock, self).__init__()
-        self.layer = self._make_layer(
-            block, in_planes, out_planes, nb_layers, stride, dropRate
+        self.layer = self.make_layer(
+            block, in_planes, out_planes, nb_layers, stride, drop_rate
         )
 
-    def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate):
+    @staticmethod
+    def make_layer(block, in_planes, out_planes, nb_layers, stride, drop_rate):
         layers = []
         for i in range(int(nb_layers)):
             layers.append(
@@ -77,7 +79,7 @@ class NetworkBlock(PyTorchModel):
                     i == 0 and in_planes or out_planes,
                     out_planes,
                     i == 0 and stride or 1,
-                    dropRate,
+                    drop_rate,
                 )
             )
         return nn.Sequential(*layers)
@@ -92,7 +94,7 @@ class WideResNet(PyTorchModel):
     Default configuration is optimized for skin lesion classification (7 classes for HAM10000).
     """
 
-    def __init__(self, depth=16, num_classes=7, widen_factor=8, dropRate=0.3):
+    def __init__(self, depth=16, num_classes=7, widen_factor=8, drop_rate=0.3):
         super(WideResNet, self).__init__()
         n_channels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]
         assert (depth - 4) % 6 == 0
@@ -104,11 +106,11 @@ class WideResNet(PyTorchModel):
             3, n_channels[0], kernel_size=3, stride=1, padding=1, bias=False
         )
         # 1st block
-        self.block1 = NetworkBlock(n, n_channels[0], n_channels[1], block, 1, dropRate)
+        self.block1 = NetworkBlock(n, n_channels[0], n_channels[1], block, 1, drop_rate)
         # 2nd block
-        self.block2 = NetworkBlock(n, n_channels[1], n_channels[2], block, 2, dropRate)
+        self.block2 = NetworkBlock(n, n_channels[1], n_channels[2], block, 2, drop_rate)
         # 3rd block
-        self.block3 = NetworkBlock(n, n_channels[2], n_channels[3], block, 2, dropRate)
+        self.block3 = NetworkBlock(n, n_channels[2], n_channels[3], block, 2, drop_rate)
         # Global average pooling and classifier
         self.bn1 = nn.BatchNorm2d(n_channels[3])
         self.relu = nn.ReLU(inplace=True)
@@ -131,7 +133,7 @@ class WideResNet(PyTorchModel):
         out = self.block2(out)
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-        out = F.adaptive_avg_pool2d(
+        out = func.adaptive_avg_pool2d(
             out, 1
         )  # Use adaptive pooling for variable input sizes
         out = out.view(-1, self.nChannels)
@@ -249,7 +251,7 @@ def find_optimal_batch_size(model, input_size, max_batch_size=64, min_batch_size
     batch_size = max_batch_size
     while batch_size > min_batch_size:
         try:
-            # Create a dummy input tensor
+            # Create a fake input tensor
             dummy_input = torch.randn(batch_size, *input_size, device=device)
 
             # Try a forward and backward pass
@@ -500,7 +502,7 @@ def main() -> None:
             depth=args.depth,
             num_classes=num_classes,
             widen_factor=args.widen_factor,
-            dropRate=args.dropout,
+            drop_rate=args.dropout,
         )
 
         optimal_batch_size = find_optimal_batch_size(

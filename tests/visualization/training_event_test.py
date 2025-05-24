@@ -51,7 +51,7 @@ def test_parameter_transfer_event():
         round_num=3,
         source_nodes=source_nodes,
         target_nodes=target_nodes,
-        param_summary=param_summary
+        param_summary=param_summary,
     )
 
     assert event.round_num == 3
@@ -71,7 +71,7 @@ def test_aggregation_event():
         round_num=4,
         participating_nodes=participating_nodes,
         aggregator_node=aggregator_node,
-        strategy_name=strategy_name
+        strategy_name=strategy_name,
     )
 
     assert event.round_num == 4
@@ -87,9 +87,7 @@ def test_model_update_event():
     param_convergence = 0.01
 
     event = ModelUpdateEvent(
-        round_num=5,
-        updated_nodes=updated_nodes,
-        param_convergence=param_convergence
+        round_num=5, updated_nodes=updated_nodes, param_convergence=param_convergence
     )
 
     assert event.round_num == 5

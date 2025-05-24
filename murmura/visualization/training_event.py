@@ -19,8 +19,14 @@ class TrainingEvent:
 class LocalTrainingEvent(TrainingEvent):
     """Event for local training process"""
 
-    def __init__(self, round_num: int, active_nodes: List[int], metrics: Dict,
-                 current_epoch: Optional[int] = None, total_epochs: Optional[int] = None):
+    def __init__(
+        self,
+        round_num: int,
+        active_nodes: List[int],
+        metrics: Dict,
+        current_epoch: Optional[int] = None,
+        total_epochs: Optional[int] = None,
+    ):
         """
         Args:
             round_num (int): The current round number.
