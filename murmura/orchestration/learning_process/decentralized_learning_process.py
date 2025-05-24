@@ -18,6 +18,7 @@ class DecentralizedLearningProcess(LearningProcess):
     """
     Implementation of a decentralized learning process where nodes exchange
     information directly with their neighbors without a central coordinator.
+    Enhanced with multi-node support.
     """
 
     def execute(self) -> Dict[str, Any]:
@@ -29,22 +30,26 @@ class DecentralizedLearningProcess(LearningProcess):
         if not self.cluster_manager:
             raise ValueError("Learning process not initialized. Call initialize first.")
 
-        # Get configuration parameters
-        rounds = self.config.get("rounds", 5)
-        epochs = self.config.get("epochs", 1)
-        batch_size = self.config.get("batch_size", 32)
-        test_split = self.config.get("test_split", "test")
+        # Get configuration parameters using the new helper method
+        rounds = self.get_config_value("rounds", 5)
+        epochs = self.get_config_value("epochs", 1)
+        batch_size = self.get_config_value("batch_size", 32)
+        test_split = self.get_config_value("test_split", "test")
+
+        # Enhanced logging with cluster context
+        self.log_training_progress(0, {"status": "starting_decentralized", "rounds": rounds})
 
         # Prepare test data for global evaluation
         test_dataset = self.dataset.get_split(test_split)
-        test_features = np.array(
-            test_dataset[self.config.get("feature_columns", ["image"])[0]]
-        )
-        test_labels = np.array(test_dataset[self.config.get("label_column", "label")])
+        feature_columns = self.get_config_value("feature_columns", ["image"])
+        label_column = self.get_config_value("label_column", "label")
+
+        test_features = np.array(test_dataset[feature_columns[0]])
+        test_labels = np.array(test_dataset[label_column])
 
         # Evaluate initial model
         initial_metrics = self.model.evaluate(test_features, test_labels)
-        print(f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%")
+        self.logger.info(f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%")
 
         # Emit evaluation event for visualization
         self.training_monitor.emit_event(
@@ -58,12 +63,18 @@ class DecentralizedLearningProcess(LearningProcess):
 
         round_metrics = []
 
-        # Training rounds
+        # Training rounds with enhanced multi-node monitoring
         for round_num in range(1, rounds + 1):
-            print(f"\n--- Round {round_num}/{rounds} ---")
+            self.logger.info(f"--- Round {round_num}/{rounds} ---")
 
-            # 1. Local Training
-            print(f"Training on clients for {epochs} epochs...")
+            # Monitor resource usage if enabled
+            monitor_resources = self.get_config_value("monitor_resources", False)
+            if monitor_resources:
+                resource_usage = self.monitor_resource_usage()
+                self.logger.debug(f"Round {round_num} resource usage: {resource_usage.get('resource_utilization', {})}")
+
+            # 1. Local Training with enhanced logging
+            self.logger.info(f"Training on clients for {epochs} epochs...")
 
             # Emit local training event with epoch info
             self.training_monitor.emit_event(
@@ -75,8 +86,8 @@ class DecentralizedLearningProcess(LearningProcess):
                 )
             )
 
-            # Training with epoch progress logging
-            print(f"Local training progress (each client trains for {epochs} epochs):")
+            # Training with enhanced progress logging for multi-node
+            self.logger.info(f"Local training progress across {topology_info.get('total_nodes', 'unknown')} nodes (each client trains for {epochs} epochs):")
             train_metrics = self.cluster_manager.train_models(
                 epochs=epochs, batch_size=batch_size, verbose=True
             )
@@ -84,12 +95,18 @@ class DecentralizedLearningProcess(LearningProcess):
             # Calculate average training metrics
             avg_train_loss = mean([m["loss"] for m in train_metrics])
             avg_train_acc = mean([m["accuracy"] for m in train_metrics])
-            print(f"Avg Training Loss: {avg_train_loss:.4f}")
-            print(f"Avg Training Accuracy: {avg_train_acc * 100:.2f}%")
+
+            # Enhanced logging with cluster context
+            self.log_training_progress(round_num, {
+                "avg_train_loss": avg_train_loss,
+                "avg_train_accuracy": avg_train_acc,
+                "active_clients": len(train_metrics),
+                "topology": topology_type
+            })
 
             # 2. Parameter Exchange and Aggregation (Decentralized)
-            print(
-                f"Performing decentralized aggregation using {topology_type} topology..."
+            self.logger.info(
+                f"Performing decentralized aggregation using {topology_type} topology across {topology_info.get('total_nodes', 'unknown')} nodes..."
             )
 
             # Collect parameters for visualization
@@ -134,7 +151,7 @@ class DecentralizedLearningProcess(LearningProcess):
                 )
 
             # Get client data sizes for weighted aggregation (if needed)
-            split = self.config.get("split", "train")
+            split = self.get_config_value("split", "train")
             partitions = list(self.dataset.get_partitions(split).values())
             client_data_sizes = [len(partition) for partition in partitions]
 
@@ -167,11 +184,11 @@ class DecentralizedLearningProcess(LearningProcess):
                 )
             )
 
-            # 4. Evaluation
+            # 4. Evaluation with enhanced multi-node context
             # Evaluate global model on test set
             test_metrics = self.model.evaluate(test_features, test_labels)
-            print(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
-            print(f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%")
+            self.logger.info(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
+            self.logger.info(f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%")
 
             # Emit evaluation event
             self.training_monitor.emit_event(
@@ -189,19 +206,31 @@ class DecentralizedLearningProcess(LearningProcess):
                 }
             )
 
-        # Final evaluation
+        # Final evaluation with enhanced cluster context
         final_metrics = self.model.evaluate(test_features, test_labels)
         improvement = final_metrics["accuracy"] - initial_metrics["accuracy"]
 
-        print("\n=== Final Model Evaluation ===")
-        print(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
-        print(f"Accuracy Improvement: {improvement * 100:.2f}%")
+        # Enhanced final logging with multi-node context
+        cluster_summary = self.get_cluster_summary()
+        self.logger.info("=== Final Model Evaluation ===")
+        self.logger.info(f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}")
+        self.logger.info(f"Total physical nodes: {cluster_summary.get('total_nodes', 'unknown')}")
+        self.logger.info(f"Total virtual actors: {cluster_summary.get('total_actors', 'unknown')}")
+        self.logger.info(f"Topology used: {cluster_summary.get('topology', 'unknown')}")
+        self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
+        self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")
 
-        # Return results
-        return {
+        # Return enhanced results with topology information
+        results = {
             "initial_metrics": initial_metrics,
             "final_metrics": final_metrics,
             "accuracy_improvement": improvement,
             "round_metrics": round_metrics,
             "topology": topology_info,
         }
+
+        # Add cluster information if available
+        if cluster_summary:
+            results["cluster_info"] = cluster_summary
+
+        return results

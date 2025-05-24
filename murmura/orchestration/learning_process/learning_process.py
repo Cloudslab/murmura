@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 
 import numpy as np
 
@@ -22,25 +22,31 @@ class LearningProcess(ABC):
     """
 
     def __init__(
-        self, config: Dict[str, Any], dataset: MDataset, model: ModelInterface
+            self, config: Union[Dict[str, Any], OrchestrationConfig], dataset: MDataset, model: ModelInterface
     ):
         """
         Initialize the learning process.
 
-        :param config: Configuration dictionary (can be from OrchestrationConfig)
+        :param config: Configuration dictionary or OrchestrationConfig
         :param dataset: Dataset instance
         :param model: Model instance
         """
-        self.config = config
+        # Handle both dict and OrchestrationConfig inputs
+        if isinstance(config, OrchestrationConfig):
+            self.config = config
+            self.config_dict = config.model_dump()
+        else:
+            self.config_dict = config
+            # For backward compatibility, create OrchestrationConfig if we have dict
+            self.config = self._create_orchestration_config_from_dict(config)
+
         self.dataset = dataset
         self.model = model
         self.cluster_manager: Optional[ClusterManager] = None
         self.training_monitor = TrainingMonitor()
 
         # Set up logging for the learning process
-        self.logger = logging.getLogger(
-            f"murmura.learning_process.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"murmura.learning_process.{self.__class__.__name__}")
 
     def register_observer(self, observer) -> None:
         """
@@ -52,11 +58,11 @@ class LearningProcess(ABC):
         self.logger.debug(f"Registered observer: {observer.__class__.__name__}")
 
     def initialize(
-        self,
-        num_actors: int,
-        topology_config: TopologyConfig,
-        aggregation_config: AggregationConfig,
-        partitioner: Partitioner,
+            self,
+            num_actors: int,
+            topology_config: TopologyConfig,
+            aggregation_config: AggregationConfig,
+            partitioner: Partitioner,
     ) -> None:
         """
         Initialize the learning process by setting up the cluster, creating actors, and distributing data and models.
@@ -68,25 +74,12 @@ class LearningProcess(ABC):
         """
         self.logger.info("=== Initializing Learning Process ===")
 
-        # Create OrchestrationConfig if we have a dict config
-        if isinstance(self.config, dict) and "ray_cluster" not in self.config:
-            # Convert legacy config format to new OrchestrationConfig
-            orchestration_config = self._create_orchestration_config_from_dict(
-                self.config, num_actors, topology_config, aggregation_config
-            )
-        elif hasattr(self.config, "ray_cluster"):
-            # Already an OrchestrationConfig
-            orchestration_config = self.config
-        else:
-            # Legacy dict config, create default OrchestrationConfig
-            orchestration_config = OrchestrationConfig(
-                num_actors=num_actors,
-                topology=topology_config,
-                aggregation=aggregation_config,
-            )
+        # Update config with actor count if needed
+        if hasattr(self.config, 'num_actors'):
+            self.config.num_actors = num_actors
 
         # Initialize the cluster manager with enhanced config
-        self.cluster_manager = ClusterManager(orchestration_config)
+        self.cluster_manager = ClusterManager(self.config)
 
         self.logger.info("Setting up aggregation strategy...")
         self.cluster_manager.set_aggregation_strategy(aggregation_config)
@@ -97,10 +90,8 @@ class LearningProcess(ABC):
 
         # Log cluster information
         cluster_stats = self.cluster_manager.get_cluster_stats()
-        self.logger.info(
-            f"Cluster stats: {cluster_stats['cluster_info']['total_nodes']} nodes, "
-            f"Multi-node: {cluster_stats['cluster_info']['is_multinode']}"
-        )
+        self.logger.info(f"Cluster stats: {cluster_stats['cluster_info']['total_nodes']} nodes, "
+                         f"Multi-node: {cluster_stats['cluster_info']['is_multinode']}")
 
         self.cluster_manager.create_actors(num_actors, topology_config)
 
@@ -117,7 +108,7 @@ class LearningProcess(ABC):
                 observer.set_topology(self.cluster_manager.topology_manager)
 
         self.logger.info("Partitioning dataset...")
-        split = self.config.get("split", "train")
+        split = self.get_config_value("split", "train")
         partitioner.partition(self.dataset, split)
 
         self.logger.info("Distributing data partitions...")
@@ -126,16 +117,16 @@ class LearningProcess(ABC):
             partitions,
             metadata={
                 "split": split,
-                "dataset": self.config.get("dataset_name", "unknown"),
+                "dataset": self.get_config_value("dataset_name", "unknown"),
                 "topology": topology_config.topology_type.value,
-                "cluster_nodes": cluster_stats["cluster_info"]["total_nodes"],
-                "is_multinode": cluster_stats["cluster_info"]["is_multinode"],
+                "cluster_nodes": cluster_stats['cluster_info']['total_nodes'],
+                "is_multinode": cluster_stats['cluster_info']['is_multinode']
             },
         )
 
         self.logger.info("Distributing dataset...")
-        feature_columns = self.config.get("feature_columns", None)
-        label_column = self.config.get("label_column", None)
+        feature_columns = self.get_config_value("feature_columns", None)
+        label_column = self.get_config_value("label_column", None)
         self.cluster_manager.distribute_dataset(
             self.dataset, feature_columns=feature_columns, label_column=label_column
         )
@@ -145,20 +136,36 @@ class LearningProcess(ABC):
 
         self.logger.info("Learning process initialized successfully.")
 
+    def get_config_value(self, key: str, default: Any = None) -> Any:
+        """
+        Get configuration value, supporting both dict and OrchestrationConfig
+
+        :param key: Configuration key
+        :param default: Default value if key not found
+        :return: Configuration value
+        """
+        if isinstance(self.config, OrchestrationConfig):
+            # Handle OrchestrationConfig objects
+            if hasattr(self.config, key):
+                return getattr(self.config, key)
+            elif key in self.config_dict:
+                return self.config_dict[key]
+            else:
+                return default
+        else:
+            # Handle dictionary configs (backward compatibility)
+            return self.config_dict.get(key, default)
+
     def _create_orchestration_config_from_dict(
-        self,
-        config_dict: Dict[str, Any],
-        num_actors: int,
-        topology_config: TopologyConfig,
-        aggregation_config: AggregationConfig,
+            self,
+            config_dict: Dict[str, Any]
     ) -> OrchestrationConfig:
         """
         Create OrchestrationConfig from legacy dict config for backward compatibility
         """
-        from murmura.orchestration.orchestration_config import (
-            RayClusterConfig,
-            ResourceConfig,
-        )
+        from murmura.orchestration.orchestration_config import RayClusterConfig, ResourceConfig
+        from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+        from murmura.network_management.topology import TopologyConfig, TopologyType
 
         # Extract Ray cluster config
         ray_cluster_config = RayClusterConfig()
@@ -168,9 +175,19 @@ class LearningProcess(ABC):
         # Extract resource config
         resource_config = ResourceConfig()
 
+        # Extract aggregation config if not provided separately
+        aggregation_config = AggregationConfig()
+        if "aggregation_strategy" in config_dict:
+            aggregation_config.strategy_type = AggregationStrategyType(config_dict["aggregation_strategy"])
+
+        # Extract topology config if not provided separately
+        topology_config = TopologyConfig()
+        if "topology" in config_dict:
+            topology_config.topology_type = TopologyType(config_dict["topology"])
+
         # Create orchestration config
         orchestration_config = OrchestrationConfig(
-            num_actors=num_actors,
+            num_actors=config_dict.get("num_actors", 10),
             topology=topology_config,
             aggregation=aggregation_config,
             dataset_name=config_dict.get("dataset_name", "unknown"),
@@ -179,7 +196,7 @@ class LearningProcess(ABC):
             min_partition_size=config_dict.get("min_partition_size", 100),
             split=config_dict.get("split", "train"),
             ray_cluster=ray_cluster_config,
-            resources=resource_config,
+            resources=resource_config
         )
 
         return orchestration_config
@@ -230,17 +247,14 @@ class LearningProcess(ABC):
                     health = ray.get(actor.health_check.remote(), timeout=10)
                     health_checks.append(health)
                 except Exception as e:
-                    health_checks.append(
-                        {"status": "error", "error": f"Health check failed: {e}"}
-                    )
+                    health_checks.append({
+                        "status": "error",
+                        "error": f"Health check failed: {e}"
+                    })
 
             # Summarize health status
-            healthy_count = sum(
-                1 for h in health_checks if h.get("status") == "healthy"
-            )
-            degraded_count = sum(
-                1 for h in health_checks if h.get("status") == "degraded"
-            )
+            healthy_count = sum(1 for h in health_checks if h.get("status") == "healthy")
+            degraded_count = sum(1 for h in health_checks if h.get("status") == "degraded")
             error_count = sum(1 for h in health_checks if h.get("status") == "error")
 
             return {
@@ -249,7 +263,7 @@ class LearningProcess(ABC):
                 "healthy": healthy_count,
                 "degraded": degraded_count,
                 "error": error_count,
-                "health_checks": health_checks,
+                "health_checks": health_checks
             }
 
         except Exception as e:
@@ -270,18 +284,14 @@ class LearningProcess(ABC):
             topology_info = self.cluster_manager.get_topology_information()
 
             summary = {
-                "cluster_type": "multi-node"
-                if cluster_stats["cluster_info"]["is_multinode"]
-                else "single-node",
-                "total_nodes": cluster_stats["cluster_info"]["total_nodes"],
-                "total_actors": cluster_stats["num_actors"],
-                "topology": topology_info.get("type", "unknown"),
-                "placement_strategy": cluster_stats["placement_strategy"],
-                "has_placement_group": cluster_stats["has_placement_group"],
-                "available_resources": cluster_stats["cluster_info"].get(
-                    "available_resources", {}
-                ),
-                "resource_config": cluster_stats["resource_config"],
+                "cluster_type": "multi-node" if cluster_stats['cluster_info']['is_multinode'] else "single-node",
+                "total_nodes": cluster_stats['cluster_info']['total_nodes'],
+                "total_actors": cluster_stats['num_actors'],
+                "topology": topology_info.get('type', 'unknown'),
+                "placement_strategy": cluster_stats['placement_strategy'],
+                "has_placement_group": cluster_stats['has_placement_group'],
+                "available_resources": cluster_stats['cluster_info'].get('available_resources', {}),
+                "resource_config": cluster_stats['resource_config']
             }
 
             return summary
@@ -292,7 +302,7 @@ class LearningProcess(ABC):
 
     @staticmethod
     def _calculate_parameter_convergence(
-        node_params: Dict[int, Dict[str, Any]], global_params: Dict[str, Any]
+            node_params: Dict[int, Dict[str, Any]], global_params: Dict[str, Any]
     ) -> float:
         """
         Calculate a measure of parameter convergence across nodes.
@@ -320,7 +330,7 @@ class LearningProcess(ABC):
 
     @staticmethod
     def _create_parameter_summaries(
-        node_params: Dict[int, Dict[str, Any]],
+            node_params: Dict[int, Dict[str, Any]],
     ) -> Dict[int, Dict[str, float]]:
         """
         Create summaries of model parameters for visualization.
@@ -356,20 +366,12 @@ class LearningProcess(ABC):
         cluster_info = ""
         if self.cluster_manager:
             stats = self.cluster_manager.get_cluster_stats()
-            cluster_type = (
-                "multi-node" if stats["cluster_info"]["is_multinode"] else "single-node"
-            )
-            cluster_info = (
-                f"[{cluster_type}:{stats['cluster_info']['total_nodes']} nodes] "
-            )
+            cluster_type = "multi-node" if stats['cluster_info']['is_multinode'] else "single-node"
+            cluster_info = f"[{cluster_type}:{stats['cluster_info']['total_nodes']} nodes] "
 
         # Log key metrics
-        metric_str = ", ".join(
-            [
-                f"{k}: {v:.4f}" if isinstance(v, float) else f"{k}: {v}"
-                for k, v in metrics.items()
-            ]
-        )
+        metric_str = ", ".join([f"{k}: {v:.4f}" if isinstance(v, float) else f"{k}: {v}"
+                                for k, v in metrics.items()])
 
         self.logger.info(f"{cluster_info}Round {round_num} - {metric_str}")
 
@@ -399,14 +401,14 @@ class LearningProcess(ABC):
                     "total": total,
                     "used": used,
                     "available": available,
-                    "utilization_percent": utilization_pct,
+                    "utilization_percent": utilization_pct
                 }
 
             return {
                 "timestamp": ray.util.get_current_time_ms(),
                 "cluster_resources": cluster_resources,
                 "available_resources": available_resources,
-                "resource_utilization": resource_utilization,
+                "resource_utilization": resource_utilization
             }
 
         except Exception as e:
