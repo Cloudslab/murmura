@@ -102,7 +102,7 @@ class MDataset:
         return new_dataset
 
     @classmethod
-    def load_dataset_with_multinode_support(cls: type[T], source, dataset_name, split) -> T:
+    def load_dataset_with_multinode_support(cls, source, dataset_name, split):
         """
         Backward compatible helper that users can drop into existing code
         """
@@ -117,15 +117,15 @@ class MDataset:
 
     @classmethod
     def create_multinode_compatible(
-            cls: type[T],
+            cls,
             source: DatasetSource,
             split: Optional[Union[str, List[str]]] = None,
             force_serializable: bool = True,
             **kwargs: Any,
-    ) -> T:
+    ):
         """
         Create a dataset that's optimized for multi-node distribution.
-        
+
         Args:
             source: Data source type
             split: Split(s) to load
@@ -151,11 +151,11 @@ class MDataset:
 
     @classmethod
     def load(
-            cls: type[T],
+            cls,
             source: DatasetSource,
             split: Optional[Union[str, List[str]]] = None,
             **kwargs: Any,
-    ) -> T:
+    ):
         """
         Load data from specified source with consistent interface
 
@@ -164,7 +164,7 @@ class MDataset:
             split: Split(s) to load (format depends on source)
             **kwargs: Source-specific parameters
         """
-        loader: Dict[DatasetSource, Callable[..., T]] = {
+        loader: Dict[DatasetSource, Callable[..., Any]] = {
             DatasetSource.CSV: cls._load_csv,
             DatasetSource.JSON: cls._load_json,
             DatasetSource.PARQUET: cls._load_parquet,
@@ -178,50 +178,50 @@ class MDataset:
 
     @classmethod
     def _load_csv(
-            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
-    ) -> T:
+            cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+    ):
         df = pd.read_csv(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_json(
-            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
-    ) -> T:
+            cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+    ):
         df = pd.read_json(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_parquet(
-            cls: type[T], path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
-    ) -> T:
+            cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+    ):
         df = pd.read_parquet(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_pandas(
-            cls: type[T], data: pd.DataFrame, split: Optional[str] = None, **_: Any
-    ) -> T:
+            cls, data: pd.DataFrame, split: Optional[str] = None, **_: Any
+    ):
         return cls._create_from_data(data, split)
 
     @classmethod
     def _load_dict(
-            cls: type[T], data: Dict, split: Optional[str] = None, **_: Any
-    ) -> T:
+            cls, data: Dict, split: Optional[str] = None, **_: Any
+    ):
         return cls._create_from_data(data, split)
 
     @classmethod
     def _load_list(
-            cls: type[T], data: List, split: Optional[str] = None, **_: Any
-    ) -> T:
+            cls, data: List, split: Optional[str] = None, **_: Any
+    ):
         return cls._create_from_data(data, split)
 
     @classmethod
     def _load_hf(
-            cls: type[T],
+            cls,
             dataset_name: str,
             split: Optional[Union[str, List[str]]] = None,
             **kwargs: Any,
-    ) -> T:
+    ):
         try:
             if split is None:
                 raise ValueError("split is not specified")
@@ -264,8 +264,8 @@ class MDataset:
 
     @classmethod
     def _create_from_data(
-            cls: type[T], data: Union[pd.DataFrame, Dict, List], split: Optional[str] = None
-    ) -> T:
+            cls, data: Union[pd.DataFrame, Dict, List], split: Optional[str] = None
+    ):
         """Create MDataset from in-memory data structures"""
         if isinstance(data, pd.DataFrame):
             dataset = Dataset.from_pandas(data)
@@ -377,7 +377,7 @@ class MDataset:
             )
 
     @classmethod
-    def reconstruct_from_metadata(cls: type[T], metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]) -> T:
+    def reconstruct_from_metadata(cls, metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]):
         """Reconstruct dataset from metadata on remote nodes"""
         logger = logging.getLogger("murmura.dataset")
 
