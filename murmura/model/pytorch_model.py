@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
 
+from murmura.data_processing.data_preprocessor import GenericDataPreprocessor
 from murmura.model.model_interface import ModelInterface
 
 
@@ -21,17 +22,20 @@ class PyTorchModel(nn.Module):
 
 class TorchModelWrapper(ModelInterface):
     """
-    PyTorch's implementation of the ModelInterface. This wrapper adapts PyTorch models to the unified interface.
+    Generic PyTorch implementation of the ModelInterface with configurable data preprocessing.
+    This wrapper adapts PyTorch models to the unified interface and handles various data formats
+    through a pluggable preprocessing system.
     """
 
     def __init__(
-        self,
-        model: PyTorchModel,
-        loss_fn: Optional[nn.Module] = None,
-        optimizer_class: Optional[Callable] = None,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
-        device: Optional[str] = None,
-        input_shape: Optional[Tuple[int, ...]] = None,
+            self,
+            model: PyTorchModel,
+            loss_fn: Optional[nn.Module] = None,
+            optimizer_class: Optional[Callable] = None,
+            optimizer_kwargs: Optional[Dict[str, Any]] = None,
+            device: Optional[str] = None,
+            input_shape: Optional[Tuple[int, ...]] = None,
+            data_preprocessor: Optional[Any] = None,  # GenericDataPreprocessor
     ):
         """
         Initialize the PyTorch model wrapper.
@@ -42,6 +46,7 @@ class TorchModelWrapper(ModelInterface):
         :param optimizer_kwargs: Additional arguments for the optimizer.
         :param device: Device to use for training (e.g., 'cpu', 'cuda').
         :param input_shape: Shape of the input data.
+        :param data_preprocessor: Custom data preprocessor. If None, uses auto-detection.
         """
         self.model = model
         self.loss_fn = loss_fn or nn.CrossEntropyLoss()
@@ -54,6 +59,17 @@ class TorchModelWrapper(ModelInterface):
             self.device = "cpu"  # Initialize to CPU for safe serialization
         else:
             self.device = device
+
+        # Set up data preprocessor
+        if data_preprocessor is None:
+            # Import here to avoid circular imports
+            try:
+                self.data_preprocessor = GenericDataPreprocessor()
+            except ImportError:
+                # Fallback to None - will use basic numpy conversion
+                self.data_preprocessor = None
+        else:
+            self.data_preprocessor = data_preprocessor
 
         # Initialize model on CPU first for serialization safety
         self.model.to("cpu")
@@ -68,54 +84,53 @@ class TorchModelWrapper(ModelInterface):
             batch_size: int = 32,
     ) -> DataLoader:
         """
-        Convert numpy arrays to PyTorch DataLoader.
+        Enhanced data preparation with pluggable preprocessing.
 
-        :param data: Input data as numpy array.
+        :param data: Input data as numpy array or other format.
         :param labels: Corresponding labels as numpy array.
         :param batch_size: Batch size for DataLoader.
 
         :return: DataLoader object.
         """
-        # Handle object dtype arrays (common with MNIST and other image datasets)
-        if data.dtype == np.object_:
-            # Convert object array to a proper numeric array
+        # Use the generic preprocessor if available
+        if self.data_preprocessor is not None:
             try:
-                # First, try to stack the objects if they're arrays
-                if hasattr(data[0], 'shape'):
-                    # If the first element has a shape, assume all are arrays
-                    data = np.stack(data.tolist())
+                # Convert data to list if it's not already
+                if isinstance(data, np.ndarray) and data.dtype == np.object_:
+                    data_list = data.tolist()
+                elif hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
+                    data_list = list(data)
                 else:
-                    # Otherwise, convert to a regular array
-                    data = np.array(data.tolist())
-            except (ValueError, AttributeError) as e:
-                # Fallback: try to convert each element individually
-                processed_data = []
-                for item in data:
-                    if hasattr(item, 'astype'):
-                        processed_data.append(item.astype(np.float32))
-                    else:
-                        processed_data.append(np.array(item, dtype=np.float32))
-                data = np.stack(processed_data)
+                    data_list = [data]
 
-        # Ensure data is in a supported numeric dtype
-        if data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number):
-            # If still object type or not numeric, convert to float32
-            try:
-                data = data.astype(np.float32)
-            except (ValueError, TypeError):
-                # Last resort: convert via list
-                data = np.array(data.tolist(), dtype=np.float32)
+                # Use the generic preprocessor
+                processed_data = self.data_preprocessor.preprocess_features(data_list)
+                data = processed_data
 
-        # Convert to tensor with explicit dtype
+            except Exception as e:
+                # Fallback to manual processing if generic preprocessor fails
+                print(f"Warning: Generic preprocessor failed ({e}), falling back to manual processing")
+                data = self.fallback_data_processing(data)
+        else:
+            # Fallback processing when no preprocessor is available
+            data = self.fallback_data_processing(data)
+
+        # Ensure data is a numpy array with correct dtype
+        if not isinstance(data, np.ndarray):
+            data = np.array(data, dtype=np.float32)
+        elif data.dtype != np.float32:
+            data = data.astype(np.float32)
+
+        # Convert to tensor
         tensor_data = torch.tensor(data, dtype=torch.float32)
 
         # Handle reshaping if necessary
         if self.input_shape and tensor_data.shape[1:] != self.input_shape:
             tensor_data = tensor_data.reshape(-1, *self.input_shape)
 
+        # Handle labels
         if labels is not None:
-            # Handle labels in case they're also object dtype
-            if labels.dtype == np.object_:
+            if hasattr(labels, 'dtype') and labels.dtype == np.object_:
                 try:
                     labels = np.array(labels.tolist())
                 except:
@@ -127,6 +142,44 @@ class TorchModelWrapper(ModelInterface):
             dataset = TensorDataset(tensor_data)
 
         return DataLoader(dataset, batch_size=batch_size, shuffle=(labels is not None))
+
+    @staticmethod
+    def fallback_data_processing(data: Any) -> np.ndarray:
+        """
+        Fallback data processing when no generic preprocessor is available.
+
+        :param data: Input data in any format
+        :return: Processed numpy array
+        """
+        # Handle object dtype arrays (common with HuggingFace datasets)
+        if hasattr(data, 'dtype') and data.dtype == np.object_:
+            try:
+                # Try to convert object array to regular array
+                if hasattr(data[0], 'shape'):
+                    # If elements are arrays, stack them
+                    data = np.stack(data.tolist())
+                else:
+                    # Otherwise, convert to regular array
+                    data = np.array(data.tolist())
+            except (ValueError, AttributeError):
+                # If that fails, try element-wise conversion
+                processed_data = []
+                for item in data:
+                    if hasattr(item, 'astype'):
+                        processed_data.append(item.astype(np.float32))
+                    else:
+                        processed_data.append(np.array(item, dtype=np.float32))
+                data = np.stack(processed_data)
+
+        # Ensure data is in a supported numeric dtype
+        if hasattr(data, 'dtype') and (data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)):
+            try:
+                data = data.astype(np.float32)
+            except (ValueError, TypeError):
+                # Last resort: convert via list
+                data = np.array(data.tolist(), dtype=np.float32)
+
+        return data
 
     def detect_and_set_device(self) -> None:
         """
@@ -163,6 +216,9 @@ class TorchModelWrapper(ModelInterface):
         epochs = kwargs.get("epochs", 1)
         verbose = kwargs.get("verbose", False)
         log_interval = kwargs.get("log_interval", 1)
+
+        # Ensure device is properly set
+        self.detect_and_set_device()
 
         dataloader = self._prepare_data(data, labels, batch_size)
 
@@ -268,6 +324,9 @@ class TorchModelWrapper(ModelInterface):
         """
         batch_size = kwargs.get("batch_size", 32)
         return_probs = kwargs.get("return_probs", False)
+
+        # Ensure device is properly set
+        self.detect_and_set_device()
 
         dataloader = self._prepare_data(data, batch_size=batch_size)
 

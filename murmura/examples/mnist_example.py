@@ -50,6 +50,27 @@ class MNISTModel(PyTorchModel):
         return x
 
 
+def create_mnist_preprocessor():
+    """
+    Create MNIST-specific data preprocessor.
+    """
+    try:
+        from murmura.data_processing.generic_preprocessor import create_image_preprocessor
+
+        # MNIST-specific configuration
+        return create_image_preprocessor(
+            grayscale=True,     # MNIST is grayscale
+            normalize=True,     # Normalize to [0,1]
+            target_size=None    # Keep original 28x28
+        )
+    except ImportError:
+        # Generic preprocessor not available, use automatic detection
+        logging.getLogger("murmura.mnist_example").info(
+            "Using automatic data type detection"
+        )
+        return None
+
+
 def setup_logging(log_level: str = "INFO") -> None:
     """Set up logging configuration"""
     logging.basicConfig(
@@ -61,10 +82,10 @@ def setup_logging(log_level: str = "INFO") -> None:
 
 def main() -> None:
     """
-    Enhanced Federated Learning Orchestrator with Multi-Node Support
+    MNIST Federated Learning with Multi-Node Support
     """
     parser = argparse.ArgumentParser(
-        description="Enhanced Federated Data Distribution Orchestrator with Multi-Node Support"
+        description="MNIST Federated Learning with Multi-Node Support"
     )
 
     # Core federated learning arguments
@@ -103,7 +124,7 @@ def main() -> None:
         "--trim_ratio",
         type=float,
         default=0.1,
-        help="Trim ratio for trimmed_mean strategy (0.1 = 10% trimmed from each end)",
+        help="Trim ratio for trimmed_mean strategy",
     )
 
     # Topology arguments
@@ -141,7 +162,7 @@ def main() -> None:
         "--ray_address",
         type=str,
         default=None,
-        help="Ray cluster address (e.g., 'ray://head-node-ip:10001'). If None, uses local cluster.",
+        help="Ray cluster address. If None, uses local cluster.",
     )
     parser.add_argument(
         "--ray_namespace",
@@ -186,6 +207,13 @@ def main() -> None:
         help="Auto-detect Ray cluster from environment variables",
     )
 
+    # MNIST-specific arguments
+    parser.add_argument(
+        "--debug_data",
+        action="store_true",
+        help="Print debug information about MNIST data format",
+    )
+
     # Logging and monitoring arguments
     parser.add_argument(
         "--log_level",
@@ -198,12 +226,6 @@ def main() -> None:
         "--monitor_resources",
         action="store_true",
         help="Monitor and log resource usage during training",
-    )
-    parser.add_argument(
-        "--health_check_interval",
-        type=int,
-        default=5,
-        help="Interval (rounds) for actor health checks",
     )
 
     # Visualization arguments
@@ -267,63 +289,74 @@ def main() -> None:
                 if args.aggregation_strategy == "trimmed_mean"
                 else None,
             ),
-            dataset_name="mnist",
+            dataset_name="mnist",  # Fixed to MNIST
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-        )
-
-        # Add additional configuration needed for the learning process
-        process_config = config.model_dump()
-        process_config.update(
-            {
-                "rounds": args.rounds,
-                "epochs": args.epochs,
-                "batch_size": args.batch_size,
-                "test_split": args.test_split,
-                "feature_columns": ["image"],
-                "label_column": "label",
-                "learning_rate": args.lr,
-            }
         )
 
         logger.info("=== Loading MNIST Dataset ===")
         # Load MNIST Dataset for training and testing
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
-            dataset_name=config.dataset_name,
+            dataset_name="mnist",
             split=config.split,
         )
 
         test_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
-            dataset_name=config.dataset_name,
+            dataset_name="mnist",
             split=args.test_split,
         )
 
         # Merge datasets to have both splits available
         train_dataset.merge_splits(test_dataset)
 
+        # Debug MNIST data format if requested
+        if args.debug_data:
+            logger.info("=== Debugging MNIST Data Format ===")
+            try:
+                split_dataset = train_dataset.get_split(config.split)
+                feature_data = split_dataset["image"]
+
+                logger.info(f"MNIST {config.split} split")
+                logger.info(f"Number of samples: {len(feature_data)}")
+
+                if len(feature_data) > 0:
+                    sample = feature_data[0]
+                    logger.info(f"Sample type: {type(sample)}")
+                    logger.info(f"Sample shape: {getattr(sample, 'shape', 'N/A')}")
+                    logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
+                    if hasattr(sample, 'size'):
+                        logger.info(f"Sample size: {sample.size}")
+            except Exception as e:
+                logger.error(f"Error debugging MNIST data format: {e}")
+
         logger.info("=== Creating Data Partitions ===")
         # Create partitioner
         partitioner = PartitionerFactory.create(config)
 
-        logger.info("=== Creating and Initializing Model ===")
-        # Create the MNIST model with PyTorch wrapper
+        logger.info("=== Creating MNIST Model ===")
+        # Create the MNIST model
         model = MNISTModel()
-        input_shape = (1, 28, 28)  # (channels, height, width)
+        input_shape = (1, 28, 28)  # MNIST: 1 channel, 28x28 pixels
 
+        # Create MNIST-specific data preprocessor
+        mnist_preprocessor = create_mnist_preprocessor()
+
+        # Create model wrapper with MNIST-specific configuration
         global_model = TorchModelWrapper(
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.Adam,
             optimizer_kwargs={"lr": args.lr},
             input_shape=input_shape,
+            data_preprocessor=mnist_preprocessor,
         )
 
-        logger.info("=== Setting Up Enhanced Learning Process ===")
-        # Create learning process with enhanced config
+        logger.info("=== Setting Up Learning Process ===")
+        # Create learning process
         learning_process = FederatedLearningProcess(
-            config=config,  # Pass the OrchestrationConfig directly
+            config=config,
             dataset=train_dataset,
             model=global_model,
         )
@@ -332,16 +365,12 @@ def main() -> None:
         visualizer = None
         if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
-            # Create visualization directory
             vis_dir = os.path.join(
                 args.vis_dir, f"mnist_{args.topology}_{args.aggregation_strategy}"
             )
             os.makedirs(vis_dir, exist_ok=True)
 
-            # Create visualizer
             visualizer = NetworkVisualizer(output_dir=vis_dir)
-
-            # Register visualizer with learning process
             learning_process.register_observer(visualizer)
             logger.info("Registered visualizer with learning process")
 
@@ -364,46 +393,27 @@ def main() -> None:
             logger.info(
                 f"Total actors: {cluster_summary.get('total_actors', 'unknown')}"
             )
-            logger.info(f"Topology: {cluster_summary.get('topology', 'unknown')}")
-            logger.info(
-                f"Placement strategy: {cluster_summary.get('placement_strategy', 'unknown')}"
-            )
 
             # Print initial summary
-            logger.info("=== Federated Learning Setup ===")
-            logger.info(f"Strategy: {config.partition_strategy}")
+            logger.info("=== MNIST Federated Learning Setup ===")
+            logger.info(f"Dataset: MNIST")
+            logger.info(f"Partitioning: {config.partition_strategy}")
             logger.info(f"Clients: {config.num_actors}")
-            logger.info(f"Aggregation strategy: {config.aggregation.strategy_type}")
+            logger.info(f"Aggregation: {config.aggregation.strategy_type}")
             logger.info(f"Topology: {config.topology.topology_type}")
             logger.info(f"Rounds: {args.rounds}")
             logger.info(f"Local epochs: {args.epochs}")
             logger.info(f"Batch size: {args.batch_size}")
             logger.info(f"Learning rate: {args.lr}")
 
-            logger.info("=== Starting Enhanced Federated Learning ===")
+            logger.info("=== Starting MNIST Federated Learning ===")
 
-            # Monitor initial resource usage
-            if args.monitor_resources:
-                initial_resources = learning_process.monitor_resource_usage()
-                logger.info(f"Initial resource usage: {initial_resources}")
-
-            # Execute the learning process with enhanced monitoring
+            # Execute the learning process
             results = learning_process.execute()
-
-            # Perform periodic health checks and resource monitoring
-            if args.monitor_resources:
-                final_resources = learning_process.monitor_resource_usage()
-                logger.info(f"Final resource usage: {final_resources}")
-
-            # Get final health status
-            health_status = learning_process.get_actor_health_status()
-            logger.info(
-                f"Final actor health: {health_status['healthy']}/{health_status['sampled_actors']} healthy"
-            )
 
             # Generate visualizations if requested
             if visualizer and (
-                args.create_animation or args.create_frames or args.create_summary
+                    args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
@@ -428,18 +438,12 @@ def main() -> None:
 
             # Save the final model
             logger.info("=== Saving Final Model ===")
-            save_path = args.save_path
-            global_model.save(save_path)
-            logger.info(f"Model saved to '{save_path}'")
+            global_model.save(args.save_path)
+            logger.info(f"MNIST model saved to '{args.save_path}'")
 
-            # Print final results with cluster context
-            logger.info("=== Training Results ===")
-            logger.info(
-                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
-            )
-            logger.info(
-                f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
-            )
+            # Print final results
+            logger.info("=== MNIST Training Results ===")
+            logger.info(f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}")
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
@@ -448,9 +452,8 @@ def main() -> None:
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"Enhanced Learning Process orchestration failed: {str(e)}")
+        logger.error(f"MNIST Learning Process failed: {str(e)}")
         import traceback
-
         traceback.print_exc()
         raise
 

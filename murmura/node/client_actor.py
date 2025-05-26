@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 import ray
 import torch
+from PIL import Image
 
 from murmura.data_processing.dataset import MDataset
 from murmura.model.model_interface import ModelInterface
@@ -116,7 +117,7 @@ class VirtualClientActor:
         return self.node_info
 
     def receive_data(
-        self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
+            self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Receive a data partition and metadata dictionary.
@@ -133,10 +134,10 @@ class VirtualClientActor:
         return message
 
     def set_dataset(
-        self,
-        mdataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            mdataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Set the dataset for the client actor.
@@ -156,10 +157,10 @@ class VirtualClientActor:
         )
 
     def reconstruct_and_set_dataset(
-        self,
-        dataset_info: Dict[str, Any],
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset_info: Dict[str, Any],
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Reconstruct dataset from metadata on this node and set it.
@@ -273,15 +274,16 @@ class VirtualClientActor:
 
     def _get_partition_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Extract features and labels from the client's dataset partition
+        Extract features and labels from the client's dataset partition.
+        Now uses the model's preprocessor for consistent data handling.
 
         :return: Tuple of features and labels as numpy arrays
         """
         if (
-            self.mdataset is None
-            or self.data_partition is None
-            or self.feature_columns is None
-            or self.label_column is None
+                self.mdataset is None
+                or self.data_partition is None
+                or self.feature_columns is None
+                or self.label_column is None
         ):
             raise ValueError(
                 "Dataset, data partition, feature columns, or label column not set"
@@ -290,14 +292,46 @@ class VirtualClientActor:
         split_dataset = self.mdataset.get_split(self.split)
         partition_dataset = split_dataset.select(self.data_partition)
 
+        # Extract features using the same approach as the learning process
         if len(self.feature_columns) == 1:
-            features = np.array(partition_dataset[self.feature_columns[0]])
-        else:
-            features = np.column_stack(
-                [np.array(partition_dataset[col]) for col in self.feature_columns]
-            )
+            feature_data = partition_dataset[self.feature_columns[0]]
 
-        labels = np.array(partition_dataset[self.label_column])
+            # Let the model wrapper handle preprocessing if available
+            if hasattr(self.model, 'data_preprocessor'):
+                if self.model.data_preprocessor is not None:
+                    try:
+                        # Convert to list format for the preprocessor
+                        data_list = list(feature_data) if not isinstance(feature_data, list) else feature_data
+                        features = self.model.data_preprocessor.preprocess_features(data_list)
+                        self.logger.debug("Used model's preprocessor for feature extraction")
+                    except Exception as e:
+                        self.logger.warning(f"Model preprocessor failed, using fallback: {e}")
+                        # Fallback to numpy conversion
+                        features = np.array(feature_data, dtype=np.float32)
+            else:
+                # No preprocessor available, use basic conversion
+                features = np.array(feature_data, dtype=np.float32)
+        else:
+            # Multiple feature columns
+            processed_columns = []
+            for col in self.feature_columns:
+                col_data = partition_dataset[col]
+                if hasattr(self.model, 'data_preprocessor'):
+                    if self.model.data_preprocessor is not None:
+                        try:
+                            col_features = self.model.data_preprocessor.preprocess_features(list(col_data))
+                            processed_columns.append(col_features)
+                        except Exception:
+                            processed_columns.append(np.array(col_data, dtype=np.float32))
+                else:
+                    processed_columns.append(np.array(col_data, dtype=np.float32))
+
+            features = np.column_stack(processed_columns)
+
+        # Extract labels
+        labels = np.array(partition_dataset[self.label_column], dtype=np.int64)
+
+        self.logger.debug(f"Extracted features shape: {features.shape}, labels shape: {labels.shape}")
 
         return features, labels
 
@@ -349,6 +383,11 @@ class VirtualClientActor:
 
         except Exception as e:
             self.logger.error(f"Training failed: {e}")
+            self.logger.error(f"Features type: {type(features) if 'features' in locals() else 'N/A'}")
+            self.logger.error(f"Labels type: {type(labels) if 'labels' in locals() else 'N/A'}")
+            if 'features' in locals():
+                self.logger.error(f"Features shape: {getattr(features, 'shape', 'N/A')}")
+                self.logger.error(f"Features dtype: {getattr(features, 'dtype', 'N/A')}")
             raise
 
     def evaluate_model(self, **kwargs) -> Dict[str, float]:

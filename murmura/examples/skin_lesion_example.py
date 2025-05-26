@@ -1,20 +1,19 @@
 import argparse
 import os
-
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
-from torchvision import transforms  # type: ignore
-from datasets import load_dataset, DatasetDict
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
     AggregationStrategyType,
 )
-from murmura.data_processing.dataset import MDataset
+from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
 from murmura.network_management.topology import TopologyConfig, TopologyType
+from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 from murmura.orchestration.learning_process.federated_learning_process import (
     FederatedLearningProcess,
 )
@@ -22,7 +21,7 @@ from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
 
-# Define the WideResNet model
+# WideResNet model components for skin lesion classification
 class BasicBlock(PyTorchModel):
     def __init__(self, in_planes, out_planes, stride, drop_rate=0.0):
         super(BasicBlock, self).__init__()
@@ -39,16 +38,16 @@ class BasicBlock(PyTorchModel):
         self.drop_rate = drop_rate
         self.equalInOut = in_planes == out_planes
         self.convShortcut = (
-            (not self.equalInOut)
-            and nn.Conv2d(
-                in_planes,
-                out_planes,
-                kernel_size=1,
-                stride=stride,
-                padding=0,
-                bias=False,
-            )
-            or None
+                (not self.equalInOut)
+                and nn.Conv2d(
+            in_planes,
+            out_planes,
+            kernel_size=1,
+            stride=stride,
+            padding=0,
+            bias=False,
+        )
+                or None
         )
 
     def forward(self, x):
@@ -81,7 +80,7 @@ class NetworkBlock(PyTorchModel):
                     out_planes,
                     i == 0 and stride or 1,
                     drop_rate,
-                )
+                    )
             )
         return nn.Sequential(*layers)
 
@@ -91,8 +90,8 @@ class NetworkBlock(PyTorchModel):
 
 class WideResNet(PyTorchModel):
     """
-    WideResNet model with adjustable depth, width, and number of classes.
-    Default configuration is optimized for skin lesion classification (7 classes for HAM10000).
+    WideResNet model optimized for skin lesion classification.
+    Default configuration targets HAM10000 dataset (7 classes).
     """
 
     def __init__(self, depth=16, num_classes=7, widen_factor=8, drop_rate=0.3):
@@ -112,7 +111,7 @@ class WideResNet(PyTorchModel):
         self.block2 = NetworkBlock(n, n_channels[1], n_channels[2], block, 2, drop_rate)
         # 3rd block
         self.block3 = NetworkBlock(n, n_channels[2], n_channels[3], block, 2, drop_rate)
-        # Global average pooling and classifier
+        # global average pooling and classifier
         self.bn1 = nn.BatchNorm2d(n_channels[3])
         self.relu = nn.ReLU(inplace=True)
         self.fc = nn.Linear(n_channels[3], num_classes)
@@ -129,98 +128,55 @@ class WideResNet(PyTorchModel):
                 m.bias.data.zero_()
 
     def forward(self, x):
+        # Ensure input has correct format for medical images
+        if x.dim() == 3:  # If missing batch dimension
+            x = x.unsqueeze(0)
+
+        # Medical images should be RGB (3 channels)
+        if x.size(1) == 1:
+            x = x.repeat(1, 3, 1, 1)
+
         out = self.conv1(x)
         out = self.block1(out)
         out = self.block2(out)
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-        out = func.adaptive_avg_pool2d(
-            out, 1
-        )  # Use adaptive pooling for variable input sizes
+        out = func.adaptive_avg_pool2d(out, 1)
         out = out.view(-1, self.nChannels)
         out = self.fc(out)
         return out
 
 
-class CustomDatasetWrapper:
-    """Custom utility to preprocess and adapt the HAM10000 dataset"""
+def create_skin_lesion_preprocessor(image_size: int = 128):
+    """
+    Create skin lesion specific data preprocessor.
 
-    @staticmethod
-    def prepare_dataset(dataset_name="marmal88/skin_cancer", image_size=224):
-        # Load the HAM10000 dataset
-        print(f"Loading dataset: {dataset_name}")
-        raw_dataset = load_dataset(dataset_name)
+    Args:
+        image_size: Target image size for preprocessing
 
-        # Extract diagnostic categories and create a label mapping
-        dx_categories = sorted(set(raw_dataset["train"]["dx"]))
-        dx_to_label = {dx: i for i, dx in enumerate(dx_categories)}
+    Returns:
+        Configured preprocessor for skin lesion images
+    """
+    try:
+        from murmura.data_processing.generic_preprocessor import create_image_preprocessor
 
-        print(f"Diagnostic categories: {dx_categories}")
-        print(f"Label mapping: {dx_to_label}")
-
-        transform = transforms.Compose(
-            [
-                transforms.Resize((image_size, image_size)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                ),
-            ]
+        # Skin lesion specific configuration
+        return create_image_preprocessor(
+            grayscale=False,        # Medical images are typically RGB
+            normalize=True,         # Normalize to [0,1]
+            target_size=(image_size, image_size)  # Resize for consistent input
         )
-
-        # Define preprocessing function to convert dx categories to numeric labels
-        # and preprocess images to standard size and format
-        def preprocess_example(example):
-            # Add a numeric label based on the dx category
-            example["label"] = dx_to_label[example["dx"]]
-
-            # Preprocess the image - transform to tensor and convert to PyTorch format
-            pil_image = example["image"]
-
-            # Apply the transformation and convert to numpy array
-            # This gives us a tensor in CHW format of shape [3, image_size, image_size]
-            transformed_tensor = transform(pil_image)
-
-            # Store preprocessed tensor as 'image_tensor' - convert to numpy for storage
-            example["image_tensor"] = transformed_tensor.numpy()
-
-            return example
-
-        # Apply preprocessing to all splits
-        print("\nPreprocessing images and adding labels...")
-        processed_dataset = {}
-        for split in raw_dataset.keys():
-            print(f"Processing {split} split...")
-            processed_dataset[split] = raw_dataset[split].map(
-                preprocess_example, desc=f"Processing {split}"
-            )
-
-        # Convert to DatasetDict for compatibility
-        processed_dataset = DatasetDict(processed_dataset)
-
-        # Print dataset statistics
-        print("\nDataset statistics:")
-        for split in processed_dataset.keys():
-            print(f"  {split}: {len(processed_dataset[split])} examples")
-
-        # Label distribution
-        for split in processed_dataset.keys():
-            label_counts = {}
-            for label in processed_dataset[split]["label"]:
-                label_counts[label] = label_counts.get(label, 0) + 1
-
-            print(f"\nLabel distribution in {split} split:")
-            for label, count in sorted(label_counts.items()):
-                dx = dx_categories[label]
-                percentage = 100 * count / len(processed_dataset[split])
-                print(f"  {dx} (label {label}): {count} examples ({percentage:.2f}%)")
-
-        return processed_dataset, dx_categories
+    except ImportError:
+        # Generic preprocessor not available, use automatic detection
+        logging.getLogger("murmura.skin_lesion_example").info(
+            "Using automatic data type detection"
+        )
+        return None
 
 
 def select_device(device_arg="auto"):
     """
-    Select the appropriate device based on availability
+    Select the appropriate device based on availability.
 
     Args:
         device_arg: Requested device ('auto', 'cuda', 'mps', 'cpu')
@@ -238,56 +194,27 @@ def select_device(device_arg="auto"):
     return device_arg
 
 
-def find_optimal_batch_size(model, input_size, max_batch_size=64, min_batch_size=1):
-    """Find the largest batch size that fits in GPU memory"""
-    device = next(model.parameters()).device
-    if device.type != "cuda":
-        # If not using CUDA, just return the max batch size
-        return max_batch_size
-
-    # Start with max batch size and reduce until it fits
-    batch_size = max_batch_size
-    while batch_size > min_batch_size:
-        try:
-            # Create a fake input tensor
-            dummy_input = torch.randn(batch_size, *input_size, device=device)
-
-            # Try a forward and backward pass
-            output = model(dummy_input)
-            if isinstance(output, tuple):
-                output = output[0]
-            loss = output.sum()
-            loss.backward()
-
-            # Clean up
-            del dummy_input, output, loss
-            torch.cuda.empty_cache()
-
-            # If we get here, the batch size fits
-            print(f"Found optimal batch size: {batch_size}")
-            return batch_size
-        except RuntimeError as e:
-            if "out of memory" in str(e):
-                # Reduce batch size and try again
-                torch.cuda.empty_cache()
-                batch_size //= 2
-                print(f"Reducing batch size to {batch_size}")
-            else:
-                # Re-raise if it's not an OOM error
-                raise
-
-    # If we get here, even the minimum batch size doesn't fit
-    print(f"Warning: Using minimum batch size {min_batch_size}")
-    return min_batch_size
+def setup_logging(log_level: str = "INFO") -> None:
+    """Set up logging configuration"""
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler("skin_lesion_federated.log"),
+        ],
+    )
 
 
 def main() -> None:
     """
-    Orchestrate Learning Process for skin cancer classification
+    Skin Lesion Classification Federated Learning with Multi-Node Support
     """
     parser = argparse.ArgumentParser(
         description="Federated Learning for Skin Cancer Classification"
     )
+
+    # Core federated learning arguments
     parser.add_argument(
         "--num_actors", type=int, default=5, help="Number of virtual clients"
     )
@@ -329,7 +256,7 @@ def main() -> None:
         "--trim_ratio",
         type=float,
         default=0.1,
-        help="Trim ratio for trimmed_mean strategy (0.1 = 10% trimmed from each end)",
+        help="Trim ratio for trimmed_mean strategy",
     )
 
     # Topology arguments
@@ -370,11 +297,16 @@ def main() -> None:
         default="skin_cancer_federated_model.pt",
         help="Path to save the final model",
     )
+
+    # Skin lesion specific arguments
     parser.add_argument(
         "--image_size", type=int, default=128, help="Size to resize images to"
     )
     parser.add_argument(
-        "--dataset_name", type=str, default="marmal88/skin_cancer", help="Dataset name"
+        "--dataset_name",
+        type=str,
+        default="marmal88/skin_cancer",
+        help="Skin lesion dataset name"
     )
     parser.add_argument(
         "--widen_factor", type=int, default=8, help="WideResNet widen factor"
@@ -385,7 +317,76 @@ def main() -> None:
         type=str,
         default="auto",
         choices=["auto", "cuda", "mps", "cpu"],
-        help="Device to use for training (auto selects best available)",
+        help="Device to use for training",
+    )
+    parser.add_argument(
+        "--debug_data",
+        action="store_true",
+        help="Print debug information about skin lesion data format",
+    )
+
+    # Multi-node Ray cluster arguments
+    parser.add_argument(
+        "--ray_address",
+        type=str,
+        default=None,
+        help="Ray cluster address. If None, uses local cluster.",
+    )
+    parser.add_argument(
+        "--ray_namespace",
+        type=str,
+        default="murmura_skin_lesion",
+        help="Ray namespace for isolation",
+    )
+    parser.add_argument(
+        "--actors_per_node",
+        type=int,
+        default=None,
+        help="Number of actors per physical node. If None, distributes evenly.",
+    )
+    parser.add_argument(
+        "--cpus_per_actor",
+        type=float,
+        default=1.0,
+        help="CPU resources per actor",
+    )
+    parser.add_argument(
+        "--gpus_per_actor",
+        type=float,
+        default=None,
+        help="GPU resources per actor. If None, auto-calculated.",
+    )
+    parser.add_argument(
+        "--memory_per_actor",
+        type=int,
+        default=None,
+        help="Memory (MB) per actor",
+    )
+    parser.add_argument(
+        "--placement_strategy",
+        type=str,
+        choices=["spread", "pack", "strict_spread", "strict_pack"],
+        default="spread",
+        help="Actor placement strategy across nodes",
+    )
+    parser.add_argument(
+        "--auto_detect_cluster",
+        action="store_true",
+        help="Auto-detect Ray cluster from environment variables",
+    )
+
+    # Logging and monitoring arguments
+    parser.add_argument(
+        "--log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="INFO",
+        help="Logging level",
+    )
+    parser.add_argument(
+        "--monitor_resources",
+        action="store_true",
+        help="Monitor and log resource usage during training",
     )
 
     # Visualization arguments
@@ -413,23 +414,31 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    # Set up logging
+    setup_logging(args.log_level)
+    logger = logging.getLogger("murmura.skin_lesion_example")
+
     try:
         # Determine the device to use
         device = select_device(args.device)
-        print(f"\n=== Using {device.upper()} device for training ===")
+        logger.info(f"Using {device.upper()} device for training")
 
-        # Process the raw dataset to add a 'label' column mapping from 'dx'
-        print("\n=== Preparing HAM10000 Skin Cancer Dataset ===")
-        processed_dataset, dx_categories = CustomDatasetWrapper.prepare_dataset(
-            dataset_name=args.dataset_name, image_size=args.image_size
+        # Create enhanced configuration with multi-node support
+        ray_cluster_config = RayClusterConfig(
+            address=args.ray_address,
+            namespace=args.ray_namespace,
+            logging_level=args.log_level,
+            auto_detect_cluster=args.auto_detect_cluster,
         )
 
-        # Now that we've processed the dataset and added a 'label' column,
-        # we can define the number of classes
-        num_classes = len(dx_categories)
-        print(f"Number of classes: {num_classes}")
+        resource_config = ResourceConfig(
+            actors_per_node=args.actors_per_node,
+            cpus_per_actor=args.cpus_per_actor,
+            gpus_per_actor=args.gpus_per_actor,
+            memory_per_actor=args.memory_per_actor,
+            placement_strategy=args.placement_strategy,
+        )
 
-        # Create configuration from command-line arguments
         config = OrchestrationConfig(
             num_actors=args.num_actors,
             partition_strategy=args.partition_strategy,
@@ -445,57 +454,69 @@ def main() -> None:
                 if args.aggregation_strategy == "trimmed_mean"
                 else None,
             ),
-            dataset_name=args.dataset_name,  # Set the dataset name
+            dataset_name=args.dataset_name,
+            ray_cluster=ray_cluster_config,
+            resources=resource_config,
         )
 
-        # Add additional configuration needed for the learning process
-        process_config = config.model_dump()
-        process_config.update(
-            {
-                "rounds": args.rounds,
-                "epochs": args.epochs,
-                "batch_size": args.batch_size,
-                "test_split": args.test_split,
-                "validation_split": args.validation_split,
-                # Use the preprocessed image_tensor instead of raw image
-                "feature_columns": ["image_tensor"],
-                "label_column": "label",  # Use the 'label' field we added in the preprocessing
-                "learning_rate": args.lr,
-                "weight_decay": args.weight_decay,
-                "image_size": args.image_size,
-                "dx_categories": dx_categories,
-                "widen_factor": args.widen_factor,
-                "depth": args.depth,
-                "dropout": args.dropout,
-            }
+        logger.info("=== Loading Skin Lesion Dataset ===")
+        # Load skin lesion dataset for training and testing
+        train_dataset = MDataset.load_dataset_with_multinode_support(
+            DatasetSource.HUGGING_FACE,
+            dataset_name=args.dataset_name,
+            split=config.split,
         )
 
-        print("\n=== Converting Dataset to Murmura Format ===")
+        test_dataset = MDataset.load_dataset_with_multinode_support(
+            DatasetSource.HUGGING_FACE,
+            dataset_name=args.dataset_name,
+            split=args.test_split,
+        )
 
-        # We need to convert our processed HuggingFace dataset into Murmura's MDataset format
-        # Create MDatasets from our processed DatasetDict
-        train_split = processed_dataset[config.split]
-        test_split = processed_dataset[args.test_split]
-        validation_split = processed_dataset[args.validation_split]
-
-        # Convert to Murmura's format
-        # Create Murmura datasets
-        train_dataset = MDataset(DatasetDict({config.split: train_split}))
-        test_dataset = MDataset(DatasetDict({args.test_split: test_split}))
-        validation_dataset = MDataset(
-            DatasetDict({args.validation_split: validation_split})
+        validation_dataset = MDataset.load_dataset_with_multinode_support(
+            DatasetSource.HUGGING_FACE,
+            dataset_name=args.dataset_name,
+            split=args.validation_split,
         )
 
         # Merge datasets to have all splits available
         train_dataset.merge_splits(test_dataset)
         train_dataset.merge_splits(validation_dataset)
 
-        print("\n=== Creating Data Partitions ===")
+        # Get diagnostic categories from the dataset
+        split_dataset = train_dataset.get_split(config.split)
+        dx_categories = sorted(set(split_dataset["dx"]))
+        num_classes = len(dx_categories)
+
+        logger.info(f"Diagnostic categories ({num_classes}): {dx_categories}")
+
+        # Debug skin lesion data format if requested
+        if args.debug_data:
+            logger.info("=== Debugging Skin Lesion Data Format ===")
+            try:
+                feature_data = split_dataset["image"]
+
+                logger.info(f"Dataset: {args.dataset_name}")
+                logger.info(f"Split: {config.split}")
+                logger.info(f"Number of samples: {len(feature_data)}")
+                logger.info(f"Diagnostic categories: {dx_categories}")
+
+                if len(feature_data) > 0:
+                    sample = feature_data[0]
+                    logger.info(f"Sample type: {type(sample)}")
+                    logger.info(f"Sample shape: {getattr(sample, 'shape', 'N/A')}")
+                    logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
+                    if hasattr(sample, 'size'):
+                        logger.info(f"Sample size: {sample.size}")
+            except Exception as e:
+                logger.error(f"Error debugging skin lesion data format: {e}")
+
+        logger.info("=== Creating Data Partitions ===")
         # Create partitioner
         partitioner = PartitionerFactory.create(config)
 
-        print("\n=== Creating and Initializing Model ===")
-        # Create the model
+        logger.info("=== Creating WideResNet Model ===")
+        # Create the WideResNet model for skin lesion classification
         model = WideResNet(
             depth=args.depth,
             num_classes=num_classes,
@@ -503,62 +524,30 @@ def main() -> None:
             drop_rate=args.dropout,
         )
 
-        optimal_batch_size = find_optimal_batch_size(
-            model,
-            input_size=(3, args.image_size, args.image_size),
-            max_batch_size=args.batch_size,
-        )
-        if optimal_batch_size != args.batch_size:
-            print(
-                f"Auto-adjusting batch size from {args.batch_size} to {optimal_batch_size}"
-            )
-            args.batch_size = optimal_batch_size
-
-        print(
-            f"Created WideResNet with depth={args.depth}, widen_factor={args.widen_factor}, "
+        logger.info(
+            f"Created WideResNet: depth={args.depth}, widen_factor={args.widen_factor}, "
             f"num_classes={num_classes}, dropout={args.dropout}"
         )
 
-        # Create a custom TorchModelWrapper extension that handles our preprocessed tensors properly
-        class PreprocessedTensorModelWrapper(TorchModelWrapper):
-            def _prepare_data(self, data, labels=None, batch_size=32):
-                """
-                Override the base _prepare_data method to handle our preprocessed tensors properly
+        # Create skin lesion specific data preprocessor
+        skin_lesion_preprocessor = create_skin_lesion_preprocessor(args.image_size)
 
-                data: Numpy array containing our preprocessed tensors (already in CHW format)
-                """
-                tensor_data = torch.tensor(data, dtype=torch.float32)
-
-                # Our data is already in the right shape, so no reshaping needed
-                # The input data should already be [N, C, H, W] where C=3, H=W=224
-
-                if labels is not None:
-                    tensor_labels = torch.tensor(labels, dtype=torch.long)
-                    dataset = torch.utils.data.TensorDataset(tensor_data, tensor_labels)
-                else:
-                    dataset = torch.utils.data.TensorDataset(tensor_data)
-
-                return torch.utils.data.DataLoader(
-                    dataset, batch_size=batch_size, shuffle=(labels is not None)
-                )
-
-        # Create the model wrapper
-        # Input shape is [C, H, W] - note that it's already in CHW format from our preprocessing
-        input_shape = (3, args.image_size, args.image_size)
-
-        global_model = PreprocessedTensorModelWrapper(
+        # Create model wrapper with skin lesion specific configuration
+        input_shape = (3, args.image_size, args.image_size)  # RGB images
+        global_model = TorchModelWrapper(
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.Adam,
             optimizer_kwargs={"lr": args.lr, "weight_decay": args.weight_decay},
             input_shape=input_shape,
             device=device,
+            data_preprocessor=skin_lesion_preprocessor,
         )
 
-        print("\n=== Setting Up Learning Process ===")
-        # Create standard learning process with our custom preprocessing
+        logger.info("=== Setting Up Learning Process ===")
+        # Create learning process
         learning_process = FederatedLearningProcess(
-            config=process_config,
+            config=config,
             dataset=train_dataset,
             model=global_model,
         )
@@ -566,26 +555,19 @@ def main() -> None:
         # Set up visualization if requested
         visualizer = None
         if args.create_animation or args.create_frames or args.create_summary:
-            print("\n=== Setting Up Visualization ===")
-            # Create visualization directory
+            logger.info("=== Setting Up Visualization ===")
             vis_dir = os.path.join(
                 args.vis_dir, f"skin_cancer_{args.topology}_{args.aggregation_strategy}"
             )
             os.makedirs(vis_dir, exist_ok=True)
 
-            # Create visualizer
             visualizer = NetworkVisualizer(output_dir=vis_dir)
-
-            # Register visualizer with learning process
             learning_process.register_observer(visualizer)
-            print("Registered visualizer with learning process")
-            print(
-                f"Current observers: {len(learning_process.training_monitor.observers)}"
-            )
+            logger.info("Registered visualizer with learning process")
 
         try:
             # Initialize the learning process
-            print("\n=== Initializing Learning Process ===")
+            logger.info("=== Initializing Learning Process ===")
             learning_process.initialize(
                 num_actors=config.num_actors,
                 topology_config=config.topology,
@@ -593,55 +575,67 @@ def main() -> None:
                 partitioner=partitioner,
             )
 
-            # Print initial summary
-            print("\n=== Federated Learning Setup ===")
-            print(f"Dataset: {args.dataset_name}")
-            print(f"Partition strategy: {config.partition_strategy}")
-            print(f"Clients: {config.num_actors}")
-            print(f"Aggregation strategy: {config.aggregation.strategy_type}")
-            print(f"Topology: {config.topology.topology_type}")
-            print(f"Rounds: {args.rounds}")
-            print(f"Local epochs: {args.epochs}")
-            print(f"Batch size: {args.batch_size}")
-            print(f"Learning rate: {args.lr}")
-            print(f"Weight decay: {args.weight_decay}")
-            print(f"Device: {device}")
-            print(f"Classes ({num_classes}): {dx_categories}")
+            # Get and log cluster information
+            cluster_summary = learning_process.get_cluster_summary()
+            logger.info("=== Cluster Summary ===")
+            logger.info(
+                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+            )
+            logger.info(f"Total nodes: {cluster_summary.get('total_nodes', 'unknown')}")
+            logger.info(
+                f"Total actors: {cluster_summary.get('total_actors', 'unknown')}"
+            )
 
-            print("\n=== Starting Federated Learning ===")
+            # Print initial summary
+            logger.info("=== Skin Lesion Federated Learning Setup ===")
+            logger.info(f"Dataset: {args.dataset_name}")
+            logger.info(f"Partitioning: {config.partition_strategy}")
+            logger.info(f"Clients: {config.num_actors}")
+            logger.info(f"Aggregation: {config.aggregation.strategy_type}")
+            logger.info(f"Topology: {config.topology.topology_type}")
+            logger.info(f"Rounds: {args.rounds}")
+            logger.info(f"Local epochs: {args.epochs}")
+            logger.info(f"Batch size: {args.batch_size}")
+            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Weight decay: {args.weight_decay}")
+            logger.info(f"Device: {device}")
+            logger.info(f"Image size: {args.image_size}")
+            logger.info(f"Classes ({num_classes}): {dx_categories}")
+
+            logger.info("=== Starting Skin Lesion Federated Learning ===")
             # Execute the learning process
             results = learning_process.execute()
 
             # Generate visualizations if requested
             if visualizer and (
-                args.create_animation or args.create_frames or args.create_summary
+                    args.create_animation or args.create_frames or args.create_summary
             ):
-                print("\n=== Generating Visualizations ===")
+                logger.info("=== Generating Visualizations ===")
 
                 if args.create_animation:
-                    print("Creating animation...")
+                    logger.info("Creating animation...")
                     visualizer.render_training_animation(
                         filename=f"skin_cancer_{args.topology}_{args.aggregation_strategy}_animation.mp4",
                         fps=2,
                     )
 
                 if args.create_frames:
-                    print("Creating frame sequence...")
+                    logger.info("Creating frame sequence...")
                     visualizer.render_frame_sequence(
                         prefix=f"skin_cancer_{args.topology}_{args.aggregation_strategy}_step"
                     )
 
                 if args.create_summary:
-                    print("Creating summary plot...")
+                    logger.info("Creating summary plot...")
                     visualizer.render_summary_plot(
                         filename=f"skin_cancer_{args.topology}_{args.aggregation_strategy}_summary.png"
                     )
 
-            # Save the final model along with the class labels
-            print("\n=== Saving Final Model ===")
+            # Save the final model with metadata
+            logger.info("=== Saving Final Model ===")
             save_path = args.save_path
 
-            # Save model with additional metadata
+            # Create comprehensive checkpoint
             checkpoint = {
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": global_model.optimizer.state_dict(),
@@ -662,38 +656,33 @@ def main() -> None:
                 os.path.dirname(os.path.abspath(save_path)) or ".", exist_ok=True
             )
             torch.save(checkpoint, save_path)
-            print(f"Model saved to '{save_path}'")
+            logger.info(f"Skin lesion model saved to '{save_path}'")
 
             # Print final results
-            print("\n=== Training Results ===")
-            print(f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}")
-            print(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
-            print(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
-            print(f"Training device: {device}")
+            logger.info("=== Skin Lesion Training Results ===")
+            logger.info(f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}")
+            logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
+            logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
+            logger.info(f"Training device: {device}")
 
             # Display detailed metrics if available
             if "round_metrics" in results:
-                print("\n--- Detailed Round Metrics ---")
+                logger.info("=== Detailed Round Metrics ===")
                 for round_data in results["round_metrics"]:
                     round_num = round_data["round"]
-                    print(f"Round {round_num}:")
-                    print(f"  Train Loss: {round_data.get('train_loss', 'N/A'):.4f}")
-                    print(
-                        f"  Train Accuracy: {round_data.get('train_accuracy', 'N/A'):.4f}"
-                    )
-                    print(f"  Test Loss: {round_data.get('test_loss', 'N/A'):.4f}")
-                    print(
-                        f"  Test Accuracy: {round_data.get('test_accuracy', 'N/A'):.4f}"
-                    )
+                    logger.info(f"Round {round_num}:")
+                    logger.info(f"  Train Loss: {round_data.get('train_loss', 'N/A'):.4f}")
+                    logger.info(f"  Train Accuracy: {round_data.get('train_accuracy', 'N/A'):.4f}")
+                    logger.info(f"  Test Loss: {round_data.get('test_loss', 'N/A'):.4f}")
+                    logger.info(f"  Test Accuracy: {round_data.get('test_accuracy', 'N/A'):.4f}")
 
         finally:
-            print("\n=== Shutting Down ===")
+            logger.info("=== Shutting Down ===")
             learning_process.shutdown()
 
     except Exception as e:
-        print(f"Learning Process orchestration failed: {str(e)}")
+        logger.error(f"Skin Lesion Learning Process failed: {str(e)}")
         import traceback
-
         traceback.print_exc()
         raise
 
