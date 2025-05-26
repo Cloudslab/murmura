@@ -38,16 +38,16 @@ class BasicBlock(PyTorchModel):
         self.drop_rate = drop_rate
         self.equalInOut = in_planes == out_planes
         self.convShortcut = (
-                (not self.equalInOut)
-                and nn.Conv2d(
-            in_planes,
-            out_planes,
-            kernel_size=1,
-            stride=stride,
-            padding=0,
-            bias=False,
-        )
-                or None
+            (not self.equalInOut)
+            and nn.Conv2d(
+                in_planes,
+                out_planes,
+                kernel_size=1,
+                stride=stride,
+                padding=0,
+                bias=False,
+            )
+            or None
         )
 
     def forward(self, x):
@@ -80,7 +80,7 @@ class NetworkBlock(PyTorchModel):
                     out_planes,
                     i == 0 and stride or 1,
                     drop_rate,
-                    )
+                )
             )
         return nn.Sequential(*layers)
 
@@ -162,9 +162,9 @@ def create_skin_lesion_preprocessor(image_size: int = 128):
 
         # Skin lesion specific configuration
         return create_image_preprocessor(
-            grayscale=False,        # Medical images are typically RGB
-            normalize=True,         # Normalize to [0,1]
-            target_size=(image_size, image_size)  # Resize for consistent input
+            grayscale=False,  # Medical images are typically RGB
+            normalize=True,  # Normalize to [0,1]
+            target_size=(image_size, image_size),  # Resize for consistent input
         )
     except ImportError:
         # Generic preprocessor not available, use automatic detection
@@ -206,7 +206,9 @@ def setup_logging(log_level: str = "INFO") -> None:
     )
 
 
-def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger) -> tuple[list[str], int, dict[str, int]]:
+def add_integer_labels_to_dataset(
+    dataset: MDataset, logger: logging.Logger
+) -> tuple[list[str], int, dict[str, int]]:
     """
     Add integer label column to dataset by converting string dx categories.
 
@@ -261,7 +263,9 @@ def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger) -> 
 
             # Verify the mapping worked
             sample_new = split_data[0]
-            logger.debug(f"Split {split_name}: dx='{sample_new['dx']}' -> label={sample_new['label']}")
+            logger.debug(
+                f"Split {split_name}: dx='{sample_new['dx']}' -> label={sample_new['label']}"
+            )
 
         logger.info("Successfully added integer 'label' column to all dataset splits")
 
@@ -281,7 +285,9 @@ def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger) -> 
         dx_categories = sorted(list(all_labels))
         num_classes = len(dx_categories)
 
-        logger.info(f"Integer labels detected. Categories ({num_classes}): {dx_categories}")
+        logger.info(
+            f"Integer labels detected. Categories ({num_classes}): {dx_categories}"
+        )
 
         # Add label column that's just a copy of dx
         def copy_dx_to_label(example):
@@ -400,7 +406,7 @@ def main() -> None:
         "--dataset_name",
         type=str,
         default="marmal88/skin_cancer",
-        help="Skin lesion dataset name"
+        help="Skin lesion dataset name",
     )
     parser.add_argument(
         "--widen_factor", type=int, default=8, help="WideResNet widen factor"
@@ -559,7 +565,9 @@ def main() -> None:
 
         # Convert string labels to integers and get diagnostic categories
         logger.info("=== Processing Labels ===")
-        dx_categories, num_classes, dx_to_label = add_integer_labels_to_dataset(train_dataset, logger)
+        dx_categories, num_classes, dx_to_label = add_integer_labels_to_dataset(
+            train_dataset, logger
+        )
 
         # Debug skin lesion data format if requested
         if args.debug_data:
@@ -579,12 +587,14 @@ def main() -> None:
                     logger.info(f"Sample type: {type(sample)}")
                     logger.info(f"Sample shape: {getattr(sample, 'shape', 'N/A')}")
                     logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
-                    if hasattr(sample, 'size'):
+                    if hasattr(sample, "size"):
                         logger.info(f"Sample size: {sample.size}")
 
                     # Check label conversion
                     sample_full = split_dataset[0]
-                    logger.info(f"Sample dx: '{sample_full['dx']}' -> label: {sample_full['label']}")
+                    logger.info(
+                        f"Sample dx: '{sample_full['dx']}' -> label: {sample_full['label']}"
+                    )
 
             except Exception as e:
                 logger.error(f"Error debugging skin lesion data format: {e}")
@@ -609,8 +619,8 @@ def main() -> None:
             ray_cluster=ray_cluster_config,
             resources=resource_config,
             # Skin lesion dataset-specific column configuration
-            feature_columns=["image"],     # Skin lesion images are in 'image' column
-            label_column="label",          # Use the integer label column we created
+            feature_columns=["image"],  # Skin lesion images are in 'image' column
+            label_column="label",  # Use the integer label column we created
         )
 
         logger.info("=== Creating Data Partitions ===")
@@ -680,16 +690,24 @@ def main() -> None:
             # Monitor dataset distribution status
             dist_status = learning_process.get_dataset_distribution_status()
             logger.info(f"Dataset distribution: {dist_status['distribution_strategy']}")
-            logger.info(f"Actors ready: {dist_status['healthy_actors']}/{dist_status['total_actors']}")
-            if dist_status['distribution_strategy'] == 'lazy':
-                logger.info(f"Lazy loading enabled on {dist_status['lazy_loading_actors']} actors")
+            logger.info(
+                f"Actors ready: {dist_status['healthy_actors']}/{dist_status['total_actors']}"
+            )
+            if dist_status["distribution_strategy"] == "lazy":
+                logger.info(
+                    f"Lazy loading enabled on {dist_status['lazy_loading_actors']} actors"
+                )
 
             # Monitor memory usage
             if args.monitor_resources:
                 memory_status = learning_process.monitor_memory_usage()
-                logger.info(f"Cluster memory: {memory_status.get('available_memory_gb', 'N/A')}GB available")
-                if memory_status.get('high_usage_nodes', 0) > 0:
-                    logger.warning(f"{memory_status['high_usage_nodes']} nodes have high memory usage")
+                logger.info(
+                    f"Cluster memory: {memory_status.get('available_memory_gb', 'N/A')}GB available"
+                )
+                if memory_status.get("high_usage_nodes", 0) > 0:
+                    logger.warning(
+                        f"{memory_status['high_usage_nodes']} nodes have high memory usage"
+                    )
 
             # Get and log cluster information
             cluster_summary = learning_process.get_cluster_summary()
@@ -726,7 +744,7 @@ def main() -> None:
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
@@ -779,7 +797,9 @@ def main() -> None:
 
             # Print final results
             logger.info("=== Skin Lesion Training Results ===")
-            logger.info(f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}")
+            logger.info(
+                f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
+            )
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
             logger.info(f"Training device: {device}")
@@ -792,10 +812,18 @@ def main() -> None:
                 for round_data in results["round_metrics"]:
                     round_num = round_data["round"]
                     logger.info(f"Round {round_num}:")
-                    logger.info(f"  Train Loss: {round_data.get('train_loss', 'N/A'):.4f}")
-                    logger.info(f"  Train Accuracy: {round_data.get('train_accuracy', 'N/A'):.4f}")
-                    logger.info(f"  Test Loss: {round_data.get('test_loss', 'N/A'):.4f}")
-                    logger.info(f"  Test Accuracy: {round_data.get('test_accuracy', 'N/A'):.4f}")
+                    logger.info(
+                        f"  Train Loss: {round_data.get('train_loss', 'N/A'):.4f}"
+                    )
+                    logger.info(
+                        f"  Train Accuracy: {round_data.get('train_accuracy', 'N/A'):.4f}"
+                    )
+                    logger.info(
+                        f"  Test Loss: {round_data.get('test_loss', 'N/A'):.4f}"
+                    )
+                    logger.info(
+                        f"  Test Accuracy: {round_data.get('test_accuracy', 'N/A'):.4f}"
+                    )
 
         finally:
             logger.info("=== Shutting Down ===")
@@ -804,6 +832,7 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Skin Lesion Learning Process failed: {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise
 

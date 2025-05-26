@@ -58,13 +58,15 @@ def create_mnist_preprocessor():
     Create MNIST-specific data preprocessor.
     """
     try:
-        from murmura.data_processing.generic_preprocessor import create_image_preprocessor
+        from murmura.data_processing.generic_preprocessor import (
+            create_image_preprocessor,
+        )
 
         # MNIST-specific configuration
         return create_image_preprocessor(
-            grayscale=True,     # MNIST is grayscale
-            normalize=True,     # Normalize to [0,1]
-            target_size=None    # Keep original 28x28
+            grayscale=True,  # MNIST is grayscale
+            normalize=True,  # Normalize to [0,1]
+            target_size=None,  # Keep original 28x28
         )
     except ImportError:
         # Generic preprocessor not available, use automatic detection
@@ -356,7 +358,7 @@ def main() -> None:
                     logger.info(f"Sample type: {type(sample)}")
                     logger.info(f"Sample shape: {getattr(sample, 'shape', 'N/A')}")
                     logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
-                    if hasattr(sample, 'size'):
+                    if hasattr(sample, "size"):
                         logger.info(f"Sample size: {sample.size}")
             except Exception as e:
                 logger.error(f"Error debugging MNIST data format: {e}")
@@ -438,7 +440,7 @@ def main() -> None:
 
             # Print initial summary
             logger.info("=== MNIST Decentralized Learning Setup ===")
-            logger.info(f"Dataset: MNIST")
+            logger.info("Dataset: MNIST")
             logger.info(f"Partitioning: {config.partition_strategy}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Aggregation strategy: {config.aggregation.strategy_type}")
@@ -481,7 +483,7 @@ def main() -> None:
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 

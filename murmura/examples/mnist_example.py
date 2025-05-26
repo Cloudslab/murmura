@@ -55,13 +55,15 @@ def create_mnist_preprocessor():
     Create MNIST-specific data preprocessor.
     """
     try:
-        from murmura.data_processing.generic_preprocessor import create_image_preprocessor
+        from murmura.data_processing.generic_preprocessor import (
+            create_image_preprocessor,
+        )
 
         # MNIST-specific configuration
         return create_image_preprocessor(
-            grayscale=True,     # MNIST is grayscale
-            normalize=True,     # Normalize to [0,1]
-            target_size=None    # Keep original 28x28
+            grayscale=True,  # MNIST is grayscale
+            normalize=True,  # Normalize to [0,1]
+            target_size=None,  # Keep original 28x28
         )
     except ImportError:
         # Generic preprocessor not available, use automatic detection
@@ -293,7 +295,7 @@ def main() -> None:
             ray_cluster=ray_cluster_config,
             resources=resource_config,
             feature_columns=["image"],
-            label_column="label"
+            label_column="label",
         )
 
         logger.info("=== Loading MNIST Dataset ===")
@@ -328,7 +330,7 @@ def main() -> None:
                     logger.info(f"Sample type: {type(sample)}")
                     logger.info(f"Sample shape: {getattr(sample, 'shape', 'N/A')}")
                     logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
-                    if hasattr(sample, 'size'):
+                    if hasattr(sample, "size"):
                         logger.info(f"Sample size: {sample.size}")
             except Exception as e:
                 logger.error(f"Error debugging MNIST data format: {e}")
@@ -387,7 +389,7 @@ def main() -> None:
 
             # Get and log cluster information
             cluster_summary = learning_process.get_cluster_summary()
-            logger.info(f"=== Cluster Summary ===")
+            logger.info("=== Cluster Summary ===")
             logger.info(
                 f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
             )
@@ -398,7 +400,7 @@ def main() -> None:
 
             # Print initial summary
             logger.info("=== MNIST Federated Learning Setup ===")
-            logger.info(f"Dataset: MNIST")
+            logger.info("Dataset: MNIST")
             logger.info(f"Partitioning: {config.partition_strategy}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Aggregation: {config.aggregation.strategy_type}")
@@ -415,7 +417,7 @@ def main() -> None:
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
@@ -445,7 +447,9 @@ def main() -> None:
 
             # Print final results
             logger.info("=== MNIST Training Results ===")
-            logger.info(f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}")
+            logger.info(
+                f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
+            )
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
@@ -456,6 +460,7 @@ def main() -> None:
     except Exception as e:
         logger.error(f"MNIST Learning Process failed: {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise
 

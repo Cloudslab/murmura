@@ -44,7 +44,7 @@ class FederatedLearningProcess(LearningProcess):
         # Convert to the format expected by the model wrapper
         if len(feature_columns) == 1:
             # Single feature column - use the model's preprocessor
-            if hasattr(self.model, 'data_preprocessor'):
+            if hasattr(self.model, "data_preprocessor"):
                 if self.model.data_preprocessor is not None:
                     try:
                         # Convert to list format for the preprocessor
@@ -53,7 +53,9 @@ class FederatedLearningProcess(LearningProcess):
                         else:
                             data_list = list(feature_data)
 
-                        features = self.model.data_preprocessor.preprocess_features(data_list)
+                        features = self.model.data_preprocessor.preprocess_features(
+                            data_list
+                        )
                     except Exception as e:
                         self.logger.warning(f"Preprocessor failed, using fallback: {e}")
                         # Fallback to numpy conversion
@@ -68,13 +70,19 @@ class FederatedLearningProcess(LearningProcess):
             # Multiple feature columns - stack them
             processed_columns = []
             for col_data in feature_data:
-                if hasattr(self.model, 'data_preprocessor'):
+                if hasattr(self.model, "data_preprocessor"):
                     if self.model.data_preprocessor is not None:
                         try:
-                            col_features = self.model.data_preprocessor.preprocess_features(list(col_data))
+                            col_features = (
+                                self.model.data_preprocessor.preprocess_features(
+                                    list(col_data)
+                                )
+                            )
                             processed_columns.append(col_features)
                         except Exception:
-                            processed_columns.append(np.array(col_data, dtype=np.float32))
+                            processed_columns.append(
+                                np.array(col_data, dtype=np.float32)
+                            )
                     else:
                         processed_columns.append(np.array(col_data, dtype=np.float32))
                 else:
@@ -85,7 +93,9 @@ class FederatedLearningProcess(LearningProcess):
         # Process labels
         labels = np.array(label_data, dtype=np.int64)
 
-        self.logger.info(f"Prepared test data - Features shape: {features.shape}, Labels shape: {labels.shape}")
+        self.logger.info(
+            f"Prepared test data - Features shape: {features.shape}, Labels shape: {labels.shape}"
+        )
 
         return features, labels
 
@@ -124,10 +134,14 @@ class FederatedLearningProcess(LearningProcess):
                 "must be specified in the configuration"
             )
 
-        self.logger.info(f"Using feature columns: {feature_columns}, label column: {label_column}")
+        self.logger.info(
+            f"Using feature columns: {feature_columns}, label column: {label_column}"
+        )
 
         self.logger.info("Preparing test data for evaluation...")
-        test_features, test_labels = self._prepare_test_data(test_dataset, feature_columns, label_column)
+        test_features, test_labels = self._prepare_test_data(
+            test_dataset, feature_columns, label_column
+        )
 
         # Rest of the method continues as before...
         # Evaluate initial model
@@ -222,8 +236,8 @@ class FederatedLearningProcess(LearningProcess):
             else:
                 # For other topologies
                 for (
-                        node,
-                        neighbors,
+                    node,
+                    neighbors,
                 ) in self.cluster_manager.topology_manager.adjacency_list.items():
                     if neighbors:
                         self.training_monitor.emit_event(

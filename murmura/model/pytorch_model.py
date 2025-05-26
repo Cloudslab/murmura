@@ -28,14 +28,14 @@ class TorchModelWrapper(ModelInterface):
     """
 
     def __init__(
-            self,
-            model: PyTorchModel,
-            loss_fn: Optional[nn.Module] = None,
-            optimizer_class: Optional[Callable] = None,
-            optimizer_kwargs: Optional[Dict[str, Any]] = None,
-            device: Optional[str] = None,
-            input_shape: Optional[Tuple[int, ...]] = None,
-            data_preprocessor: Optional[Any] = None,  # GenericDataPreprocessor
+        self,
+        model: PyTorchModel,
+        loss_fn: Optional[nn.Module] = None,
+        optimizer_class: Optional[Callable] = None,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        device: Optional[str] = None,
+        input_shape: Optional[Tuple[int, ...]] = None,
+        data_preprocessor: Optional[Any] = None,  # GenericDataPreprocessor
     ):
         """
         Initialize the PyTorch model wrapper.
@@ -78,10 +78,10 @@ class TorchModelWrapper(ModelInterface):
         )
 
     def _prepare_data(
-            self,
-            data: np.ndarray,
-            labels: Optional[np.ndarray] = None,
-            batch_size: int = 32,
+        self,
+        data: np.ndarray,
+        labels: Optional[np.ndarray] = None,
+        batch_size: int = 32,
     ) -> DataLoader:
         """
         Enhanced data preparation with pluggable preprocessing.
@@ -98,7 +98,7 @@ class TorchModelWrapper(ModelInterface):
                 # Convert data to list if it's not already
                 if isinstance(data, np.ndarray) and data.dtype == np.object_:
                     data_list = data.tolist()
-                elif hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
+                elif hasattr(data, "__iter__") and not isinstance(data, (str, bytes)):
                     data_list = list(data)
                 else:
                     data_list = [data]
@@ -109,7 +109,9 @@ class TorchModelWrapper(ModelInterface):
 
             except Exception as e:
                 # Fallback to manual processing if generic preprocessor fails
-                print(f"Warning: Generic preprocessor failed ({e}), falling back to manual processing")
+                print(
+                    f"Warning: Generic preprocessor failed ({e}), falling back to manual processing"
+                )
                 data = self.fallback_data_processing(data)
         else:
             # Fallback processing when no preprocessor is available
@@ -130,10 +132,10 @@ class TorchModelWrapper(ModelInterface):
 
         # Handle labels
         if labels is not None:
-            if hasattr(labels, 'dtype') and labels.dtype == np.object_:
+            if hasattr(labels, "dtype") and labels.dtype == np.object_:
                 try:
                     labels = np.array(labels.tolist())
-                except:
+                except Exception:
                     labels = labels.astype(np.int64)
 
             tensor_labels = torch.tensor(labels, dtype=torch.long)
@@ -152,10 +154,10 @@ class TorchModelWrapper(ModelInterface):
         :return: Processed numpy array
         """
         # Handle object dtype arrays (common with HuggingFace datasets)
-        if hasattr(data, 'dtype') and data.dtype == np.object_:
+        if hasattr(data, "dtype") and data.dtype == np.object_:
             try:
                 # Try to convert object array to regular array
-                if hasattr(data[0], 'shape'):
+                if hasattr(data[0], "shape"):
                     # If elements are arrays, stack them
                     data = np.stack(data.tolist())
                 else:
@@ -165,14 +167,16 @@ class TorchModelWrapper(ModelInterface):
                 # If that fails, try element-wise conversion
                 processed_data = []
                 for item in data:
-                    if hasattr(item, 'astype'):
+                    if hasattr(item, "astype"):
                         processed_data.append(item.astype(np.float32))
                     else:
                         processed_data.append(np.array(item, dtype=np.float32))
                 data = np.stack(processed_data)
 
         # Ensure data is in a supported numeric dtype
-        if hasattr(data, 'dtype') and (data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)):
+        if hasattr(data, "dtype") and (
+            data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
+        ):
             try:
                 data = data.astype(np.float32)
             except (ValueError, TypeError):
@@ -268,7 +272,7 @@ class TorchModelWrapper(ModelInterface):
         }
 
     def evaluate(
-            self, data: np.ndarray, labels: np.ndarray, **kwargs
+        self, data: np.ndarray, labels: np.ndarray, **kwargs
     ) -> Dict[str, float]:
         """
         Evaluate the model on the provided data and labels.

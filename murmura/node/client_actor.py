@@ -116,7 +116,7 @@ class VirtualClientActor:
         return self.node_info
 
     def receive_data(
-            self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
+        self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Receive a data partition and metadata dictionary.
@@ -133,10 +133,10 @@ class VirtualClientActor:
         return message
 
     def set_dataset(
-            self,
-            mdataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        mdataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Set the dataset for the client actor.
@@ -156,10 +156,10 @@ class VirtualClientActor:
         )
 
     def reconstruct_and_set_dataset(
-            self,
-            dataset_info: Dict[str, Any],
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset_info: Dict[str, Any],
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Reconstruct dataset from metadata on this node and set it.
@@ -255,10 +255,10 @@ class VirtualClientActor:
         )
 
     def set_dataset_metadata(
-            self,
-            dataset_metadata: Dict[str, Any],
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset_metadata: Dict[str, Any],
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Set dataset metadata for lazy loading instead of the full dataset.
@@ -274,13 +274,10 @@ class VirtualClientActor:
         self.mdataset = None  # Will be loaded on-demand
         self.lazy_loading = True
 
-        self.logger.info(
-            f"Set dataset metadata for lazy loading"
-        )
+        self.logger.info("Set dataset metadata for lazy loading")
         self.logger.info(f"Dataset: {dataset_metadata.get('dataset_name')}")
         self.logger.info(f"Splits: {dataset_metadata.get('available_splits')}")
         self.logger.info(f"Features: {feature_columns}, Label: {label_column}")
-
 
     def _lazy_load_dataset(self) -> None:
         """
@@ -290,7 +287,7 @@ class VirtualClientActor:
         if self.mdataset is not None:
             return  # Already loaded
 
-        if not hasattr(self, 'dataset_metadata') or not self.dataset_metadata:
+        if not hasattr(self, "dataset_metadata") or not self.dataset_metadata:
             raise ValueError("No dataset metadata available for lazy loading")
 
         try:
@@ -307,7 +304,9 @@ class VirtualClientActor:
             from murmura.data_processing.dataset import MDataset, DatasetSource
 
             if dataset_source != DatasetSource.HUGGING_FACE:
-                raise ValueError(f"Lazy loading only supports HuggingFace datasets currently")
+                raise ValueError(
+                    "Lazy loading only supports HuggingFace datasets currently"
+                )
 
             self.logger.info(f"Loading HuggingFace dataset: {dataset_name}")
 
@@ -319,7 +318,7 @@ class VirtualClientActor:
                     DatasetSource.HUGGING_FACE,
                     dataset_name=dataset_name,
                     split=None,  # Load all splits
-                    **dataset_kwargs
+                    **dataset_kwargs,
                 )
                 self.mdataset = full_dataset
 
@@ -334,7 +333,7 @@ class VirtualClientActor:
                             DatasetSource.HUGGING_FACE,
                             dataset_name=dataset_name,
                             split=split_name,
-                            **dataset_kwargs
+                            **dataset_kwargs,
                         )
 
                         if self.mdataset is None:
@@ -367,12 +366,15 @@ class VirtualClientActor:
                 )
 
                 if max_idx >= actual_size:
-                    raise ValueError(f"Partition index {max_idx} exceeds dataset size {actual_size}")
+                    raise ValueError(
+                        f"Partition index {max_idx} exceeds dataset size {actual_size}"
+                    )
 
         except Exception as e:
             self.logger.error(f"Failed to lazy load dataset: {e}")
-            raise RuntimeError(f"Lazy loading failed on node {self.node_info['node_id']}: {e}")
-
+            raise RuntimeError(
+                f"Lazy loading failed on node {self.node_info['node_id']}: {e}"
+            )
 
     def _get_partition_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -382,10 +384,10 @@ class VirtualClientActor:
         :return: Tuple of features and labels as numpy arrays
         """
         if (
-                self.mdataset is None
-                or self.data_partition is None
-                or self.feature_columns is None
-                or self.label_column is None
+            self.mdataset is None
+            or self.data_partition is None
+            or self.feature_columns is None
+            or self.label_column is None
         ):
             raise ValueError(
                 "Dataset, data partition, feature columns, or label column not set"
@@ -399,15 +401,25 @@ class VirtualClientActor:
             feature_data = partition_dataset[self.feature_columns[0]]
 
             # Let the model wrapper handle preprocessing if available
-            if hasattr(self.model, 'data_preprocessor'):
+            if hasattr(self.model, "data_preprocessor"):
                 if self.model.data_preprocessor is not None:
                     try:
                         # Convert to list format for the preprocessor
-                        data_list = list(feature_data) if not isinstance(feature_data, list) else feature_data
-                        features = self.model.data_preprocessor.preprocess_features(data_list)
-                        self.logger.debug("Used model's preprocessor for feature extraction")
+                        data_list = (
+                            list(feature_data)
+                            if not isinstance(feature_data, list)
+                            else feature_data
+                        )
+                        features = self.model.data_preprocessor.preprocess_features(
+                            data_list
+                        )
+                        self.logger.debug(
+                            "Used model's preprocessor for feature extraction"
+                        )
                     except Exception as e:
-                        self.logger.warning(f"Model preprocessor failed, using fallback: {e}")
+                        self.logger.warning(
+                            f"Model preprocessor failed, using fallback: {e}"
+                        )
                         # Fallback to numpy conversion
                         features = np.array(feature_data, dtype=np.float32)
                 else:
@@ -421,13 +433,19 @@ class VirtualClientActor:
             processed_columns = []
             for col in self.feature_columns:
                 col_data = partition_dataset[col]
-                if hasattr(self.model, 'data_preprocessor'):
+                if hasattr(self.model, "data_preprocessor"):
                     if self.model.data_preprocessor is not None:
                         try:
-                            col_features = self.model.data_preprocessor.preprocess_features(list(col_data))
+                            col_features = (
+                                self.model.data_preprocessor.preprocess_features(
+                                    list(col_data)
+                                )
+                            )
                             processed_columns.append(col_features)
                         except Exception:
-                            processed_columns.append(np.array(col_data, dtype=np.float32))
+                            processed_columns.append(
+                                np.array(col_data, dtype=np.float32)
+                            )
                 else:
                     processed_columns.append(np.array(col_data, dtype=np.float32))
 
@@ -447,21 +465,26 @@ class VirtualClientActor:
             # Emergency fallback: create a simple mapping for this partition
             unique_labels = sorted(set(label_data))
             label_map = {label: idx for idx, label in enumerate(unique_labels)}
-            labels = np.array([label_map[label] for label in label_data], dtype=np.int64)
+            labels = np.array(
+                [label_map[label] for label in label_data], dtype=np.int64
+            )
             self.logger.warning(f"Emergency label encoding applied: {label_map}")
-            self.logger.warning("Please ensure your example script converts string labels to integers before training.")
+            self.logger.warning(
+                "Please ensure your example script converts string labels to integers before training."
+            )
         else:
             # Labels are already numeric (expected case)
             labels = np.array(label_data, dtype=np.int64)
 
-        self.logger.debug(f"Extracted features shape: {features.shape}, labels shape: {labels.shape}")
+        self.logger.debug(
+            f"Extracted features shape: {features.shape}, labels shape: {labels.shape}"
+        )
 
         # Log label distribution for debugging
         unique_labels, counts = np.unique(labels, return_counts=True)
         self.logger.debug(f"Label distribution: {dict(zip(unique_labels, counts))}")
 
         return features, labels
-
 
     def get_data_info(self) -> Dict[str, Any]:
         """
@@ -474,17 +497,19 @@ class VirtualClientActor:
             "metadata": self.metadata,
             "has_model": self.model is not None,
             "has_dataset": self.mdataset is not None,
-            "lazy_loading": getattr(self, 'lazy_loading', False),
+            "lazy_loading": getattr(self, "lazy_loading", False),
             "dataset_loaded": self.mdataset is not None,
             "node_info": self.node_info,
             "device_info": self.device_info,
         }
 
-        if hasattr(self, 'dataset_metadata'):
+        if hasattr(self, "dataset_metadata"):
             info["dataset_name"] = self.dataset_metadata.get("dataset_name")
             info["available_splits"] = self.dataset_metadata.get("available_splits", [])
 
-        self.logger.debug(f"Data info requested: {info['data_size']} samples, lazy={info['lazy_loading']}")
+        self.logger.debug(
+            f"Data info requested: {info['data_size']} samples, lazy={info['lazy_loading']}"
+        )
         return info
 
     def train_model(self, **kwargs) -> Dict[str, float]:
@@ -535,11 +560,19 @@ class VirtualClientActor:
 
         except Exception as e:
             self.logger.error(f"Training failed: {e}")
-            self.logger.error(f"Features type: {type(features) if 'features' in locals() else 'N/A'}")
-            self.logger.error(f"Labels type: {type(labels) if 'labels' in locals() else 'N/A'}")
-            if 'features' in locals():
-                self.logger.error(f"Features shape: {getattr(features, 'shape', 'N/A')}")
-                self.logger.error(f"Features dtype: {getattr(features, 'dtype', 'N/A')}")
+            self.logger.error(
+                f"Features type: {type(features) if 'features' in locals() else 'N/A'}"
+            )
+            self.logger.error(
+                f"Labels type: {type(labels) if 'labels' in locals() else 'N/A'}"
+            )
+            if "features" in locals():
+                self.logger.error(
+                    f"Features shape: {getattr(features, 'shape', 'N/A')}"
+                )
+                self.logger.error(
+                    f"Features dtype: {getattr(features, 'dtype', 'N/A')}"
+                )
             raise
 
     def evaluate_model(self, **kwargs) -> Dict[str, float]:
@@ -719,6 +752,7 @@ class VirtualClientActor:
         :return: Health status dictionary
         """
         import time
+
         try:
             timestamp = int(time.time() * 1000)
 

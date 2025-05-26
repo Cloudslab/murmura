@@ -352,7 +352,9 @@ class ClusterManager:
 
             is_large_by_size = total_samples > 5000
             is_multinode = self.cluster_info.get("is_multinode", False)
-            is_hf_dataset = dataset.dataset_metadata.get("source") == DatasetSource.HUGGING_FACE
+            is_hf_dataset = (
+                dataset.dataset_metadata.get("source") == DatasetSource.HUGGING_FACE
+            )
 
             # Use lazy loading if it's large AND (multinode OR huggingface)
             should_use_lazy = is_large_by_size and (is_multinode or is_hf_dataset)
@@ -370,12 +372,11 @@ class ClusterManager:
             logging.getLogger("murmura").warning(f"Could not analyze dataset size: {e}")
             return False
 
-
     def _distribute_dataset_metadata_only(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute only dataset metadata for lazy loading.
@@ -396,15 +397,12 @@ class ClusterManager:
             "dataset_source": dataset.dataset_metadata.get("source"),
             "dataset_name": dataset.dataset_metadata.get("dataset_name"),
             "dataset_kwargs": dataset.dataset_metadata.get("kwargs", {}),
-
             # Structure info
             "available_splits": dataset.available_splits,
             "partitions": dataset.partitions,
-
             # Column info
             "feature_columns": feature_columns,
             "label_column": label_column,
-
             # Reconstruction strategy
             "lazy_loading": True,
             "reconstruction_strategy": "on_demand",
@@ -413,7 +411,9 @@ class ClusterManager:
         logger.info(f"Distributing lazy metadata to {len(self.actors)} actors")
         logger.info(f"Dataset: {dataset_metadata['dataset_name']}")
         logger.info(f"Splits: {dataset_metadata['available_splits']}")
-        logger.info(f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned")
+        logger.info(
+            f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned"
+        )
 
         # Distribute metadata one actor at a time to avoid memory spikes
         for i, actor in enumerate(self.actors):
@@ -428,18 +428,19 @@ class ClusterManager:
                 # Wait for each actor individually
                 ray.get(task, timeout=30)
 
-                logger.info(f"Distributed lazy metadata to actor {i + 1}/{len(self.actors)}")
+                logger.info(
+                    f"Distributed lazy metadata to actor {i + 1}/{len(self.actors)}"
+                )
 
             except Exception as e:
                 logger.error(f"Failed to distribute metadata to actor {i}: {e}")
                 raise
 
-
     def distribute_dataset(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Enhanced dataset distribution with automatic lazy loading for large datasets.
@@ -456,7 +457,9 @@ class ClusterManager:
         # Decide on distribution strategy
         if self._is_large_dataset(dataset):
             logger.info("Using lazy distribution for large dataset")
-            self._distribute_dataset_metadata_only(dataset, feature_columns, label_column)
+            self._distribute_dataset_metadata_only(
+                dataset, feature_columns, label_column
+            )
 
         elif is_multinode:
             logger.info("Using HuggingFace metadata reconstruction for multi-node")
@@ -468,19 +471,25 @@ class ClusterManager:
 
             # Use HuggingFace reconstruction approach
             if dataset.dataset_metadata.get("source") == DatasetSource.HUGGING_FACE:
-                self._distribute_hf_dataset_metadata(dataset, feature_columns, label_column)
+                self._distribute_hf_dataset_metadata(
+                    dataset, feature_columns, label_column
+                )
             else:
-                self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+                self._distribute_serializable_dataset(
+                    dataset, feature_columns, label_column
+                )
 
         else:
             logger.info("Using direct serialization for single-node")
-            self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+            self._distribute_serializable_dataset(
+                dataset, feature_columns, label_column
+            )
 
     def _distribute_hf_dataset_metadata(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute HuggingFace dataset using metadata reconstruction approach.
@@ -505,7 +514,9 @@ class ClusterManager:
         }
 
         logger = logging.getLogger("murmura")
-        logger.info(f"Distributing dataset with feature_columns={feature_columns}, label_column={label_column}")
+        logger.info(
+            f"Distributing dataset with feature_columns={feature_columns}, label_column={label_column}"
+        )
 
         for i in range(0, len(self.actors), batch_size):
             batch_actors = self.actors[i : i + batch_size]
@@ -539,12 +550,11 @@ class ClusterManager:
                 )
                 return
 
-
     def _distribute_serializable_dataset(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute dataset using direct serialization (original method).
@@ -559,7 +569,9 @@ class ClusterManager:
         batch_size = 10  # Smaller batches for stability
 
         logger = logging.getLogger("murmura")
-        logger.info(f"Distributing dataset with feature_columns={feature_columns}, label_column={label_column}")
+        logger.info(
+            f"Distributing dataset with feature_columns={feature_columns}, label_column={label_column}"
+        )
 
         for i in range(0, len(self.actors), batch_size):
             batch_actors = self.actors[i : i + batch_size]
@@ -853,7 +865,7 @@ class ClusterManager:
                     for actor in batch_actors:
                         try:
                             ray.kill(actor)
-                        except:
+                        except Exception:
                             pass  # Ignore errors during cleanup
 
             logging.getLogger("murmura").info("Cluster manager shutdown complete")

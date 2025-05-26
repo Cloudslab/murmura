@@ -38,11 +38,11 @@ class OrchestrationConfig(BaseModel):
     # Generic column configuration - NO DEFAULTS, must be specified by user
     feature_columns: Optional[List[str]] = Field(
         default=None,
-        description="List of feature column names (must be specified for each dataset)"
+        description="List of feature column names (must be specified for each dataset)",
     )
     label_column: Optional[str] = Field(
         default=None,
-        description="Name of the label column (must be specified for each dataset)"
+        description="Name of the label column (must be specified for each dataset)",
     )
 
     # Multi-node Ray cluster configuration
@@ -104,7 +104,7 @@ class OrchestrationConfig(BaseModel):
 
         if self.resources.memory_per_actor is not None:
             resources["memory"] = (
-                    self.resources.memory_per_actor * 1024 * 1024
+                self.resources.memory_per_actor * 1024 * 1024
             )  # Convert MB to bytes
 
         return resources
