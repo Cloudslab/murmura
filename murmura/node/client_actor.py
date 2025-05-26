@@ -255,10 +255,10 @@ class VirtualClientActor:
         )
 
     def set_dataset_metadata(
-        self,
-        dataset_metadata: Dict[str, Any],
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset_metadata: Dict[str, Any],
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Set dataset metadata for lazy loading instead of the full dataset.
@@ -269,6 +269,7 @@ class VirtualClientActor:
             label_column: Name of the label column
         """
         self.dataset_metadata = dataset_metadata
+        # CRITICAL FIX: These were not being stored properly
         self.feature_columns = feature_columns
         self.label_column = label_column
         self.mdataset = None  # Will be loaded on-demand
@@ -278,6 +279,39 @@ class VirtualClientActor:
         self.logger.info(f"Dataset: {dataset_metadata.get('dataset_name')}")
         self.logger.info(f"Splits: {dataset_metadata.get('available_splits')}")
         self.logger.info(f"Features: {feature_columns}, Label: {label_column}")
+
+        # Log for debugging
+        self.logger.debug(f"Stored feature_columns: {self.feature_columns}")
+        self.logger.debug(f"Stored label_column: {self.label_column}")
+
+    def get_data_info(self) -> Dict[str, Any]:
+        """
+        Return information about stored data partition.
+        Enhanced with lazy loading status and proper field access.
+        """
+        info = {
+            "client_id": self.client_id,
+            "data_size": len(self.data_partition) if self.data_partition else 0,
+            "metadata": self.metadata,
+            "has_model": self.model is not None,
+            "has_dataset": self.mdataset is not None,
+            "lazy_loading": getattr(self, "lazy_loading", False),
+            "dataset_loaded": self.mdataset is not None,
+            "node_info": self.node_info,
+            "device_info": self.device_info,
+            "feature_columns": self.feature_columns,
+            "label_column": self.label_column,
+        }
+
+        if hasattr(self, "dataset_metadata") and self.dataset_metadata:
+            info["dataset_name"] = self.dataset_metadata.get("dataset_name")
+            info["available_splits"] = self.dataset_metadata.get("available_splits", [])
+
+        self.logger.debug(
+            f"Data info requested: {info['data_size']} samples, lazy={info['lazy_loading']}, "
+            f"features={info['feature_columns']}, label={info['label_column']}"
+        )
+        return info
 
     def _lazy_load_dataset(self) -> None:
         """
@@ -529,32 +563,6 @@ class VirtualClientActor:
             self.logger.error(f"  - available splits: {self.mdataset.available_splits if self.mdataset else 'N/A'}")
             self.logger.error(f"  - partition size: {len(self.data_partition)}")
             raise RuntimeError(f"Data extraction failed on node {self.node_info['node_id']}: {e}")
-
-    def get_data_info(self) -> Dict[str, Any]:
-        """
-        Return information about stored data partition.
-        Enhanced with lazy loading status.
-        """
-        info = {
-            "client_id": self.client_id,
-            "data_size": len(self.data_partition) if self.data_partition else 0,
-            "metadata": self.metadata,
-            "has_model": self.model is not None,
-            "has_dataset": self.mdataset is not None,
-            "lazy_loading": getattr(self, "lazy_loading", False),
-            "dataset_loaded": self.mdataset is not None,
-            "node_info": self.node_info,
-            "device_info": self.device_info,
-        }
-
-        if hasattr(self, "dataset_metadata"):
-            info["dataset_name"] = self.dataset_metadata.get("dataset_name")
-            info["available_splits"] = self.dataset_metadata.get("available_splits", [])
-
-        self.logger.debug(
-            f"Data info requested: {info['data_size']} samples, lazy={info['lazy_loading']}"
-        )
-        return info
 
     def train_model(self, **kwargs) -> Dict[str, float]:
         """
