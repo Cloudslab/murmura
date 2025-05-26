@@ -1,5 +1,7 @@
+import io
 from abc import ABC, abstractmethod
-from typing import Any, List, Dict, Optional, Union, Callable
+from typing import Any, List, Dict, Optional, Callable
+
 import numpy as np
 from PIL import Image
 
@@ -16,6 +18,99 @@ class DataPreprocessor(ABC):
     def preprocess(self, data: List[Any]) -> np.ndarray:
         """Preprocess the data into a numpy array."""
         pass
+
+
+class ImageBytesPreprocessor(DataPreprocessor):
+    """Preprocessor for image data stored as bytes (common in HuggingFace datasets)."""
+
+    def __init__(
+            self,
+            target_mode: Optional[str] = None,
+            normalize: bool = True,
+            normalization_factor: float = 255.0,
+            target_size: Optional[tuple] = None
+    ):
+        """
+        Initialize image bytes preprocessor.
+
+        Args:
+            target_mode: Target PIL mode ('RGB', 'L', etc.). If None, keeps original.
+            normalize: Whether to normalize pixel values.
+            normalization_factor: Factor to divide pixel values by.
+            target_size: Target size as (width, height). If None, keeps original.
+        """
+        self.target_mode = target_mode
+        self.normalize = normalize
+        self.normalization_factor = normalization_factor
+        self.target_size = target_size
+
+    def can_handle(self, data_sample: Any) -> bool:
+        """Check if data contains image bytes."""
+        if isinstance(data_sample, dict):
+            # Check for common image byte keys
+            image_keys = ['bytes', 'image_bytes', 'data', 'content']
+            for key in image_keys:
+                if key in data_sample:
+                    value = data_sample[key]
+                    if isinstance(value, bytes):
+                        # Try to detect if it's actually image data
+                        return self._is_image_bytes(value)
+        return False
+
+    def _is_image_bytes(self, data: bytes) -> bool:
+        """Check if bytes represent an image."""
+        # Common image file signatures
+        image_signatures = [
+            b'\x89PNG',  # PNG
+            b'\xff\xd8\xff',  # JPEG
+            b'GIF8',  # GIF
+            b'BM',  # BMP
+            b'RIFF',  # WebP (contains WEBP later)
+        ]
+        return any(data.startswith(sig) for sig in image_signatures)
+
+    def preprocess(self, data: List[Any]) -> np.ndarray:
+        """Preprocess image bytes data."""
+        processed = []
+        for item in data:
+            if isinstance(item, dict):
+                # Find the image bytes
+                image_bytes = None
+                for key in ['bytes', 'image_bytes', 'data', 'content']:
+                    if key in item and isinstance(item[key], bytes):
+                        image_bytes = item[key]
+                        break
+
+                if image_bytes is None:
+                    raise ValueError(f"No image bytes found in dictionary with keys: {list(item.keys())}")
+
+                # Convert bytes to PIL Image
+                try:
+                    img = Image.open(io.BytesIO(image_bytes))
+
+                    # Convert mode if specified
+                    if self.target_mode and hasattr(img, 'convert'):
+                        img = img.convert(self.target_mode)
+
+                    # Resize if specified
+                    if self.target_size is not None and hasattr(img, 'resize'):
+                        img = img.resize(self.target_size)
+
+                except Exception as e:
+                    raise ValueError(f"Failed to decode image bytes: {e}")
+            else:
+                raise ValueError(f"Expected dictionary with image bytes, got {type(item)}")
+
+            # Convert to numpy
+            img_array = np.array(img, dtype=np.float32)
+
+            # Normalize if specified
+            if self.normalize:
+                img_array = img_array / self.normalization_factor
+
+            processed.append(img_array)
+
+        return np.array(processed)
 
 
 class ImagePreprocessor(DataPreprocessor):
@@ -57,7 +152,7 @@ class ImagePreprocessor(DataPreprocessor):
                 img = img.convert(self.target_mode)
 
             # Resize if specified
-            if self.target_size and hasattr(img, 'resize'):
+            if self.target_size is not None and hasattr(img, 'resize'):
                 img = img.resize(self.target_size)
 
             # Convert to numpy
@@ -190,19 +285,21 @@ class GenericDataPreprocessor:
             preprocessors: List of preprocessing strategies. If None, uses defaults.
         """
         if preprocessors is None:
-            # Default preprocessors for common data types
+            # Default preprocessors for common data types - order matters!
             self.preprocessors = [
-                TensorPreprocessor(),  # Try tensors first
-                ImagePreprocessor(),   # Then images
-                DictPreprocessor(      # Then dictionaries
+                TensorPreprocessor(),     # Try tensors first
+                ImageBytesPreprocessor(), # Then image bytes (for HuggingFace datasets)
+                ImagePreprocessor(),      # Then direct PIL images
+                DictPreprocessor(         # Then dictionaries with custom extractors
                     key_extractors={
                         'image': lambda x: self._preprocess_image_from_dict(x),
+                        'pixel_values': lambda x: np.array(x, dtype=np.float32),
                         'data': lambda x: np.array(x, dtype=np.float32),
                         'features': lambda x: np.array(x, dtype=np.float32),
                     },
                     primary_key='image'
                 ),
-                NumericPreprocessor(), # Finally, try numeric conversion
+                NumericPreprocessor(),    # Finally, try numeric conversion
             ]
         else:
             self.preprocessors = preprocessors
@@ -211,6 +308,13 @@ class GenericDataPreprocessor:
         """Helper to preprocess image data extracted from dictionary."""
         if hasattr(img_data, 'convert') or isinstance(img_data, Image.Image):
             return np.array(img_data, dtype=np.float32) / 255.0
+        elif isinstance(img_data, bytes):
+            # Handle image bytes
+            try:
+                img = Image.open(io.BytesIO(img_data))
+                return np.array(img, dtype=np.float32) / 255.0
+            except Exception:
+                raise ValueError("Failed to decode image bytes")
         else:
             return np.array(img_data, dtype=np.float32)
 
@@ -243,9 +347,10 @@ class GenericDataPreprocessor:
                     continue
 
         # If no preprocessor worked, raise an error with helpful info
+        sample_str = str(sample) if not hasattr(sample, '__len__') or len(str(sample)) < 100 else str(sample)[:100] + '...'
         raise ValueError(
             f"Cannot preprocess data of type {type(sample)}. "
-            f"Sample value: {sample if not hasattr(sample, '__len__') or len(str(sample)) < 100 else str(sample)[:100] + '...'}"
+            f"Sample value: {sample_str}"
         )
 
     def add_preprocessor(self, preprocessor: DataPreprocessor, priority: int = -1) -> None:
@@ -273,6 +378,11 @@ def create_image_preprocessor(
 
     preprocessors = [
         TensorPreprocessor(),
+        ImageBytesPreprocessor(  # Add support for image bytes
+            target_mode=target_mode,
+            normalize=normalize,
+            target_size=target_size
+        ),
         ImagePreprocessor(
             target_mode=target_mode,
             normalize=normalize,
@@ -282,6 +392,7 @@ def create_image_preprocessor(
             key_extractors={
                 'image': lambda x: _process_dict_image(x, target_mode, normalize),
                 'pixel_values': lambda x: np.array(x, dtype=np.float32),
+                'bytes': lambda x: _process_image_bytes(x, target_mode, normalize, target_size),
             },
             primary_key='image'
         ),
@@ -337,8 +448,36 @@ def _process_dict_image(img_data: Any, target_mode: Optional[str], normalize: bo
         if normalize:
             img_array = img_array / 255.0
         return img_array
+    elif isinstance(img_data, bytes):
+        return _process_image_bytes(img_data, target_mode, normalize, None)
     else:
         return np.array(img_data, dtype=np.float32)
+
+
+def _process_image_bytes(
+        img_bytes: bytes,
+        target_mode: Optional[str],
+        normalize: bool,
+        target_size: Optional[tuple]
+) -> np.ndarray:
+    """Process image bytes into numpy array."""
+    try:
+        img = Image.open(io.BytesIO(img_bytes))
+
+        if target_mode and hasattr(img, 'convert'):
+            img = img.convert(target_mode)
+
+        if target_size is not None and hasattr(img, 'resize'):
+            img = img.resize(target_size)
+
+        img_array = np.array(img, dtype=np.float32)
+
+        if normalize:
+            img_array = img_array / 255.0
+
+        return img_array
+    except Exception as e:
+        raise ValueError(f"Failed to process image bytes: {e}")
 
 
 def _encode_text(text: str) -> np.ndarray:
