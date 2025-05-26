@@ -58,7 +58,7 @@ class ClusterManager:
 
         # Create formatter for distributed logs
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
 
         # Add console handler if not exists
@@ -70,7 +70,9 @@ class ClusterManager:
     def _initialize_ray_cluster(self) -> None:
         """Initialize Ray cluster with multi-node support"""
         if ray.is_initialized():
-            logging.getLogger("murmura").info("Ray already initialized, using existing cluster")
+            logging.getLogger("murmura").info(
+                "Ray already initialized, using existing cluster"
+            )
             return
 
         ray_config = {
@@ -88,7 +90,10 @@ class ClusterManager:
             ray_config["runtime_env"] = self.config.ray_cluster.runtime_env
 
         # Auto-detect cluster setup if enabled
-        if self.config.ray_cluster.auto_detect_cluster and not self.config.ray_cluster.address:
+        if (
+            self.config.ray_cluster.auto_detect_cluster
+            and not self.config.ray_cluster.address
+        ):
             # Check for Ray cluster environment variables
             if "RAY_ADDRESS" in os.environ:
                 ray_config["address"] = os.environ["RAY_ADDRESS"]
@@ -119,7 +124,7 @@ class ClusterManager:
                 "cluster_resources": cluster_resources,
                 "available_resources": available_resources,
                 "nodes": nodes,
-                "is_multinode": len([n for n in nodes if n["Alive"]]) > 1
+                "is_multinode": len([n for n in nodes if n["Alive"]]) > 1,
             }
 
             # Log cluster information
@@ -136,7 +141,7 @@ class ClusterManager:
                 "cluster_resources": {},
                 "available_resources": {},
                 "nodes": [],
-                "is_multinode": False
+                "is_multinode": False,
             }
 
     def _calculate_resource_allocation(self) -> Tuple[Dict[str, Any], int]:
@@ -169,8 +174,12 @@ class ClusterManager:
         else:
             # Auto-calculate based on available resources
             # Use a more conservative approach for multi-node
-            cpus_per_actor = max(0.5, total_cpus / (self.config.num_actors * 1.2))  # Leave some headroom
-            resource_requirements["num_cpus"] = min(cpus_per_actor, 2.0)  # Cap at 2 CPUs per actor
+            cpus_per_actor = max(
+                0.5, total_cpus / (self.config.num_actors * 1.2)
+            )  # Leave some headroom
+            resource_requirements["num_cpus"] = min(
+                cpus_per_actor, 2.0
+            )  # Cap at 2 CPUs per actor
 
         # GPU allocation
         if self.config.resources.gpus_per_actor is not None:
@@ -182,7 +191,9 @@ class ClusterManager:
 
         # Memory allocation
         if self.config.resources.memory_per_actor is not None:
-            resource_requirements["memory"] = self.config.resources.memory_per_actor * 1024 * 1024
+            resource_requirements["memory"] = (
+                self.config.resources.memory_per_actor * 1024 * 1024
+            )
 
         logging.getLogger("murmura").info(
             f"Resource allocation: {resource_requirements} per actor, "
@@ -212,12 +223,18 @@ class ClusterManager:
             actor_options.update(resource_requirements)
 
             try:
-                actor = VirtualClientActor.options(**actor_options).remote(f"client_{i}")
+                actor = VirtualClientActor.options(**actor_options).remote(
+                    f"client_{i}"
+                )
                 self.actors.append(actor)
 
                 # Log actor creation with node information
-                if i % 10 == 0 or i == num_actors - 1:  # Log every 10th actor and the last one
-                    logging.getLogger("murmura").info(f"Created actors {i+1}/{num_actors}")
+                if (
+                    i % 10 == 0 or i == num_actors - 1
+                ):  # Log every 10th actor and the last one
+                    logging.getLogger("murmura").info(
+                        f"Created actors {i + 1}/{num_actors}"
+                    )
 
             except Exception as e:
                 logging.getLogger("murmura").error(f"Failed to create actor {i}: {e}")
@@ -243,7 +260,9 @@ class ClusterManager:
                 )
 
         except Exception as e:
-            logging.getLogger("murmura").debug(f"Could not determine actor distribution: {e}")
+            logging.getLogger("murmura").debug(
+                f"Could not determine actor distribution: {e}"
+            )
 
     def set_aggregation_strategy(self, aggregation_config: AggregationConfig) -> None:
         """Set the aggregation strategy for the cluster"""
@@ -258,22 +277,24 @@ class ClusterManager:
             )
 
     def distribute_data(
-            self,
-            data_partitions: List[List[int]],
-            metadata: Optional[Dict[str, Any]] = None,
+        self,
+        data_partitions: List[List[int]],
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         """Distribute data partitions to actors with improved error handling"""
         resolved_metadata = metadata or {}
-        resolved_metadata.update({
-            "cluster_nodes": self.cluster_info["total_nodes"],
-            "is_multinode": self.cluster_info["is_multinode"]
-        })
+        resolved_metadata.update(
+            {
+                "cluster_nodes": self.cluster_info["total_nodes"],
+                "is_multinode": self.cluster_info["is_multinode"],
+            }
+        )
 
         results = []
         batch_size = 20  # Smaller batches for better stability
 
         for i in range(0, len(self.actors), batch_size):
-            batch_actors = self.actors[i:i + batch_size]
+            batch_actors = self.actors[i : i + batch_size]
             batch_results = []
 
             for j, actor in enumerate(batch_actors):
@@ -283,30 +304,38 @@ class ClusterManager:
                 batch_results.append(
                     actor.receive_data.remote(
                         data_partitions[partition_idx],
-                        {**resolved_metadata, "partition_idx": partition_idx, "actor_id": actual_idx},
+                        {
+                            **resolved_metadata,
+                            "partition_idx": partition_idx,
+                            "actor_id": actual_idx,
+                        },
                     )
                 )
 
             # Wait for batch to complete
             try:
-                batch_completed = ray.get(batch_results, timeout=60)  # Increased timeout
+                batch_completed = ray.get(
+                    batch_results, timeout=60
+                )  # Increased timeout
                 results.extend(batch_completed)
 
                 logging.getLogger("murmura").info(
-                    f"Distributed data to actors {i+1}-{min(i+batch_size, len(self.actors))}"
+                    f"Distributed data to actors {i + 1}-{min(i + batch_size, len(self.actors))}"
                 )
 
             except Exception as e:
-                logging.getLogger("murmura").error(f"Failed to distribute data batch {i//batch_size}: {e}")
+                logging.getLogger("murmura").error(
+                    f"Failed to distribute data batch {i // batch_size}: {e}"
+                )
                 raise
 
         return results
 
     def distribute_dataset(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute dataset to all actors with smart multi-node handling.
@@ -320,45 +349,63 @@ class ClusterManager:
         is_multinode = self.cluster_info.get("is_multinode", False)
 
         if is_multinode:
-            logging.getLogger("murmura").info("Multi-node cluster detected - using smart dataset distribution")
+            logging.getLogger("murmura").info(
+                "Multi-node cluster detected - using smart dataset distribution"
+            )
 
             # Check if dataset is already multi-node compatible
             if not dataset.is_serializable_for_multinode():
-                logging.getLogger("murmura").info("Converting dataset for multi-node compatibility...")
+                logging.getLogger("murmura").info(
+                    "Converting dataset for multi-node compatibility..."
+                )
                 dataset = dataset.prepare_for_multinode_distribution()
 
             # For HuggingFace datasets, we'll use the reconstruction approach
             if dataset.dataset_metadata.get("source") == DatasetSource.HUGGING_FACE:
-                logging.getLogger("murmura").info("Using HuggingFace dataset reconstruction for multi-node distribution")
-                self._distribute_hf_dataset_metadata(dataset, feature_columns, label_column)
+                logging.getLogger("murmura").info(
+                    "Using HuggingFace dataset reconstruction for multi-node distribution"
+                )
+                self._distribute_hf_dataset_metadata(
+                    dataset, feature_columns, label_column
+                )
             else:
-                logging.getLogger("murmura").info("Using direct serialization for multi-node distribution")
-                self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+                logging.getLogger("murmura").info(
+                    "Using direct serialization for multi-node distribution"
+                )
+                self._distribute_serializable_dataset(
+                    dataset, feature_columns, label_column
+                )
         else:
-            logging.getLogger("murmura").info("Single-node cluster detected - using direct dataset distribution")
-            self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+            logging.getLogger("murmura").info(
+                "Single-node cluster detected - using direct dataset distribution"
+            )
+            self._distribute_serializable_dataset(
+                dataset, feature_columns, label_column
+            )
 
     def _distribute_hf_dataset_metadata(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute HuggingFace dataset using metadata reconstruction approach.
         This avoids serializing large memory-mapped files across the network.
         """
-        batch_size = 20
+        batch_size = 5  # Smaller batches for metadata reconstruction
 
         # Create a lightweight metadata package
         dataset_metadata = {
             "metadata": dataset.dataset_metadata,
             "partitions": dataset.partitions,
-            "available_splits": dataset.available_splits
+            "available_splits": dataset.available_splits,
         }
 
+        logger = logging.getLogger("murmura")
+
         for i in range(0, len(self.actors), batch_size):
-            batch_actors = self.actors[i:i + batch_size]
+            batch_actors = self.actors[i : i + batch_size]
             batch_tasks = []
 
             for actor in batch_actors:
@@ -367,52 +414,62 @@ class ClusterManager:
                     actor.reconstruct_and_set_dataset.remote(
                         dataset_metadata,
                         feature_columns=feature_columns,
-                        label_column=label_column
+                        label_column=label_column,
                     )
                 )
 
             try:
-                ray.get(batch_tasks, timeout=120)  # Longer timeout for reconstruction
-                logging.getLogger("murmura").info(
-                    f"Distributed dataset metadata to actors {i+1}-{min(i+batch_size, len(self.actors))}"
+                ray.get(
+                    batch_tasks, timeout=180
+                )  # Increased timeout for reconstruction
+                logger.info(
+                    f"Distributed dataset metadata to actors {i + 1}-{min(i + batch_size, len(self.actors))}"
                 )
             except Exception as e:
-                logging.getLogger("murmura").error(f"Failed to distribute dataset metadata batch {i//batch_size}: {e}")
+                logger.error(
+                    f"Failed to distribute dataset metadata batch {i // batch_size}: {e}"
+                )
                 # Fallback to direct distribution
-                logging.getLogger("murmura").info("Falling back to direct dataset distribution...")
-                self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+                logger.info("Falling back to direct dataset distribution...")
+                self._distribute_serializable_dataset(
+                    dataset, feature_columns, label_column
+                )
                 return
 
     def _distribute_serializable_dataset(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute dataset using direct serialization (original method).
         Used for single-node clusters or already-serializable datasets.
         """
-        batch_size = 20
+        batch_size = 10  # Smaller batches for stability
 
         for i in range(0, len(self.actors), batch_size):
-            batch_actors = self.actors[i:i + batch_size]
+            batch_actors = self.actors[i : i + batch_size]
             batch_tasks = []
 
             for actor in batch_actors:
                 batch_tasks.append(
                     actor.set_dataset.remote(
-                        dataset, feature_columns=feature_columns, label_column=label_column
+                        dataset,
+                        feature_columns=feature_columns,
+                        label_column=label_column,
                     )
                 )
 
             try:
-                ray.get(batch_tasks, timeout=60)
+                ray.get(batch_tasks, timeout=120)  # Increased timeout
                 logging.getLogger("murmura").info(
-                    f"Distributed dataset to actors {i+1}-{min(i+batch_size, len(self.actors))}"
+                    f"Distributed dataset to actors {i + 1}-{min(i + batch_size, len(self.actors))}"
                 )
             except Exception as e:
-                logging.getLogger("murmura").error(f"Failed to distribute dataset batch {i//batch_size}: {e}")
+                logging.getLogger("murmura").error(
+                    f"Failed to distribute dataset batch {i // batch_size}: {e}"
+                )
                 raise
 
     def distribute_model(self, model: ModelInterface) -> None:
@@ -434,7 +491,7 @@ class ClusterManager:
         batch_size = 10
 
         for i in range(0, len(self.actors), batch_size):
-            batch_actors = self.actors[i:i + batch_size]
+            batch_actors = self.actors[i : i + batch_size]
             batch_tasks = []
 
             for actor in batch_actors:
@@ -442,7 +499,9 @@ class ClusterManager:
                 batch_tasks.append(actor.set_model.remote(model))
 
             try:
-                ray.get(batch_tasks, timeout=120)  # Longer timeout for model distribution
+                ray.get(
+                    batch_tasks, timeout=120
+                )  # Longer timeout for model distribution
 
                 # Now set parameters
                 param_tasks = []
@@ -452,18 +511,20 @@ class ClusterManager:
                 ray.get(param_tasks, timeout=120)
 
                 logging.getLogger("murmura").info(
-                    f"Distributed model to actors {i+1}-{min(i+batch_size, len(self.actors))}"
+                    f"Distributed model to actors {i + 1}-{min(i + batch_size, len(self.actors))}"
                 )
 
             except Exception as e:
-                logging.getLogger("murmura").error(f"Failed to distribute model batch {i//batch_size}: {e}")
+                logging.getLogger("murmura").error(
+                    f"Failed to distribute model batch {i // batch_size}: {e}"
+                )
                 raise
 
         # Restore original device
         if (
-                hasattr(model, "model")
-                and hasattr(model.model, "to")
-                and original_device is not None
+            hasattr(model, "model")
+            and hasattr(model.model, "to")
+            and original_device is not None
         ):
             model.model.to(original_device)
             if hasattr(model, "device"):
@@ -475,22 +536,26 @@ class ClusterManager:
         all_results = []
 
         for i in range(0, len(self.actors), batch_size):
-            batch_actors = self.actors[i:i + batch_size]
+            batch_actors = self.actors[i : i + batch_size]
             batch_tasks = []
 
             for actor in batch_actors:
                 batch_tasks.append(actor.train_model.remote(**kwargs))
 
             try:
-                batch_results = ray.get(batch_tasks, timeout=600)  # 10 min timeout for training
+                batch_results = ray.get(
+                    batch_tasks, timeout=600
+                )  # 10 min timeout for training
                 all_results.extend(batch_results)
 
                 logging.getLogger("murmura").debug(
-                    f"Completed training batch {i//batch_size + 1}/{(len(self.actors) + batch_size - 1)//batch_size}"
+                    f"Completed training batch {i // batch_size + 1}/{(len(self.actors) + batch_size - 1) // batch_size}"
                 )
 
             except Exception as e:
-                logging.getLogger("murmura").error(f"Training failed for batch {i//batch_size}: {e}")
+                logging.getLogger("murmura").error(
+                    f"Training failed for batch {i // batch_size}: {e}"
+                )
                 raise
 
         return all_results
@@ -501,24 +566,28 @@ class ClusterManager:
         all_results = []
 
         for i in range(0, len(self.actors), batch_size):
-            batch_actors = self.actors[i:i + batch_size]
+            batch_actors = self.actors[i : i + batch_size]
             batch_tasks = []
 
             for actor in batch_actors:
                 batch_tasks.append(actor.evaluate_model.remote(**kwargs))
 
             try:
-                batch_results = ray.get(batch_tasks, timeout=300)  # 5 min timeout for evaluation
+                batch_results = ray.get(
+                    batch_tasks, timeout=300
+                )  # 5 min timeout for evaluation
                 all_results.extend(batch_results)
 
             except Exception as e:
-                logging.getLogger("murmura").error(f"Evaluation failed for batch {i//batch_size}: {e}")
+                logging.getLogger("murmura").error(
+                    f"Evaluation failed for batch {i // batch_size}: {e}"
+                )
                 raise
 
         return all_results
 
     def aggregate_model_parameters(
-            self, weights: Optional[List[float]] = None
+        self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """Aggregate model parameters from all actors"""
         if not self.aggregation_strategy:
@@ -527,14 +596,12 @@ class ClusterManager:
             )
 
         if not self.topology_coordinator:
-            raise ValueError(
-                "Topology coordinator not initialized."
-            )
+            raise ValueError("Topology coordinator not initialized.")
 
         return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
     def update_aggregation_strategy(
-            self, strategy: AggregationStrategy, topology_check: bool = True
+        self, strategy: AggregationStrategy, topology_check: bool = True
     ) -> None:
         """Update the aggregation strategy for the cluster"""
         if topology_check and self.topology_manager:
@@ -542,7 +609,7 @@ class ClusterManager:
             topology_type = self.topology_manager.config.topology_type
 
             if not TopologyCompatibilityManager.is_compatible(
-                    strategy_class, topology_type
+                strategy_class, topology_type
             ):
                 compatible_topologies = (
                     TopologyCompatibilityManager.get_compatible_topologies(
@@ -564,7 +631,7 @@ class ClusterManager:
         batch_size = 20
 
         for i in range(0, len(self.actors), batch_size):
-            batch_actors = self.actors[i:i + batch_size]
+            batch_actors = self.actors[i : i + batch_size]
             batch_tasks = []
 
             for actor in batch_actors:
@@ -573,7 +640,9 @@ class ClusterManager:
             try:
                 ray.get(batch_tasks, timeout=120)
             except Exception as e:
-                logging.getLogger("murmura").error(f"Model update failed for batch {i//batch_size}: {e}")
+                logging.getLogger("murmura").error(
+                    f"Model update failed for batch {i // batch_size}: {e}"
+                )
                 raise
 
     def _apply_topology(self) -> None:
@@ -598,7 +667,7 @@ class ClusterManager:
         """Get information about the current topology and cluster"""
         base_info = {
             "initialized": bool(self.topology_manager),
-            "cluster_info": self.cluster_info
+            "cluster_info": self.cluster_info,
         }
 
         if not self.topology_manager:
@@ -653,7 +722,7 @@ class ClusterManager:
             "num_actors": len(self.actors),
             "placement_strategy": self.config.resources.placement_strategy,
             "has_placement_group": False,  # Simplified for now
-            "resource_config": self.config.resources.model_dump()
+            "resource_config": self.config.resources.model_dump(),
         }
 
     def shutdown(self) -> None:
@@ -661,11 +730,13 @@ class ClusterManager:
         try:
             # Clean up actors
             if self.actors:
-                logging.getLogger("murmura").info(f"Cleaning up {len(self.actors)} actors")
+                logging.getLogger("murmura").info(
+                    f"Cleaning up {len(self.actors)} actors"
+                )
                 # Kill actors in batches to avoid overwhelming the cluster
                 batch_size = 20
                 for i in range(0, len(self.actors), batch_size):
-                    batch_actors = self.actors[i:i + batch_size]
+                    batch_actors = self.actors[i : i + batch_size]
                     for actor in batch_actors:
                         try:
                             ray.kill(actor)

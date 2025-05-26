@@ -37,7 +37,9 @@ class DecentralizedLearningProcess(LearningProcess):
         test_split = self.get_config_value("test_split", "test")
 
         # Enhanced logging with cluster context
-        self.log_training_progress(0, {"status": "starting_decentralized", "rounds": rounds})
+        self.log_training_progress(
+            0, {"status": "starting_decentralized", "rounds": rounds}
+        )
 
         # Prepare test data for global evaluation
         test_dataset = self.dataset.get_split(test_split)
@@ -49,7 +51,9 @@ class DecentralizedLearningProcess(LearningProcess):
 
         # Evaluate initial model
         initial_metrics = self.model.evaluate(test_features, test_labels)
-        self.logger.info(f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%")
+        self.logger.info(
+            f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%"
+        )
 
         # Emit evaluation event for visualization
         self.training_monitor.emit_event(
@@ -71,7 +75,9 @@ class DecentralizedLearningProcess(LearningProcess):
             monitor_resources = self.get_config_value("monitor_resources", False)
             if monitor_resources:
                 resource_usage = self.monitor_resource_usage()
-                self.logger.debug(f"Round {round_num} resource usage: {resource_usage.get('resource_utilization', {})}")
+                self.logger.debug(
+                    f"Round {round_num} resource usage: {resource_usage.get('resource_utilization', {})}"
+                )
 
             # 1. Local Training with enhanced logging
             self.logger.info(f"Training on clients for {epochs} epochs...")
@@ -87,7 +93,9 @@ class DecentralizedLearningProcess(LearningProcess):
             )
 
             # Training with enhanced progress logging for multi-node
-            self.logger.info(f"Local training progress across {topology_info.get('total_nodes', 'unknown')} nodes (each client trains for {epochs} epochs):")
+            self.logger.info(
+                f"Local training progress across {topology_info.get('total_nodes', 'unknown')} nodes (each client trains for {epochs} epochs):"
+            )
             train_metrics = self.cluster_manager.train_models(
                 epochs=epochs, batch_size=batch_size, verbose=True
             )
@@ -97,12 +105,15 @@ class DecentralizedLearningProcess(LearningProcess):
             avg_train_acc = mean([m["accuracy"] for m in train_metrics])
 
             # Enhanced logging with cluster context
-            self.log_training_progress(round_num, {
-                "avg_train_loss": avg_train_loss,
-                "avg_train_accuracy": avg_train_acc,
-                "active_clients": len(train_metrics),
-                "topology": topology_type
-            })
+            self.log_training_progress(
+                round_num,
+                {
+                    "avg_train_loss": avg_train_loss,
+                    "avg_train_accuracy": avg_train_acc,
+                    "active_clients": len(train_metrics),
+                    "topology": topology_type,
+                },
+            )
 
             # 2. Parameter Exchange and Aggregation (Decentralized)
             self.logger.info(
@@ -188,7 +199,9 @@ class DecentralizedLearningProcess(LearningProcess):
             # Evaluate global model on test set
             test_metrics = self.model.evaluate(test_features, test_labels)
             self.logger.info(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
-            self.logger.info(f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%")
+            self.logger.info(
+                f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
+            )
 
             # Emit evaluation event
             self.training_monitor.emit_event(
@@ -213,9 +226,15 @@ class DecentralizedLearningProcess(LearningProcess):
         # Enhanced final logging with multi-node context
         cluster_summary = self.get_cluster_summary()
         self.logger.info("=== Final Model Evaluation ===")
-        self.logger.info(f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}")
-        self.logger.info(f"Total physical nodes: {cluster_summary.get('total_nodes', 'unknown')}")
-        self.logger.info(f"Total virtual actors: {cluster_summary.get('total_actors', 'unknown')}")
+        self.logger.info(
+            f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+        )
+        self.logger.info(
+            f"Total physical nodes: {cluster_summary.get('total_nodes', 'unknown')}"
+        )
+        self.logger.info(
+            f"Total virtual actors: {cluster_summary.get('total_actors', 'unknown')}"
+        )
         self.logger.info(f"Topology used: {cluster_summary.get('topology', 'unknown')}")
         self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
         self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")

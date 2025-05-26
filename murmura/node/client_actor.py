@@ -9,6 +9,7 @@ import torch
 from murmura.data_processing.dataset import MDataset
 from murmura.model.model_interface import ModelInterface
 
+
 def get_node_id() -> str:
     """Get the node ID this actor is running on - standalone function for serialization"""
     try:
@@ -39,7 +40,7 @@ def get_node_info() -> Dict[str, Any]:
             "node_id": node_id,
             "worker_id": worker_id,
             "hostname": os.environ.get("HOSTNAME", "unknown"),
-            "ip": os.environ.get("RAY_NODE_IP", "unknown")
+            "ip": os.environ.get("RAY_NODE_IP", "unknown"),
         }
     except Exception as e:
         return {
@@ -47,8 +48,9 @@ def get_node_info() -> Dict[str, Any]:
             "worker_id": "unknown",
             "hostname": "unknown",
             "ip": "unknown",
-            "error": str(e)
+            "error": str(e),
         }
+
 
 @ray.remote
 class VirtualClientActor:
@@ -97,7 +99,7 @@ class VirtualClientActor:
 
             # Create formatter that includes node and actor information
             formatter = logging.Formatter(
-                f'%(asctime)s - %(name)s - [Node:{current_node_id}] - [Actor:{self.client_id}] - %(levelname)s - %(message)s'
+                f"%(asctime)s - %(name)s - [Node:{current_node_id}] - [Actor:{self.client_id}] - %(levelname)s - %(message)s"
             )
 
             # Add console handler
@@ -114,7 +116,7 @@ class VirtualClientActor:
         return self.node_info
 
     def receive_data(
-            self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
+        self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Receive a data partition and metadata dictionary.
@@ -131,10 +133,10 @@ class VirtualClientActor:
         return message
 
     def set_dataset(
-            self,
-            mdataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        mdataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Set the dataset for the client actor.
@@ -149,13 +151,15 @@ class VirtualClientActor:
         if label_column:
             self.label_column = label_column
 
-        self.logger.debug(f"Dataset set with features: {feature_columns}, label: {label_column}")
+        self.logger.debug(
+            f"Dataset set with features: {feature_columns}, label: {label_column}"
+        )
 
     def reconstruct_and_set_dataset(
-            self,
-            dataset_info: Dict[str, Any],
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset_info: Dict[str, Any],
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Reconstruct dataset from metadata on this node and set it.
@@ -174,11 +178,22 @@ class VirtualClientActor:
             metadata = dataset_info["metadata"]
             partitions = dataset_info["partitions"]
 
-            # Import MDataset here to avoid UnboundLocalError
+            # Import MDataset here to avoid circular imports
             from murmura.data_processing.dataset import MDataset
 
-            # Reconstruct the dataset
-            reconstructed_dataset = MDataset.reconstruct_from_metadata(metadata, partitions)
+            # Check if MDataset class has the reconstruct_from_metadata method
+            if not hasattr(MDataset, "reconstruct_from_metadata"):
+                self.logger.error(
+                    "MDataset class does not have 'reconstruct_from_metadata' method"
+                )
+                raise AttributeError(
+                    "type object 'MDataset' has no attribute 'reconstruct_from_metadata'"
+                )
+
+            # Reconstruct the dataset using the class method
+            reconstructed_dataset = MDataset.reconstruct_from_metadata(
+                metadata, partitions
+            )
 
             # Set the reconstructed dataset
             self.mdataset = reconstructed_dataset
@@ -199,20 +214,29 @@ class VirtualClientActor:
                 from murmura.data_processing.dataset import MDataset
                 from datasets import DatasetDict, Dataset
 
-                empty_splits = DatasetDict({"train": Dataset.from_dict({"dummy": [0]})})
+                # Create a minimal empty dataset
+                empty_data = {"dummy": [0]}
+                empty_dataset = Dataset.from_dict(empty_data)
+                empty_splits = DatasetDict({"train": empty_dataset})
                 self.mdataset = MDataset(empty_splits)
                 self.feature_columns = feature_columns
                 self.label_column = label_column
 
-                self.logger.warning("Created fallback empty dataset due to reconstruction failure")
+                self.logger.warning(
+                    "Created fallback empty dataset due to reconstruction failure"
+                )
 
             except Exception as fallback_error:
-                self.logger.error(f"Even fallback dataset creation failed: {fallback_error}")
+                self.logger.error(
+                    f"Even fallback dataset creation failed: {fallback_error}"
+                )
                 self.mdataset = None
                 self.feature_columns = feature_columns
                 self.label_column = label_column
 
-            raise RuntimeError(f"Dataset reconstruction failed on node {self.node_info['node_id']}: {e}")
+            raise RuntimeError(
+                f"Dataset reconstruction failed on node {self.node_info['node_id']}: {e}"
+            )
 
     def set_model(self, model: ModelInterface) -> None:
         """
@@ -223,10 +247,12 @@ class VirtualClientActor:
         self.model = model
 
         # Ensure model uses proper device detection in multi-node environment
-        if hasattr(self.model, 'detect_and_set_device'):
+        if hasattr(self.model, "detect_and_set_device"):
             self.model.detect_and_set_device()
 
-        self.logger.debug(f"Model set on device: {getattr(self.model, 'device', 'unknown')}")
+        self.logger.debug(
+            f"Model set on device: {getattr(self.model, 'device', 'unknown')}"
+        )
 
     def get_data_info(self) -> Dict[str, Any]:
         """
@@ -239,7 +265,7 @@ class VirtualClientActor:
             "has_model": self.model is not None,
             "has_dataset": self.mdataset is not None,
             "node_info": self.node_info,
-            "device_info": self.device_info
+            "device_info": self.device_info,
         }
 
         self.logger.debug(f"Data info requested: {info['data_size']} samples")
@@ -252,10 +278,10 @@ class VirtualClientActor:
         :return: Tuple of features and labels as numpy arrays
         """
         if (
-                self.mdataset is None
-                or self.data_partition is None
-                or self.feature_columns is None
-                or self.label_column is None
+            self.mdataset is None
+            or self.data_partition is None
+            or self.feature_columns is None
+            or self.label_column is None
         ):
             raise ValueError(
                 "Dataset, data partition, feature columns, or label column not set"
@@ -286,7 +312,9 @@ class VirtualClientActor:
             raise ValueError("Model is not set")
 
         try:
-            self.logger.debug(f"Starting training with {len(self.data_partition)} samples")
+            self.logger.debug(
+                f"Starting training with {len(self.data_partition)} samples"
+            )
 
             # Extract callback if provided
             client_id = self.client_id
@@ -307,7 +335,7 @@ class VirtualClientActor:
             features, labels = self._get_partition_data()
 
             # Ensure model is on correct device for multi-node environment
-            if hasattr(self.model, 'detect_and_set_device'):
+            if hasattr(self.model, "detect_and_set_device"):
                 self.model.detect_and_set_device()
 
             result = self.model.train(features, labels, **kwargs)
@@ -334,12 +362,14 @@ class VirtualClientActor:
             raise ValueError("Model is not set")
 
         try:
-            self.logger.debug(f"Starting evaluation with {len(self.data_partition)} samples")
+            self.logger.debug(
+                f"Starting evaluation with {len(self.data_partition)} samples"
+            )
 
             features, labels = self._get_partition_data()
 
             # Ensure model is on correct device
-            if hasattr(self.model, 'detect_and_set_device'):
+            if hasattr(self.model, "detect_and_set_device"):
                 self.model.detect_and_set_device()
 
             result = self.model.evaluate(features, labels, **kwargs)
@@ -381,7 +411,7 @@ class VirtualClientActor:
                 features = data
 
             # Ensure model is on correct device
-            if hasattr(self.model, 'detect_and_set_device'):
+            if hasattr(self.model, "detect_and_set_device"):
                 self.model.detect_and_set_device()
 
             result = self.model.predict(features, **kwargs)
@@ -467,21 +497,25 @@ class VirtualClientActor:
             # Memory usage
             memory_info = {}
             if torch.cuda.is_available():
-                memory_info.update({
-                    "gpu_memory_allocated": torch.cuda.memory_allocated(),
-                    "gpu_memory_cached": torch.cuda.memory_reserved(),
-                    "gpu_max_memory_allocated": torch.cuda.max_memory_allocated()
-                })
+                memory_info.update(
+                    {
+                        "gpu_memory_allocated": torch.cuda.memory_allocated(),
+                        "gpu_memory_cached": torch.cuda.memory_reserved(),
+                        "gpu_max_memory_allocated": torch.cuda.max_memory_allocated(),
+                    }
+                )
 
             return {
                 "client_id": self.client_id,
                 "node_info": self.node_info,
                 "device_info": self.device_info,
                 "memory_info": memory_info,
-                "data_partition_size": len(self.data_partition) if self.data_partition else 0,
+                "data_partition_size": len(self.data_partition)
+                if self.data_partition
+                else 0,
                 "has_model": self.model is not None,
                 "has_dataset": self.mdataset is not None,
-                "num_neighbours": len(self.neighbours)
+                "num_neighbours": len(self.neighbours),
             }
         except Exception as e:
             self.logger.error(f"Failed to get system info: {e}")
@@ -499,6 +533,7 @@ class VirtualClientActor:
                 timestamp = ray.util.get_current_time_ms()
             except:
                 import time
+
                 timestamp = int(time.time() * 1000)
 
             status = {
@@ -506,17 +541,21 @@ class VirtualClientActor:
                 "node_id": self.node_info["node_id"],
                 "status": "healthy",
                 "timestamp": timestamp,
-                "checks": {}
+                "checks": {},
             }
 
             # Check model
             status["checks"]["model"] = "ok" if self.model is not None else "missing"
 
             # Check dataset
-            status["checks"]["dataset"] = "ok" if self.mdataset is not None else "missing"
+            status["checks"]["dataset"] = (
+                "ok" if self.mdataset is not None else "missing"
+            )
 
             # Check data partition
-            status["checks"]["data_partition"] = "ok" if self.data_partition is not None else "missing"
+            status["checks"]["data_partition"] = (
+                "ok" if self.data_partition is not None else "missing"
+            )
 
             # Check GPU if available
             if torch.cuda.is_available():
@@ -540,5 +579,5 @@ class VirtualClientActor:
                 "client_id": self.client_id,
                 "status": "error",
                 "error": str(e),
-                "timestamp": 0
+                "timestamp": 0,
             }

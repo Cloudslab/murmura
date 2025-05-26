@@ -21,7 +21,9 @@ class DatasetSource(Enum):
 
 
 class MDataset:
-    def __init__(self, splits: DatasetDict, dataset_metadata: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, splits: DatasetDict, dataset_metadata: Optional[Dict[str, Any]] = None
+    ):
         """
         Unified dataset representation with split management and multi-node support
 
@@ -70,7 +72,10 @@ class MDataset:
         Prepare dataset for distribution across multiple nodes.
         This converts memory-mapped datasets to serializable format.
         """
-        if self.is_serializable_for_multinode() and self._dataset_metadata.get("source") != DatasetSource.HUGGING_FACE:
+        if (
+            self.is_serializable_for_multinode()
+            and self._dataset_metadata.get("source") != DatasetSource.HUGGING_FACE
+        ):
             return self  # Already safe to distribute
 
         self._logger.info("Converting dataset to multi-node compatible format...")
@@ -79,7 +84,9 @@ class MDataset:
         serializable_splits = DatasetDict()
 
         for split_name, split_dataset in self._splits.items():
-            self._logger.debug(f"Converting split '{split_name}' to serializable format...")
+            self._logger.debug(
+                f"Converting split '{split_name}' to serializable format..."
+            )
 
             # Convert to pandas then back to dataset to break file dependencies
             try:
@@ -117,11 +124,11 @@ class MDataset:
 
     @classmethod
     def create_multinode_compatible(
-            cls,
-            source: DatasetSource,
-            split: Optional[Union[str, List[str]]] = None,
-            force_serializable: bool = True,
-            **kwargs: Any,
+        cls,
+        source: DatasetSource,
+        split: Optional[Union[str, List[str]]] = None,
+        force_serializable: bool = True,
+        **kwargs: Any,
     ):
         """
         Create a dataset that's optimized for multi-node distribution.
@@ -136,12 +143,14 @@ class MDataset:
         dataset = cls.load(source, split, **kwargs)
 
         # Store metadata for potential reconstruction
-        dataset._dataset_metadata.update({
-            "source": source,
-            "split": split,
-            "kwargs": kwargs,
-            "multinode_compatible": True
-        })
+        dataset._dataset_metadata.update(
+            {
+                "source": source,
+                "split": split,
+                "kwargs": kwargs,
+                "multinode_compatible": True,
+            }
+        )
 
         # Convert to serializable format if needed
         if force_serializable and source == DatasetSource.HUGGING_FACE:
@@ -151,10 +160,10 @@ class MDataset:
 
     @classmethod
     def load(
-            cls,
-            source: DatasetSource,
-            split: Optional[Union[str, List[str]]] = None,
-            **kwargs: Any,
+        cls,
+        source: DatasetSource,
+        split: Optional[Union[str, List[str]]] = None,
+        **kwargs: Any,
     ):
         """
         Load data from specified source with consistent interface
@@ -178,56 +187,50 @@ class MDataset:
 
     @classmethod
     def _load_csv(
-            cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+        cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
     ):
         df = pd.read_csv(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_json(
-            cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+        cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
     ):
         df = pd.read_json(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
     def _load_parquet(
-            cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
+        cls, path: Union[str, Path], split: Optional[str] = None, **kwargs: Any
     ):
         df = pd.read_parquet(path, **kwargs)
         return cls._create_from_data(df, split)
 
     @classmethod
-    def _load_pandas(
-            cls, data: pd.DataFrame, split: Optional[str] = None, **_: Any
-    ):
+    def _load_pandas(cls, data: pd.DataFrame, split: Optional[str] = None, **_: Any):
         return cls._create_from_data(data, split)
 
     @classmethod
-    def _load_dict(
-            cls, data: Dict, split: Optional[str] = None, **_: Any
-    ):
+    def _load_dict(cls, data: Dict, split: Optional[str] = None, **_: Any):
         return cls._create_from_data(data, split)
 
     @classmethod
-    def _load_list(
-            cls, data: List, split: Optional[str] = None, **_: Any
-    ):
+    def _load_list(cls, data: List, split: Optional[str] = None, **_: Any):
         return cls._create_from_data(data, split)
 
     @classmethod
     def _load_hf(
-            cls,
-            dataset_name: str,
-            split: Optional[Union[str, List[str]]] = None,
-            **kwargs: Any,
+        cls,
+        dataset_name: str,
+        split: Optional[Union[str, List[str]]] = None,
+        **kwargs: Any,
     ):
         try:
             if split is None:
                 raise ValueError("split is not specified")
 
             # Remove dataset_name from kwargs if it exists to avoid duplicate parameter error
-            load_kwargs = {k: v for k, v in kwargs.items() if k != 'dataset_name'}
+            load_kwargs = {k: v for k, v in kwargs.items() if k != "dataset_name"}
 
             dataset = load_dataset(dataset_name, split=split, **load_kwargs)
             if isinstance(dataset, list) and isinstance(split, list):
@@ -243,28 +246,28 @@ class MDataset:
                 "source": DatasetSource.HUGGING_FACE,
                 "dataset_name": dataset_name,
                 "split": split,
-                "kwargs": load_kwargs  # Use filtered kwargs
+                "kwargs": load_kwargs,  # Use filtered kwargs
             }
 
             return result
         except ValueError as e:
             if "split" in str(e):
                 # Remove dataset_name from kwargs if it exists
-                load_kwargs = {k: v for k, v in kwargs.items() if k != 'dataset_name'}
+                load_kwargs = {k: v for k, v in kwargs.items() if k != "dataset_name"}
                 full_dataset = load_dataset(dataset_name, **load_kwargs)
                 result = cls(full_dataset)
                 result._dataset_metadata = {
                     "source": DatasetSource.HUGGING_FACE,
                     "dataset_name": dataset_name,
                     "split": None,
-                    "kwargs": load_kwargs  # Use filtered kwargs
+                    "kwargs": load_kwargs,  # Use filtered kwargs
                 }
                 return result
             raise
 
     @classmethod
     def _create_from_data(
-            cls, data: Union[pd.DataFrame, Dict, List], split: Optional[str] = None
+        cls, data: Union[pd.DataFrame, Dict, List], split: Optional[str] = None
     ):
         """Create MDataset from in-memory data structures"""
         if isinstance(data, pd.DataFrame):
@@ -284,11 +287,11 @@ class MDataset:
         return self._splits[split]
 
     def train_test_split(
-            self,
-            source_split: str = "train",
-            test_size: float = 0.2,
-            seed: int = 42,
-            new_split_names: tuple[str, str] = ("train", "test"),
+        self,
+        source_split: str = "train",
+        test_size: float = 0.2,
+        seed: int = 42,
+        new_split_names: tuple[str, str] = ("train", "test"),
     ) -> "MDataset":
         """Create new splits from existing data"""
         base_dataset = self._splits[source_split]
@@ -301,7 +304,7 @@ class MDataset:
                     new_split_names[1]: splits["test"],
                 }
             ),
-            self._dataset_metadata.copy()
+            self._dataset_metadata.copy(),
         )
 
     def get_partitions(self, split_name: str) -> Dict[int, List[int]]:
@@ -341,7 +344,7 @@ class MDataset:
             self._splits[split] = other_dataset.get_split(split)
 
     def merge_splits(
-            self, other_dataset: "MDataset", splits: Optional[List[str]] = None
+        self, other_dataset: "MDataset", splits: Optional[List[str]] = None
     ) -> None:
         """
         Merge multiple splits from another dataset into this dataset.
@@ -362,28 +365,35 @@ class MDataset:
     def __reduce__(self):
         """Custom serialization for Ray/pickle compatibility"""
         # If we have metadata to reconstruct from HuggingFace, use that
-        if (self._dataset_metadata.get("source") == DatasetSource.HUGGING_FACE and
-                not self._dataset_metadata.get("converted_to_serializable", False)):
+        if self._dataset_metadata.get(
+            "source"
+        ) == DatasetSource.HUGGING_FACE and not self._dataset_metadata.get(
+            "converted_to_serializable", False
+        ):
             return (
                 self.reconstruct_from_metadata,
-                (self._dataset_metadata, self._partitions)
+                (self._dataset_metadata, self._partitions),
             )
         else:
             # Normal serialization for already-safe datasets
             return (
                 self.__class__,
                 (self._splits, self._dataset_metadata),
-                {"_partitions": self._partitions}
+                {"_partitions": self._partitions},
             )
 
     @classmethod
-    def reconstruct_from_metadata(cls, metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]):
+    def reconstruct_from_metadata(
+        cls, metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]
+    ):
         """Reconstruct dataset from metadata on remote nodes"""
         logger = logging.getLogger("murmura.dataset")
 
         try:
             if metadata["source"] == DatasetSource.HUGGING_FACE:
-                logger.info(f"Reconstructing HuggingFace dataset '{metadata['dataset_name']}' on remote node")
+                logger.info(
+                    f"Reconstructing HuggingFace dataset '{metadata['dataset_name']}' on remote node"
+                )
 
                 # Load dataset on the remote node
                 dataset_name = metadata["dataset_name"]
@@ -391,10 +401,11 @@ class MDataset:
                 kwargs = metadata.get("kwargs", {})
 
                 # Ensure no duplicate dataset_name parameter
-                load_kwargs = {k: v for k, v in kwargs.items() if k != 'dataset_name'}
+                load_kwargs = {k: v for k, v in kwargs.items() if k != "dataset_name"}
 
                 if split is None:
                     full_dataset = load_dataset(dataset_name, **load_kwargs)
+                    # Create instance with proper arguments
                     dataset = cls(full_dataset, metadata)
                 else:
                     hf_dataset = load_dataset(dataset_name, split=split, **load_kwargs)
@@ -402,9 +413,13 @@ class MDataset:
                         dataset_dict = DatasetDict()
                         for i, s in enumerate(split):
                             dataset_dict[s] = hf_dataset[i]
+                        # Create instance with proper arguments
                         dataset = cls(dataset_dict, metadata)
                     else:
-                        dataset = cls(DatasetDict({split or "train": hf_dataset}), metadata)
+                        # Create instance with proper arguments
+                        dataset = cls(
+                            DatasetDict({split or "train": hf_dataset}), metadata
+                        )
 
                 # Restore partitions
                 dataset._partitions = partitions
@@ -416,7 +431,9 @@ class MDataset:
                 logger.info("Dataset reconstruction completed on remote node")
                 return dataset
             else:
-                raise ValueError(f"Cannot reconstruct dataset with source: {metadata['source']}")
+                raise ValueError(
+                    f"Cannot reconstruct dataset with source: {metadata['source']}"
+                )
 
         except Exception as e:
             logger.error(f"Failed to reconstruct dataset on remote node: {e}")

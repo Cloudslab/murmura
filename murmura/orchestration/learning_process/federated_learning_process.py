@@ -50,7 +50,9 @@ class FederatedLearningProcess(LearningProcess):
 
         # Evaluate initial model
         initial_metrics = self.model.evaluate(test_features, test_labels)
-        self.logger.info(f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%")
+        self.logger.info(
+            f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%"
+        )
 
         # Emit evaluation event for visualization
         self.training_monitor.emit_event(
@@ -72,7 +74,9 @@ class FederatedLearningProcess(LearningProcess):
             monitor_resources = self.get_config_value("monitor_resources", False)
             if monitor_resources:
                 resource_usage = self.monitor_resource_usage()
-                self.logger.debug(f"Round {round_num} resource usage: {resource_usage.get('resource_utilization', {})}")
+                self.logger.debug(
+                    f"Round {round_num} resource usage: {resource_usage.get('resource_utilization', {})}"
+                )
 
             # 1. Local Training with enhanced logging
             self.logger.info(f"Training on clients for {epochs} epochs...")
@@ -88,7 +92,9 @@ class FederatedLearningProcess(LearningProcess):
             )
 
             # Training with enhanced progress logging
-            self.logger.info(f"Local training progress (each client trains for {epochs} epochs):")
+            self.logger.info(
+                f"Local training progress (each client trains for {epochs} epochs):"
+            )
             train_metrics = self.cluster_manager.train_models(
                 epochs=epochs, batch_size=batch_size, verbose=True
             )
@@ -98,11 +104,14 @@ class FederatedLearningProcess(LearningProcess):
             avg_train_acc = mean([m["accuracy"] for m in train_metrics])
 
             # Enhanced logging
-            self.log_training_progress(round_num, {
-                "avg_train_loss": avg_train_loss,
-                "avg_train_accuracy": avg_train_acc,
-                "active_clients": len(train_metrics)
-            })
+            self.log_training_progress(
+                round_num,
+                {
+                    "avg_train_loss": avg_train_loss,
+                    "avg_train_accuracy": avg_train_acc,
+                    "active_clients": len(train_metrics),
+                },
+            )
 
             # 2. Parameter Aggregation
             self.logger.info("Aggregating model parameters...")
@@ -134,8 +143,8 @@ class FederatedLearningProcess(LearningProcess):
             else:
                 # For other topologies
                 for (
-                        node,
-                        neighbors,
+                    node,
+                    neighbors,
                 ) in self.cluster_manager.topology_manager.adjacency_list.items():
                     if neighbors:  # Only emit if the node has neighbors
                         self.training_monitor.emit_event(
@@ -197,7 +206,9 @@ class FederatedLearningProcess(LearningProcess):
             # Evaluate global model on test set
             test_metrics = self.model.evaluate(test_features, test_labels)
             self.logger.info(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
-            self.logger.info(f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%")
+            self.logger.info(
+                f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
+            )
 
             # Emit evaluation event
             self.training_monitor.emit_event(
@@ -222,7 +233,9 @@ class FederatedLearningProcess(LearningProcess):
         # Enhanced final logging
         cluster_summary = self.get_cluster_summary()
         self.logger.info("=== Final Model Evaluation ===")
-        self.logger.info(f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}")
+        self.logger.info(
+            f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+        )
         self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
         self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")
 
