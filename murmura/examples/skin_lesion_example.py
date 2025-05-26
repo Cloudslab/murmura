@@ -158,7 +158,7 @@ def create_skin_lesion_preprocessor(image_size: int = 128):
         Configured preprocessor for skin lesion images
     """
     try:
-        from murmura.data_processing.generic_preprocessor import create_image_preprocessor
+        from murmura.data_processing.data_preprocessor import create_image_preprocessor
 
         # Skin lesion specific configuration
         return create_image_preprocessor(
@@ -204,6 +204,100 @@ def setup_logging(log_level: str = "INFO") -> None:
             logging.FileHandler("skin_lesion_federated.log"),
         ],
     )
+
+
+def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger) -> tuple[list[str], int, dict[str, int]]:
+    """
+    Add integer label column to dataset by converting string dx categories.
+
+    Args:
+        dataset: The MDataset object to modify
+        logger: Logger instance for logging
+
+    Returns:
+        tuple: (dx_categories, num_classes, dx_to_label_mapping)
+    """
+    # Get a sample from the training split to check label type
+    train_split = dataset.get_split("train")
+    sample_label = train_split["dx"][0]
+
+    if isinstance(sample_label, str):
+        logger.info("Converting string diagnostic categories to integer labels...")
+
+        # Get all unique diagnostic categories across all splits
+        all_dx_categories = set()
+
+        for split_name in dataset.available_splits:
+            split_data = dataset.get_split(split_name)
+            split_dx = set(split_data["dx"])
+            all_dx_categories.update(split_dx)
+
+        # Sort for consistent ordering
+        dx_categories = sorted(list(all_dx_categories))
+        num_classes = len(dx_categories)
+
+        # Create mapping from dx to integer label
+        dx_to_label = {dx: i for i, dx in enumerate(dx_categories)}
+
+        logger.info(f"Diagnostic categories ({num_classes}): {dx_categories}")
+        logger.info(f"Label mapping: {dx_to_label}")
+
+        # Define function to add label column
+        def add_label_column(example):
+            example["label"] = dx_to_label[example["dx"]]
+            return example
+
+        # Apply to all splits
+        logger.info("Adding integer 'label' column to all dataset splits...")
+        for split_name in dataset.available_splits:
+            logger.debug(f"Processing split: {split_name}")
+            split_data = dataset.get_split(split_name)
+
+            # Apply the mapping
+            split_data = split_data.map(add_label_column)
+
+            # Update the dataset split
+            dataset._splits[split_name] = split_data
+
+            # Verify the mapping worked
+            sample_new = split_data[0]
+            logger.debug(f"Split {split_name}: dx='{sample_new['dx']}' -> label={sample_new['label']}")
+
+        logger.info("Successfully added integer 'label' column to all dataset splits")
+
+        return dx_categories, num_classes, dx_to_label
+
+    else:
+        # Labels are already integers
+        logger.info("Integer labels detected in dx column")
+
+        # Get unique values to determine categories
+        all_labels = set()
+        for split_name in dataset.available_splits:
+            split_data = dataset.get_split(split_name)
+            split_labels = set(split_data["dx"])
+            all_labels.update(split_labels)
+
+        dx_categories = sorted(list(all_labels))
+        num_classes = len(dx_categories)
+
+        logger.info(f"Integer labels detected. Categories ({num_classes}): {dx_categories}")
+
+        # Add label column that's just a copy of dx
+        def copy_dx_to_label(example):
+            example["label"] = int(example["dx"])
+            return example
+
+        # Apply to all splits
+        for split_name in dataset.available_splits:
+            split_data = dataset.get_split(split_name)
+            split_data = split_data.map(copy_dx_to_label)
+            dataset._splits[split_name] = split_data
+
+        # Create identity mapping
+        dx_to_label = {str(dx): dx for dx in dx_categories}
+
+        return [str(cat) for cat in dx_categories], num_classes, dx_to_label
 
 
 def main() -> None:
@@ -439,34 +533,12 @@ def main() -> None:
             placement_strategy=args.placement_strategy,
         )
 
-        config = OrchestrationConfig(
-            num_actors=args.num_actors,
-            partition_strategy=args.partition_strategy,
-            alpha=args.alpha,
-            min_partition_size=args.min_partition_size,
-            split=args.split,
-            topology=TopologyConfig(
-                topology_type=TopologyType(args.topology), hub_index=args.hub_index
-            ),
-            aggregation=AggregationConfig(
-                strategy_type=AggregationStrategyType(args.aggregation_strategy),
-                params={"trim_ratio": args.trim_ratio}
-                if args.aggregation_strategy == "trimmed_mean"
-                else None,
-            ),
-            dataset_name=args.dataset_name,
-            ray_cluster=ray_cluster_config,
-            resources=resource_config,
-            feature_columns=["image"],
-            label_column="dx",
-        )
-
         logger.info("=== Loading Skin Lesion Dataset ===")
         # Load skin lesion dataset for training and testing
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
-            split=config.split,
+            split=args.split,
         )
 
         test_dataset = MDataset.load_dataset_with_multinode_support(
@@ -485,23 +557,22 @@ def main() -> None:
         train_dataset.merge_splits(test_dataset)
         train_dataset.merge_splits(validation_dataset)
 
-        # Get diagnostic categories from the dataset
-        split_dataset = train_dataset.get_split(config.split)
-        dx_categories = sorted(set(split_dataset["dx"]))
-        num_classes = len(dx_categories)
-
-        logger.info(f"Diagnostic categories ({num_classes}): {dx_categories}")
+        # Convert string labels to integers and get diagnostic categories
+        logger.info("=== Processing Labels ===")
+        dx_categories, num_classes, dx_to_label = add_integer_labels_to_dataset(train_dataset, logger)
 
         # Debug skin lesion data format if requested
         if args.debug_data:
             logger.info("=== Debugging Skin Lesion Data Format ===")
             try:
+                split_dataset = train_dataset.get_split(args.split)
                 feature_data = split_dataset["image"]
 
                 logger.info(f"Dataset: {args.dataset_name}")
-                logger.info(f"Split: {config.split}")
+                logger.info(f"Split: {args.split}")
                 logger.info(f"Number of samples: {len(feature_data)}")
                 logger.info(f"Diagnostic categories: {dx_categories}")
+                logger.info(f"Label mapping: {dx_to_label}")
 
                 if len(feature_data) > 0:
                     sample = feature_data[0]
@@ -510,8 +581,37 @@ def main() -> None:
                     logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
                     if hasattr(sample, 'size'):
                         logger.info(f"Sample size: {sample.size}")
+
+                    # Check label conversion
+                    sample_full = split_dataset[0]
+                    logger.info(f"Sample dx: '{sample_full['dx']}' -> label: {sample_full['label']}")
+
             except Exception as e:
                 logger.error(f"Error debugging skin lesion data format: {e}")
+
+        # Create configuration with proper label column
+        config = OrchestrationConfig(
+            num_actors=args.num_actors,
+            partition_strategy=args.partition_strategy,
+            alpha=args.alpha,
+            min_partition_size=args.min_partition_size,
+            split=args.split,
+            topology=TopologyConfig(
+                topology_type=TopologyType(args.topology), hub_index=args.hub_index
+            ),
+            aggregation=AggregationConfig(
+                strategy_type=AggregationStrategyType(args.aggregation_strategy),
+                params={"trim_ratio": args.trim_ratio}
+                if args.aggregation_strategy == "trimmed_mean"
+                else None,
+            ),
+            dataset_name=args.dataset_name,
+            ray_cluster=ray_cluster_config,
+            resources=resource_config,
+            # Skin lesion dataset-specific column configuration
+            feature_columns=["image"],     # Skin lesion images are in 'image' column
+            label_column="label",          # Use the integer label column we created
+        )
 
         logger.info("=== Creating Data Partitions ===")
         # Create partitioner
@@ -603,6 +703,8 @@ def main() -> None:
             logger.info(f"Device: {device}")
             logger.info(f"Image size: {args.image_size}")
             logger.info(f"Classes ({num_classes}): {dx_categories}")
+            logger.info(f"Using feature column: {config.feature_columns}")
+            logger.info(f"Using label column: {config.label_column}")
 
             logger.info("=== Starting Skin Lesion Federated Learning ===")
             # Execute the learning process
@@ -642,6 +744,7 @@ def main() -> None:
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": global_model.optimizer.state_dict(),
                 "dx_categories": dx_categories,
+                "dx_to_label_mapping": dx_to_label,
                 "num_classes": num_classes,
                 "depth": args.depth,
                 "widen_factor": args.widen_factor,
@@ -666,6 +769,8 @@ def main() -> None:
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
             logger.info(f"Training device: {device}")
+            logger.info(f"Diagnostic categories used: {dx_categories}")
+            logger.info(f"Label mapping: {dx_to_label}")
 
             # Display detailed metrics if available
             if "round_metrics" in results:
