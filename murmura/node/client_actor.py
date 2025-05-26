@@ -5,7 +5,6 @@ from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 import ray
 import torch
-from PIL import Image
 
 from murmura.data_processing.dataset import MDataset
 from murmura.model.model_interface import ModelInterface
@@ -255,27 +254,130 @@ class VirtualClientActor:
             f"Model set on device: {getattr(self.model, 'device', 'unknown')}"
         )
 
-    def get_data_info(self) -> Dict[str, Any]:
+    def set_dataset_metadata(
+            self,
+            dataset_metadata: Dict[str, Any],
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
+    ) -> None:
         """
-        Return Information about stored data partition.
-        """
-        info = {
-            "client_id": self.client_id,
-            "data_size": len(self.data_partition) if self.data_partition else 0,
-            "metadata": self.metadata,
-            "has_model": self.model is not None,
-            "has_dataset": self.mdataset is not None,
-            "node_info": self.node_info,
-            "device_info": self.device_info,
-        }
+        Set dataset metadata for lazy loading instead of the full dataset.
 
-        self.logger.debug(f"Data info requested: {info['data_size']} samples")
-        return info
+        Args:
+            dataset_metadata: Metadata needed to reconstruct dataset on-demand
+            feature_columns: List of feature column names
+            label_column: Name of the label column
+        """
+        self.dataset_metadata = dataset_metadata
+        self.feature_columns = feature_columns
+        self.label_column = label_column
+        self.mdataset = None  # Will be loaded on-demand
+        self.lazy_loading = True
+
+        self.logger.info(
+            f"Set dataset metadata for lazy loading"
+        )
+        self.logger.info(f"Dataset: {dataset_metadata.get('dataset_name')}")
+        self.logger.info(f"Splits: {dataset_metadata.get('available_splits')}")
+        self.logger.info(f"Features: {feature_columns}, Label: {label_column}")
+
+
+    def _lazy_load_dataset(self) -> None:
+        """
+        Load the dataset on-demand when first needed for training.
+        This is the core of the lazy loading strategy.
+        """
+        if self.mdataset is not None:
+            return  # Already loaded
+
+        if not hasattr(self, 'dataset_metadata') or not self.dataset_metadata:
+            raise ValueError("No dataset metadata available for lazy loading")
+
+        try:
+            self.logger.info("Lazy loading dataset from metadata...")
+
+            # Extract metadata
+            dataset_source = self.dataset_metadata["dataset_source"]
+            dataset_name = self.dataset_metadata["dataset_name"]
+            dataset_kwargs = self.dataset_metadata.get("dataset_kwargs", {})
+            available_splits = self.dataset_metadata["available_splits"]
+            partitions = self.dataset_metadata["partitions"]
+
+            # Import here to avoid circular imports
+            from murmura.data_processing.dataset import MDataset, DatasetSource
+
+            if dataset_source != DatasetSource.HUGGING_FACE:
+                raise ValueError(f"Lazy loading only supports HuggingFace datasets currently")
+
+            self.logger.info(f"Loading HuggingFace dataset: {dataset_name}")
+
+            # Load dataset using the original metadata
+            # This will re-download from HuggingFace cache (fast) or reload from disk
+            try:
+                # Try to load all splits at once if the dataset supports it
+                full_dataset = MDataset.load(
+                    DatasetSource.HUGGING_FACE,
+                    dataset_name=dataset_name,
+                    split=None,  # Load all splits
+                    **dataset_kwargs
+                )
+                self.mdataset = full_dataset
+
+            except Exception:
+                # Fallback: load splits individually
+                self.logger.info("Loading splits individually...")
+                self.mdataset = None
+
+                for split_name in available_splits:
+                    try:
+                        split_dataset = MDataset.load(
+                            DatasetSource.HUGGING_FACE,
+                            dataset_name=dataset_name,
+                            split=split_name,
+                            **dataset_kwargs
+                        )
+
+                        if self.mdataset is None:
+                            self.mdataset = split_dataset
+                        else:
+                            self.mdataset.merge_splits(split_dataset)
+
+                    except Exception as e:
+                        self.logger.warning(f"Could not load split {split_name}: {e}")
+
+            # Restore partitions
+            for split_name, split_partitions in partitions.items():
+                if split_name in self.mdataset.available_splits:
+                    self.mdataset.add_partitions(split_name, split_partitions)
+
+            self.logger.info(
+                f"Dataset lazy loaded successfully with {len(self.mdataset.available_splits)} splits"
+            )
+
+            # Verify we have the data we need
+            if self.data_partition:
+                split_dataset = self.mdataset.get_split(self.split)
+                actual_size = len(split_dataset)
+                partition_size = len(self.data_partition)
+                max_idx = max(self.data_partition) if self.data_partition else -1
+
+                self.logger.info(
+                    f"Partition validation - Split size: {actual_size}, "
+                    f"Partition size: {partition_size}, Max index: {max_idx}"
+                )
+
+                if max_idx >= actual_size:
+                    raise ValueError(f"Partition index {max_idx} exceeds dataset size {actual_size}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to lazy load dataset: {e}")
+            raise RuntimeError(f"Lazy loading failed on node {self.node_info['node_id']}: {e}")
+
 
     def _get_partition_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Extract features and labels from the client's dataset partition.
-        Now uses the model's preprocessor for consistent data handling.
+        Labels should already be encoded as integers in the example scripts.
 
         :return: Tuple of features and labels as numpy arrays
         """
@@ -308,6 +410,9 @@ class VirtualClientActor:
                         self.logger.warning(f"Model preprocessor failed, using fallback: {e}")
                         # Fallback to numpy conversion
                         features = np.array(feature_data, dtype=np.float32)
+                else:
+                    # No preprocessor available, use basic conversion
+                    features = np.array(feature_data, dtype=np.float32)
             else:
                 # No preprocessor available, use basic conversion
                 features = np.array(feature_data, dtype=np.float32)
@@ -328,12 +433,59 @@ class VirtualClientActor:
 
             features = np.column_stack(processed_columns)
 
-        # Extract labels
-        labels = np.array(partition_dataset[self.label_column], dtype=np.int64)
+        # Extract and process labels
+        label_data = partition_dataset[self.label_column]
+
+        # Since we handle label encoding in the example scripts (like skin_lesion_example.py),
+        # we expect labels to already be integers here. If they're strings, it means
+        # the preprocessing wasn't done properly in the example script.
+        if len(label_data) > 0 and isinstance(label_data[0], str):
+            self.logger.error(
+                f"Found string labels in column '{self.label_column}'. "
+                "Labels should be converted to integers in the example script before training."
+            )
+            # Emergency fallback: create a simple mapping for this partition
+            unique_labels = sorted(set(label_data))
+            label_map = {label: idx for idx, label in enumerate(unique_labels)}
+            labels = np.array([label_map[label] for label in label_data], dtype=np.int64)
+            self.logger.warning(f"Emergency label encoding applied: {label_map}")
+            self.logger.warning("Please ensure your example script converts string labels to integers before training.")
+        else:
+            # Labels are already numeric (expected case)
+            labels = np.array(label_data, dtype=np.int64)
 
         self.logger.debug(f"Extracted features shape: {features.shape}, labels shape: {labels.shape}")
 
+        # Log label distribution for debugging
+        unique_labels, counts = np.unique(labels, return_counts=True)
+        self.logger.debug(f"Label distribution: {dict(zip(unique_labels, counts))}")
+
         return features, labels
+
+
+    def get_data_info(self) -> Dict[str, Any]:
+        """
+        Return information about stored data partition.
+        Enhanced with lazy loading status.
+        """
+        info = {
+            "client_id": self.client_id,
+            "data_size": len(self.data_partition) if self.data_partition else 0,
+            "metadata": self.metadata,
+            "has_model": self.model is not None,
+            "has_dataset": self.mdataset is not None,
+            "lazy_loading": getattr(self, 'lazy_loading', False),
+            "dataset_loaded": self.mdataset is not None,
+            "node_info": self.node_info,
+            "device_info": self.device_info,
+        }
+
+        if hasattr(self, 'dataset_metadata'):
+            info["dataset_name"] = self.dataset_metadata.get("dataset_name")
+            info["available_splits"] = self.dataset_metadata.get("available_splits", [])
+
+        self.logger.debug(f"Data info requested: {info['data_size']} samples, lazy={info['lazy_loading']}")
+        return info
 
     def train_model(self, **kwargs) -> Dict[str, float]:
         """

@@ -331,57 +331,150 @@ class ClusterManager:
 
         return results
 
-    def distribute_dataset(
-        self,
-        dataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+    def _is_large_dataset(self, dataset: MDataset) -> bool:
+        """
+        Determine if dataset should use lazy loading based on size and type.
+
+        Returns:
+            True if dataset should use lazy loading
+        """
+        try:
+            # Check total number of samples across all splits
+            total_samples = 0
+            for split_name in dataset.available_splits:
+                split_data = dataset.get_split(split_name)
+                total_samples += len(split_data)
+
+            # Heuristics for when to use lazy loading:
+            # 1. More than 5000 total samples (likely large images)
+            # 2. Multi-node cluster (network transfer overhead)
+            # 3. HuggingFace dataset (can be reloaded from cache)
+
+            is_large_by_size = total_samples > 5000
+            is_multinode = self.cluster_info.get("is_multinode", False)
+            is_hf_dataset = dataset.dataset_metadata.get("source") == DatasetSource.HUGGING_FACE
+
+            # Use lazy loading if it's large AND (multinode OR huggingface)
+            should_use_lazy = is_large_by_size and (is_multinode or is_hf_dataset)
+
+            logger = logging.getLogger("murmura")
+            logger.info(
+                f"Dataset analysis - Samples: {total_samples}, "
+                f"Large: {is_large_by_size}, Multi-node: {is_multinode}, "
+                f"HF: {is_hf_dataset}, Using lazy: {should_use_lazy}"
+            )
+
+            return should_use_lazy
+
+        except Exception as e:
+            logging.getLogger("murmura").warning(f"Could not analyze dataset size: {e}")
+            return False
+
+
+    def _distribute_dataset_metadata_only(
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
-        Distribute dataset to all actors with smart multi-node handling.
-
-        This method automatically detects multi-node clusters and handles dataset
-        distribution appropriately:
-        - Single node: Direct dataset distribution
-        - Multi-node: Converts datasets to serializable format or uses reconstruction
+        Distribute only dataset metadata for lazy loading.
+        Actors will reconstruct datasets on-demand during training.
         """
-        # Check if we're in a multi-node environment
+        logger = logging.getLogger("murmura")
+        logger.info("Using lazy dataset distribution (metadata only)")
+
+        # Validate that columns are provided
+        if feature_columns is None or label_column is None:
+            raise ValueError(
+                "feature_columns and label_column must be provided for lazy dataset distribution"
+            )
+
+        # Create comprehensive metadata package for reconstruction
+        dataset_metadata = {
+            # Core dataset info
+            "dataset_source": dataset.dataset_metadata.get("source"),
+            "dataset_name": dataset.dataset_metadata.get("dataset_name"),
+            "dataset_kwargs": dataset.dataset_metadata.get("kwargs", {}),
+
+            # Structure info
+            "available_splits": dataset.available_splits,
+            "partitions": dataset.partitions,
+
+            # Column info
+            "feature_columns": feature_columns,
+            "label_column": label_column,
+
+            # Reconstruction strategy
+            "lazy_loading": True,
+            "reconstruction_strategy": "on_demand",
+        }
+
+        logger.info(f"Distributing lazy metadata to {len(self.actors)} actors")
+        logger.info(f"Dataset: {dataset_metadata['dataset_name']}")
+        logger.info(f"Splits: {dataset_metadata['available_splits']}")
+        logger.info(f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned")
+
+        # Distribute metadata one actor at a time to avoid memory spikes
+        for i, actor in enumerate(self.actors):
+            try:
+                # Each actor gets the full metadata but will only load its partition
+                task = actor.set_dataset_metadata.remote(
+                    dataset_metadata,
+                    feature_columns=feature_columns,
+                    label_column=label_column,
+                )
+
+                # Wait for each actor individually
+                ray.get(task, timeout=30)
+
+                logger.info(f"Distributed lazy metadata to actor {i + 1}/{len(self.actors)}")
+
+            except Exception as e:
+                logger.error(f"Failed to distribute metadata to actor {i}: {e}")
+                raise
+
+
+    def distribute_dataset(
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
+    ) -> None:
+        """
+        Enhanced dataset distribution with automatic lazy loading for large datasets.
+        """
+        # Validate inputs
+        if feature_columns is None or label_column is None:
+            raise ValueError(
+                "feature_columns and label_column must be provided for dataset distribution"
+            )
+
+        logger = logging.getLogger("murmura")
         is_multinode = self.cluster_info.get("is_multinode", False)
 
-        if is_multinode:
-            logging.getLogger("murmura").info(
-                "Multi-node cluster detected - using smart dataset distribution"
-            )
+        # Decide on distribution strategy
+        if self._is_large_dataset(dataset):
+            logger.info("Using lazy distribution for large dataset")
+            self._distribute_dataset_metadata_only(dataset, feature_columns, label_column)
 
-            # Check if dataset is already multi-node compatible
+        elif is_multinode:
+            logger.info("Using HuggingFace metadata reconstruction for multi-node")
+
+            # Check if dataset can be safely serialized
             if not dataset.is_serializable_for_multinode():
-                logging.getLogger("murmura").info(
-                    "Converting dataset for multi-node compatibility..."
-                )
+                logger.info("Converting dataset for multi-node compatibility...")
                 dataset = dataset.prepare_for_multinode_distribution()
 
-            # For HuggingFace datasets, we'll use the reconstruction approach
+            # Use HuggingFace reconstruction approach
             if dataset.dataset_metadata.get("source") == DatasetSource.HUGGING_FACE:
-                logging.getLogger("murmura").info(
-                    "Using HuggingFace dataset reconstruction for multi-node distribution"
-                )
-                self._distribute_hf_dataset_metadata(
-                    dataset, feature_columns, label_column
-                )
+                self._distribute_hf_dataset_metadata(dataset, feature_columns, label_column)
             else:
-                logging.getLogger("murmura").info(
-                    "Using direct serialization for multi-node distribution"
-                )
-                self._distribute_serializable_dataset(
-                    dataset, feature_columns, label_column
-                )
+                self._distribute_serializable_dataset(dataset, feature_columns, label_column)
+
         else:
-            logging.getLogger("murmura").info(
-                "Single-node cluster detected - using direct dataset distribution"
-            )
-            self._distribute_serializable_dataset(
-                dataset, feature_columns, label_column
-            )
+            logger.info("Using direct serialization for single-node")
+            self._distribute_serializable_dataset(dataset, feature_columns, label_column)
 
     def _distribute_hf_dataset_metadata(
             self,

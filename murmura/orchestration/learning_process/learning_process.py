@@ -1,8 +1,10 @@
 import logging
+import time
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Union
 
 import numpy as np
+import ray
 
 from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.data_processing.dataset import MDataset
@@ -70,7 +72,7 @@ class LearningProcess(ABC):
             partitioner: Partitioner,
     ) -> None:
         """
-        Initialize the learning process by setting up the cluster, creating actors, and distributing data and models.
+        Initialize the learning process with enhanced dataset distribution strategies.
         """
         self.logger.info("=== Initializing Learning Process ===")
 
@@ -126,9 +128,10 @@ class LearningProcess(ABC):
             },
         )
 
+        # Enhanced dataset distribution with automatic strategy selection
         self.logger.info("Distributing dataset...")
 
-        # Get feature and label columns from config - these MUST be set in the config
+        # Get feature and label columns from config - these MUST be set
         feature_columns = self.get_config_value("feature_columns", None)
         label_column = self.get_config_value("label_column", None)
 
@@ -146,6 +149,8 @@ class LearningProcess(ABC):
 
         self.logger.info(f"Using feature columns: {feature_columns}, label column: {label_column}")
 
+        # The cluster manager will automatically choose the best distribution strategy
+        # based on dataset size and cluster configuration
         self.cluster_manager.distribute_dataset(
             self.dataset, feature_columns=feature_columns, label_column=label_column
         )
@@ -154,6 +159,55 @@ class LearningProcess(ABC):
         self.cluster_manager.distribute_model(self.model)
 
         self.logger.info("Learning process initialized successfully.")
+
+
+    def get_cluster_summary(self) -> Dict[str, Any]:
+        """
+        Get a comprehensive summary of the cluster state including distribution strategy.
+        """
+        if not self.cluster_manager:
+            return {"error": "Cluster manager not initialized"}
+
+        try:
+            cluster_stats = self.cluster_manager.get_cluster_stats()
+            topology_info = self.cluster_manager.get_topology_information()
+
+            # Get distribution strategy info from actors
+            distribution_info = {"strategy": "unknown", "lazy_loading": False}
+            if self.cluster_manager.actors:
+                try:
+                    # Check first actor for distribution strategy
+                    sample_info = ray.get(self.cluster_manager.actors[0].get_data_info.remote())
+                    distribution_info = {
+                        "strategy": "lazy" if sample_info.get("lazy_loading", False) else "eager",
+                        "lazy_loading": sample_info.get("lazy_loading", False),
+                        "dataset_loaded": sample_info.get("dataset_loaded", False),
+                    }
+                except Exception:
+                    pass  # Ignore errors getting distribution info
+
+            summary = {
+                "cluster_type": "multi-node"
+                if cluster_stats["cluster_info"]["is_multinode"]
+                else "single-node",
+                "total_nodes": cluster_stats["cluster_info"]["total_nodes"],
+                "total_actors": cluster_stats["num_actors"],
+                "topology": topology_info.get("type", "unknown"),
+                "placement_strategy": cluster_stats["placement_strategy"],
+                "has_placement_group": cluster_stats["has_placement_group"],
+                "available_resources": cluster_stats["cluster_info"].get(
+                    "available_resources", {}
+                ),
+                "resource_config": cluster_stats["resource_config"],
+                "distribution_strategy": distribution_info["strategy"],
+                "lazy_loading_enabled": distribution_info["lazy_loading"],
+            }
+
+            return summary
+
+        except Exception as e:
+            self.logger.error(f"Failed to get cluster summary: {e}")
+            return {"error": str(e)}
 
     def get_config_value(self, key: str, default: Any = None) -> Any:
         """
@@ -226,6 +280,108 @@ class LearningProcess(ABC):
         )
 
         return orchestration_config
+
+    def get_dataset_distribution_status(self) -> Dict[str, Any]:
+        """
+        Get detailed status of dataset distribution across actors.
+        """
+        if not self.cluster_manager:
+            return {"error": "Cluster manager not initialized"}
+
+        try:
+            actor_statuses = []
+
+            # Check each actor's dataset status
+            for i, actor in enumerate(self.cluster_manager.actors):
+                try:
+                    info = ray.get(actor.get_data_info.remote(), timeout=10)
+                    actor_statuses.append({
+                        "actor_id": i,
+                        "client_id": info.get("client_id"),
+                        "node_id": info.get("node_info", {}).get("node_id", "unknown"),
+                        "data_size": info.get("data_size", 0),
+                        "has_dataset": info.get("has_dataset", False),
+                        "dataset_loaded": info.get("dataset_loaded", False),
+                        "lazy_loading": info.get("lazy_loading", False),
+                        "dataset_name": info.get("dataset_name", "unknown"),
+                    })
+                except Exception as e:
+                    actor_statuses.append({
+                        "actor_id": i,
+                        "error": str(e),
+                        "status": "unreachable"
+                    })
+
+            # Summarize distribution status
+            total_actors = len(actor_statuses)
+            healthy_actors = len([s for s in actor_statuses if "error" not in s])
+            lazy_loading_actors = len([s for s in actor_statuses if s.get("lazy_loading", False)])
+            loaded_actors = len([s for s in actor_statuses if s.get("dataset_loaded", False)])
+
+            return {
+                "total_actors": total_actors,
+                "healthy_actors": healthy_actors,
+                "lazy_loading_actors": lazy_loading_actors,
+                "loaded_actors": loaded_actors,
+                "distribution_strategy": "lazy" if lazy_loading_actors > 0 else "eager",
+                "actor_details": actor_statuses,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Failed to get dataset distribution status: {e}")
+            return {"error": str(e)}
+
+
+    def monitor_memory_usage(self) -> Dict[str, Any]:
+        """
+        Monitor memory usage across the cluster with focus on dataset loading.
+        """
+        if not self.cluster_manager:
+            return {"error": "Cluster manager not initialized"}
+
+        try:
+            import ray
+
+            # Get cluster-wide resource information
+            cluster_resources = ray.cluster_resources()
+            available_resources = ray.available_resources()
+
+            # Get node-specific information
+            nodes = ray.nodes()
+            node_stats = []
+
+            for node in nodes:
+                if not node.get("Alive", False):
+                    continue
+
+                node_id = node["NodeID"]
+                node_ip = node.get("NodeManagerAddress", "unknown")
+
+                # Calculate memory usage
+                total_memory = node.get("Resources", {}).get("memory", 0)
+                used_memory = total_memory - available_resources.get("memory", 0)
+                memory_usage_pct = (used_memory / total_memory * 100) if total_memory > 0 else 0
+
+                node_stats.append({
+                    "node_id": node_id[:8],  # Shortened for readability
+                    "node_ip": node_ip,
+                    "total_memory_gb": round(total_memory / (1024**3), 2),
+                    "used_memory_gb": round(used_memory / (1024**3), 2),
+                    "memory_usage_percent": round(memory_usage_pct, 1),
+                    "status": "high_usage" if memory_usage_pct > 80 else "normal"
+                })
+
+            return {
+                "timestamp": int(time.time() * 1000),
+                "cluster_memory_gb": round(cluster_resources.get("memory", 0) / (1024**3), 2),
+                "available_memory_gb": round(available_resources.get("memory", 0) / (1024**3), 2),
+                "node_stats": node_stats,
+                "high_usage_nodes": len([n for n in node_stats if n["status"] == "high_usage"]),
+            }
+
+        except Exception as e:
+            self.logger.error(f"Failed to monitor memory usage: {e}")
+            return {"error": str(e)}
 
     @abstractmethod
     def execute(self) -> Dict[str, Any]:

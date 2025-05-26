@@ -232,7 +232,7 @@ def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger) -> 
             split_dx = set(split_data["dx"])
             all_dx_categories.update(split_dx)
 
-        # Sort for consistent ordering
+        # Sort for consistent ordering across all nodes/actors
         dx_categories = sorted(list(all_dx_categories))
         num_classes = len(dx_categories)
 
@@ -676,6 +676,20 @@ def main() -> None:
                 aggregation_config=config.aggregation,
                 partitioner=partitioner,
             )
+
+            # Monitor dataset distribution status
+            dist_status = learning_process.get_dataset_distribution_status()
+            logger.info(f"Dataset distribution: {dist_status['distribution_strategy']}")
+            logger.info(f"Actors ready: {dist_status['healthy_actors']}/{dist_status['total_actors']}")
+            if dist_status['distribution_strategy'] == 'lazy':
+                logger.info(f"Lazy loading enabled on {dist_status['lazy_loading_actors']} actors")
+
+            # Monitor memory usage
+            if args.monitor_resources:
+                memory_status = learning_process.monitor_memory_usage()
+                logger.info(f"Cluster memory: {memory_status.get('available_memory_gb', 'N/A')}GB available")
+                if memory_status.get('high_usage_nodes', 0) > 0:
+                    logger.warning(f"{memory_status['high_usage_nodes']} nodes have high memory usage")
 
             # Get and log cluster information
             cluster_summary = learning_process.get_cluster_summary()
