@@ -379,112 +379,156 @@ class VirtualClientActor:
     def _get_partition_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Extract features and labels from the client's dataset partition.
-        Labels should already be encoded as integers in the example scripts.
+        Enhanced with proper lazy loading support and comprehensive validation.
 
         :return: Tuple of features and labels as numpy arrays
         """
-        if (
-            self.mdataset is None
-            or self.data_partition is None
-            or self.feature_columns is None
-            or self.label_column is None
-        ):
-            raise ValueError(
-                "Dataset, data partition, feature columns, or label column not set"
-            )
+        # Step 1: Comprehensive validation of all required components
+        validation_errors = []
 
-        split_dataset = self.mdataset.get_split(self.split)
-        partition_dataset = split_dataset.select(self.data_partition)
+        if self.data_partition is None:
+            validation_errors.append("data_partition not set")
 
-        # Extract features using the same approach as the learning process
-        if len(self.feature_columns) == 1:
-            feature_data = partition_dataset[self.feature_columns[0]]
+        if self.feature_columns is None:
+            validation_errors.append("feature_columns not set")
 
-            # Let the model wrapper handle preprocessing if available
-            if hasattr(self.model, "data_preprocessor"):
-                if self.model.data_preprocessor is not None:
-                    try:
-                        # Convert to list format for the preprocessor
-                        data_list = (
-                            list(feature_data)
-                            if not isinstance(feature_data, list)
-                            else feature_data
-                        )
-                        features = self.model.data_preprocessor.preprocess_features(
-                            data_list
-                        )
-                        self.logger.debug(
-                            "Used model's preprocessor for feature extraction"
-                        )
-                    except Exception as e:
-                        self.logger.warning(
-                            f"Model preprocessor failed, using fallback: {e}"
-                        )
-                        # Fallback to numpy conversion
+        if self.label_column is None:
+            validation_errors.append("label_column not set")
+
+        # Step 2: Handle dataset loading (direct or lazy)
+        if self.mdataset is None:
+            if getattr(self, 'lazy_loading', False) and hasattr(self, 'dataset_metadata') and self.dataset_metadata:
+                self.logger.info("Dataset not loaded, triggering lazy loading...")
+                try:
+                    self._lazy_load_dataset()
+                    self.logger.info("Lazy loading completed successfully")
+                except Exception as e:
+                    validation_errors.append(f"lazy loading failed: {e}")
+                    self.logger.error(f"Lazy loading failed: {e}")
+            else:
+                validation_errors.append("dataset not available (neither direct nor lazy)")
+                self.logger.error("No dataset available and lazy loading not configured")
+
+        # Step 3: Final validation after potential lazy loading
+        if self.mdataset is None:
+            validation_errors.append("dataset still not available after lazy loading attempt")
+
+        # Step 4: Report any validation errors with detailed state information
+        if validation_errors:
+            error_msg = "Cannot extract partition data: " + ", ".join(validation_errors)
+            self.logger.error(f"Actor state validation failed:")
+            self.logger.error(f"  - data_partition: {self.data_partition is not None} (size: {len(self.data_partition) if self.data_partition else 0})")
+            self.logger.error(f"  - feature_columns: {self.feature_columns}")
+            self.logger.error(f"  - label_column: {self.label_column}")
+            self.logger.error(f"  - mdataset: {self.mdataset is not None}")
+            self.logger.error(f"  - lazy_loading: {getattr(self, 'lazy_loading', False)}")
+            self.logger.error(f"  - has_dataset_metadata: {hasattr(self, 'dataset_metadata') and self.dataset_metadata is not None}")
+            self.logger.error(f"  - node_id: {self.node_info.get('node_id', 'unknown')}")
+            if hasattr(self, 'dataset_metadata') and self.dataset_metadata:
+                self.logger.error(f"  - dataset_metadata keys: {list(self.dataset_metadata.keys())}")
+            raise ValueError(error_msg)
+
+        # Step 5: Proceed with data extraction
+        try:
+            split_dataset = self.mdataset.get_split(self.split)
+            partition_dataset = split_dataset.select(self.data_partition)
+
+            # Extract features using the same approach as the learning process
+            if len(self.feature_columns) == 1:
+                feature_data = partition_dataset[self.feature_columns[0]]
+
+                # Let the model wrapper handle preprocessing if available
+                if hasattr(self.model, "data_preprocessor"):
+                    if self.model.data_preprocessor is not None:
+                        try:
+                            # Convert to list format for the preprocessor
+                            data_list = (
+                                list(feature_data)
+                                if not isinstance(feature_data, list)
+                                else feature_data
+                            )
+                            features = self.model.data_preprocessor.preprocess_features(
+                                data_list
+                            )
+                            self.logger.debug(
+                                "Used model's preprocessor for feature extraction"
+                            )
+                        except Exception as e:
+                            self.logger.warning(
+                                f"Model preprocessor failed, using fallback: {e}"
+                            )
+                            # Fallback to numpy conversion
+                            features = np.array(feature_data, dtype=np.float32)
+                    else:
+                        # No preprocessor available, use basic conversion
                         features = np.array(feature_data, dtype=np.float32)
                 else:
                     # No preprocessor available, use basic conversion
                     features = np.array(feature_data, dtype=np.float32)
             else:
-                # No preprocessor available, use basic conversion
-                features = np.array(feature_data, dtype=np.float32)
-        else:
-            # Multiple feature columns
-            processed_columns = []
-            for col in self.feature_columns:
-                col_data = partition_dataset[col]
-                if hasattr(self.model, "data_preprocessor"):
-                    if self.model.data_preprocessor is not None:
-                        try:
-                            col_features = (
-                                self.model.data_preprocessor.preprocess_features(
-                                    list(col_data)
+                # Multiple feature columns
+                processed_columns = []
+                for col in self.feature_columns:
+                    col_data = partition_dataset[col]
+                    if hasattr(self.model, "data_preprocessor"):
+                        if self.model.data_preprocessor is not None:
+                            try:
+                                col_features = (
+                                    self.model.data_preprocessor.preprocess_features(
+                                        list(col_data)
+                                    )
                                 )
-                            )
-                            processed_columns.append(col_features)
-                        except Exception:
-                            processed_columns.append(
-                                np.array(col_data, dtype=np.float32)
-                            )
-                else:
-                    processed_columns.append(np.array(col_data, dtype=np.float32))
+                                processed_columns.append(col_features)
+                            except Exception:
+                                processed_columns.append(
+                                    np.array(col_data, dtype=np.float32)
+                                )
+                    else:
+                        processed_columns.append(np.array(col_data, dtype=np.float32))
 
-            features = np.column_stack(processed_columns)
+                features = np.column_stack(processed_columns)
 
-        # Extract and process labels
-        label_data = partition_dataset[self.label_column]
+            # Extract and process labels
+            label_data = partition_dataset[self.label_column]
 
-        # Since we handle label encoding in the example scripts (like skin_lesion_example.py),
-        # we expect labels to already be integers here. If they're strings, it means
-        # the preprocessing wasn't done properly in the example script.
-        if len(label_data) > 0 and isinstance(label_data[0], str):
-            self.logger.error(
-                f"Found string labels in column '{self.label_column}'. "
-                "Labels should be converted to integers in the example script before training."
+            # Since we handle label encoding in the example scripts (like skin_lesion_example.py),
+            # we expect labels to already be integers here. If they're strings, it means
+            # the preprocessing wasn't done properly in the example script.
+            if len(label_data) > 0 and isinstance(label_data[0], str):
+                self.logger.error(
+                    f"Found string labels in column '{self.label_column}'. "
+                    "Labels should be converted to integers in the example script before training."
+                )
+                # Emergency fallback: create a simple mapping for this partition
+                unique_labels = sorted(set(label_data))
+                label_map = {label: idx for idx, label in enumerate(unique_labels)}
+                labels = np.array(
+                    [label_map[label] for label in label_data], dtype=np.int64
+                )
+                self.logger.warning(f"Emergency label encoding applied: {label_map}")
+                self.logger.warning(
+                    "Please ensure your example script converts string labels to integers before training."
+                )
+            else:
+                # Labels are already numeric (expected case)
+                labels = np.array(label_data, dtype=np.int64)
+
+            self.logger.debug(
+                f"Successfully extracted features shape: {features.shape}, labels shape: {labels.shape}"
             )
-            # Emergency fallback: create a simple mapping for this partition
-            unique_labels = sorted(set(label_data))
-            label_map = {label: idx for idx, label in enumerate(unique_labels)}
-            labels = np.array(
-                [label_map[label] for label in label_data], dtype=np.int64
-            )
-            self.logger.warning(f"Emergency label encoding applied: {label_map}")
-            self.logger.warning(
-                "Please ensure your example script converts string labels to integers before training."
-            )
-        else:
-            # Labels are already numeric (expected case)
-            labels = np.array(label_data, dtype=np.int64)
 
-        self.logger.debug(
-            f"Extracted features shape: {features.shape}, labels shape: {labels.shape}"
-        )
+            # Log label distribution for debugging
+            unique_labels, counts = np.unique(labels, return_counts=True)
+            self.logger.debug(f"Label distribution: {dict(zip(unique_labels, counts))}")
 
-        # Log label distribution for debugging
-        unique_labels, counts = np.unique(labels, return_counts=True)
-        self.logger.debug(f"Label distribution: {dict(zip(unique_labels, counts))}")
+            return features, labels
 
-        return features, labels
+        except Exception as e:
+            self.logger.error(f"Error during data extraction: {e}")
+            self.logger.error(f"  - split: {self.split}")
+            self.logger.error(f"  - available splits: {self.mdataset.available_splits if self.mdataset else 'N/A'}")
+            self.logger.error(f"  - partition size: {len(self.data_partition)}")
+            raise RuntimeError(f"Data extraction failed on node {self.node_info['node_id']}: {e}")
 
     def get_data_info(self) -> Dict[str, Any]:
         """

@@ -373,14 +373,14 @@ class ClusterManager:
             return False
 
     def _distribute_dataset_metadata_only(
-        self,
-        dataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute only dataset metadata for lazy loading.
-        Actors will reconstruct datasets on-demand during training.
+        Fixed to properly pass column information to actors.
         """
         logger = logging.getLogger("murmura")
         logger.info("Using lazy dataset distribution (metadata only)")
@@ -400,9 +400,6 @@ class ClusterManager:
             # Structure info
             "available_splits": dataset.available_splits,
             "partitions": dataset.partitions,
-            # Column info
-            "feature_columns": feature_columns,
-            "label_column": label_column,
             # Reconstruction strategy
             "lazy_loading": True,
             "reconstruction_strategy": "on_demand",
@@ -411,30 +408,134 @@ class ClusterManager:
         logger.info(f"Distributing lazy metadata to {len(self.actors)} actors")
         logger.info(f"Dataset: {dataset_metadata['dataset_name']}")
         logger.info(f"Splits: {dataset_metadata['available_splits']}")
-        logger.info(
-            f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned"
-        )
+        logger.info(f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned")
+        logger.info(f"Feature columns: {feature_columns}")
+        logger.info(f"Label column: {label_column}")
 
         # Distribute metadata one actor at a time to avoid memory spikes
+        failed_actors = []
         for i, actor in enumerate(self.actors):
             try:
-                # Each actor gets the full metadata but will only load its partition
+                # CRITICAL FIX: Pass feature_columns and label_column as separate parameters
+                # This ensures they are properly set on each actor
                 task = actor.set_dataset_metadata.remote(
                     dataset_metadata,
                     feature_columns=feature_columns,
                     label_column=label_column,
                 )
 
-                # Wait for each actor individually
+                # Wait for each actor individually with timeout
                 ray.get(task, timeout=30)
 
-                logger.info(
-                    f"Distributed lazy metadata to actor {i + 1}/{len(self.actors)}"
+                logger.debug(
+                    f"Successfully distributed lazy metadata to actor {i + 1}/{len(self.actors)} "
+                    f"with features={feature_columns}, label={label_column}"
                 )
 
             except Exception as e:
                 logger.error(f"Failed to distribute metadata to actor {i}: {e}")
-                raise
+                logger.error(f"  - feature_columns: {feature_columns}")
+                logger.error(f"  - label_column: {label_column}")
+                logger.error(f"  - dataset_metadata keys: {list(dataset_metadata.keys())}")
+                failed_actors.append(i)
+                # Don't raise immediately, try to distribute to other actors first
+
+        # If any actors failed, raise an error with details
+        if failed_actors:
+            raise RuntimeError(
+                f"Dataset metadata distribution failed for {len(failed_actors)} actors: {failed_actors}. "
+                f"Check actor logs for detailed error information."
+            )
+
+    def validate_actor_dataset_state(self) -> Dict[str, Any]:
+        """
+        Validate that all actors have properly received dataset configuration.
+        This helps debug multi-node distribution issues.
+        """
+        logger = logging.getLogger("murmura")
+        logger.info("Validating actor dataset state across cluster...")
+
+        validation_results = {
+            "total_actors": len(self.actors),
+            "valid_actors": 0,
+            "invalid_actors": 0,
+            "errors": [],
+            "actor_details": []
+        }
+
+        for i, actor in enumerate(self.actors):
+            try:
+                # Get detailed actor state
+                actor_info = ray.get(actor.get_data_info.remote(), timeout=10)
+
+                # Validate required fields
+                has_data_partition = actor_info.get("data_size", 0) > 0
+                has_feature_columns = actor_info.get("feature_columns") is not None
+                has_label_column = actor_info.get("label_column") is not None
+                has_dataset_ready = (
+                        actor_info.get("has_dataset", False) or
+                        actor_info.get("lazy_loading", False)
+                )
+
+                is_valid = all([
+                    has_data_partition,
+                    has_feature_columns,
+                    has_label_column,
+                    has_dataset_ready
+                ])
+
+                actor_detail = {
+                    "actor_id": i,
+                    "client_id": actor_info.get("client_id"),
+                    "node_id": actor_info.get("node_info", {}).get("node_id", "unknown"),
+                    "is_valid": is_valid,
+                    "data_partition_size": actor_info.get("data_size", 0),
+                    "has_feature_columns": has_feature_columns,
+                    "has_label_column": has_label_column,
+                    "feature_columns": actor_info.get("feature_columns"),
+                    "label_column": actor_info.get("label_column"),
+                    "lazy_loading": actor_info.get("lazy_loading", False),
+                    "dataset_loaded": actor_info.get("has_dataset", False),
+                }
+
+                validation_results["actor_details"].append(actor_detail)
+
+                if is_valid:
+                    validation_results["valid_actors"] += 1
+                    logger.debug(f"Actor {i} validation passed")
+                else:
+                    validation_results["invalid_actors"] += 1
+                    error_msg = f"Actor {i} validation failed: missing "
+                    missing_items = []
+                    if not has_data_partition:
+                        missing_items.append("data_partition")
+                    if not has_feature_columns:
+                        missing_items.append("feature_columns")
+                    if not has_label_column:
+                        missing_items.append("label_column")
+                    if not has_dataset_ready:
+                        missing_items.append("dataset")
+                    error_msg += ", ".join(missing_items)
+                    validation_results["errors"].append(error_msg)
+                    logger.error(error_msg)
+
+            except Exception as e:
+                validation_results["invalid_actors"] += 1
+                error_msg = f"Actor {i} unreachable or error: {e}"
+                validation_results["errors"].append(error_msg)
+                logger.error(error_msg)
+
+        # Log validation summary
+        logger.info(f"Actor validation complete:")
+        logger.info(f"  Valid actors: {validation_results['valid_actors']}/{validation_results['total_actors']}")
+        logger.info(f"  Invalid actors: {validation_results['invalid_actors']}")
+
+        if validation_results["errors"]:
+            logger.error("Actor validation errors found:")
+            for error in validation_results["errors"]:
+                logger.error(f"  {error}")
+
+        return validation_results
 
     def distribute_dataset(
         self,

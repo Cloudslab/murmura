@@ -65,14 +65,14 @@ class LearningProcess(ABC):
         self.logger.debug(f"Registered observer: {observer.__class__.__name__}")
 
     def initialize(
-        self,
-        num_actors: int,
-        topology_config: TopologyConfig,
-        aggregation_config: AggregationConfig,
-        partitioner: Partitioner,
+            self,
+            num_actors: int,
+            topology_config: TopologyConfig,
+            aggregation_config: AggregationConfig,
+            partitioner: Partitioner,
     ) -> None:
         """
-        Initialize the learning process with enhanced dataset distribution strategies.
+        Initialize the learning process with enhanced dataset distribution strategies and validation.
         """
         self.logger.info("=== Initializing Learning Process ===")
 
@@ -159,6 +159,48 @@ class LearningProcess(ABC):
 
         self.logger.info("Distributing model...")
         self.cluster_manager.distribute_model(self.model)
+
+        # CRITICAL: Validate actor state after distribution
+        self.logger.info("Validating actor dataset distribution...")
+        try:
+            validation_results = self.cluster_manager.validate_actor_dataset_state()
+
+            if validation_results["invalid_actors"] > 0:
+                error_msg = (
+                    f"Dataset distribution validation failed: "
+                    f"{validation_results['invalid_actors']}/{validation_results['total_actors']} "
+                    f"actors are not properly configured.\n"
+                    f"Errors: {validation_results['errors']}\n"
+                    f"This typically indicates issues with lazy loading or feature/label column distribution."
+                )
+                self.logger.error(error_msg)
+
+                # Log detailed actor information for debugging
+                for actor_detail in validation_results["actor_details"]:
+                    if not actor_detail["is_valid"]:
+                        self.logger.error(f"Invalid actor details: {actor_detail}")
+
+                raise RuntimeError(error_msg)
+
+            self.logger.info(
+                f"All {validation_results['valid_actors']} actors successfully configured for training"
+            )
+
+        except Exception as e:
+            self.logger.error(f"Actor validation failed: {e}")
+            # Try to get additional debug information
+            try:
+                self.logger.error("Attempting to gather debug information from actors...")
+                for i, actor in enumerate(self.cluster_manager.actors[:3]):  # Sample first 3 actors
+                    try:
+                        debug_info = ray.get(actor.get_data_info.remote(), timeout=5)
+                        self.logger.error(f"Actor {i} debug info: {debug_info}")
+                    except Exception as debug_e:
+                        self.logger.error(f"Could not get debug info from actor {i}: {debug_e}")
+            except Exception:
+                pass  # Ignore debug information gathering errors
+
+            raise RuntimeError(f"Learning process initialization failed during actor validation: {e}")
 
         self.logger.info("Learning process initialized successfully.")
 
