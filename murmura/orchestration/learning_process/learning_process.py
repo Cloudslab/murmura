@@ -415,6 +415,7 @@ class LearningProcess(ABC):
 
         try:
             import ray
+            import time
 
             # Get cluster-wide resource information
             cluster_resources = ray.cluster_resources()
@@ -434,7 +435,7 @@ class LearningProcess(ABC):
                 }
 
             return {
-                "timestamp": ray.util.get_current_time_ms(),
+                "timestamp": int(time.time() * 1000),  # Convert to milliseconds
                 "cluster_resources": cluster_resources,
                 "available_resources": available_resources,
                 "resource_utilization": resource_utilization,

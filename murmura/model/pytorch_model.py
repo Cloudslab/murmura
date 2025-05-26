@@ -62,10 +62,10 @@ class TorchModelWrapper(ModelInterface):
         )
 
     def _prepare_data(
-        self,
-        data: np.ndarray,
-        labels: Optional[np.ndarray] = None,
-        batch_size: int = 32,
+            self,
+            data: np.ndarray,
+            labels: Optional[np.ndarray] = None,
+            batch_size: int = 32,
     ) -> DataLoader:
         """
         Convert numpy arrays to PyTorch DataLoader.
@@ -76,13 +76,51 @@ class TorchModelWrapper(ModelInterface):
 
         :return: DataLoader object.
         """
-        # Convert to tensor and handle reshaping if necessary
+        # Handle object dtype arrays (common with MNIST and other image datasets)
+        if data.dtype == np.object_:
+            # Convert object array to a proper numeric array
+            try:
+                # First, try to stack the objects if they're arrays
+                if hasattr(data[0], 'shape'):
+                    # If the first element has a shape, assume all are arrays
+                    data = np.stack(data.tolist())
+                else:
+                    # Otherwise, convert to a regular array
+                    data = np.array(data.tolist())
+            except (ValueError, AttributeError) as e:
+                # Fallback: try to convert each element individually
+                processed_data = []
+                for item in data:
+                    if hasattr(item, 'astype'):
+                        processed_data.append(item.astype(np.float32))
+                    else:
+                        processed_data.append(np.array(item, dtype=np.float32))
+                data = np.stack(processed_data)
+
+        # Ensure data is in a supported numeric dtype
+        if data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number):
+            # If still object type or not numeric, convert to float32
+            try:
+                data = data.astype(np.float32)
+            except (ValueError, TypeError):
+                # Last resort: convert via list
+                data = np.array(data.tolist(), dtype=np.float32)
+
+        # Convert to tensor with explicit dtype
         tensor_data = torch.tensor(data, dtype=torch.float32)
 
+        # Handle reshaping if necessary
         if self.input_shape and tensor_data.shape[1:] != self.input_shape:
             tensor_data = tensor_data.reshape(-1, *self.input_shape)
 
         if labels is not None:
+            # Handle labels in case they're also object dtype
+            if labels.dtype == np.object_:
+                try:
+                    labels = np.array(labels.tolist())
+                except:
+                    labels = labels.astype(np.int64)
+
             tensor_labels = torch.tensor(labels, dtype=torch.long)
             dataset = TensorDataset(tensor_data, tensor_labels)
         else:
@@ -174,7 +212,7 @@ class TorchModelWrapper(ModelInterface):
         }
 
     def evaluate(
-        self, data: np.ndarray, labels: np.ndarray, **kwargs
+            self, data: np.ndarray, labels: np.ndarray, **kwargs
     ) -> Dict[str, float]:
         """
         Evaluate the model on the provided data and labels.
@@ -186,6 +224,9 @@ class TorchModelWrapper(ModelInterface):
 
         :return: Dictionary containing evaluation metrics (e.g., loss, accuracy).
         """
+        # Ensure model is on the correct device before evaluation
+        self.detect_and_set_device()
+
         batch_size = kwargs.get("batch_size", 32)
         dataloader = self._prepare_data(data, labels, batch_size)
 

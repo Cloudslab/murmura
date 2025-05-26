@@ -527,14 +527,9 @@ class VirtualClientActor:
 
         :return: Health status dictionary
         """
+        import time
         try:
-            # Get current timestamp using Ray utility
-            try:
-                timestamp = ray.util.get_current_time_ms()
-            except:
-                import time
-
-                timestamp = int(time.time() * 1000)
+            timestamp = int(time.time() * 1000)
 
             status = {
                 "client_id": self.client_id,
@@ -579,5 +574,5 @@ class VirtualClientActor:
                 "client_id": self.client_id,
                 "status": "error",
                 "error": str(e),
-                "timestamp": 0,
+                "timestamp": int(time.time() * 1000),
             }
