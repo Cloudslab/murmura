@@ -292,6 +292,8 @@ def main() -> None:
             dataset_name="mnist",  # Fixed to MNIST
             ray_cluster=ray_cluster_config,
             resources=resource_config,
+            feature_columns=["image"],
+            label_column="label"
         )
 
         logger.info("=== Loading MNIST Dataset ===")

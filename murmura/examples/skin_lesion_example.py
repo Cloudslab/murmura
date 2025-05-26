@@ -457,6 +457,8 @@ def main() -> None:
             dataset_name=args.dataset_name,
             ray_cluster=ray_cluster_config,
             resources=resource_config,
+            feature_columns=["image"],
+            label_column="dx",
         )
 
         logger.info("=== Loading Skin Lesion Dataset ===")

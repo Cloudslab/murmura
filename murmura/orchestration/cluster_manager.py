@@ -384,15 +384,21 @@ class ClusterManager:
             )
 
     def _distribute_hf_dataset_metadata(
-        self,
-        dataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute HuggingFace dataset using metadata reconstruction approach.
         This avoids serializing large memory-mapped files across the network.
         """
+        # Validate that columns are provided
+        if feature_columns is None or label_column is None:
+            raise ValueError(
+                "feature_columns and label_column must be provided for multi-node dataset distribution"
+            )
+
         batch_size = 5  # Smaller batches for metadata reconstruction
 
         # Create a lightweight metadata package
@@ -400,16 +406,20 @@ class ClusterManager:
             "metadata": dataset.dataset_metadata,
             "partitions": dataset.partitions,
             "available_splits": dataset.available_splits,
+            # Include column information in metadata for reconstruction
+            "feature_columns": feature_columns,
+            "label_column": label_column,
         }
 
         logger = logging.getLogger("murmura")
+        logger.info(f"Distributing dataset with feature_columns={feature_columns}, label_column={label_column}")
 
         for i in range(0, len(self.actors), batch_size):
             batch_actors = self.actors[i : i + batch_size]
             batch_tasks = []
 
             for actor in batch_actors:
-                # Send reconstruction instruction instead of full dataset
+                # Send reconstruction instruction with explicit column information
                 batch_tasks.append(
                     actor.reconstruct_and_set_dataset.remote(
                         dataset_metadata,
@@ -436,17 +446,27 @@ class ClusterManager:
                 )
                 return
 
+
     def _distribute_serializable_dataset(
-        self,
-        dataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute dataset using direct serialization (original method).
         Used for single-node clusters or already-serializable datasets.
         """
+        # Validate that columns are provided
+        if feature_columns is None or label_column is None:
+            raise ValueError(
+                "feature_columns and label_column must be provided for dataset distribution"
+            )
+
         batch_size = 10  # Smaller batches for stability
+
+        logger = logging.getLogger("murmura")
+        logger.info(f"Distributing dataset with feature_columns={feature_columns}, label_column={label_column}")
 
         for i in range(0, len(self.actors), batch_size):
             batch_actors = self.actors[i : i + batch_size]

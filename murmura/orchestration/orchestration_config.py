@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Dict, Any
+from typing import Literal, Optional, Dict, Any, List
 from pydantic import BaseModel, Field, model_validator
 
 from murmura.aggregation.aggregation_config import AggregationConfig
@@ -19,7 +19,7 @@ class OrchestrationConfig(BaseModel):
     aggregation: AggregationConfig = Field(default_factory=AggregationConfig)
 
     # Dataset configuration
-    dataset_name: str = Field(default="mnist", description="Dataset name")
+    dataset_name: str = Field(default="unknown", description="Dataset name")
     partition_strategy: Literal["dirichlet", "iid"] = Field(
         default="dirichlet", description="Data Partitioning strategy"
     )
@@ -34,6 +34,16 @@ class OrchestrationConfig(BaseModel):
         description="Minimum samples per partition (only for dirichlet strategy)",
     )
     split: str = Field(default="train", description="Dataset split")
+
+    # Generic column configuration - NO DEFAULTS, must be specified by user
+    feature_columns: Optional[List[str]] = Field(
+        default=None,
+        description="List of feature column names (must be specified for each dataset)"
+    )
+    label_column: Optional[str] = Field(
+        default=None,
+        description="Name of the label column (must be specified for each dataset)"
+    )
 
     # Multi-node Ray cluster configuration
     ray_cluster: RayClusterConfig = Field(
@@ -60,6 +70,21 @@ class OrchestrationConfig(BaseModel):
         if self.resources.placement_strategy not in valid_strategies:
             raise ValueError(f"placement_strategy must be one of {valid_strategies}")
 
+        # Validate that feature_columns and label_column are specified
+        if self.feature_columns is None:
+            raise ValueError(
+                "feature_columns must be specified for the dataset. "
+                "Example: feature_columns=['image'] for image datasets, "
+                "feature_columns=['text'] for text datasets, etc."
+            )
+
+        if self.label_column is None:
+            raise ValueError(
+                "label_column must be specified for the dataset. "
+                "Example: label_column='label' for most datasets, "
+                "label_column='dx' for medical diagnosis datasets, etc."
+            )
+
         return self
 
     @property
@@ -79,7 +104,7 @@ class OrchestrationConfig(BaseModel):
 
         if self.resources.memory_per_actor is not None:
             resources["memory"] = (
-                self.resources.memory_per_actor * 1024 * 1024
+                    self.resources.memory_per_actor * 1024 * 1024
             )  # Convert MB to bytes
 
         return resources

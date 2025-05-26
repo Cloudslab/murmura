@@ -89,8 +89,19 @@ class DecentralizedLearningProcess(LearningProcess):
 
         # Prepare test data for global evaluation
         test_dataset = self.dataset.get_split(test_split)
-        feature_columns = self.get_config_value("feature_columns", ["image"])
-        label_column = self.get_config_value("label_column", "label")
+
+        # Get feature and label columns from config - these should be set during initialization
+        feature_columns = self.get_config_value("feature_columns", None)
+        label_column = self.get_config_value("label_column", None)
+
+        # These should never be None if config validation worked properly
+        if feature_columns is None or label_column is None:
+            raise ValueError(
+                f"feature_columns ({feature_columns}) and label_column ({label_column}) "
+                "must be specified in the configuration"
+            )
+
+        self.logger.info(f"Using feature columns: {feature_columns}, label column: {label_column}")
 
         self.logger.info("Preparing test data for evaluation...")
         test_features, test_labels = self._prepare_test_data(test_dataset, feature_columns, label_column)

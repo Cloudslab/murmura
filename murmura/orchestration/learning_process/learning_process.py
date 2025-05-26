@@ -63,19 +63,14 @@ class LearningProcess(ABC):
         self.logger.debug(f"Registered observer: {observer.__class__.__name__}")
 
     def initialize(
-        self,
-        num_actors: int,
-        topology_config: TopologyConfig,
-        aggregation_config: AggregationConfig,
-        partitioner: Partitioner,
+            self,
+            num_actors: int,
+            topology_config: TopologyConfig,
+            aggregation_config: AggregationConfig,
+            partitioner: Partitioner,
     ) -> None:
         """
         Initialize the learning process by setting up the cluster, creating actors, and distributing data and models.
-
-        :param num_actors: Number of actors to create
-        :param topology_config: Topology configuration
-        :param aggregation_config: Aggregation configuration
-        :param partitioner: Partitioner instance
         """
         self.logger.info("=== Initializing Learning Process ===")
 
@@ -132,8 +127,25 @@ class LearningProcess(ABC):
         )
 
         self.logger.info("Distributing dataset...")
+
+        # Get feature and label columns from config - these MUST be set in the config
         feature_columns = self.get_config_value("feature_columns", None)
         label_column = self.get_config_value("label_column", None)
+
+        # Validate that columns are specified
+        if feature_columns is None:
+            raise ValueError(
+                "feature_columns not specified in configuration. "
+                "Please set feature_columns in your OrchestrationConfig."
+            )
+        if label_column is None:
+            raise ValueError(
+                "label_column not specified in configuration. "
+                "Please set label_column in your OrchestrationConfig."
+            )
+
+        self.logger.info(f"Using feature columns: {feature_columns}, label column: {label_column}")
+
         self.cluster_manager.distribute_dataset(
             self.dataset, feature_columns=feature_columns, label_column=label_column
         )
