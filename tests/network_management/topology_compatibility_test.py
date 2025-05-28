@@ -1,5 +1,7 @@
 from typing import List, Dict, Any, Optional
 
+import pytest
+
 from murmura.aggregation.strategies.fed_avg import FedAvg
 from murmura.aggregation.strategies.gossip_avg import GossipAvg
 from murmura.aggregation.strategies.trimmed_mean import TrimmedMean
@@ -90,3 +92,46 @@ def test_register_compatibility():
     finally:
         # Clean up the test changes
         TopologyCompatibilityManager._strategy_topology_map.pop(DummyStrategy, None)
+
+
+@pytest.mark.parametrize("strategy,topology,expected", [
+    (FedAvg, TopologyType.STAR, True),
+    (FedAvg, TopologyType.COMPLETE, True),
+    (FedAvg, TopologyType.LINE, False),
+    (TrimmedMean, TopologyType.STAR, True),
+    (TrimmedMean, TopologyType.COMPLETE, True),
+    (TrimmedMean, TopologyType.LINE, False),
+    (GossipAvg, TopologyType.STAR, True),
+    (GossipAvg, TopologyType.COMPLETE, True),
+    (GossipAvg, TopologyType.LINE, True),
+    (GossipAvg, TopologyType.RING, True),
+    (GossipAvg, TopologyType.CUSTOM, True),
+])
+def test_strategy_topology_matrix(strategy, topology, expected):
+    """Parametrized test for all strategy-topology combinations"""
+    assert TopologyCompatibilityManager.is_compatible(strategy, topology) == expected
+
+
+def test_large_topology_stress():
+    """Stress test compatibility manager with large topology configs"""
+    class DummyStrategy(AggregationStrategy):
+        def aggregate(self, parameters_list, weights=None):
+            return {}
+    # Register DummyStrategy for a large number of fake topologies
+    large_topologies = [TopologyType.STAR, TopologyType.COMPLETE, TopologyType.LINE, TopologyType.RING, TopologyType.CUSTOM]
+    TopologyCompatibilityManager.register_compatibility(DummyStrategy, large_topologies)
+    try:
+        for t in large_topologies:
+            assert TopologyCompatibilityManager.is_compatible(DummyStrategy, t)
+    finally:
+        TopologyCompatibilityManager._strategy_topology_map.pop(DummyStrategy, None)
+
+
+@pytest.mark.parametrize("strategy,topology", [
+    (FedAvg, TopologyType.LINE),
+    (TrimmedMean, TopologyType.LINE),
+    (FedAvg, TopologyType.CUSTOM),
+])
+def test_incompatible_strategy_topology_negative(strategy, topology):
+    """Negative test for incompatible strategy-topology pairs"""
+    assert not TopologyCompatibilityManager.is_compatible(strategy, topology)

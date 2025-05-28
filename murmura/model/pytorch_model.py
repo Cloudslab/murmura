@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Callable, Dict, Any, Tuple, cast
+from typing import Optional, Callable, Dict, Any, Tuple, cast, Union, List
 
 import numpy as np
 import torch
@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
 
+from murmura.data_processing.data_preprocessor import GenericDataPreprocessor
 from murmura.model.model_interface import ModelInterface
 
 
@@ -21,7 +22,9 @@ class PyTorchModel(nn.Module):
 
 class TorchModelWrapper(ModelInterface):
     """
-    PyTorch's implementation of the ModelInterface. This wrapper adapts PyTorch models to the unified interface.
+    Generic PyTorch implementation of the ModelInterface with configurable data preprocessing.
+    This wrapper adapts PyTorch models to the unified interface and handles various data formats
+    through a pluggable preprocessing system.
     """
 
     def __init__(
@@ -32,6 +35,7 @@ class TorchModelWrapper(ModelInterface):
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         device: Optional[str] = None,
         input_shape: Optional[Tuple[int, ...]] = None,
+        data_preprocessor: Optional[GenericDataPreprocessor] = None,
     ):
         """
         Initialize the PyTorch model wrapper.
@@ -42,6 +46,7 @@ class TorchModelWrapper(ModelInterface):
         :param optimizer_kwargs: Additional arguments for the optimizer.
         :param device: Device to use for training (e.g., 'cpu', 'cuda').
         :param input_shape: Shape of the input data.
+        :param data_preprocessor: Custom data preprocessor. If None, uses auto-detection.
         """
         self.model = model
         self.loss_fn = loss_fn or nn.CrossEntropyLoss()
@@ -54,6 +59,18 @@ class TorchModelWrapper(ModelInterface):
             self.device = "cpu"  # Initialize to CPU for safe serialization
         else:
             self.device = device
+
+        # Set up data preprocessor - fix type annotation issue
+        self.data_preprocessor: Optional[GenericDataPreprocessor]
+        if data_preprocessor is None:
+            # Import here to avoid circular imports
+            try:
+                self.data_preprocessor = GenericDataPreprocessor()
+            except ImportError:
+                # Fallback to None - will use basic numpy conversion
+                self.data_preprocessor = None
+        else:
+            self.data_preprocessor = data_preprocessor
 
         # Initialize model on CPU first for serialization safety
         self.model.to("cpu")
@@ -68,27 +85,120 @@ class TorchModelWrapper(ModelInterface):
         batch_size: int = 32,
     ) -> DataLoader:
         """
-        Convert numpy arrays to PyTorch DataLoader.
+        Enhanced data preparation with pluggable preprocessing.
 
-        :param data: Input data as numpy array.
+        :param data: Input data as numpy array or other format.
         :param labels: Corresponding labels as numpy array.
         :param batch_size: Batch size for DataLoader.
 
         :return: DataLoader object.
         """
-        # Convert to tensor and handle reshaping if necessary
+        # Use the generic preprocessor if available
+        if self.data_preprocessor is not None:
+            try:
+                # Convert data to list if it's not already - fix type handling
+                processed_data: Union[List[Any], np.ndarray]
+                if isinstance(data, np.ndarray) and data.dtype == np.object_:
+                    processed_data_raw = data.tolist()
+                    # Ensure we always get a list, even if tolist() returns a scalar
+                    if isinstance(processed_data_raw, list):
+                        processed_data = processed_data_raw
+                    else:
+                        processed_data = [processed_data_raw]
+                elif hasattr(data, "__iter__") and not isinstance(data, (str, bytes)):
+                    processed_data = list(data)
+                else:
+                    processed_data = [data]
+
+                # Ensure we have a list for the preprocessor
+                if not isinstance(processed_data, list):
+                    processed_data = [processed_data]
+
+                # Use the generic preprocessor
+                processed_array = self.data_preprocessor.preprocess_features(
+                    processed_data
+                )
+                data = processed_array
+
+            except Exception as e:
+                # Fallback to manual processing if generic preprocessor fails
+                print(
+                    f"Warning: Generic preprocessor failed ({e}), falling back to manual processing"
+                )
+                data = self.fallback_data_processing(data)
+        else:
+            # Fallback processing when no preprocessor is available
+            data = self.fallback_data_processing(data)
+
+        # Ensure data is a numpy array with correct dtype
+        if not isinstance(data, np.ndarray):
+            data = np.array(data, dtype=np.float32)
+        elif data.dtype != np.float32:
+            data = data.astype(np.float32)
+
+        # Convert to tensor
         tensor_data = torch.tensor(data, dtype=torch.float32)
 
+        # Handle reshaping if necessary
         if self.input_shape and tensor_data.shape[1:] != self.input_shape:
             tensor_data = tensor_data.reshape(-1, *self.input_shape)
 
+        # Handle labels
         if labels is not None:
+            if hasattr(labels, "dtype") and labels.dtype == np.object_:
+                try:
+                    labels = np.array(labels.tolist())
+                except Exception:
+                    labels = labels.astype(np.int64)
+
             tensor_labels = torch.tensor(labels, dtype=torch.long)
             dataset = TensorDataset(tensor_data, tensor_labels)
         else:
             dataset = TensorDataset(tensor_data)
 
         return DataLoader(dataset, batch_size=batch_size, shuffle=(labels is not None))
+
+    @staticmethod
+    def fallback_data_processing(data: Any) -> np.ndarray:
+        """
+        Fallback data processing when no generic preprocessor is available.
+
+        :param data: Input data in any format
+        :return: Processed numpy array
+        """
+        # Handle object dtype arrays (common with HuggingFace datasets)
+        if hasattr(data, "dtype") and data.dtype == np.object_:
+            try:
+                # Try to convert object array to regular array
+                if hasattr(data[0], "shape"):
+                    # If elements are arrays, stack them
+                    data = np.stack(data.tolist())
+                else:
+                    # Otherwise, convert to regular array
+                    data = np.array(data.tolist())
+            except (ValueError, AttributeError):
+                # If that fails, try element-wise conversion
+                processed_data = []
+                for item in data:
+                    if hasattr(item, "astype"):
+                        processed_data.append(item.astype(np.float32))
+                    else:
+                        processed_data.append(np.array(item, dtype=np.float32))
+                data = np.stack(processed_data)
+
+        # Ensure data is in a supported numeric dtype
+        if hasattr(data, "dtype") and (
+            data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
+        ):
+            try:
+                # FIXED: Use intermediate variable to help type inference
+                data_array: np.ndarray = np.array(data, dtype=np.float32)
+                data = data_array
+            except (ValueError, TypeError):
+                # Last resort: convert via list
+                data = np.array(data.tolist(), dtype=np.float32)
+
+        return data
 
     def detect_and_set_device(self) -> None:
         """
@@ -125,6 +235,9 @@ class TorchModelWrapper(ModelInterface):
         epochs = kwargs.get("epochs", 1)
         verbose = kwargs.get("verbose", False)
         log_interval = kwargs.get("log_interval", 1)
+
+        # Ensure device is properly set
+        self.detect_and_set_device()
 
         dataloader = self._prepare_data(data, labels, batch_size)
 
@@ -186,6 +299,9 @@ class TorchModelWrapper(ModelInterface):
 
         :return: Dictionary containing evaluation metrics (e.g., loss, accuracy).
         """
+        # Ensure model is on the correct device before evaluation
+        self.detect_and_set_device()
+
         batch_size = kwargs.get("batch_size", 32)
         dataloader = self._prepare_data(data, labels, batch_size)
 
@@ -227,6 +343,9 @@ class TorchModelWrapper(ModelInterface):
         """
         batch_size = kwargs.get("batch_size", 32)
         return_probs = kwargs.get("return_probs", False)
+
+        # Ensure device is properly set
+        self.detect_and_set_device()
 
         dataloader = self._prepare_data(data, batch_size=batch_size)
 

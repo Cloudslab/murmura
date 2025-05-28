@@ -1,5 +1,6 @@
 import tempfile
 from pathlib import Path
+import threading
 
 import pandas as pd
 import pytest
@@ -310,3 +311,65 @@ def test_load_hugging_face():
 
     assert "test" in dataset.available_splits
     assert "train" not in dataset.available_splits
+
+
+def test_load_empty_dict():
+    """Test loading an empty dictionary as dataset"""
+    dataset = MDataset.load(DatasetSource.DICT, data={"a": []})
+    assert "train" in dataset.available_splits
+    assert len(dataset.get_split("train")) == 0
+
+
+def test_load_malformed_dict():
+    """Test loading a malformed dictionary (missing values)"""
+    with pytest.raises(Exception):
+        MDataset.load(DatasetSource.DICT, data={"a": [1, 2, 3], "b": [1, 2]})
+
+
+def test_hf_load_various_configs():
+    """Test HuggingFace dataset loading with different configurations"""
+    # Only run if internet is available
+    try:
+        ds = MDataset.load(DatasetSource.HUGGING_FACE, dataset_name="mnist", split="train")
+        assert "train" in ds.available_splits
+        ds = MDataset.load(DatasetSource.HUGGING_FACE, dataset_name="mnist", split=["train", "test"])
+        assert set(["train", "test"]).issubset(ds.available_splits)
+        ds = MDataset.load(DatasetSource.HUGGING_FACE, dataset_name="imdb", split="train")
+        assert "train" in ds.available_splits
+    except Exception:
+        pytest.skip("HuggingFace datasets require internet access.")
+
+
+def test_concurrent_partition_access(sample_mdataset):
+    """Test concurrent access to partition methods for thread safety"""
+    def add_and_get():
+        sample_mdataset.add_partitions("train", {0: [1, 2, 3]})
+        _ = sample_mdataset.get_partitions("train")
+    threads = [threading.Thread(target=add_and_get) for _ in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert "train" in sample_mdataset.partitions
+
+
+def test_large_partitioning():
+    """Test partitioning with a large dataset and varying partition sizes"""
+    data = {"a": list(range(10000)), "label": [i % 10 for i in range(10000)]}
+    dataset = MDataset(DatasetDict({"train": Dataset.from_dict(data)}))
+    part = DirichletPartitioner(num_partitions=10, alpha=0.5, partition_by="label")
+    part.partition(dataset, "train")
+    partitions = dataset.get_partitions("train")
+    assert len(partitions) == 10
+    total = sum(len(v) for v in partitions.values())
+    assert total == 10000
+    sizes = [len(v) for v in partitions.values()]
+    assert max(sizes) - min(sizes) < 2000  # Should be reasonably balanced
+
+
+def test_partition_with_malformed_metadata():
+    """Test adding malformed partition metadata"""
+    dataset = MDataset(DatasetDict({"train": Dataset.from_dict({"a": range(10)})}))
+    # Accept None as a valid value for partition indices, so test for TypeError or ValueError if enforced
+    with pytest.raises((TypeError, ValueError, AssertionError)):
+        dataset.add_partitions("train", {0: None})

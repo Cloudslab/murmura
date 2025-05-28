@@ -1,5 +1,6 @@
 import pytest
 from pydantic import ValidationError
+import json
 
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.aggregation.aggregation_config import (
@@ -137,3 +138,48 @@ def test_compatibility_with_topology():
     # Check the topology configuration is properly nested
     assert config.topology.topology_type == TopologyType.STAR
     assert config.topology.hub_index == 2
+
+
+def test_config_serialization_deserialization():
+    """Test config serialization and deserialization round-trip"""
+    config = OrchestrationConfig(
+        num_actors=4,
+        dataset_name="testset",
+        partition_strategy="iid",
+        topology=TopologyConfig(topology_type=TopologyType.LINE),
+        aggregation=AggregationConfig(strategy_type=AggregationStrategyType.GOSSIP_AVG),
+    )
+    dumped = config.model_dump()
+    loaded = OrchestrationConfig.model_validate(dumped)
+    assert loaded == config
+
+
+def test_config_inheritance_and_override():
+    """Test config inheritance and override behavior"""
+    base = OrchestrationConfig(num_actors=2)
+    override = base.model_copy(update={"num_actors": 5, "partition_strategy": "iid"})
+    assert override.num_actors == 5
+    assert override.partition_strategy == "iid"
+    assert override.topology == base.topology
+
+
+def test_invalid_config_combinations():
+    """Test invalid config combinations (e.g., custom topology with missing adjacency)"""
+    with pytest.raises(Exception):
+        OrchestrationConfig(
+            topology=TopologyConfig(topology_type=TopologyType.CUSTOM, adjacency_list=None)
+        )
+    with pytest.raises(Exception):
+        OrchestrationConfig(
+            topology=TopologyConfig(topology_type=TopologyType.CUSTOM, adjacency_list={})
+        )
+
+
+def test_nested_config_validation():
+    """Test validation of nested configuration parameters"""
+    config = OrchestrationConfig(
+        aggregation=AggregationConfig(strategy_type=AggregationStrategyType.TRIMMED_MEAN, params={"trim_ratio": 0.2}),
+        topology=TopologyConfig(topology_type=TopologyType.STAR, hub_index=1),
+    )
+    assert config.aggregation.params["trim_ratio"] == 0.2
+    assert config.topology.hub_index == 1

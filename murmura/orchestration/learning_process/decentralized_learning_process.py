@@ -16,13 +16,74 @@ from murmura.visualization.training_event import (
 
 class DecentralizedLearningProcess(LearningProcess):
     """
-    Implementation of a decentralized learning process where nodes exchange
-    information directly with their neighbors without a central coordinator.
+    Implementation of a decentralized learning process with generic data handling.
     """
+
+    def _prepare_test_data(self, test_dataset, feature_columns, label_column):
+        """
+        Prepare test data with proper preprocessing - same as FederatedLearningProcess.
+        """
+        # Extract raw data
+        if len(feature_columns) == 1:
+            feature_data = test_dataset[feature_columns[0]]
+        else:
+            feature_data = [test_dataset[col] for col in feature_columns]
+
+        label_data = test_dataset[label_column]
+
+        # Let the model wrapper handle preprocessing
+        if len(feature_columns) == 1:
+            if hasattr(self.model, "data_preprocessor"):
+                if self.model.data_preprocessor is not None:
+                    try:
+                        data_list = (
+                            list(feature_data)
+                            if not isinstance(feature_data, list)
+                            else feature_data
+                        )
+                        features = self.model.data_preprocessor.preprocess_features(
+                            data_list
+                        )
+                    except Exception as e:
+                        self.logger.warning(f"Preprocessor failed, using fallback: {e}")
+                        features = np.array(feature_data, dtype=np.float32)
+                else:
+                    features = np.array(feature_data, dtype=np.float32)
+            else:
+                features = np.array(feature_data, dtype=np.float32)
+        else:
+            processed_columns = []
+            for col_data in feature_data:
+                if hasattr(self.model, "data_preprocessor"):
+                    if self.model.data_preprocessor is not None:
+                        try:
+                            col_features = (
+                                self.model.data_preprocessor.preprocess_features(
+                                    list(col_data)
+                                )
+                            )
+                            processed_columns.append(col_features)
+                        except Exception:
+                            processed_columns.append(
+                                np.array(col_data, dtype=np.float32)
+                            )
+                    else:
+                        processed_columns.append(np.array(col_data, dtype=np.float32))
+                else:
+                    processed_columns.append(np.array(col_data, dtype=np.float32))
+
+            features = np.column_stack(processed_columns)
+
+        labels = np.array(label_data, dtype=np.int64)
+        self.logger.info(
+            f"Prepared test data - Features shape: {features.shape}, Labels shape: {labels.shape}"
+        )
+
+        return features, labels
 
     def execute(self) -> Dict[str, Any]:
         """
-        Execute the decentralized learning process.
+        Execute the decentralized learning process with generic data handling.
 
         :return: Results of the decentralized learning process
         """
@@ -30,21 +91,44 @@ class DecentralizedLearningProcess(LearningProcess):
             raise ValueError("Learning process not initialized. Call initialize first.")
 
         # Get configuration parameters
-        rounds = self.config.get("rounds", 5)
-        epochs = self.config.get("epochs", 1)
-        batch_size = self.config.get("batch_size", 32)
-        test_split = self.config.get("test_split", "test")
+        rounds = self.get_config_value("rounds", 5)
+        epochs = self.get_config_value("epochs", 1)
+        batch_size = self.get_config_value("batch_size", 32)
+        test_split = self.get_config_value("test_split", "test")
+
+        # Enhanced logging with cluster context
+        self.log_training_progress(
+            0, {"status": "starting_decentralized", "rounds": rounds}
+        )
 
         # Prepare test data for global evaluation
         test_dataset = self.dataset.get_split(test_split)
-        test_features = np.array(
-            test_dataset[self.config.get("feature_columns", ["image"])[0]]
+
+        # Get feature and label columns from config - these should be set during initialization
+        feature_columns = self.get_config_value("feature_columns", None)
+        label_column = self.get_config_value("label_column", None)
+
+        # These should never be None if config validation worked properly
+        if feature_columns is None or label_column is None:
+            raise ValueError(
+                f"feature_columns ({feature_columns}) and label_column ({label_column}) "
+                "must be specified in the configuration"
+            )
+
+        self.logger.info(
+            f"Using feature columns: {feature_columns}, label column: {label_column}"
         )
-        test_labels = np.array(test_dataset[self.config.get("label_column", "label")])
+
+        self.logger.info("Preparing test data for evaluation...")
+        test_features, test_labels = self._prepare_test_data(
+            test_dataset, feature_columns, label_column
+        )
 
         # Evaluate initial model
         initial_metrics = self.model.evaluate(test_features, test_labels)
-        print(f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%")
+        self.logger.info(
+            f"Initial Test Accuracy: {initial_metrics['accuracy'] * 100:.2f}%"
+        )
 
         # Emit evaluation event for visualization
         self.training_monitor.emit_event(
@@ -60,12 +144,20 @@ class DecentralizedLearningProcess(LearningProcess):
 
         # Training rounds
         for round_num in range(1, rounds + 1):
-            print(f"\n--- Round {round_num}/{rounds} ---")
+            self.logger.info(f"--- Round {round_num}/{rounds} ---")
+
+            # Monitor resource usage if enabled
+            monitor_resources = self.get_config_value("monitor_resources", False)
+            if monitor_resources:
+                resource_usage = self.monitor_resource_usage()
+                self.logger.debug(
+                    f"Round {round_num} resource usage: {resource_usage.get('resource_utilization', {})}"
+                )
 
             # 1. Local Training
-            print(f"Training on clients for {epochs} epochs...")
+            self.logger.info(f"Training on clients for {epochs} epochs...")
 
-            # Emit local training event with epoch info
+            # Emit local training event
             self.training_monitor.emit_event(
                 LocalTrainingEvent(
                     round_num=round_num,
@@ -75,8 +167,7 @@ class DecentralizedLearningProcess(LearningProcess):
                 )
             )
 
-            # Training with epoch progress logging
-            print(f"Local training progress (each client trains for {epochs} epochs):")
+            # Training
             train_metrics = self.cluster_manager.train_models(
                 epochs=epochs, batch_size=batch_size, verbose=True
             )
@@ -84,11 +175,20 @@ class DecentralizedLearningProcess(LearningProcess):
             # Calculate average training metrics
             avg_train_loss = mean([m["loss"] for m in train_metrics])
             avg_train_acc = mean([m["accuracy"] for m in train_metrics])
-            print(f"Avg Training Loss: {avg_train_loss:.4f}")
-            print(f"Avg Training Accuracy: {avg_train_acc * 100:.2f}%")
+
+            # Enhanced logging
+            self.log_training_progress(
+                round_num,
+                {
+                    "avg_train_loss": avg_train_loss,
+                    "avg_train_accuracy": avg_train_acc,
+                    "active_clients": len(train_metrics),
+                    "topology": topology_type,
+                },
+            )
 
             # 2. Parameter Exchange and Aggregation (Decentralized)
-            print(
+            self.logger.info(
                 f"Performing decentralized aggregation using {topology_type} topology..."
             )
 
@@ -101,10 +201,9 @@ class DecentralizedLearningProcess(LearningProcess):
             # Create parameter summaries for visualization
             param_summaries = self._create_parameter_summaries(node_params)
 
-            # For each node, emit parameter transfer events based on its neighbors
+            # For each node, emit parameter transfer events
             for node, neighbors in adjacency_list.items():
-                if neighbors:  # Only emit if the node has neighbors
-                    # Emit parameter transfer event for this node
+                if neighbors:
                     self.training_monitor.emit_event(
                         ParameterTransferEvent(
                             round_num=round_num,
@@ -116,29 +215,23 @@ class DecentralizedLearningProcess(LearningProcess):
                         )
                     )
 
-            # For decentralized learning, multiple local aggregations happen
+            # Emit aggregation events for each node
             for node in range(len(self.cluster_manager.actors)):
-                # Get neighbors for this node
                 neighbors = adjacency_list.get(node, [])
-                if not neighbors:
-                    continue
-
-                # Emit aggregation event for this node
-                self.training_monitor.emit_event(
-                    AggregationEvent(
-                        round_num=round_num,
-                        participating_nodes=[node] + neighbors,
-                        aggregator_node=node,  # Each node is its own aggregator
-                        strategy_name=self.cluster_manager.aggregation_strategy.__class__.__name__,
+                if neighbors:
+                    self.training_monitor.emit_event(
+                        AggregationEvent(
+                            round_num=round_num,
+                            participating_nodes=[node] + neighbors,
+                            aggregator_node=node,
+                            strategy_name=self.cluster_manager.aggregation_strategy.__class__.__name__,
+                        )
                     )
-                )
 
-            # Get client data sizes for weighted aggregation (if needed)
-            split = self.config.get("split", "train")
+            # Get client data sizes for weighted aggregation
+            split = self.get_config_value("split", "train")
             partitions = list(self.dataset.get_partitions(split).values())
             client_data_sizes = [len(partition) for partition in partitions]
-
-            # Use data size as weights for aggregation
             weights = [float(size) for size in client_data_sizes]
 
             # Perform topology-aware aggregation
@@ -147,7 +240,7 @@ class DecentralizedLearningProcess(LearningProcess):
             )
 
             # 3. Model Update
-            # Update global model (for evaluation purposes)
+            # Update global model
             self.model.set_parameters(aggregated_params)
 
             # Distribute updated model to clients
@@ -168,10 +261,11 @@ class DecentralizedLearningProcess(LearningProcess):
             )
 
             # 4. Evaluation
-            # Evaluate global model on test set
             test_metrics = self.model.evaluate(test_features, test_labels)
-            print(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
-            print(f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%")
+            self.logger.info(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
+            self.logger.info(
+                f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
+            )
 
             # Emit evaluation event
             self.training_monitor.emit_event(
@@ -193,15 +287,25 @@ class DecentralizedLearningProcess(LearningProcess):
         final_metrics = self.model.evaluate(test_features, test_labels)
         improvement = final_metrics["accuracy"] - initial_metrics["accuracy"]
 
-        print("\n=== Final Model Evaluation ===")
-        print(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
-        print(f"Accuracy Improvement: {improvement * 100:.2f}%")
+        # Enhanced final logging
+        cluster_summary = self.get_cluster_summary()
+        self.logger.info("=== Final Model Evaluation ===")
+        self.logger.info(
+            f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+        )
+        self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
+        self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")
 
         # Return results
-        return {
+        results = {
             "initial_metrics": initial_metrics,
             "final_metrics": final_metrics,
             "accuracy_improvement": improvement,
             "round_metrics": round_metrics,
             "topology": topology_info,
         }
+
+        if cluster_summary:
+            results["cluster_info"] = cluster_summary
+
+        return results
