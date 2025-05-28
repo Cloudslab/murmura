@@ -207,7 +207,7 @@ def setup_logging(log_level: str = "INFO") -> None:
 
 
 def add_integer_labels_to_dataset(
-        dataset: MDataset, logger: logging.Logger
+    dataset: MDataset, logger: logging.Logger
 ) -> tuple[list[str], int, dict[str, int]]:
     """
     Add integer label column to dataset by converting string dx categories.
@@ -271,7 +271,10 @@ def add_integer_labels_to_dataset(
         logger.info("Successfully added integer 'label' column to all dataset splits")
 
         # CRITICAL: Store preprocessing information in dataset metadata for multi-node compatibility
-        if not hasattr(dataset, '_dataset_metadata') or dataset._dataset_metadata is None:
+        if (
+            not hasattr(dataset, "_dataset_metadata")
+            or dataset._dataset_metadata is None
+        ):
             dataset._dataset_metadata = {}
 
         # Store the preprocessing information that remote nodes will need
@@ -279,7 +282,7 @@ def add_integer_labels_to_dataset(
             "label_encoding": {
                 "source_column": "dx",
                 "target_column": "label",
-                "mapping": dx_to_label
+                "mapping": dx_to_label,
             }
         }
 

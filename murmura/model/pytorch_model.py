@@ -28,14 +28,14 @@ class TorchModelWrapper(ModelInterface):
     """
 
     def __init__(
-            self,
-            model: PyTorchModel,
-            loss_fn: Optional[nn.Module] = None,
-            optimizer_class: Optional[Callable] = None,
-            optimizer_kwargs: Optional[Dict[str, Any]] = None,
-            device: Optional[str] = None,
-            input_shape: Optional[Tuple[int, ...]] = None,
-            data_preprocessor: Optional[GenericDataPreprocessor] = None,
+        self,
+        model: PyTorchModel,
+        loss_fn: Optional[nn.Module] = None,
+        optimizer_class: Optional[Callable] = None,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        device: Optional[str] = None,
+        input_shape: Optional[Tuple[int, ...]] = None,
+        data_preprocessor: Optional[GenericDataPreprocessor] = None,
     ):
         """
         Initialize the PyTorch model wrapper.
@@ -79,10 +79,10 @@ class TorchModelWrapper(ModelInterface):
         )
 
     def _prepare_data(
-            self,
-            data: np.ndarray,
-            labels: Optional[np.ndarray] = None,
-            batch_size: int = 32,
+        self,
+        data: np.ndarray,
+        labels: Optional[np.ndarray] = None,
+        batch_size: int = 32,
     ) -> DataLoader:
         """
         Enhanced data preparation with pluggable preprocessing.
@@ -110,7 +110,9 @@ class TorchModelWrapper(ModelInterface):
                     processed_data = [processed_data]
 
                 # Use the generic preprocessor
-                processed_array = self.data_preprocessor.preprocess_features(processed_data)
+                processed_array = self.data_preprocessor.preprocess_features(
+                    processed_data
+                )
                 data = processed_array
 
             except Exception as e:
@@ -181,7 +183,7 @@ class TorchModelWrapper(ModelInterface):
 
         # Ensure data is in a supported numeric dtype
         if hasattr(data, "dtype") and (
-                data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
+            data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
         ):
             try:
                 data = data.astype(np.float32)
@@ -278,7 +280,7 @@ class TorchModelWrapper(ModelInterface):
         }
 
     def evaluate(
-            self, data: np.ndarray, labels: np.ndarray, **kwargs
+        self, data: np.ndarray, labels: np.ndarray, **kwargs
     ) -> Dict[str, float]:
         """
         Evaluate the model on the provided data and labels.

@@ -367,14 +367,18 @@ class VirtualClientActor:
 
             # Check if we need to apply preprocessing
             if preprocessing_info:
-                self.logger.info(f"Dataset requires preprocessing: {list(preprocessing_info.keys())}")
+                self.logger.info(
+                    f"Dataset requires preprocessing: {list(preprocessing_info.keys())}"
+                )
 
             # Import here to avoid circular imports
             from murmura.data_processing.dataset import MDataset, DatasetSource
 
             # Validate dataset source
             if dataset_source != DatasetSource.HUGGING_FACE:
-                raise ValueError(f"Lazy loading currently only supports HuggingFace datasets, got: {dataset_source}")
+                raise ValueError(
+                    f"Lazy loading currently only supports HuggingFace datasets, got: {dataset_source}"
+                )
 
             # Enhanced dataset loading with better error handling
             try:
@@ -382,7 +386,9 @@ class VirtualClientActor:
                 self.logger.debug("Attempting to load all splits at once...")
 
                 # Ensure we don't pass duplicate dataset_name in kwargs
-                clean_kwargs = {k: v for k, v in dataset_kwargs.items() if k != 'dataset_name'}
+                clean_kwargs = {
+                    k: v for k, v in dataset_kwargs.items() if k != "dataset_name"
+                }
 
                 full_dataset = MDataset.load(
                     DatasetSource.HUGGING_FACE,
@@ -428,7 +434,9 @@ class VirtualClientActor:
                     except Exception as e3:
                         self.logger.error(f"Failed to merge split {split_name}: {e3}")
 
-                self.logger.info(f"Successfully loaded {len(loaded_datasets)} splits individually")
+                self.logger.info(
+                    f"Successfully loaded {len(loaded_datasets)} splits individually"
+                )
 
             # CRITICAL: Apply preprocessing if needed (this is the key fix!)
             if preprocessing_info:
@@ -442,11 +450,17 @@ class VirtualClientActor:
                     if split_name in self.mdataset.available_splits:
                         try:
                             self.mdataset.add_partitions(split_name, split_partitions)
-                            self.logger.debug(f"Restored partitions for split: {split_name}")
+                            self.logger.debug(
+                                f"Restored partitions for split: {split_name}"
+                            )
                         except Exception as e:
-                            self.logger.error(f"Failed to restore partitions for {split_name}: {e}")
+                            self.logger.error(
+                                f"Failed to restore partitions for {split_name}: {e}"
+                            )
                     else:
-                        self.logger.warning(f"Split {split_name} not found in loaded dataset")
+                        self.logger.warning(
+                            f"Split {split_name} not found in loaded dataset"
+                        )
 
             # Final validation
             if not self.mdataset:
@@ -458,7 +472,7 @@ class VirtualClientActor:
             # Mark as successfully loaded
             self.dataset_loaded = True
 
-            self.logger.info(f"Dataset lazy loaded successfully!")
+            self.logger.info("Dataset lazy loaded successfully!")
             self.logger.info(f"Available splits: {self.mdataset.available_splits}")
             self.logger.info(f"Feature columns: {self.feature_columns}")
             self.logger.info(f"Label column: {self.label_column}")
@@ -472,24 +486,38 @@ class VirtualClientActor:
 
                 # Check if label column exists
                 if self.label_column not in dataset_columns:
-                    self.logger.error(f"Label column '{self.label_column}' not found in dataset columns: {dataset_columns}")
-                    raise ValueError(f"Label column '{self.label_column}' not found after dataset loading. Available columns: {dataset_columns}")
+                    self.logger.error(
+                        f"Label column '{self.label_column}' not found in dataset columns: {dataset_columns}"
+                    )
+                    raise ValueError(
+                        f"Label column '{self.label_column}' not found after dataset loading. Available columns: {dataset_columns}"
+                    )
 
                 # Check if feature columns exist
-                missing_features = [col for col in self.feature_columns if col not in dataset_columns]
+                missing_features = [
+                    col for col in self.feature_columns if col not in dataset_columns
+                ]
                 if missing_features:
-                    self.logger.error(f"Feature columns {missing_features} not found in dataset columns: {dataset_columns}")
-                    raise ValueError(f"Feature columns {missing_features} not found after dataset loading. Available columns: {dataset_columns}")
+                    self.logger.error(
+                        f"Feature columns {missing_features} not found in dataset columns: {dataset_columns}"
+                    )
+                    raise ValueError(
+                        f"Feature columns {missing_features} not found after dataset loading. Available columns: {dataset_columns}"
+                    )
 
                 # Validate partition data
                 actual_size = len(split_dataset)
                 partition_size = len(self.data_partition)
                 max_idx = max(self.data_partition) if self.data_partition else -1
 
-                self.logger.debug(f"Partition validation - Split size: {actual_size}, Partition size: {partition_size}, Max index: {max_idx}")
+                self.logger.debug(
+                    f"Partition validation - Split size: {actual_size}, Partition size: {partition_size}, Max index: {max_idx}"
+                )
 
                 if max_idx >= actual_size:
-                    raise ValueError(f"Partition index {max_idx} exceeds dataset size {actual_size}")
+                    raise ValueError(
+                        f"Partition index {max_idx} exceeds dataset size {actual_size}"
+                    )
 
         except Exception as e:
             self.logger.error(f"Failed to lazy load dataset: {e}")
@@ -500,7 +528,9 @@ class VirtualClientActor:
             self.dataset_loaded = False
             self.mdataset = None
 
-            raise RuntimeError(f"Lazy loading failed on node {self.node_info['node_id']}: {e}")
+            raise RuntimeError(
+                f"Lazy loading failed on node {self.node_info['node_id']}: {e}"
+            )
 
     def _apply_dataset_preprocessing(self, preprocessing_info: Dict[str, Any]) -> None:
         """
@@ -521,7 +551,9 @@ class VirtualClientActor:
                     self.logger.error("Label mapping is empty in preprocessing info")
                     raise ValueError("Label mapping is required for label encoding")
 
-                self.logger.info(f"Applying label encoding: {source_column} -> {target_column}")
+                self.logger.info(
+                    f"Applying label encoding: {source_column} -> {target_column}"
+                )
                 self.logger.info(f"Label mapping: {label_mapping}")
 
                 # Define the mapping function
@@ -532,10 +564,14 @@ class VirtualClientActor:
                             example[target_column] = label_mapping[source_value]
                         else:
                             # Handle unknown labels gracefully
-                            self.logger.warning(f"Unknown label value: {source_value}, using 0")
+                            self.logger.warning(
+                                f"Unknown label value: {source_value}, using 0"
+                            )
                             example[target_column] = 0
                     else:
-                        self.logger.warning(f"Source column {source_column} not found in example")
+                        self.logger.warning(
+                            f"Source column {source_column} not found in example"
+                        )
                         example[target_column] = 0
                     return example
 
@@ -548,9 +584,13 @@ class VirtualClientActor:
                     if target_column not in split_dataset.column_names:
                         processed_split = split_dataset.map(add_label_column)
                         self.mdataset._splits[split_name] = processed_split
-                        self.logger.debug(f"Added {target_column} column to split {split_name}")
+                        self.logger.debug(
+                            f"Added {target_column} column to split {split_name}"
+                        )
                     else:
-                        self.logger.debug(f"Target column {target_column} already exists in split {split_name}")
+                        self.logger.debug(
+                            f"Target column {target_column} already exists in split {split_name}"
+                        )
 
                 self.logger.info("Label encoding applied successfully")
 
@@ -563,7 +603,9 @@ class VirtualClientActor:
 
         except Exception as e:
             self.logger.error(f"Failed to apply dataset preprocessing: {e}")
-            raise RuntimeError(f"Dataset preprocessing failed on node {self.node_info['node_id']}: {e}")
+            raise RuntimeError(
+                f"Dataset preprocessing failed on node {self.node_info['node_id']}: {e}"
+            )
 
     def _get_partition_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """
