@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 DP-Enhanced Skin Lesion Classification - Central Differential Privacy for Medical FL
+FIXED VERSION - Uses identical model architecture and preprocessing as normal skin lesion example
 """
 
 import argparse
@@ -23,7 +24,7 @@ from murmura.privacy.dp_integration import (
 )
 
 
-# WideResNet model components for skin lesion classification
+# IDENTICAL WideResNet model components from normal skin lesion example
 class BasicBlock(PyTorchModel):
     def __init__(self, in_planes, out_planes, stride, drop_rate=0.0):
         super(BasicBlock, self).__init__()
@@ -92,7 +93,8 @@ class NetworkBlock(PyTorchModel):
 
 class WideResNet(PyTorchModel):
     """
-    WideResNet model optimized for skin lesion classification with DP.
+    WideResNet model optimized for skin lesion classification.
+    IDENTICAL to normal skin lesion example - no modifications.
     Default configuration targets HAM10000 dataset (7 classes).
     """
 
@@ -130,6 +132,7 @@ class WideResNet(PyTorchModel):
                 m.bias.data.zero_()
 
     def forward(self, x):
+        # IDENTICAL forward pass from normal skin lesion example
         # Ensure input has correct format for medical images
         if x.dim() == 3:  # If missing batch dimension
             x = x.unsqueeze(0)
@@ -149,8 +152,57 @@ class WideResNet(PyTorchModel):
         return out
 
 
+def create_skin_lesion_preprocessor(image_size: int = 128):
+    """
+    Create skin lesion specific data preprocessor.
+    IDENTICAL function from normal skin lesion example.
+
+    Args:
+        image_size: Target image size for preprocessing
+
+    Returns:
+        Configured preprocessor for skin lesion images
+    """
+    try:
+        from murmura.data_processing.data_preprocessor import create_image_preprocessor
+
+        # Skin lesion specific configuration
+        return create_image_preprocessor(
+            grayscale=False,  # Medical images are typically RGB
+            normalize=True,  # Normalize to [0,1]
+            target_size=(image_size, image_size),  # Resize for consistent input
+        )
+    except ImportError:
+        # Generic preprocessor not available, use automatic detection
+        logging.getLogger("murmura.dp_skin_lesion").info(
+            "Using automatic data type detection"
+        )
+        return None
+
+
+def select_device(device_arg="auto"):
+    """
+    Select the appropriate device based on availability.
+    IDENTICAL function from normal skin lesion example.
+
+    Args:
+        device_arg: Requested device ('auto', 'cuda', 'mps', 'cpu')
+
+    Returns:
+        device: Device to use
+    """
+    if device_arg == "auto":
+        if torch.cuda.is_available():
+            return "cuda"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            return "mps"
+        else:
+            return "cpu"
+    return device_arg
+
+
 def setup_logging(log_level: str = "INFO") -> None:
-    """Set up logging configuration."""
+    """Set up logging configuration"""
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -196,8 +248,21 @@ def create_dp_config(args) -> DifferentialPrivacyConfig:
     )
 
 
-def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger):
-    """Add integer label column to dataset by converting string dx categories."""
+def add_integer_labels_to_dataset(
+        dataset: MDataset, logger: logging.Logger
+) -> tuple[list[str], int, dict[str, int]]:
+    """
+    Add integer label column to dataset by converting string dx categories.
+    IDENTICAL function from normal skin lesion example.
+    Enhanced to store preprocessing metadata for multi-node compatibility.
+
+    Args:
+        dataset: The MDataset object to modify
+        logger: Logger instance for logging
+
+    Returns:
+        tuple: (dx_categories, num_classes, dx_to_label_mapping)
+    """
     # Get a sample from the training split to check label type
     train_split = dataset.get_split("train")
     sample_label = train_split["dx"][0]
@@ -240,12 +305,22 @@ def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger):
             # Update the dataset split
             dataset._splits[split_name] = split_data
 
+            # Verify the mapping worked
+            sample_new = split_data[0]
+            logger.debug(
+                f"Split {split_name}: dx='{sample_new['dx']}' -> label={sample_new['label']}"
+            )
+
         logger.info("Successfully added integer 'label' column to all dataset splits")
 
-        # Store preprocessing information in dataset metadata for multi-node compatibility
-        if not hasattr(dataset, "_dataset_metadata") or dataset._dataset_metadata is None:
+        # CRITICAL: Store preprocessing information in dataset metadata for multi-node compatibility
+        if (
+                not hasattr(dataset, "_dataset_metadata")
+                or dataset._dataset_metadata is None
+        ):
             dataset._dataset_metadata = {}
 
+        # Store the preprocessing information that remote nodes will need
         preprocessing_info = {
             "label_encoding": {
                 "source_column": "dx",
@@ -254,8 +329,11 @@ def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger):
             }
         }
 
+        # Add to dataset metadata
         dataset._dataset_metadata["preprocessing_applied"] = preprocessing_info
+
         logger.info("Stored preprocessing metadata for multi-node compatibility")
+        logger.debug(f"Preprocessing metadata: {preprocessing_info}")
 
         return dx_categories, num_classes, dx_to_label
 
@@ -273,7 +351,9 @@ def add_integer_labels_to_dataset(dataset: MDataset, logger: logging.Logger):
         dx_categories = sorted(list(all_labels))
         num_classes = len(dx_categories)
 
-        logger.info(f"Integer labels detected. Categories ({num_classes}): {dx_categories}")
+        logger.info(
+            f"Integer labels detected. Categories ({num_classes}): {dx_categories}"
+        )
 
         # Add label column that's just a copy of dx
         def copy_dx_to_label(example):
@@ -301,7 +381,7 @@ def main():
     # Core federated learning arguments
     parser.add_argument("--num_actors", type=int, default=5,
                         help="Number of virtual clients (hospitals)")
-    parser.add_argument("--rounds", type=int, default=10,
+    parser.add_argument("--rounds", type=int, default=3,  # Reduced for testing
                         help="Number of federated learning rounds")
     parser.add_argument("--epochs", type=int, default=2,
                         help="Local epochs per round")
@@ -310,7 +390,7 @@ def main():
     parser.add_argument("--lr", type=float, default=0.001,
                         help="Learning rate")
 
-    # Model architecture
+    # Model architecture - IDENTICAL to normal skin lesion example
     parser.add_argument("--depth", type=int, default=16,
                         help="WideResNet depth")
     parser.add_argument("--widen_factor", type=int, default=8,
@@ -330,7 +410,7 @@ def main():
     parser.add_argument("--client_sampling_rate", type=float, default=0.8,
                         help="Client sampling rate for privacy amplification")
 
-    # Data partitioning
+    # Data partitioning - IDENTICAL to normal skin lesion example
     parser.add_argument("--partition_strategy", type=str, default="dirichlet",
                         choices=["dirichlet", "iid"])
     parser.add_argument("--alpha", type=float, default=0.3,
@@ -338,7 +418,7 @@ def main():
     parser.add_argument("--min_partition_size", type=int, default=50,
                         help="Minimum samples per partition")
 
-    # Dataset configuration
+    # Dataset configuration - IDENTICAL to normal skin lesion example
     parser.add_argument("--dataset_name", type=str, default="marmal88/skin_cancer",
                         help="Skin lesion dataset name")
 
@@ -348,6 +428,15 @@ def main():
     parser.add_argument("--save_path", type=str, default="dp_skin_lesion_model.pt",
                         help="Path to save final model")
 
+    # Device selection - IDENTICAL to normal skin lesion example
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cuda", "mps", "cpu"],
+        help="Device to use for training",
+    )
+
     args = parser.parse_args()
 
     # Set up logging
@@ -355,6 +444,10 @@ def main():
     logger = logging.getLogger("murmura.dp_skin_lesion")
 
     try:
+        # Determine the device to use - IDENTICAL to normal skin lesion example
+        device = select_device(args.device)
+        logger.info(f"Using {device.upper()} device for training")
+
         # Create DP configuration for medical federated learning
         dp_config = create_dp_config(args)
         logger.info("Created DP configuration for medical federated learning")
@@ -409,6 +502,7 @@ def main():
         logger.info("Created DP orchestration configuration")
 
         logger.info("=== Loading Skin Lesion Dataset ===")
+        # IDENTICAL dataset loading from normal skin lesion example
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
@@ -433,12 +527,15 @@ def main():
         logger.info("Loaded and merged skin lesion dataset")
 
         # Convert string labels to integers and get diagnostic categories
+        # IDENTICAL to normal skin lesion example
         logger.info("=== Processing Labels ===")
         dx_categories, num_classes, dx_to_label = add_integer_labels_to_dataset(
             train_dataset, logger
         )
 
         logger.info("=== Creating WideResNet Model ===")
+        # Create the WideResNet model for skin lesion classification
+        # IDENTICAL to normal skin lesion example
         model = WideResNet(
             depth=args.depth,
             num_classes=num_classes,
@@ -451,7 +548,12 @@ def main():
             f"num_classes={num_classes}, dropout={args.dropout}"
         )
 
+        # Create skin lesion specific data preprocessor
+        # IDENTICAL to normal skin lesion example
+        skin_lesion_preprocessor = create_skin_lesion_preprocessor(args.image_size)
+
         # Create model wrapper with skin lesion specific configuration
+        # IDENTICAL to normal skin lesion example
         input_shape = (3, args.image_size, args.image_size)  # RGB images
         global_model = TorchModelWrapper(
             model=model,
@@ -459,6 +561,8 @@ def main():
             optimizer_class=torch.optim.Adam,
             optimizer_kwargs={"lr": args.lr, "weight_decay": 1e-4},
             input_shape=input_shape,
+            device=device,
+            data_preprocessor=skin_lesion_preprocessor,
         )
         logger.info("Created model wrapper")
 
@@ -493,7 +597,7 @@ def main():
         logger.info(f"Per-client Privacy: {dp_config.per_client_clipping}")
 
         logger.info("=== Starting DP-Enhanced Medical FL Training ===")
-        logger.info(f"Hospitals/Clients: {args.num_actors}")
+        logger.info(f"Hospitals/Clients: {config.num_actors}")
         logger.info(f"Rounds: {args.rounds}")
         logger.info(f"Topology: star")
         logger.info(f"Aggregation: fedavg")
@@ -503,7 +607,7 @@ def main():
         # Execute training
         results = learning_process.execute()
 
-        # Save model with comprehensive metadata
+        # Save model with comprehensive metadata - IDENTICAL to normal skin lesion example
         logger.info("=== Saving Model ===")
         save_path = args.save_path
 
@@ -519,6 +623,8 @@ def main():
             "dropout": args.dropout,
             "image_size": args.image_size,
             "input_shape": input_shape,
+            "device": device,
+            "learning_type": "centralized_dp",  # Mark as DP-enhanced
             "dp_config": {
                 "epsilon": dp_config.epsilon,
                 "delta": dp_config.delta,
@@ -540,6 +646,7 @@ def main():
         logger.info(f"Initial Accuracy: {results['initial_metrics']['accuracy']:.4f}")
         logger.info(f"Final Accuracy: {results['final_metrics']['accuracy']:.4f}")
         logger.info(f"Accuracy Improvement: {results['accuracy_improvement']:.4f}")
+        logger.info(f"Training device: {device}")
         logger.info(f"Diagnostic Categories: {dx_categories}")
 
         if 'privacy_summary' in results:
