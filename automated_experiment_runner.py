@@ -34,9 +34,9 @@ class ExperimentConfig:
     epsilon: float = 1.0
     delta: float = 1e-5
 
-    # Execution parameters
-    rounds: int = 10
-    local_epochs: int = 2
+    # Execution parameters - Updated for high-quality results
+    rounds: int = 50  # Increased significantly for convergence
+    local_epochs: int = 3  # Balanced for communication efficiency
     batch_size: int = 32
     learning_rate: float = 0.001
 
@@ -78,6 +78,29 @@ class ExperimentConfig:
                 self.epsilon = 2.0
             elif self.privacy == "strong_dp":
                 self.epsilon = 0.5
+
+        # Dataset-specific training adjustments
+        if self.dataset == "ham10000":
+            # Medical images need more training
+            self.rounds = 75  # More rounds for complex medical data
+            self.local_epochs = 4  # More local training
+            self.learning_rate = 0.0005  # Lower LR for stability
+        elif self.dataset == "mnist":
+            # MNIST converges faster
+            self.rounds = 40  # Sufficient for MNIST
+            self.local_epochs = 3
+            self.learning_rate = 0.001
+
+        # Privacy-specific adjustments
+        if self.privacy != "none":
+            # DP requires more rounds due to noise
+            self.rounds = int(self.rounds * 1.5)  # 50% more rounds for DP
+            self.learning_rate *= 0.8  # Slightly lower LR for stability with noise
+
+        # Scale-specific adjustments
+        if self.scale >= 20:
+            # More actors can handle more local work
+            self.local_epochs += 1
 
         # Set resource allocation based on scale
         if self.scale <= 10:
