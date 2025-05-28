@@ -182,18 +182,60 @@ class ClusterManager:
                 cpus_per_actor, 2.0
             )  # Cap at 2 CPUs per actor
 
-        # GPU allocation
+        # GPU allocation - FIXED LOGIC
         if self.config.resources.gpus_per_actor is not None:
             resource_requirements["num_gpus"] = self.config.resources.gpus_per_actor
         elif total_gpus > 0:
-            # Auto-calculate GPU allocation
-            gpus_per_actor = total_gpus / self.config.num_actors
-            resource_requirements["num_gpus"] = gpus_per_actor
+            # FIXED: Calculate based on GPUs available per node, not total cluster GPUs
+
+            # Get GPU information per node to make informed decisions
+            nodes = self.cluster_info.get("nodes", [])
+            gpus_per_node = []
+
+            for node in nodes:
+                if node.get("Alive", False):
+                    node_resources = node.get("Resources", {})
+                    node_gpus = node_resources.get("GPU", 0)
+                    gpus_per_node.append(node_gpus)
+
+            if gpus_per_node:
+                # Use the typical (median) GPU count per node as the basis
+                median_gpus_per_node = sorted(gpus_per_node)[len(gpus_per_node) // 2]
+                max_gpus_per_node = max(gpus_per_node)
+
+                # Calculate how many actors we expect per node
+                expected_actors_per_node = max(1, self.config.num_actors // total_nodes)
+
+                # Allocate GPUs conservatively
+                if expected_actors_per_node <= median_gpus_per_node:
+                    # We can give each actor 1 GPU if we have enough
+                    gpus_per_actor = min(1.0, median_gpus_per_node / expected_actors_per_node)
+                else:
+                    # More actors than GPUs per node - share GPUs
+                    gpus_per_actor = median_gpus_per_node / expected_actors_per_node
+
+                # Ensure we don't exceed what any single node can provide
+                gpus_per_actor = min(gpus_per_actor, max_gpus_per_node)
+
+                # Only allocate if meaningful amount (at least 0.1 GPU)
+                if gpus_per_actor >= 0.1:
+                    resource_requirements["num_gpus"] = gpus_per_actor
+
+                logging.getLogger("murmura").info(
+                    f"GPU allocation: {gpus_per_actor:.2f} GPUs per actor "
+                    f"(median {median_gpus_per_node} GPUs/node, "
+                    f"{expected_actors_per_node} actors/node expected)"
+                )
+            else:
+                # Fallback: simple division but cap at 1.0 GPU per actor
+                gpus_per_actor = min(1.0, total_gpus / self.config.num_actors)
+                if gpus_per_actor >= 0.1:
+                    resource_requirements["num_gpus"] = gpus_per_actor
 
         # Memory allocation
         if self.config.resources.memory_per_actor is not None:
             resource_requirements["memory"] = (
-                self.config.resources.memory_per_actor * 1024 * 1024
+                    self.config.resources.memory_per_actor * 1024 * 1024
             )
 
         logging.getLogger("murmura").info(
