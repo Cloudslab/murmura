@@ -262,22 +262,30 @@ class ExperimentRunner:
         """Get the appropriate example script path"""
         base_path = "murmura/examples"
 
+        # Map dataset names to script names
+        dataset_script_map = {
+            "mnist": "mnist",
+            "ham10000": "skin_lesion"  # HAM10000 uses skin_lesion scripts
+        }
+
+        script_dataset = dataset_script_map.get(config.dataset, config.dataset)
+
         if config.paradigm == "centralized":
             # Use regular federated examples for centralized (they support star topology)
             if config.privacy != "none":
-                script = f"dp_{config.dataset}_example.py"
+                script = f"dp_{script_dataset}_example.py"
             else:
-                script = f"{config.dataset}_example.py"
+                script = f"{script_dataset}_example.py"
         elif config.paradigm == "federated":
             if config.privacy != "none":
-                script = f"dp_{config.dataset}_example.py"
+                script = f"dp_{script_dataset}_example.py"
             else:
-                script = f"{config.dataset}_example.py"
+                script = f"{script_dataset}_example.py"
         elif config.paradigm == "decentralized":
             if config.privacy != "none":
-                script = f"dp_decentralized_{config.dataset}_example.py"
+                script = f"dp_decentralized_{script_dataset}_example.py"
             else:
-                script = f"decentralized_{config.dataset}_example.py"
+                script = f"decentralized_{script_dataset}_example.py"
 
         return os.path.join(base_path, script)
 
