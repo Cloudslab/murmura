@@ -220,14 +220,16 @@ class ClusterManager:
         for i in range(num_actors):
             try:
                 if resource_requirements:
-                    actor_ref = VirtualClientActor.options(**resource_requirements).remote(f"client_{i}")
+                    actor_ref = VirtualClientActor.options(  # type: ignore[attr-defined]
+                        **resource_requirements
+                    ).remote(f"client_{i}")
                 else:
-                    actor_ref = VirtualClientActor.remote(f"client_{i}")
+                    actor_ref = VirtualClientActor.remote(f"client_{i}")  # type: ignore[attr-defined]
                 self.actors.append(actor_ref)
 
                 # Log actor creation with node information
                 if (
-                        i % 10 == 0 or i == num_actors - 1
+                    i % 10 == 0 or i == num_actors - 1
                 ):  # Log every 10th actor and the last one
                     logging.getLogger("murmura").info(
                         f"Created actors {i + 1}/{num_actors}"
