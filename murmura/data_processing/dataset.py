@@ -363,83 +363,113 @@ class MDataset:
                 print(f"Warning: {e}")
 
     def __reduce__(self):
-        """Custom serialization for Ray/pickle compatibility"""
-        # If we have metadata to reconstruct from HuggingFace, use that
-        if self._dataset_metadata.get(
-            "source"
-        ) == DatasetSource.HUGGING_FACE and not self._dataset_metadata.get(
-            "converted_to_serializable", False
-        ):
-            return (
-                self.reconstruct_from_metadata,
-                (self._dataset_metadata, self._partitions),
-            )
-        else:
-            # Normal serialization for already-safe datasets
-            return (
-                self.__class__,
-                (self._splits, self._dataset_metadata),
-                {"_partitions": self._partitions},
-            )
+        """
+        Enhanced custom serialization for Ray/pickle compatibility with better error handling.
+        """
+        # For HuggingFace datasets, prefer metadata reconstruction to avoid serializing large files
+        if (self._dataset_metadata.get("source") == DatasetSource.HUGGING_FACE and
+                not self._dataset_metadata.get("converted_to_serializable", False)):
+
+            # Ensure metadata is complete before attempting reconstruction
+            required_metadata = ["source", "dataset_name"]
+            if all(key in self._dataset_metadata for key in required_metadata):
+                return (
+                    self.reconstruct_from_metadata,
+                    (self._dataset_metadata, self._partitions),
+                )
+
+        # Fallback to normal serialization for other cases
+        return (
+            self.__class__,
+            (self._splits, self._dataset_metadata),
+            {"_partitions": self._partitions},
+        )
 
     @classmethod
     def reconstruct_from_metadata(
-        cls, metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]
+            cls, metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]
     ):
-        """Reconstruct dataset from metadata on remote nodes"""
+        """
+        Reconstruct dataset from metadata on remote nodes with enhanced error handling.
+        """
         logger = logging.getLogger("murmura.dataset")
 
         try:
-            if metadata["source"] == DatasetSource.HUGGING_FACE:
-                logger.info(
-                    f"Reconstructing HuggingFace dataset '{metadata['dataset_name']}' on remote node"
-                )
+            # Validate metadata structure first
+            required_keys = ["source", "dataset_name"]
+            missing_keys = [key for key in required_keys if key not in metadata]
+            if missing_keys:
+                raise ValueError(f"Metadata missing required keys: {missing_keys}")
 
-                # Load dataset on the remote node
+            dataset_source = metadata["source"]
+
+            if dataset_source == DatasetSource.HUGGING_FACE:
+                logger.info(f"Reconstructing HuggingFace dataset '{metadata['dataset_name']}' on remote node")
+
+                # Extract parameters with defaults
                 dataset_name = metadata["dataset_name"]
-                split = metadata["split"]
+                split = metadata.get("split")
                 kwargs = metadata.get("kwargs", {})
 
-                # Ensure no duplicate dataset_name parameter
-                load_kwargs = {k: v for k, v in kwargs.items() if k != "dataset_name"}
+                # Clean kwargs to avoid duplicate parameters
+                clean_kwargs = {k: v for k, v in kwargs.items() if k != "dataset_name"}
 
-                if split is None:
-                    full_dataset = load_dataset(dataset_name, **load_kwargs)
-                    # Create instance with proper arguments
-                    dataset = cls(full_dataset, metadata)
-                else:
-                    hf_dataset = load_dataset(dataset_name, split=split, **load_kwargs)
-                    if isinstance(hf_dataset, list) and isinstance(split, list):
-                        dataset_dict = DatasetDict()
-                        for i, s in enumerate(split):
-                            dataset_dict[s] = hf_dataset[i]
-                        # Create instance with proper arguments
-                        dataset = cls(dataset_dict, metadata)
+                logger.debug(f"Dataset parameters: name={dataset_name}, split={split}, kwargs={clean_kwargs}")
+
+                try:
+                    if split is None:
+                        # Load all available splits
+                        logger.debug("Loading all available splits")
+                        full_dataset = load_dataset(dataset_name, **clean_kwargs)
+                        dataset = cls(full_dataset, metadata)
                     else:
-                        # Create instance with proper arguments
-                        dataset = cls(
-                            DatasetDict({split or "train": hf_dataset}), metadata
-                        )
+                        # Load specific split(s)
+                        logger.debug(f"Loading specific split(s): {split}")
+                        hf_dataset = load_dataset(dataset_name, split=split, **clean_kwargs)
 
-                # Restore partitions
-                dataset._partitions = partitions
+                        if isinstance(hf_dataset, list) and isinstance(split, list):
+                            # Multiple splits loaded as list
+                            dataset_dict = DatasetDict()
+                            for i, s in enumerate(split):
+                                dataset_dict[s] = hf_dataset[i]
+                            dataset = cls(dataset_dict, metadata)
+                        else:
+                            # Single split or single dataset
+                            split_name = split if isinstance(split, str) else "train"
+                            dataset = cls(DatasetDict({split_name: hf_dataset}), metadata)
 
-                # Convert to serializable format to avoid future issues
-                dataset = dataset.prepare_for_multinode_distribution()
-                dataset._dataset_metadata["converted_to_serializable"] = True
+                    # Restore partitions if provided
+                    if partitions:
+                        dataset._partitions = partitions.copy()
+                        logger.debug(f"Restored partitions for {len(partitions)} splits")
 
-                logger.info("Dataset reconstruction completed on remote node")
-                return dataset
+                    logger.info("Dataset reconstruction completed successfully on remote node")
+                    return dataset
+
+                except Exception as e:
+                    logger.error(f"HuggingFace dataset loading failed: {e}")
+                    raise RuntimeError(f"Failed to load HuggingFace dataset '{dataset_name}': {e}")
+
             else:
-                raise ValueError(
-                    f"Cannot reconstruct dataset with source: {metadata['source']}"
-                )
+                raise ValueError(f"Unsupported dataset source for reconstruction: {dataset_source}")
 
         except Exception as e:
-            logger.error(f"Failed to reconstruct dataset on remote node: {e}")
-            # Fallback: create empty dataset
-            empty_splits = DatasetDict()
-            return cls(empty_splits, metadata)
+            logger.error(f"Dataset reconstruction failed on remote node: {e}")
+            logger.error(f"Metadata: {metadata}")
+
+            # Create a minimal fallback dataset to prevent complete failure
+            try:
+                logger.warning("Creating fallback empty dataset")
+                empty_data = {"dummy_feature": [0], "dummy_label": [0]}
+                empty_dataset = Dataset.from_dict(empty_data)
+                empty_splits = DatasetDict({"train": empty_dataset})
+                fallback_dataset = cls(empty_splits, metadata)
+                fallback_dataset._partitions = partitions.copy() if partitions else {}
+                return fallback_dataset
+
+            except Exception as fallback_error:
+                logger.error(f"Even fallback dataset creation failed: {fallback_error}")
+                raise RuntimeError(f"Complete dataset reconstruction failure: {e}")
 
     def __setstate__(self, state):
         """Custom deserialization state restoration"""

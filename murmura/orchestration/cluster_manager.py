@@ -379,31 +379,58 @@ class ClusterManager:
             label_column: Optional[str] = None,
     ) -> None:
         """
-        Distribute only dataset metadata for lazy loading.
-        Fixed to properly pass column information to actors.
+        Distribute only dataset metadata for lazy loading with enhanced validation and error handling.
         """
         logger = logging.getLogger("murmura")
         logger.info("Using lazy dataset distribution (metadata only)")
 
-        # Validate that columns are provided
+        # Validate inputs
         if feature_columns is None or label_column is None:
-            raise ValueError(
-                "feature_columns and label_column must be provided for lazy dataset distribution"
-            )
+            raise ValueError("feature_columns and label_column must be provided for lazy dataset distribution")
 
-        # Create comprehensive metadata package for reconstruction
+        if not isinstance(feature_columns, list) or not feature_columns:
+            raise ValueError("feature_columns must be a non-empty list")
+
+        if not isinstance(label_column, str) or not label_column:
+            raise ValueError("label_column must be a non-empty string")
+
+        # Validate dataset has required metadata
+        if not dataset.dataset_metadata:
+            raise ValueError("Dataset must have metadata for lazy loading")
+
+        # Create comprehensive metadata package with proper validation
         dataset_metadata = {
-            # Core dataset info
+            # Core dataset info - with validation
             "dataset_source": dataset.dataset_metadata.get("source"),
             "dataset_name": dataset.dataset_metadata.get("dataset_name"),
             "dataset_kwargs": dataset.dataset_metadata.get("kwargs", {}),
-            # Structure info
+
+            # Structure info - with validation
             "available_splits": dataset.available_splits,
             "partitions": dataset.partitions,
+
+            # Column information - explicitly included
+            "feature_columns": feature_columns.copy(),
+            "label_column": label_column,
+
             # Reconstruction strategy
             "lazy_loading": True,
             "reconstruction_strategy": "on_demand",
         }
+
+        # Validate the metadata we're about to send
+        required_fields = ["dataset_source", "dataset_name", "available_splits"]
+        missing_fields = [field for field in required_fields if not dataset_metadata.get(field)]
+        if missing_fields:
+            raise ValueError(f"Dataset metadata missing required fields: {missing_fields}")
+
+        # Ensure we have partitions
+        if not dataset_metadata["partitions"]:
+            raise ValueError("Dataset must have partitions for lazy loading")
+
+        # Ensure we have valid splits
+        if not dataset_metadata["available_splits"]:
+            raise ValueError("Dataset must have available_splits for lazy loading")
 
         logger.info(f"Distributing lazy metadata to {len(self.actors)} actors")
         logger.info(f"Dataset: {dataset_metadata['dataset_name']}")
@@ -412,45 +439,58 @@ class ClusterManager:
         logger.info(f"Feature columns: {feature_columns}")
         logger.info(f"Label column: {label_column}")
 
-        # Distribute metadata one actor at a time to avoid memory spikes
+        # Distribute metadata with enhanced error handling
         failed_actors = []
+        successful_actors = 0
+
         for i, actor in enumerate(self.actors):
             try:
-                # CRITICAL FIX: Pass feature_columns and label_column as separate parameters
-                # This ensures they are properly set on each actor
+                # Create a deep copy of metadata for each actor to avoid reference issues
+                actor_metadata = {
+                    k: (v.copy() if isinstance(v, (dict, list)) else v)
+                    for k, v in dataset_metadata.items()
+                }
+
+                # Send metadata with explicit column information
                 task = actor.set_dataset_metadata.remote(
-                    dataset_metadata,
-                    feature_columns=feature_columns,
+                    actor_metadata,
+                    feature_columns=feature_columns.copy(),  # Ensure we pass a copy
                     label_column=label_column,
                 )
 
-                # Wait for each actor individually with timeout
-                ray.get(task, timeout=30)
+                # Wait for each actor individually with reasonable timeout
+                ray.get(task, timeout=45)  # Increased timeout for network overhead
 
-                logger.debug(
-                    f"Successfully distributed lazy metadata to actor {i + 1}/{len(self.actors)} "
-                    f"with features={feature_columns}, label={label_column}"
-                )
+                successful_actors += 1
+
+                if (i + 1) % 5 == 0 or i == len(self.actors) - 1:  # Log progress every 5 actors
+                    logger.info(f"Successfully distributed metadata to {successful_actors}/{i + 1} actors")
 
             except Exception as e:
-                logger.error(f"Failed to distribute metadata to actor {i}: {e}")
-                logger.error(f"  - feature_columns: {feature_columns}")
-                logger.error(f"  - label_column: {label_column}")
-                logger.error(f"  - dataset_metadata keys: {list(dataset_metadata.keys())}")
-                failed_actors.append(i)
-                # Don't raise immediately, try to distribute to other actors first
+                error_msg = f"Failed to distribute metadata to actor {i}: {e}"
+                logger.error(error_msg)
+                logger.error(f"  - Actor index: {i}")
+                logger.error(f"  - Feature columns: {feature_columns}")
+                logger.error(f"  - Label column: {label_column}")
+                logger.error(f"  - Dataset name: {dataset_metadata.get('dataset_name')}")
+                failed_actors.append((i, str(e)))
 
-        # If any actors failed, raise an error with details
+        # Report results
         if failed_actors:
-            raise RuntimeError(
-                f"Dataset metadata distribution failed for {len(failed_actors)} actors: {failed_actors}. "
-                f"Check actor logs for detailed error information."
+            failure_details = [f"Actor {idx}: {error}" for idx, error in failed_actors]
+            error_msg = (
+                f"Dataset metadata distribution failed for {len(failed_actors)}/{len(self.actors)} actors.\n"
+                f"Successful: {successful_actors}, Failed: {len(failed_actors)}\n"
+                f"Failures: {failure_details[:3]}..."  # Show first 3 failures
             )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        logger.info(f"Successfully distributed metadata to all {successful_actors} actors")
 
     def validate_actor_dataset_state(self) -> Dict[str, Any]:
         """
-        Validate that all actors have properly received dataset configuration.
-        This helps debug multi-node distribution issues.
+        Enhanced validation of actor dataset state with better error reporting.
         """
         logger = logging.getLogger("murmura")
         logger.info("Validating actor dataset state across cluster...")
@@ -459,81 +499,123 @@ class ClusterManager:
             "total_actors": len(self.actors),
             "valid_actors": 0,
             "invalid_actors": 0,
+            "unreachable_actors": 0,
             "errors": [],
             "actor_details": []
         }
 
-        for i, actor in enumerate(self.actors):
+        # Use smaller batches for validation to avoid overwhelming the cluster
+        batch_size = 10
+
+        for batch_start in range(0, len(self.actors), batch_size):
+            batch_end = min(batch_start + batch_size, len(self.actors))
+            batch_actors = self.actors[batch_start:batch_end]
+
+            # Create batch tasks
+            batch_tasks = []
+            for i, actor in enumerate(batch_actors):
+                actual_idx = batch_start + i
+                batch_tasks.append((actual_idx, actor.get_data_info.remote()))
+
+            # Wait for batch results
             try:
-                # Get detailed actor state
-                actor_info = ray.get(actor.get_data_info.remote(), timeout=10)
+                # Get all results for this batch
+                batch_results = ray.get([task for _, task in batch_tasks], timeout=30)
 
-                # Validate required fields
-                has_data_partition = actor_info.get("data_size", 0) > 0
-                has_feature_columns = actor_info.get("feature_columns") is not None
-                has_label_column = actor_info.get("label_column") is not None
-                has_dataset_ready = (
-                        actor_info.get("has_dataset", False) or
-                        actor_info.get("lazy_loading", False)
-                )
+                # Process results
+                for (actual_idx, _), actor_info in zip(batch_tasks, batch_results):
+                    try:
+                        # Validate required fields with more specific checks
+                        has_data_partition = actor_info.get("data_size", 0) > 0
+                        has_feature_columns = (
+                                actor_info.get("feature_columns") is not None and
+                                len(actor_info.get("feature_columns", [])) > 0
+                        )
+                        has_label_column = (
+                                actor_info.get("label_column") is not None and
+                                actor_info.get("label_column") != ""
+                        )
+                        has_dataset_ready = (
+                                actor_info.get("has_dataset", False) or
+                                actor_info.get("lazy_loading", False)
+                        )
 
-                is_valid = all([
-                    has_data_partition,
-                    has_feature_columns,
-                    has_label_column,
-                    has_dataset_ready
-                ])
+                        is_valid = all([
+                            has_data_partition,
+                            has_feature_columns,
+                            has_label_column,
+                            has_dataset_ready
+                        ])
 
-                actor_detail = {
-                    "actor_id": i,
-                    "client_id": actor_info.get("client_id"),
-                    "node_id": actor_info.get("node_info", {}).get("node_id", "unknown"),
-                    "is_valid": is_valid,
-                    "data_partition_size": actor_info.get("data_size", 0),
-                    "has_feature_columns": has_feature_columns,
-                    "has_label_column": has_label_column,
-                    "feature_columns": actor_info.get("feature_columns"),
-                    "label_column": actor_info.get("label_column"),
-                    "lazy_loading": actor_info.get("lazy_loading", False),
-                    "dataset_loaded": actor_info.get("has_dataset", False),
-                }
+                        actor_detail = {
+                            "actor_id": actual_idx,
+                            "client_id": actor_info.get("client_id"),
+                            "node_id": actor_info.get("node_info", {}).get("node_id", "unknown"),
+                            "is_valid": is_valid,
+                            "data_partition_size": actor_info.get("data_size", 0),
+                            "has_feature_columns": has_feature_columns,
+                            "has_label_column": has_label_column,
+                            "feature_columns": actor_info.get("feature_columns"),
+                            "label_column": actor_info.get("label_column"),
+                            "lazy_loading": actor_info.get("lazy_loading", False),
+                            "dataset_loaded": actor_info.get("has_dataset", False),
+                            "dataset_name": actor_info.get("dataset_name", "unknown"),
+                        }
 
-                validation_results["actor_details"].append(actor_detail)
+                        validation_results["actor_details"].append(actor_detail)
 
-                if is_valid:
-                    validation_results["valid_actors"] += 1
-                    logger.debug(f"Actor {i} validation passed")
-                else:
-                    validation_results["invalid_actors"] += 1
-                    error_msg = f"Actor {i} validation failed: missing "
-                    missing_items = []
-                    if not has_data_partition:
-                        missing_items.append("data_partition")
-                    if not has_feature_columns:
-                        missing_items.append("feature_columns")
-                    if not has_label_column:
-                        missing_items.append("label_column")
-                    if not has_dataset_ready:
-                        missing_items.append("dataset")
-                    error_msg += ", ".join(missing_items)
+                        if is_valid:
+                            validation_results["valid_actors"] += 1
+                        else:
+                            validation_results["invalid_actors"] += 1
+
+                            # Create detailed error message
+                            missing_items = []
+                            if not has_data_partition:
+                                missing_items.append("data_partition")
+                            if not has_feature_columns:
+                                missing_items.append("feature_columns")
+                            if not has_label_column:
+                                missing_items.append("label_column")
+                            if not has_dataset_ready:
+                                missing_items.append("dataset")
+
+                            error_msg = (
+                                f"Actor {actual_idx} validation failed: missing {', '.join(missing_items)}. "
+                                f"Feature columns: {actor_info.get('feature_columns')}, "
+                                f"Label column: {actor_info.get('label_column')}"
+                            )
+                            validation_results["errors"].append(error_msg)
+
+                    except Exception as detail_error:
+                        validation_results["invalid_actors"] += 1
+                        error_msg = f"Actor {actual_idx} detail processing error: {detail_error}"
+                        validation_results["errors"].append(error_msg)
+                        logger.error(error_msg)
+
+            except Exception as batch_error:
+                # Handle batch timeout or other errors
+                logger.error(f"Batch validation failed for actors {batch_start}-{batch_end-1}: {batch_error}")
+
+                # Mark all actors in this batch as unreachable
+                for i in range(batch_start, batch_end):
+                    validation_results["unreachable_actors"] += 1
+                    error_msg = f"Actor {i} unreachable: {batch_error}"
                     validation_results["errors"].append(error_msg)
-                    logger.error(error_msg)
 
-            except Exception as e:
-                validation_results["invalid_actors"] += 1
-                error_msg = f"Actor {i} unreachable or error: {e}"
-                validation_results["errors"].append(error_msg)
-                logger.error(error_msg)
-
-        # Log validation summary
-        logger.info(f"Actor validation complete:")
+        # Log comprehensive validation summary
+        logger.info("Actor validation complete:")
         logger.info(f"  Valid actors: {validation_results['valid_actors']}/{validation_results['total_actors']}")
         logger.info(f"  Invalid actors: {validation_results['invalid_actors']}")
+        logger.info(f"  Unreachable actors: {validation_results['unreachable_actors']}")
 
+        # Log first few errors for debugging
         if validation_results["errors"]:
             logger.error("Actor validation errors found:")
-            for error in validation_results["errors"]:
+            for error in validation_results["errors"][:5]:  # Show first 5 errors
                 logger.error(f"  {error}")
+            if len(validation_results["errors"]) > 5:
+                logger.error(f"  ... and {len(validation_results['errors']) - 5} more errors")
 
         return validation_results
 

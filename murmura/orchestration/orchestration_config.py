@@ -55,9 +55,9 @@ class OrchestrationConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_multinode_config(self) -> "OrchestrationConfig":
-        """Validate multi-node configuration consistency"""
+        """Enhanced validation for multi-node configuration and dataset columns"""
 
-        # If actors_per_node is specified, ensure it's compatible with total num_actors
+        # Validate actors and nodes
         if self.resources.actors_per_node is not None:
             if self.num_actors < self.resources.actors_per_node:
                 raise ValueError(
@@ -70,19 +70,47 @@ class OrchestrationConfig(BaseModel):
         if self.resources.placement_strategy not in valid_strategies:
             raise ValueError(f"placement_strategy must be one of {valid_strategies}")
 
-        # Validate that feature_columns and label_column are specified
+        # CRITICAL: Validate dataset column configuration
         if self.feature_columns is None:
             raise ValueError(
                 "feature_columns must be specified for the dataset. "
-                "Example: feature_columns=['image'] for image datasets, "
-                "feature_columns=['text'] for text datasets, etc."
+                "This is required for generic data handling across different datasets. "
+                "Examples:\n"
+                "  - For image datasets: feature_columns=['image']\n"
+                "  - For text datasets: feature_columns=['text'] or ['input_ids']\n"
+                "  - For tabular datasets: feature_columns=['feature1', 'feature2', ...]\n"
+                "  - For multi-modal: feature_columns=['image', 'text']"
             )
 
         if self.label_column is None:
             raise ValueError(
                 "label_column must be specified for the dataset. "
-                "Example: label_column='label' for most datasets, "
-                "label_column='dx' for medical diagnosis datasets, etc."
+                "This is required for supervised learning tasks. "
+                "Examples:\n"
+                "  - Most datasets: label_column='label'\n"
+                "  - Medical datasets: label_column='dx' or label_column='diagnosis'\n"
+                "  - Text classification: label_column='sentiment' or label_column='category'"
+            )
+
+        # Validate that feature_columns is a non-empty list
+        if not isinstance(self.feature_columns, list) or len(self.feature_columns) == 0:
+            raise ValueError(
+                "feature_columns must be a non-empty list of column names. "
+                f"Got: {self.feature_columns} (type: {type(self.feature_columns)})"
+            )
+
+        # Validate that label_column is a non-empty string
+        if not isinstance(self.label_column, str) or len(self.label_column.strip()) == 0:
+            raise ValueError(
+                "label_column must be a non-empty string. "
+                f"Got: {self.label_column} (type: {type(self.label_column)})"
+            )
+
+        # Validate that feature columns don't contain the label column
+        if self.label_column in self.feature_columns:
+            raise ValueError(
+                f"label_column '{self.label_column}' cannot be included in feature_columns {self.feature_columns}. "
+                "Features and labels must be separate columns."
             )
 
         return self

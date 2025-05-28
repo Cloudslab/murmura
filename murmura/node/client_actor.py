@@ -13,8 +13,7 @@ from murmura.model.model_interface import ModelInterface
 def get_node_id() -> str:
     """Get the node ID this actor is running on - standalone function for serialization"""
     try:
-        # Use the new Ray API
-        return ray.get_runtime_context().get_node_id()[:8]  # Shortened for readability
+        return ray.get_runtime_context().get_node_id()[:8]
     except Exception:
         return "unknown"
 
@@ -22,14 +21,11 @@ def get_node_id() -> str:
 def get_node_info() -> Dict[str, Any]:
     """Get detailed node information - standalone function for serialization"""
     try:
-        # Use new Ray API methods
         runtime_context = ray.get_runtime_context()
         node_id = runtime_context.get_node_id()[:8]
 
-        # Get worker info safely
         worker_id = "unknown"
         try:
-            # Try to get worker ID if available
             worker_info = ray.runtime_context.get_runtime_context().get_worker_id()
             if worker_info:
                 worker_id = str(worker_info)[:8]
@@ -64,8 +60,15 @@ class VirtualClientActor:
         self.model: Optional[ModelInterface] = None
         self.mdataset: Optional[MDataset] = None
         self.split: str = "train"
+
+        # CRITICAL: Initialize these properly
         self.feature_columns: Optional[List[str]] = None
         self.label_column: Optional[str] = None
+
+        # Lazy loading state
+        self.lazy_loading: bool = False
+        self.dataset_metadata: Optional[Dict[str, Any]] = None
+        self.dataset_loaded: bool = False
 
         # Set up logging for multi-node environment
         self._setup_logging()
@@ -89,25 +92,18 @@ class VirtualClientActor:
 
     def _setup_logging(self) -> None:
         """Set up logging for the actor with node information"""
-        # Create logger for this actor
         self.logger = logging.getLogger(f"murmura.actor.{self.client_id}")
 
-        # Don't add handlers if they already exist (avoid duplication)
         if not self.logger.handlers:
-            # Get current node ID for logging
             current_node_id = get_node_id()
-
-            # Create formatter that includes node and actor information
             formatter = logging.Formatter(
                 f"%(asctime)s - %(name)s - [Node:{current_node_id}] - [Actor:{self.client_id}] - %(levelname)s - %(message)s"
             )
 
-            # Add console handler
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(formatter)
             self.logger.addHandler(console_handler)
 
-            # Set log level based on environment variable or default to INFO
             log_level = os.environ.get("MURMURA_LOG_LEVEL", "INFO")
             self.logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
 
@@ -116,44 +112,87 @@ class VirtualClientActor:
         return self.node_info
 
     def receive_data(
-        self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
+            self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
     ) -> str:
-        """
-        Receive a data partition and metadata dictionary.
-
-        :param data_partition: DataPartition instance
-        :param metadata: Metadata dictionary
-        """
+        """Receive a data partition and metadata dictionary."""
         self.data_partition = data_partition
         self.metadata = metadata if metadata is not None else {}
 
         message = f"Client {self.client_id} received {len(data_partition)} samples"
         self.logger.debug(message)
-
         return message
 
     def set_dataset(
-        self,
-        mdataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            mdataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
-        """
-        Set the dataset for the client actor.
-
-        :param mdataset: Dataset instance
-        :param feature_columns: List of feature column names
-        :param label_column: Name of the label column
-        """
+        """Set the dataset for the client actor."""
         self.mdataset = mdataset
-        if feature_columns:
-            self.feature_columns = feature_columns
-        if label_column:
-            self.label_column = label_column
+        self.feature_columns = feature_columns
+        self.label_column = label_column
+        self.dataset_loaded = True
+        self.lazy_loading = False
 
         self.logger.debug(
             f"Dataset set with features: {feature_columns}, label: {label_column}"
         )
+
+    def set_dataset_metadata(
+            self,
+            dataset_metadata: Dict[str, Any],
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
+    ) -> None:
+        """
+        Set dataset metadata for lazy loading with robust validation.
+        """
+        # Validate inputs
+        if not dataset_metadata:
+            raise ValueError("Dataset metadata cannot be empty")
+
+        if not feature_columns:
+            raise ValueError("feature_columns must be provided and non-empty")
+
+        if not label_column:
+            raise ValueError("label_column must be provided and non-empty")
+
+        # CRITICAL: Store all information properly
+        self.dataset_metadata = dataset_metadata.copy()  # Deep copy to avoid reference issues
+        self.feature_columns = feature_columns.copy() if isinstance(feature_columns, list) else feature_columns
+        self.label_column = label_column
+        self.mdataset = None  # Will be loaded on-demand
+        self.lazy_loading = True
+        self.dataset_loaded = False
+
+        # Enhanced validation of metadata structure
+        required_keys = [
+            'dataset_source', 'dataset_name', 'available_splits',
+            'dataset_kwargs', 'partitions'
+        ]
+
+        missing_keys = [key for key in required_keys if key not in self.dataset_metadata]
+        if missing_keys:
+            self.logger.error(f"Missing required metadata keys: {missing_keys}")
+            raise ValueError(f"Dataset metadata missing required keys: {missing_keys}")
+
+        # Validate that we have proper splits and partitions
+        if not self.dataset_metadata.get('available_splits'):
+            raise ValueError("Dataset metadata must contain 'available_splits'")
+
+        if not isinstance(self.dataset_metadata.get('partitions'), dict):
+            raise ValueError("Dataset metadata must contain 'partitions' as a dictionary")
+
+        self.logger.info("Set dataset metadata for lazy loading")
+        self.logger.info(f"Dataset: {self.dataset_metadata.get('dataset_name')}")
+        self.logger.info(f"Splits: {self.dataset_metadata.get('available_splits')}")
+        self.logger.info(f"Features: {self.feature_columns}, Label: {self.label_column}")
+
+        # Additional debug logging
+        self.logger.debug(f"Metadata keys: {list(self.dataset_metadata.keys())}")
+        self.logger.debug(f"Dataset source: {self.dataset_metadata.get('dataset_source')}")
+        self.logger.debug(f"Dataset kwargs: {self.dataset_metadata.get('dataset_kwargs', {})}")
 
     def reconstruct_and_set_dataset(
         self,
@@ -239,185 +278,187 @@ class VirtualClientActor:
             )
 
     def set_model(self, model: ModelInterface) -> None:
-        """
-        Set the model for the client actor with proper device handling.
-
-        :param model: Model instance
-        """
+        """Set the model for the client actor with proper device handling."""
         self.model = model
 
-        # Ensure model uses proper device detection in multi-node environment
         if hasattr(self.model, "detect_and_set_device"):
             self.model.detect_and_set_device()
 
-        self.logger.debug(
-            f"Model set on device: {getattr(self.model, 'device', 'unknown')}"
-        )
-
-    def set_dataset_metadata(
-            self,
-            dataset_metadata: Dict[str, Any],
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
-    ) -> None:
-        """
-        Set dataset metadata for lazy loading instead of the full dataset.
-
-        Args:
-            dataset_metadata: Metadata needed to reconstruct dataset on-demand
-            feature_columns: List of feature column names
-            label_column: Name of the label column
-        """
-        self.dataset_metadata = dataset_metadata
-        # CRITICAL FIX: These were not being stored properly
-        self.feature_columns = feature_columns
-        self.label_column = label_column
-        self.mdataset = None  # Will be loaded on-demand
-        self.lazy_loading = True
-
-        self.logger.info("Set dataset metadata for lazy loading")
-        self.logger.info(f"Dataset: {dataset_metadata.get('dataset_name')}")
-        self.logger.info(f"Splits: {dataset_metadata.get('available_splits')}")
-        self.logger.info(f"Features: {feature_columns}, Label: {label_column}")
-
-        # Log for debugging
-        self.logger.debug(f"Stored feature_columns: {self.feature_columns}")
-        self.logger.debug(f"Stored label_column: {self.label_column}")
+        self.logger.debug(f"Model set on device: {getattr(self.model, 'device', 'unknown')}")
 
     def get_data_info(self) -> Dict[str, Any]:
-        """
-        Return information about stored data partition.
-        Enhanced with lazy loading status and proper field access.
-        """
+        """Return comprehensive information about stored data partition."""
         info = {
             "client_id": self.client_id,
             "data_size": len(self.data_partition) if self.data_partition else 0,
             "metadata": self.metadata,
             "has_model": self.model is not None,
             "has_dataset": self.mdataset is not None,
-            "lazy_loading": getattr(self, "lazy_loading", False),
-            "dataset_loaded": self.mdataset is not None,
+            "lazy_loading": self.lazy_loading,
+            "dataset_loaded": self.dataset_loaded,
             "node_info": self.node_info,
             "device_info": self.device_info,
             "feature_columns": self.feature_columns,
             "label_column": self.label_column,
         }
 
-        if hasattr(self, "dataset_metadata") and self.dataset_metadata:
+        if self.dataset_metadata:
             info["dataset_name"] = self.dataset_metadata.get("dataset_name")
             info["available_splits"] = self.dataset_metadata.get("available_splits", [])
 
-        self.logger.debug(
-            f"Data info requested: {info['data_size']} samples, lazy={info['lazy_loading']}, "
-            f"features={info['feature_columns']}, label={info['label_column']}"
-        )
         return info
 
     def _lazy_load_dataset(self) -> None:
         """
-        Load the dataset on-demand when first needed for training.
-        This is the core of the lazy loading strategy.
+        Load the dataset on-demand with enhanced error handling and validation.
         """
         if self.mdataset is not None:
-            return  # Already loaded
+            self.logger.debug("Dataset already loaded, skipping lazy loading")
+            return
 
-        if not hasattr(self, "dataset_metadata") or not self.dataset_metadata:
+        if not self.dataset_metadata:
             raise ValueError("No dataset metadata available for lazy loading")
 
         try:
             self.logger.info("Lazy loading dataset from metadata...")
 
-            # Extract metadata
-            dataset_source = self.dataset_metadata["dataset_source"]
-            dataset_name = self.dataset_metadata["dataset_name"]
+            # Extract and validate metadata
+            dataset_source = self.dataset_metadata.get("dataset_source")
+            dataset_name = self.dataset_metadata.get("dataset_name")
             dataset_kwargs = self.dataset_metadata.get("dataset_kwargs", {})
-            available_splits = self.dataset_metadata["available_splits"]
-            partitions = self.dataset_metadata["partitions"]
+            available_splits = self.dataset_metadata.get("available_splits", [])
+            partitions = self.dataset_metadata.get("partitions", {})
+
+            # Validate required fields
+            if not dataset_source:
+                raise ValueError("dataset_source not found in metadata")
+            if not dataset_name:
+                raise ValueError("dataset_name not found in metadata")
+            if not available_splits:
+                raise ValueError("available_splits not found in metadata")
+
+            self.logger.info(f"Loading dataset: {dataset_name}")
+            self.logger.info(f"Source: {dataset_source}")
+            self.logger.info(f"Available splits: {available_splits}")
+            self.logger.debug(f"Dataset kwargs: {dataset_kwargs}")
 
             # Import here to avoid circular imports
             from murmura.data_processing.dataset import MDataset, DatasetSource
 
+            # Validate dataset source
             if dataset_source != DatasetSource.HUGGING_FACE:
-                raise ValueError(
-                    "Lazy loading only supports HuggingFace datasets currently"
-                )
+                raise ValueError(f"Lazy loading currently only supports HuggingFace datasets, got: {dataset_source}")
 
-            self.logger.info(f"Loading HuggingFace dataset: {dataset_name}")
-
-            # Load dataset using the original metadata
-            # This will re-download from HuggingFace cache (fast) or reload from disk
+            # Enhanced dataset loading with better error handling
             try:
-                # Try to load all splits at once if the dataset supports it
+                # Method 1: Try to load all splits at once
+                self.logger.debug("Attempting to load all splits at once...")
+
+                # Ensure we don't pass duplicate dataset_name in kwargs
+                clean_kwargs = {k: v for k, v in dataset_kwargs.items() if k != 'dataset_name'}
+
                 full_dataset = MDataset.load(
                     DatasetSource.HUGGING_FACE,
                     dataset_name=dataset_name,
                     split=None,  # Load all splits
-                    **dataset_kwargs,
+                    **clean_kwargs,
                 )
                 self.mdataset = full_dataset
+                self.logger.info("Successfully loaded all splits at once")
 
-            except Exception:
-                # Fallback: load splits individually
-                self.logger.info("Loading splits individually...")
-                self.mdataset = None
+            except Exception as e1:
+                self.logger.warning(f"Failed to load all splits at once: {e1}")
+                self.logger.info("Attempting to load splits individually...")
 
+                # Method 2: Load splits individually and merge
+                loaded_datasets = []
                 for split_name in available_splits:
                     try:
+                        self.logger.debug(f"Loading split: {split_name}")
+
                         split_dataset = MDataset.load(
                             DatasetSource.HUGGING_FACE,
                             dataset_name=dataset_name,
                             split=split_name,
-                            **dataset_kwargs,
+                            **clean_kwargs,
                         )
+                        loaded_datasets.append((split_name, split_dataset))
+                        self.logger.debug(f"Successfully loaded split: {split_name}")
 
-                        if self.mdataset is None:
-                            self.mdataset = split_dataset
-                        else:
-                            self.mdataset.merge_splits(split_dataset)
+                    except Exception as e2:
+                        self.logger.error(f"Failed to load split {split_name}: {e2}")
+                        # Continue trying other splits
 
-                    except Exception as e:
-                        self.logger.warning(f"Could not load split {split_name}: {e}")
+                if not loaded_datasets:
+                    raise RuntimeError("Failed to load any dataset splits")
 
-            # Restore partitions
-            for split_name, split_partitions in partitions.items():
-                if split_name in self.mdataset.available_splits:
-                    self.mdataset.add_partitions(split_name, split_partitions)
+                # Merge loaded datasets
+                self.mdataset = loaded_datasets[0][1]  # Start with first dataset
+                for split_name, dataset in loaded_datasets[1:]:
+                    try:
+                        self.mdataset.merge_splits(dataset)
+                        self.logger.debug(f"Merged split: {split_name}")
+                    except Exception as e3:
+                        self.logger.error(f"Failed to merge split {split_name}: {e3}")
 
-            self.logger.info(
-                f"Dataset lazy loaded successfully with {len(self.mdataset.available_splits)} splits"
-            )
+                self.logger.info(f"Successfully loaded {len(loaded_datasets)} splits individually")
 
-            # Verify we have the data we need
-            if self.data_partition:
+            # Restore partitions from metadata
+            if partitions:
+                self.logger.debug("Restoring partitions from metadata...")
+                for split_name, split_partitions in partitions.items():
+                    if split_name in self.mdataset.available_splits:
+                        try:
+                            self.mdataset.add_partitions(split_name, split_partitions)
+                            self.logger.debug(f"Restored partitions for split: {split_name}")
+                        except Exception as e:
+                            self.logger.error(f"Failed to restore partitions for {split_name}: {e}")
+                    else:
+                        self.logger.warning(f"Split {split_name} not found in loaded dataset")
+
+            # Final validation
+            if not self.mdataset:
+                raise RuntimeError("Dataset loading resulted in None")
+
+            if not self.mdataset.available_splits:
+                raise RuntimeError("Loaded dataset has no available splits")
+
+            # Mark as successfully loaded
+            self.dataset_loaded = True
+
+            self.logger.info(f"Dataset lazy loaded successfully!")
+            self.logger.info(f"Available splits: {self.mdataset.available_splits}")
+            self.logger.info(f"Feature columns: {self.feature_columns}")
+            self.logger.info(f"Label column: {self.label_column}")
+
+            # Validate partition data if we have it
+            if self.data_partition and self.split in self.mdataset.available_splits:
                 split_dataset = self.mdataset.get_split(self.split)
                 actual_size = len(split_dataset)
                 partition_size = len(self.data_partition)
                 max_idx = max(self.data_partition) if self.data_partition else -1
 
-                self.logger.info(
-                    f"Partition validation - Split size: {actual_size}, "
-                    f"Partition size: {partition_size}, Max index: {max_idx}"
-                )
+                self.logger.debug(f"Partition validation - Split size: {actual_size}, Partition size: {partition_size}, Max index: {max_idx}")
 
                 if max_idx >= actual_size:
-                    raise ValueError(
-                        f"Partition index {max_idx} exceeds dataset size {actual_size}"
-                    )
+                    raise ValueError(f"Partition index {max_idx} exceeds dataset size {actual_size}")
 
         except Exception as e:
             self.logger.error(f"Failed to lazy load dataset: {e}")
-            raise RuntimeError(
-                f"Lazy loading failed on node {self.node_info['node_id']}: {e}"
-            )
+            self.logger.error(f"Dataset metadata: {self.dataset_metadata}")
+            self.logger.error(f"Node ID: {self.node_info.get('node_id', 'unknown')}")
+
+            # Set failure state
+            self.dataset_loaded = False
+            self.mdataset = None
+
+            raise RuntimeError(f"Lazy loading failed on node {self.node_info['node_id']}: {e}")
 
     def _get_partition_data(self) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Extract features and labels from the client's dataset partition.
-        Enhanced with proper lazy loading support and comprehensive validation.
-
-        :return: Tuple of features and labels as numpy arrays
+        Extract features and labels from the client's dataset partition with comprehensive validation.
         """
-        # Step 1: Comprehensive validation of all required components
+        # Step 1: Validate all required components
         validation_errors = []
 
         if self.data_partition is None:
@@ -429,75 +470,66 @@ class VirtualClientActor:
         if self.label_column is None:
             validation_errors.append("label_column not set")
 
-        # Step 2: Handle dataset loading (direct or lazy)
+        # Step 2: Handle dataset loading (lazy or direct)
         if self.mdataset is None:
-            if getattr(self, 'lazy_loading', False) and hasattr(self, 'dataset_metadata') and self.dataset_metadata:
+            if self.lazy_loading and self.dataset_metadata:
                 self.logger.info("Dataset not loaded, triggering lazy loading...")
                 try:
                     self._lazy_load_dataset()
-                    self.logger.info("Lazy loading completed successfully")
+                    if self.mdataset is None:
+                        validation_errors.append("lazy loading completed but dataset is still None")
+                    else:
+                        self.logger.info("Lazy loading completed successfully")
                 except Exception as e:
                     validation_errors.append(f"lazy loading failed: {e}")
                     self.logger.error(f"Lazy loading failed: {e}")
             else:
-                validation_errors.append("dataset not available (neither direct nor lazy)")
-                self.logger.error("No dataset available and lazy loading not configured")
+                validation_errors.append("dataset not available and lazy loading not properly configured")
 
-        # Step 3: Final validation after potential lazy loading
-        if self.mdataset is None:
-            validation_errors.append("dataset still not available after lazy loading attempt")
-
-        # Step 4: Report any validation errors with detailed state information
+        # Step 3: Final validation
         if validation_errors:
             error_msg = "Cannot extract partition data: " + ", ".join(validation_errors)
-            self.logger.error(f"Actor state validation failed:")
+
+            # Comprehensive debug logging
+            self.logger.error("Actor state validation failed:")
             self.logger.error(f"  - data_partition: {self.data_partition is not None} (size: {len(self.data_partition) if self.data_partition else 0})")
             self.logger.error(f"  - feature_columns: {self.feature_columns}")
             self.logger.error(f"  - label_column: {self.label_column}")
             self.logger.error(f"  - mdataset: {self.mdataset is not None}")
-            self.logger.error(f"  - lazy_loading: {getattr(self, 'lazy_loading', False)}")
-            self.logger.error(f"  - has_dataset_metadata: {hasattr(self, 'dataset_metadata') and self.dataset_metadata is not None}")
+            self.logger.error(f"  - lazy_loading: {self.lazy_loading}")
+            self.logger.error(f"  - dataset_loaded: {self.dataset_loaded}")
+            self.logger.error(f"  - has_dataset_metadata: {self.dataset_metadata is not None}")
             self.logger.error(f"  - node_id: {self.node_info.get('node_id', 'unknown')}")
-            if hasattr(self, 'dataset_metadata') and self.dataset_metadata:
+
+            if self.dataset_metadata:
                 self.logger.error(f"  - dataset_metadata keys: {list(self.dataset_metadata.keys())}")
+                self.logger.error(f"  - dataset_name: {self.dataset_metadata.get('dataset_name')}")
+                self.logger.error(f"  - available_splits: {self.dataset_metadata.get('available_splits')}")
+
             raise ValueError(error_msg)
 
-        # Step 5: Proceed with data extraction
+        # Step 4: Extract data
         try:
             split_dataset = self.mdataset.get_split(self.split)
             partition_dataset = split_dataset.select(self.data_partition)
 
-            # Extract features using the same approach as the learning process
+            # Extract features
             if len(self.feature_columns) == 1:
                 feature_data = partition_dataset[self.feature_columns[0]]
 
-                # Let the model wrapper handle preprocessing if available
+                # Use model's preprocessor if available
                 if hasattr(self.model, "data_preprocessor"):
                     if self.model.data_preprocessor is not None:
                         try:
-                            # Convert to list format for the preprocessor
-                            data_list = (
-                                list(feature_data)
-                                if not isinstance(feature_data, list)
-                                else feature_data
-                            )
-                            features = self.model.data_preprocessor.preprocess_features(
-                                data_list
-                            )
-                            self.logger.debug(
-                                "Used model's preprocessor for feature extraction"
-                            )
+                            data_list = list(feature_data) if not isinstance(feature_data, list) else feature_data
+                            features = self.model.data_preprocessor.preprocess_features(data_list)
+                            self.logger.debug("Used model's preprocessor for feature extraction")
                         except Exception as e:
-                            self.logger.warning(
-                                f"Model preprocessor failed, using fallback: {e}"
-                            )
-                            # Fallback to numpy conversion
+                            self.logger.warning(f"Model preprocessor failed, using fallback: {e}")
                             features = np.array(feature_data, dtype=np.float32)
                     else:
-                        # No preprocessor available, use basic conversion
                         features = np.array(feature_data, dtype=np.float32)
                 else:
-                    # No preprocessor available, use basic conversion
                     features = np.array(feature_data, dtype=np.float32)
             else:
                 # Multiple feature columns
@@ -507,49 +539,35 @@ class VirtualClientActor:
                     if hasattr(self.model, "data_preprocessor"):
                         if self.model.data_preprocessor is not None:
                             try:
-                                col_features = (
-                                    self.model.data_preprocessor.preprocess_features(
-                                        list(col_data)
-                                    )
-                                )
+                                col_features = self.model.data_preprocessor.preprocess_features(list(col_data))
                                 processed_columns.append(col_features)
                             except Exception:
-                                processed_columns.append(
-                                    np.array(col_data, dtype=np.float32)
-                                )
+                                processed_columns.append(np.array(col_data, dtype=np.float32))
+                        else:
+                            processed_columns.append(np.array(col_data, dtype=np.float32))
                     else:
                         processed_columns.append(np.array(col_data, dtype=np.float32))
 
                 features = np.column_stack(processed_columns)
 
-            # Extract and process labels
+            # Extract labels
             label_data = partition_dataset[self.label_column]
 
-            # Since we handle label encoding in the example scripts (like skin_lesion_example.py),
-            # we expect labels to already be integers here. If they're strings, it means
-            # the preprocessing wasn't done properly in the example script.
+            # Handle string labels with proper error messaging
             if len(label_data) > 0 and isinstance(label_data[0], str):
                 self.logger.error(
                     f"Found string labels in column '{self.label_column}'. "
                     "Labels should be converted to integers in the example script before training."
                 )
-                # Emergency fallback: create a simple mapping for this partition
+                # Emergency fallback
                 unique_labels = sorted(set(label_data))
                 label_map = {label: idx for idx, label in enumerate(unique_labels)}
-                labels = np.array(
-                    [label_map[label] for label in label_data], dtype=np.int64
-                )
+                labels = np.array([label_map[label] for label in label_data], dtype=np.int64)
                 self.logger.warning(f"Emergency label encoding applied: {label_map}")
-                self.logger.warning(
-                    "Please ensure your example script converts string labels to integers before training."
-                )
             else:
-                # Labels are already numeric (expected case)
                 labels = np.array(label_data, dtype=np.int64)
 
-            self.logger.debug(
-                f"Successfully extracted features shape: {features.shape}, labels shape: {labels.shape}"
-            )
+            self.logger.debug(f"Successfully extracted features shape: {features.shape}, labels shape: {labels.shape}")
 
             # Log label distribution for debugging
             unique_labels, counts = np.unique(labels, return_counts=True)
@@ -561,7 +579,7 @@ class VirtualClientActor:
             self.logger.error(f"Error during data extraction: {e}")
             self.logger.error(f"  - split: {self.split}")
             self.logger.error(f"  - available splits: {self.mdataset.available_splits if self.mdataset else 'N/A'}")
-            self.logger.error(f"  - partition size: {len(self.data_partition)}")
+            self.logger.error(f"  - partition size: {len(self.data_partition) if self.data_partition else 0}")
             raise RuntimeError(f"Data extraction failed on node {self.node_info['node_id']}: {e}")
 
     def train_model(self, **kwargs) -> Dict[str, float]:
