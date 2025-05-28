@@ -418,15 +418,31 @@ class ExperimentRunner:
         ])
 
         # Resource allocation based on experiment scale
-        cpus_per_actor = max(0.5, self.config.total_cpus / (exp["scale"] * 1.5))
-        gpus_per_actor = self.config.total_gpus / exp["scale"] if exp["scale"] <= self.config.total_gpus else 0
+        # CPU allocation - ensure reasonable minimum while avoiding oversubscription
+        cpus_per_actor = max(1.0, min(4.0, self.config.total_cpus / exp["scale"]))
+
+        # GPU allocation - Ray requires whole numbers for GPUs > 1
+        if exp["scale"] <= self.config.total_gpus:
+            gpus_per_actor = 1  # 1 GPU per actor when we have enough
+        else:
+            gpus_per_actor = 0  # No GPU allocation when we don't have enough
 
         cmd.extend([
             "--cpus_per_actor", str(cpus_per_actor),
         ])
 
+        # Only add GPU allocation if we're allocating GPUs
         if gpus_per_actor > 0:
             cmd.extend(["--gpus_per_actor", str(gpus_per_actor)])
+
+        # Add Ray cluster parameters
+        if self.ray_address:
+            cmd.extend(["--ray_address", self.ray_address])
+
+        cmd.extend([
+            "--auto_detect_cluster",
+            "--placement_strategy", "spread",
+        ])
 
         return cmd
 
