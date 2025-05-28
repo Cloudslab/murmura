@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DP-Enhanced Skin Lesion Classification - Central Differential Privacy for Medical FL
-FIXED VERSION - Uses identical model architecture and preprocessing as normal skin lesion example
+Updated to include all arguments from the regular skin lesion example for consistency.
 """
 
 import argparse
@@ -22,6 +22,7 @@ from murmura.privacy.dp_config import (
 from murmura.privacy.dp_integration import (
     DPOrchestrationConfig, create_dp_federated_learning_process
 )
+from murmura.visualization.network_visualizer import NetworkVisualizer
 
 
 # IDENTICAL WideResNet model components from normal skin lesion example
@@ -208,7 +209,7 @@ def setup_logging(log_level: str = "INFO") -> None:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler("dp_skin_lesion.log"),
+            logging.FileHandler("dp_skin_lesion_federated.log"),
         ],
     )
 
@@ -375,66 +376,223 @@ def add_integer_labels_to_dataset(
 def main():
     """Main function for DP-enhanced skin lesion classification."""
     parser = argparse.ArgumentParser(
-        description="DP-Enhanced Skin Lesion Classification (Central DP)"
+        description="DP-Enhanced Federated Learning for Skin Cancer Classification (Central DP)"
     )
 
-    # Core federated learning arguments
-    parser.add_argument("--num_actors", type=int, default=5,
-                        help="Number of virtual clients (hospitals)")
-    parser.add_argument("--rounds", type=int, default=3,  # Reduced for testing
-                        help="Number of federated learning rounds")
-    parser.add_argument("--epochs", type=int, default=2,
-                        help="Local epochs per round")
-    parser.add_argument("--batch_size", type=int, default=16,
-                        help="Batch size for training")
-    parser.add_argument("--lr", type=float, default=0.001,
-                        help="Learning rate")
+    # Core federated learning arguments (from regular skin lesion example)
+    parser.add_argument(
+        "--num_actors", type=int, default=5, help="Number of virtual clients (hospitals)"
+    )
+    parser.add_argument(
+        "--partition_strategy",
+        choices=["dirichlet", "iid"],
+        default="dirichlet",
+        help="Data partitioning strategy",
+    )
+    parser.add_argument(
+        "--alpha", type=float, default=0.5, help="Dirichlet concentration parameter"
+    )
+    parser.add_argument(
+        "--min_partition_size",
+        type=int,
+        default=50,
+        help="Minimum samples per partition",
+    )
+    parser.add_argument(
+        "--split", type=str, default="train", help="Dataset split to use"
+    )
+    parser.add_argument(
+        "--test_split", type=str, default="test", help="Test split to use"
+    )
+    parser.add_argument(
+        "--validation_split",
+        type=str,
+        default="validation",
+        help="Validation split to use",
+    )
+    parser.add_argument(
+        "--aggregation_strategy",
+        type=str,
+        choices=["fedavg", "trimmed_mean"],
+        default="fedavg",
+        help="Aggregation strategy to use",
+    )
+    parser.add_argument(
+        "--trim_ratio",
+        type=float,
+        default=0.1,
+        help="Trim ratio for trimmed_mean strategy",
+    )
 
-    # Model architecture - IDENTICAL to normal skin lesion example
-    parser.add_argument("--depth", type=int, default=16,
-                        help="WideResNet depth")
-    parser.add_argument("--widen_factor", type=int, default=8,
-                        help="WideResNet widen factor")
-    parser.add_argument("--dropout", type=float, default=0.3,
-                        help="Dropout rate")
-    parser.add_argument("--image_size", type=int, default=128,
-                        help="Image size for preprocessing")
+    # Topology arguments (from regular skin lesion example)
+    parser.add_argument(
+        "--topology",
+        type=str,
+        default="star",
+        choices=["star", "ring", "complete", "line", "custom"],
+        help="Network topology between clients",
+    )
+    parser.add_argument(
+        "--hub_index", type=int, default=0, help="Hub node index for star topology"
+    )
 
-    # Differential Privacy arguments - stricter for medical data
-    parser.add_argument("--epsilon", type=float, default=0.5,
-                        help="Privacy budget (ε) - lower for medical data")
-    parser.add_argument("--delta", type=float, default=1e-6,
-                        help="Failure probability (δ) - lower for medical data")
-    parser.add_argument("--clipping_norm", type=float, default=1.0,
-                        help="Gradient clipping threshold")
-    parser.add_argument("--client_sampling_rate", type=float, default=0.8,
-                        help="Client sampling rate for privacy amplification")
+    # Training arguments (from regular skin lesion example)
+    parser.add_argument(
+        "--rounds", type=int, default=5, help="Number of federated learning rounds"
+    )
+    parser.add_argument(
+        "--epochs", type=int, default=2, help="Number of local epochs per round"
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=16, help="Batch size for training"
+    )
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
+    parser.add_argument(
+        "--weight_decay",
+        type=float,
+        default=1e-4,
+        help="Weight decay for regularization",
+    )
+    parser.add_argument(
+        "--dropout", type=float, default=0.3, help="Dropout rate in WideResNet"
+    )
+    parser.add_argument(
+        "--save_path",
+        type=str,
+        default="dp_skin_cancer_federated_model.pt",
+        help="Path to save the final model",
+    )
 
-    # Data partitioning - IDENTICAL to normal skin lesion example
-    parser.add_argument("--partition_strategy", type=str, default="dirichlet",
-                        choices=["dirichlet", "iid"])
-    parser.add_argument("--alpha", type=float, default=0.3,
-                        help="Dirichlet concentration (lower for more heterogeneity)")
-    parser.add_argument("--min_partition_size", type=int, default=50,
-                        help="Minimum samples per partition")
-
-    # Dataset configuration - IDENTICAL to normal skin lesion example
-    parser.add_argument("--dataset_name", type=str, default="marmal88/skin_cancer",
-                        help="Skin lesion dataset name")
-
-    # System configuration
-    parser.add_argument("--log_level", type=str, default="INFO",
-                        choices=["DEBUG", "INFO", "WARNING", "ERROR"])
-    parser.add_argument("--save_path", type=str, default="dp_skin_lesion_model.pt",
-                        help="Path to save final model")
-
-    # Device selection - IDENTICAL to normal skin lesion example
+    # Skin lesion specific arguments (from regular skin lesion example)
+    parser.add_argument(
+        "--image_size", type=int, default=128, help="Size to resize images to"
+    )
+    parser.add_argument(
+        "--dataset_name",
+        type=str,
+        default="marmal88/skin_cancer",
+        help="Skin lesion dataset name",
+    )
+    parser.add_argument(
+        "--widen_factor", type=int, default=8, help="WideResNet widen factor"
+    )
+    parser.add_argument("--depth", type=int, default=16, help="WideResNet depth")
     parser.add_argument(
         "--device",
         type=str,
         default="auto",
         choices=["auto", "cuda", "mps", "cpu"],
         help="Device to use for training",
+    )
+    parser.add_argument(
+        "--debug_data",
+        action="store_true",
+        help="Print debug information about skin lesion data format",
+    )
+
+    # Multi-node Ray cluster arguments (from regular skin lesion example)
+    parser.add_argument(
+        "--ray_address",
+        type=str,
+        default=None,
+        help="Ray cluster address. If None, uses local cluster.",
+    )
+    parser.add_argument(
+        "--ray_namespace",
+        type=str,
+        default="murmura_dp_skin_lesion",
+        help="Ray namespace for isolation",
+    )
+    parser.add_argument(
+        "--actors_per_node",
+        type=int,
+        default=None,
+        help="Number of actors per physical node. If None, distributes evenly.",
+    )
+    parser.add_argument(
+        "--cpus_per_actor",
+        type=float,
+        default=1.0,
+        help="CPU resources per actor",
+    )
+    parser.add_argument(
+        "--gpus_per_actor",
+        type=float,
+        default=None,
+        help="GPU resources per actor. If None, auto-calculated.",
+    )
+    parser.add_argument(
+        "--memory_per_actor",
+        type=int,
+        default=None,
+        help="Memory (MB) per actor",
+    )
+    parser.add_argument(
+        "--placement_strategy",
+        type=str,
+        choices=["spread", "pack", "strict_spread", "strict_pack"],
+        default="spread",
+        help="Actor placement strategy across nodes",
+    )
+    parser.add_argument(
+        "--auto_detect_cluster",
+        action="store_true",
+        help="Auto-detect Ray cluster from environment variables",
+    )
+
+    # Logging and monitoring arguments (from regular skin lesion example)
+    parser.add_argument(
+        "--log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="INFO",
+        help="Logging level",
+    )
+    parser.add_argument(
+        "--monitor_resources",
+        action="store_true",
+        help="Monitor and log resource usage during training",
+    )
+
+    # Visualization arguments (from regular skin lesion example)
+    parser.add_argument(
+        "--vis_dir",
+        type=str,
+        default="./visualizations",
+        help="Directory to save visualizations",
+    )
+    parser.add_argument(
+        "--create_animation",
+        action="store_true",
+        help="Create animation of the training process",
+    )
+    parser.add_argument(
+        "--create_frames",
+        action="store_true",
+        help="Create individual frames of the training process",
+    )
+    parser.add_argument(
+        "--create_summary",
+        action="store_true",
+        help="Create summary plot of the training process",
+    )
+
+    # DP-specific arguments - stricter for medical data
+    parser.add_argument(
+        "--epsilon", type=float, default=0.5,
+        help="Privacy budget (ε) - lower for medical data (stronger privacy)"
+    )
+    parser.add_argument(
+        "--delta", type=float, default=1e-6,
+        help="Failure probability (δ) - lower for medical data"
+    )
+    parser.add_argument(
+        "--clipping_norm", type=float, default=1.0,
+        help="Gradient clipping threshold"
+    )
+    parser.add_argument(
+        "--client_sampling_rate", type=float, default=0.8,
+        help="Client sampling rate for privacy amplification"
     )
 
     args = parser.parse_args()
@@ -452,10 +610,25 @@ def main():
         dp_config = create_dp_config(args)
         logger.info("Created DP configuration for medical federated learning")
 
-        # Create enhanced orchestration configuration
+        # Create enhanced configuration with multi-node support
         from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
         from murmura.network_management.topology import TopologyConfig, TopologyType
         from murmura.node.resource_config import RayClusterConfig, ResourceConfig
+
+        ray_cluster_config = RayClusterConfig(
+            address=args.ray_address,
+            namespace=args.ray_namespace,
+            logging_level=args.log_level,
+            auto_detect_cluster=args.auto_detect_cluster,
+        )
+
+        resource_config = ResourceConfig(
+            actors_per_node=args.actors_per_node,
+            cpus_per_actor=args.cpus_per_actor,
+            gpus_per_actor=args.gpus_per_actor,
+            memory_per_actor=args.memory_per_actor,
+            placement_strategy=args.placement_strategy,
+        )
 
         config = DPOrchestrationConfig(
             # Core FL parameters
@@ -463,36 +636,30 @@ def main():
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
-            split="train",
+            split=args.split,
 
-            # CRITICAL: Must specify feature and label columns
-            feature_columns=["image"],  # Skin lesion images
-            label_column="label",       # Diagnostic labels
-
-            # Network topology (centralized for Central DP)
+            # Network topology
             topology=TopologyConfig(
-                topology_type=TopologyType.STAR,
-                hub_index=0
+                topology_type=TopologyType(args.topology),
+                hub_index=args.hub_index
             ),
 
-            # Aggregation strategy (FedAvg for Central DP)
+            # Aggregation strategy
             aggregation=AggregationConfig(
-                strategy_type=AggregationStrategyType.FEDAVG
+                strategy_type=AggregationStrategyType(args.aggregation_strategy),
+                params={"trim_ratio": args.trim_ratio}
+                if args.aggregation_strategy == "trimmed_mean"
+                else None,
             ),
 
             # Dataset configuration
             dataset_name=args.dataset_name,
+            ray_cluster=ray_cluster_config,
+            resources=resource_config,
 
-            # Ray cluster configuration
-            ray_cluster=RayClusterConfig(
-                namespace="murmura_dp_skin_lesion",
-                logging_level=args.log_level
-            ),
-
-            resources=ResourceConfig(
-                cpus_per_actor=1.0,
-                placement_strategy="spread"
-            ),
+            # CRITICAL: Must specify feature and label columns
+            feature_columns=["image"],  # Skin lesion images
+            label_column="label",       # Diagnostic labels
 
             # Differential Privacy configuration (Central DP)
             differential_privacy=dp_config,
@@ -506,19 +673,19 @@ def main():
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
-            split="train"
+            split=args.split,
         )
 
         test_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
-            split="test"
+            split=args.test_split,
         )
 
         validation_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
-            split="validation"
+            split=args.validation_split,
         )
 
         # Merge datasets to have all splits available
@@ -532,6 +699,36 @@ def main():
         dx_categories, num_classes, dx_to_label = add_integer_labels_to_dataset(
             train_dataset, logger
         )
+
+        # Debug skin lesion data format if requested
+        if args.debug_data:
+            logger.info("=== Debugging Skin Lesion Data Format ===")
+            try:
+                split_dataset = train_dataset.get_split(args.split)
+                feature_data = split_dataset["image"]
+
+                logger.info(f"Dataset: {args.dataset_name}")
+                logger.info(f"Split: {args.split}")
+                logger.info(f"Number of samples: {len(feature_data)}")
+                logger.info(f"Diagnostic categories: {dx_categories}")
+                logger.info(f"Label mapping: {dx_to_label}")
+
+                if len(feature_data) > 0:
+                    sample = feature_data[0]
+                    logger.info(f"Sample type: {type(sample)}")
+                    logger.info(f"Sample shape: {getattr(sample, 'shape', 'N/A')}")
+                    logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
+                    if hasattr(sample, "size"):
+                        logger.info(f"Sample size: {sample.size}")
+
+                    # Check label conversion
+                    sample_full = split_dataset[0]
+                    logger.info(
+                        f"Sample dx: '{sample_full['dx']}' -> label: {sample_full['label']}"
+                    )
+
+            except Exception as e:
+                logger.error(f"Error debugging skin lesion data format: {e}")
 
         logger.info("=== Creating WideResNet Model ===")
         # Create the WideResNet model for skin lesion classification
@@ -559,7 +756,7 @@ def main():
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.Adam,
-            optimizer_kwargs={"lr": args.lr, "weight_decay": 1e-4},
+            optimizer_kwargs={"lr": args.lr, "weight_decay": args.weight_decay},
             input_shape=input_shape,
             device=device,
             data_preprocessor=skin_lesion_preprocessor,
@@ -572,106 +769,216 @@ def main():
         )
         logger.info("Created DP-enhanced federated learning process")
 
-        # Initialize the learning process
-        partitioner = PartitionerFactory.create(config)
-        logger.info("Created partitioner")
+        # Set up visualization if requested
+        visualizer = None
+        if args.create_animation or args.create_frames or args.create_summary:
+            logger.info("=== Setting Up Visualization ===")
+            vis_dir = os.path.join(
+                args.vis_dir, f"dp_skin_cancer_{args.topology}_{args.aggregation_strategy}"
+            )
+            os.makedirs(vis_dir, exist_ok=True)
 
-        logger.info("=== Initializing Learning Process ===")
-        learning_process.initialize(
-            num_actors=config.num_actors,
-            topology_config=config.topology,
-            aggregation_config=config.aggregation,
-            partitioner=partitioner
-        )
+            visualizer = NetworkVisualizer(output_dir=vis_dir)
+            learning_process.register_observer(visualizer)
+            logger.info("Registered visualizer with learning process")
 
-        # Log privacy configuration
-        privacy_desc = dp_config.get_privacy_description()
-        utility_impact = dp_config.estimate_utility_impact()
+        try:
+            # Initialize the learning process
+            partitioner = PartitionerFactory.create(config)
+            logger.info("Created partitioner")
 
-        logger.info("=== Privacy Configuration for Medical Data ===")
-        logger.info(f"Privacy Guarantee: {privacy_desc}")
-        logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
-        logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
-        logger.info(f"Communication Impact: {utility_impact['communication']}")
-        logger.info(f"DP Mode: Central (server-side noise)")
-        logger.info(f"Per-client Privacy: {dp_config.per_client_clipping}")
+            logger.info("=== Initializing Learning Process ===")
+            learning_process.initialize(
+                num_actors=config.num_actors,
+                topology_config=config.topology,
+                aggregation_config=config.aggregation,
+                partitioner=partitioner
+            )
 
-        logger.info("=== Starting DP-Enhanced Medical FL Training ===")
-        logger.info(f"Hospitals/Clients: {config.num_actors}")
-        logger.info(f"Rounds: {args.rounds}")
-        logger.info(f"Topology: star")
-        logger.info(f"Aggregation: fedavg")
-        logger.info(f"Diagnostic Categories: {dx_categories}")
-        logger.info(f"Client Sampling Rate: {args.client_sampling_rate}")
+            # Monitor dataset distribution status
+            dist_status = learning_process.get_dataset_distribution_status()
+            logger.info(f"Dataset distribution: {dist_status['distribution_strategy']}")
+            logger.info(
+                f"Hospitals ready: {dist_status['healthy_actors']}/{dist_status['total_actors']}"
+            )
+            if dist_status["distribution_strategy"] == "lazy":
+                logger.info(
+                    f"Lazy loading enabled on {dist_status['lazy_loading_actors']} hospitals"
+                )
 
-        # Execute training
-        results = learning_process.execute()
+            # Monitor memory usage
+            if args.monitor_resources:
+                memory_status = learning_process.monitor_memory_usage()
+                logger.info(
+                    f"Cluster memory: {memory_status.get('available_memory_gb', 'N/A')}GB available"
+                )
+                if memory_status.get("high_usage_nodes", 0) > 0:
+                    logger.warning(
+                        f"{memory_status['high_usage_nodes']} nodes have high memory usage"
+                    )
 
-        # Save model with comprehensive metadata - IDENTICAL to normal skin lesion example
-        logger.info("=== Saving Model ===")
-        save_path = args.save_path
+            # Get and log cluster information
+            cluster_summary = learning_process.get_cluster_summary()
+            logger.info("=== DP-Enhanced Cluster Summary ===")
+            logger.info(
+                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+            )
+            logger.info(f"Total nodes: {cluster_summary.get('total_nodes', 'unknown')}")
+            logger.info(
+                f"Total hospitals: {cluster_summary.get('total_actors', 'unknown')}"
+            )
 
-        # Create comprehensive checkpoint for medical model
-        checkpoint = {
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": global_model.optimizer.state_dict(),
-            "dx_categories": dx_categories,
-            "dx_to_label_mapping": dx_to_label,
-            "num_classes": num_classes,
-            "depth": args.depth,
-            "widen_factor": args.widen_factor,
-            "dropout": args.dropout,
-            "image_size": args.image_size,
-            "input_shape": input_shape,
-            "device": device,
-            "learning_type": "centralized_dp",  # Mark as DP-enhanced
-            "dp_config": {
-                "epsilon": dp_config.epsilon,
-                "delta": dp_config.delta,
-                "mechanism": dp_config.mechanism.value,
-                "noise_application": dp_config.noise_application.value,
-                "clipping_norm": dp_config.clipping_norm,
-            },
-            "config": {
-                k: v for k, v in vars(args).items() if not k.startswith("_")
-            },
-        }
+            # Log privacy configuration
+            privacy_desc = dp_config.get_privacy_description()
+            utility_impact = dp_config.estimate_utility_impact()
 
-        os.makedirs(os.path.dirname(os.path.abspath(save_path)) or ".", exist_ok=True)
-        torch.save(checkpoint, save_path)
-        logger.info(f"DP-enhanced skin lesion model saved to '{save_path}'")
+            logger.info("=== Privacy Configuration for Medical Data ===")
+            logger.info(f"Privacy Guarantee: {privacy_desc}")
+            logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
+            logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
+            logger.info(f"Communication Impact: {utility_impact['communication']}")
+            logger.info(f"DP Mode: Central (server-side noise)")
+            logger.info(f"Per-client Privacy: {dp_config.per_client_clipping}")
 
-        # Print final summary
-        logger.info("=== DP-Enhanced Medical FL Training Results ===")
-        logger.info(f"Initial Accuracy: {results['initial_metrics']['accuracy']:.4f}")
-        logger.info(f"Final Accuracy: {results['final_metrics']['accuracy']:.4f}")
-        logger.info(f"Accuracy Improvement: {results['accuracy_improvement']:.4f}")
-        logger.info(f"Training device: {device}")
-        logger.info(f"Diagnostic Categories: {dx_categories}")
+            # Print initial summary
+            logger.info("=== DP-Enhanced Skin Lesion Federated Learning Setup ===")
+            logger.info(f"Dataset: {args.dataset_name}")
+            logger.info(f"Partitioning: {config.partition_strategy} (α={args.alpha})")
+            logger.info(f"Hospitals: {config.num_actors}")
+            logger.info(f"Aggregation: {config.aggregation.strategy_type}")
+            logger.info(f"Topology: {config.topology.topology_type}")
+            logger.info(f"Privacy: Central DP (ε={args.epsilon}, δ={args.delta})")
+            logger.info(f"Clipping norm: {args.clipping_norm}")
+            logger.info(f"Client sampling rate: {args.client_sampling_rate}")
+            logger.info(f"Rounds: {args.rounds}")
+            logger.info(f"Local epochs: {args.epochs}")
+            logger.info(f"Batch size: {args.batch_size}")
+            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Weight decay: {args.weight_decay}")
+            logger.info(f"Device: {device}")
+            logger.info(f"Image size: {args.image_size}")
+            logger.info(f"Classes ({num_classes}): {dx_categories}")
+            logger.info(f"Using feature column: {config.feature_columns}")
+            logger.info(f"Using label column: {config.label_column}")
 
-        if 'privacy_summary' in results:
-            privacy_summary = results['privacy_summary']
-            if privacy_summary['dp_enabled']:
-                logger.info("Differential Privacy: ENABLED (Central DP)")
-                if 'accountant' in privacy_summary:
-                    spent = privacy_summary['accountant']['spent']
-                    total = privacy_summary['accountant']['total_budget']
-                    logger.info(f"Privacy Spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
-                                f"δ={spent['delta']:.2e}/{total['delta']:.2e}")
+            logger.info("=== Starting DP-Enhanced Medical FL Training ===")
 
-                    # Calculate privacy budget utilization
-                    eps_utilization = (spent['epsilon'] / total['epsilon']) * 100
-                    delta_utilization = (spent['delta'] / total['delta']) * 100
-                    logger.info(f"Privacy Budget Utilization: ε={eps_utilization:.1f}%, δ={delta_utilization:.1f}%")
-            else:
-                logger.info("Differential Privacy: DISABLED")
+            # Execute training
+            results = learning_process.execute()
 
-        # Medical-specific logging
-        logger.info("=== Medical FL Compliance Summary ===")
-        logger.info(f"Privacy-preserving: YES (ε={dp_config.epsilon}, δ={dp_config.delta})")
-        logger.info(f"Per-hospital privacy: {dp_config.per_client_clipping}")
-        logger.info(f"Data never leaves hospitals: YES (federated learning)")
-        logger.info(f"Noise added to prevent reconstruction: YES ({dp_config.mechanism.value})")
+            # Generate visualizations if requested
+            if visualizer and (
+                    args.create_animation or args.create_frames or args.create_summary
+            ):
+                logger.info("=== Generating Visualizations ===")
+
+                if args.create_animation:
+                    logger.info("Creating animation...")
+                    visualizer.render_training_animation(
+                        filename=f"dp_skin_cancer_{args.topology}_{args.aggregation_strategy}_animation.mp4",
+                        fps=2,
+                    )
+
+                if args.create_frames:
+                    logger.info("Creating frame sequence...")
+                    visualizer.render_frame_sequence(
+                        prefix=f"dp_skin_cancer_{args.topology}_{args.aggregation_strategy}_step"
+                    )
+
+                if args.create_summary:
+                    logger.info("Creating summary plot...")
+                    visualizer.render_summary_plot(
+                        filename=f"dp_skin_cancer_{args.topology}_{args.aggregation_strategy}_summary.png"
+                    )
+
+            # Save model with comprehensive metadata - IDENTICAL to normal skin lesion example
+            logger.info("=== Saving Model ===")
+            save_path = args.save_path
+
+            # Create comprehensive checkpoint for medical model
+            checkpoint = {
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": global_model.optimizer.state_dict(),
+                "dx_categories": dx_categories,
+                "dx_to_label_mapping": dx_to_label,
+                "num_classes": num_classes,
+                "depth": args.depth,
+                "widen_factor": args.widen_factor,
+                "dropout": args.dropout,
+                "image_size": args.image_size,
+                "input_shape": input_shape,
+                "device": device,
+                "learning_type": "centralized_dp",  # Mark as DP-enhanced
+                "dp_config": {
+                    "epsilon": dp_config.epsilon,
+                    "delta": dp_config.delta,
+                    "mechanism": dp_config.mechanism.value,
+                    "noise_application": dp_config.noise_application.value,
+                    "clipping_norm": dp_config.clipping_norm,
+                },
+                "config": {
+                    k: v for k, v in vars(args).items() if not k.startswith("_")
+                },
+            }
+
+            os.makedirs(os.path.dirname(os.path.abspath(save_path)) or ".", exist_ok=True)
+            torch.save(checkpoint, save_path)
+            logger.info(f"DP-enhanced skin lesion model saved to '{save_path}'")
+
+            # Print final summary
+            logger.info("=== DP-Enhanced Medical FL Training Results ===")
+            logger.info(f"Initial Accuracy: {results['initial_metrics']['accuracy']:.4f}")
+            logger.info(f"Final Accuracy: {results['final_metrics']['accuracy']:.4f}")
+            logger.info(f"Accuracy Improvement: {results['accuracy_improvement']:.4f}")
+            logger.info(f"Training device: {device}")
+            logger.info(f"Diagnostic Categories: {dx_categories}")
+
+            if 'privacy_summary' in results:
+                privacy_summary = results['privacy_summary']
+                if privacy_summary['dp_enabled']:
+                    logger.info("Differential Privacy: ENABLED (Central DP)")
+                    if 'accountant' in privacy_summary:
+                        spent = privacy_summary['accountant']['spent']
+                        total = privacy_summary['accountant']['total_budget']
+                        logger.info(f"Privacy Spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
+                                    f"δ={spent['delta']:.2e}/{total['delta']:.2e}")
+
+                        # Calculate privacy budget utilization
+                        eps_utilization = (spent['epsilon'] / total['epsilon']) * 100
+                        delta_utilization = (spent['delta'] / total['delta']) * 100
+                        logger.info(f"Privacy Budget Utilization: ε={eps_utilization:.1f}%, δ={delta_utilization:.1f}%")
+                else:
+                    logger.info("Differential Privacy: DISABLED")
+
+            # Display detailed metrics if available
+            if "round_metrics" in results:
+                logger.info("=== Detailed Round Metrics ===")
+                for round_data in results["round_metrics"]:
+                    round_num = round_data["round"]
+                    logger.info(f"Round {round_num}:")
+                    logger.info(
+                        f"  Train Loss: {round_data.get('train_loss', 'N/A'):.4f}"
+                    )
+                    logger.info(
+                        f"  Train Accuracy: {round_data.get('train_accuracy', 'N/A'):.4f}"
+                    )
+                    logger.info(
+                        f"  Test Loss: {round_data.get('test_loss', 'N/A'):.4f}"
+                    )
+                    logger.info(
+                        f"  Test Accuracy: {round_data.get('test_accuracy', 'N/A'):.4f}"
+                    )
+
+            # Medical-specific logging
+            logger.info("=== Medical FL Compliance Summary ===")
+            logger.info(f"Privacy-preserving: YES (ε={dp_config.epsilon}, δ={dp_config.delta})")
+            logger.info(f"Per-hospital privacy: {dp_config.per_client_clipping}")
+            logger.info(f"Data never leaves hospitals: YES (federated learning)")
+            logger.info(f"Noise added to prevent reconstruction: YES ({dp_config.mechanism.value})")
+
+        finally:
+            logger.info("=== Shutting Down ===")
+            learning_process.shutdown()
 
     except Exception as e:
         logger.error(f"DP-enhanced medical federated learning failed: {e}")

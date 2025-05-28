@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 DP-Enhanced Decentralized Skin Lesion Classification - Local Differential Privacy for Medical FL
+Updated to include all arguments from the regular decentralized skin lesion example for consistency.
 
 This example demonstrates decentralized federated learning with differential privacy for medical image
 classification using skin lesion data. Unlike centralized approaches, this uses gossip protocols where
@@ -400,7 +401,7 @@ def main() -> None:
         description="DP-Enhanced Decentralized Federated Learning for Skin Cancer Classification (Local DP)"
     )
 
-    # Core decentralized learning arguments
+    # Core decentralized learning arguments (from regular decentralized skin lesion example)
     parser.add_argument(
         "--num_actors", type=int, default=6, help="Number of virtual clients (hospitals)"
     )
@@ -456,7 +457,7 @@ def main() -> None:
         help="Network topology (decentralized-compatible only)",
     )
 
-    # Training arguments
+    # Training arguments (from regular decentralized skin lesion example)
     parser.add_argument(
         "--rounds", type=int, default=8, help="Number of decentralized learning rounds"
     )
@@ -483,25 +484,7 @@ def main() -> None:
         help="Path to save the final model",
     )
 
-    # Differential Privacy arguments - Medical-grade privacy with Local DP
-    parser.add_argument(
-        "--epsilon", type=float, default=3.0,
-        help="Privacy budget per client per round (ε) - higher for Local DP in medical setting"
-    )
-    parser.add_argument(
-        "--delta", type=float, default=1e-6,
-        help="Failure probability (δ) - lower for medical data"
-    )
-    parser.add_argument(
-        "--clipping_norm", type=float, default=1.0,
-        help="Gradient clipping threshold"
-    )
-    parser.add_argument(
-        "--client_sampling_rate", type=float, default=1.0,
-        help="Client sampling rate (less effective with Local DP)"
-    )
-
-    # Skin lesion specific arguments - IDENTICAL to normal skin lesion example
+    # Skin lesion specific arguments (from regular decentralized skin lesion example)
     parser.add_argument(
         "--image_size", type=int, default=128, help="Size to resize images to"
     )
@@ -528,7 +511,7 @@ def main() -> None:
         help="Print debug information about skin lesion data format",
     )
 
-    # Multi-node Ray cluster arguments
+    # Multi-node Ray cluster arguments (from regular decentralized skin lesion example)
     parser.add_argument(
         "--ray_address",
         type=str,
@@ -578,7 +561,7 @@ def main() -> None:
         help="Auto-detect Ray cluster from environment variables",
     )
 
-    # Logging and monitoring arguments
+    # Logging and monitoring arguments (from regular decentralized skin lesion example)
     parser.add_argument(
         "--log_level",
         type=str,
@@ -592,7 +575,7 @@ def main() -> None:
         help="Monitor and log resource usage during training",
     )
 
-    # Visualization arguments
+    # Visualization arguments (from regular decentralized skin lesion example)
     parser.add_argument(
         "--vis_dir",
         type=str,
@@ -613,6 +596,24 @@ def main() -> None:
         "--create_summary",
         action="store_true",
         help="Create summary plot of the training process",
+    )
+
+    # DP-specific arguments - Medical-grade privacy with Local DP
+    parser.add_argument(
+        "--epsilon", type=float, default=3.0,
+        help="Privacy budget per client per round (ε) - higher for Local DP in medical setting"
+    )
+    parser.add_argument(
+        "--delta", type=float, default=1e-6,
+        help="Failure probability (δ) - lower for medical data"
+    )
+    parser.add_argument(
+        "--clipping_norm", type=float, default=1.0,
+        help="Gradient clipping threshold"
+    )
+    parser.add_argument(
+        "--client_sampling_rate", type=float, default=1.0,
+        help="Client sampling rate (less effective with Local DP)"
     )
 
     args = parser.parse_args()
