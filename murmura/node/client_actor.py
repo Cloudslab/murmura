@@ -427,16 +427,18 @@ class VirtualClientActor:
 
                 # Merge loaded datasets
                 self.mdataset = loaded_datasets[0][1]  # Start with first dataset
-                for split_name, dataset in loaded_datasets[1:]:
-                    try:
-                        self.mdataset.merge_splits(dataset)
-                        self.logger.debug(f"Merged split: {split_name}")
-                    except Exception as e3:
-                        self.logger.error(f"Failed to merge split {split_name}: {e3}")
 
-                self.logger.info(
-                    f"Successfully loaded {len(loaded_datasets)} splits individually"
-                )
+                if self.mdataset is not None:
+                    for split_name, dataset in loaded_datasets[1:]:
+                        try:
+                            self.mdataset.merge_splits(dataset)
+                            self.logger.debug(f"Merged split: {split_name}")
+                        except Exception as e3:
+                            self.logger.error(f"Failed to merge split {split_name}: {e3}")
+
+                    self.logger.info(
+                        f"Successfully loaded {len(loaded_datasets)} splits individually"
+                    )
 
             # CRITICAL: Apply preprocessing if needed (this is the key fix!)
             if preprocessing_info:
@@ -447,7 +449,7 @@ class VirtualClientActor:
             if partitions:
                 self.logger.debug("Restoring partitions from metadata...")
                 for split_name, split_partitions in partitions.items():
-                    if split_name in self.mdataset.available_splits:
+                    if self.mdataset is not None and split_name in self.mdataset.available_splits:
                         try:
                             self.mdataset.add_partitions(split_name, split_partitions)
                             self.logger.debug(
@@ -494,16 +496,17 @@ class VirtualClientActor:
                     )
 
                 # Check if feature columns exist
-                missing_features = [
-                    col for col in self.feature_columns if col not in dataset_columns
-                ]
-                if missing_features:
-                    self.logger.error(
-                        f"Feature columns {missing_features} not found in dataset columns: {dataset_columns}"
-                    )
-                    raise ValueError(
-                        f"Feature columns {missing_features} not found after dataset loading. Available columns: {dataset_columns}"
-                    )
+                if self.feature_columns is not None:
+                    missing_features = [
+                        col for col in self.feature_columns if col not in dataset_columns
+                    ]
+                    if missing_features:
+                        self.logger.error(
+                            f"Feature columns {missing_features} not found in dataset columns: {dataset_columns}"
+                        )
+                        raise ValueError(
+                            f"Feature columns {missing_features} not found after dataset loading. Available columns: {dataset_columns}"
+                        )
 
                 # Validate partition data
                 actual_size = len(split_dataset)

@@ -183,10 +183,11 @@ class TorchModelWrapper(ModelInterface):
 
         # Ensure data is in a supported numeric dtype
         if hasattr(data, "dtype") and (
-            data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
+                data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
         ):
             try:
-                data = data.astype(np.float32)
+                # FIXED: Use np.array instead of astype to ensure we get ndarray
+                data = np.array(data, dtype=np.float32)
             except (ValueError, TypeError):
                 # Last resort: convert via list
                 data = np.array(data.tolist(), dtype=np.float32)
