@@ -42,7 +42,6 @@ class ExperimentConfig:
 
     # Cluster configuration
     actors_per_node: int = 2
-    cpus_per_actor: float = 1.5
 
     def __post_init__(self):
         """Set derived parameters based on configuration"""
@@ -127,16 +126,12 @@ class ExperimentConfig:
         if self.scale <= 1:
             # Centralized learning
             self.actors_per_node = 1
-            self.cpus_per_actor = 4.0  # Can use more resources
         elif self.scale <= 10:
             self.actors_per_node = 2
-            self.cpus_per_actor = 1.5
         elif self.scale <= 20:
             self.actors_per_node = 4
-            self.cpus_per_actor = 1.8
         else:
             self.actors_per_node = 6
-            self.cpus_per_actor = 1.2
 
 
 @dataclass
@@ -371,7 +366,6 @@ class ExperimentRunner:
             "--lr", str(config.learning_rate),
             "--log_level", "INFO",
             "--actors_per_node", str(config.actors_per_node),
-            "--cpus_per_actor", str(config.cpus_per_actor),
             "--placement_strategy", "spread",
         ]
 
