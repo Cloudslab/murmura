@@ -171,7 +171,7 @@ def main():
 
             # Network topology (decentralized-compatible)
             topology=TopologyConfig(
-                topology_type=TopologyType(args.topology.upper()),
+                topology_type=TopologyType(args.topology),
                 hub_index=0  # Not used for decentralized topologies
             ),
 

@@ -553,8 +553,8 @@ def main() -> None:
     logger = logging.getLogger("murmura.decentralized_skin_lesion")
 
     # Check compatibility of topology and strategy before proceeding
-    topology_type = TopologyType(args.topology.upper())
-    strategy_type = AggregationStrategyType(args.aggregation_strategy.upper())
+    topology_type = TopologyType(args.topology)
+    strategy_type = AggregationStrategyType(args.aggregation_strategy)
 
     # Validate decentralized compatibility
     from murmura.aggregation.strategies.gossip_avg import GossipAvg
