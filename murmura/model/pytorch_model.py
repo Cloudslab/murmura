@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Callable, Dict, Any, Tuple, cast
+from typing import Optional, Callable, Dict, Any, Tuple, cast, Union, List
 
 import numpy as np
 import torch
@@ -28,14 +28,14 @@ class TorchModelWrapper(ModelInterface):
     """
 
     def __init__(
-        self,
-        model: PyTorchModel,
-        loss_fn: Optional[nn.Module] = None,
-        optimizer_class: Optional[Callable] = None,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
-        device: Optional[str] = None,
-        input_shape: Optional[Tuple[int, ...]] = None,
-        data_preprocessor: Optional[Any] = None,  # GenericDataPreprocessor
+            self,
+            model: PyTorchModel,
+            loss_fn: Optional[nn.Module] = None,
+            optimizer_class: Optional[Callable] = None,
+            optimizer_kwargs: Optional[Dict[str, Any]] = None,
+            device: Optional[str] = None,
+            input_shape: Optional[Tuple[int, ...]] = None,
+            data_preprocessor: Optional[GenericDataPreprocessor] = None,
     ):
         """
         Initialize the PyTorch model wrapper.
@@ -60,7 +60,8 @@ class TorchModelWrapper(ModelInterface):
         else:
             self.device = device
 
-        # Set up data preprocessor
+        # Set up data preprocessor - fix type annotation issue
+        self.data_preprocessor: Optional[GenericDataPreprocessor]
         if data_preprocessor is None:
             # Import here to avoid circular imports
             try:
@@ -78,10 +79,10 @@ class TorchModelWrapper(ModelInterface):
         )
 
     def _prepare_data(
-        self,
-        data: np.ndarray,
-        labels: Optional[np.ndarray] = None,
-        batch_size: int = 32,
+            self,
+            data: np.ndarray,
+            labels: Optional[np.ndarray] = None,
+            batch_size: int = 32,
     ) -> DataLoader:
         """
         Enhanced data preparation with pluggable preprocessing.
@@ -95,17 +96,22 @@ class TorchModelWrapper(ModelInterface):
         # Use the generic preprocessor if available
         if self.data_preprocessor is not None:
             try:
-                # Convert data to list if it's not already
+                # Convert data to list if it's not already - fix type handling
+                processed_data: Union[List[Any], np.ndarray]
                 if isinstance(data, np.ndarray) and data.dtype == np.object_:
-                    data_list = data.tolist()
+                    processed_data = data.tolist()
                 elif hasattr(data, "__iter__") and not isinstance(data, (str, bytes)):
-                    data_list = list(data)
+                    processed_data = list(data)
                 else:
-                    data_list = [data]
+                    processed_data = [data]
+
+                # Ensure we have a list for the preprocessor
+                if not isinstance(processed_data, list):
+                    processed_data = [processed_data]
 
                 # Use the generic preprocessor
-                processed_data = self.data_preprocessor.preprocess_features(data_list)
-                data = processed_data
+                processed_array = self.data_preprocessor.preprocess_features(processed_data)
+                data = processed_array
 
             except Exception as e:
                 # Fallback to manual processing if generic preprocessor fails
@@ -175,7 +181,7 @@ class TorchModelWrapper(ModelInterface):
 
         # Ensure data is in a supported numeric dtype
         if hasattr(data, "dtype") and (
-            data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
+                data.dtype == np.object_ or not np.issubdtype(data.dtype, np.number)
         ):
             try:
                 data = data.astype(np.float32)
@@ -272,7 +278,7 @@ class TorchModelWrapper(ModelInterface):
         }
 
     def evaluate(
-        self, data: np.ndarray, labels: np.ndarray, **kwargs
+            self, data: np.ndarray, labels: np.ndarray, **kwargs
     ) -> Dict[str, float]:
         """
         Evaluate the model on the provided data and labels.

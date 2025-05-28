@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Dict, Any, List, Optional, Tuple
 
+import numpy as np
 import ray
 
 from murmura.aggregation.aggregation_config import (
@@ -373,22 +374,20 @@ class ClusterManager:
             return False
 
     def _distribute_dataset_metadata_only(
-        self,
-        dataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
-        Distribute only dataset metadata for lazy loading with enhanced validation and error handling.
+        Distribute only dataset metadata for lazy loading with preprocessing information.
         """
         logger = logging.getLogger("murmura")
         logger.info("Using lazy dataset distribution (metadata only)")
 
         # Validate inputs
         if feature_columns is None or label_column is None:
-            raise ValueError(
-                "feature_columns and label_column must be provided for lazy dataset distribution"
-            )
+            raise ValueError("feature_columns and label_column must be provided for lazy dataset distribution")
 
         if not isinstance(feature_columns, list) or not feature_columns:
             raise ValueError("feature_columns must be a non-empty list")
@@ -400,18 +399,27 @@ class ClusterManager:
         if not dataset.dataset_metadata:
             raise ValueError("Dataset must have metadata for lazy loading")
 
-        # Create comprehensive metadata package with proper validation
+        # CRITICAL: Extract preprocessing information from the dataset
+        preprocessing_info = self._extract_preprocessing_info(dataset, feature_columns, label_column)
+
+        # Create comprehensive metadata package with preprocessing info
         dataset_metadata = {
             # Core dataset info - with validation
             "dataset_source": dataset.dataset_metadata.get("source"),
             "dataset_name": dataset.dataset_metadata.get("dataset_name"),
             "dataset_kwargs": dataset.dataset_metadata.get("kwargs", {}),
+
             # Structure info - with validation
             "available_splits": dataset.available_splits,
             "partitions": dataset.partitions,
+
             # Column information - explicitly included
             "feature_columns": feature_columns.copy(),
             "label_column": label_column,
+
+            # CRITICAL: Include preprocessing information
+            "preprocessing_info": preprocessing_info,
+
             # Reconstruction strategy
             "lazy_loading": True,
             "reconstruction_strategy": "on_demand",
@@ -419,13 +427,9 @@ class ClusterManager:
 
         # Validate the metadata we're about to send
         required_fields = ["dataset_source", "dataset_name", "available_splits"]
-        missing_fields = [
-            field for field in required_fields if not dataset_metadata.get(field)
-        ]
+        missing_fields = [field for field in required_fields if not dataset_metadata.get(field)]
         if missing_fields:
-            raise ValueError(
-                f"Dataset metadata missing required fields: {missing_fields}"
-            )
+            raise ValueError(f"Dataset metadata missing required fields: {missing_fields}")
 
         # Ensure we have partitions
         if not dataset_metadata["partitions"]:
@@ -438,11 +442,12 @@ class ClusterManager:
         logger.info(f"Distributing lazy metadata to {len(self.actors)} actors")
         logger.info(f"Dataset: {dataset_metadata['dataset_name']}")
         logger.info(f"Splits: {dataset_metadata['available_splits']}")
-        logger.info(
-            f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned"
-        )
+        logger.info(f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned")
         logger.info(f"Feature columns: {feature_columns}")
         logger.info(f"Label column: {label_column}")
+
+        if preprocessing_info:
+            logger.info(f"Preprocessing info included: {list(preprocessing_info.keys())}")
 
         # Distribute metadata with enhanced error handling
         failed_actors = []
@@ -468,12 +473,8 @@ class ClusterManager:
 
                 successful_actors += 1
 
-                if (i + 1) % 5 == 0 or i == len(
-                    self.actors
-                ) - 1:  # Log progress every 5 actors
-                    logger.info(
-                        f"Successfully distributed metadata to {successful_actors}/{i + 1} actors"
-                    )
+                if (i + 1) % 5 == 0 or i == len(self.actors) - 1:  # Log progress every 5 actors
+                    logger.info(f"Successfully distributed metadata to {successful_actors}/{i + 1} actors")
 
             except Exception as e:
                 error_msg = f"Failed to distribute metadata to actor {i}: {e}"
@@ -481,9 +482,7 @@ class ClusterManager:
                 logger.error(f"  - Actor index: {i}")
                 logger.error(f"  - Feature columns: {feature_columns}")
                 logger.error(f"  - Label column: {label_column}")
-                logger.error(
-                    f"  - Dataset name: {dataset_metadata.get('dataset_name')}"
-                )
+                logger.error(f"  - Dataset name: {dataset_metadata.get('dataset_name')}")
                 failed_actors.append((i, str(e)))
 
         # Report results
@@ -497,9 +496,99 @@ class ClusterManager:
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
-        logger.info(
-            f"Successfully distributed metadata to all {successful_actors} actors"
-        )
+        logger.info(f"Successfully distributed metadata to all {successful_actors} actors")
+
+    def _extract_preprocessing_info(
+            self,
+            dataset: MDataset,
+            feature_columns: List[str],
+            label_column: str
+    ) -> Dict[str, Any]:
+        """
+        Extract preprocessing information from the dataset to recreate transformations on remote nodes.
+        """
+        logger = logging.getLogger("murmura")
+
+        # PRIORITY 1: Check if preprocessing info is already stored in dataset metadata
+        if (hasattr(dataset, '_dataset_metadata') and
+                dataset._dataset_metadata and
+                "preprocessing_applied" in dataset._dataset_metadata):
+
+            stored_preprocessing = dataset._dataset_metadata["preprocessing_applied"]
+            logger.info(f"Found stored preprocessing metadata: {list(stored_preprocessing.keys())}")
+            return stored_preprocessing
+
+        # PRIORITY 2: Try to detect preprocessing by examining the dataset
+        preprocessing_info = {}
+
+        try:
+            # Check if we have any split to examine
+            if not dataset.available_splits:
+                return preprocessing_info
+
+            # Get a sample split to examine the data structure
+            sample_split_name = dataset.available_splits[0]
+            sample_split = dataset.get_split(sample_split_name)
+
+            if len(sample_split) == 0:
+                return preprocessing_info
+
+            # Get column names and a sample
+            column_names = sample_split.column_names
+            sample_data = sample_split[0]
+
+            logger.debug(f"Extracting preprocessing info from dataset with columns: {column_names}")
+
+            # Check for label encoding (most common case)
+            # If the target label_column exists but there's also a string column that could be the source
+            if label_column in column_names:
+                # Look for potential source columns (common patterns)
+                potential_source_columns = ["dx", "diagnosis", "class", "category", "target"]
+
+                for source_col in potential_source_columns:
+                    if source_col in column_names and source_col != label_column:
+                        # Check if source column contains strings and target contains integers
+                        source_sample = sample_data.get(source_col)
+                        target_sample = sample_data.get(label_column)
+
+                        if (isinstance(source_sample, str) and
+                                isinstance(target_sample, (int, np.integer))):
+
+                            logger.info(f"Detected label encoding: {source_col} -> {label_column}")
+
+                            # Extract the full mapping by examining the entire split
+                            logger.debug("Extracting label mapping from dataset...")
+
+                            # Get all unique combinations of source -> target
+                            mapping = {}
+
+                            # Sample more data to build the mapping (don't load entire dataset)
+                            sample_size = min(1000, len(sample_split))  # Sample first 1000 or all if smaller
+                            sample_data_list = sample_split.select(range(sample_size))
+
+                            for example in sample_data_list:
+                                source_val = example.get(source_col)
+                                target_val = example.get(label_column)
+                                if source_val is not None and target_val is not None:
+                                    mapping[source_val] = target_val
+
+                            if mapping:
+                                preprocessing_info["label_encoding"] = {
+                                    "source_column": source_col,
+                                    "target_column": label_column,
+                                    "mapping": mapping
+                                }
+                                logger.info(f"Extracted label mapping with {len(mapping)} categories: {mapping}")
+                                break
+
+            # Add other preprocessing detection logic here as needed
+            # For example: feature scaling, normalization, etc.
+
+        except Exception as e:
+            logger.warning(f"Failed to extract preprocessing info: {e}")
+            # Return empty dict - preprocessing will be skipped
+
+        return preprocessing_info
 
     def validate_actor_dataset_state(self) -> Dict[str, Any]:
         """

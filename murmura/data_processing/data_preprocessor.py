@@ -1,9 +1,11 @@
 import io
 from abc import ABC, abstractmethod
-from typing import Any, List, Dict, Optional, Callable
+from typing import Any, List, Dict, Optional, Callable, Union
 
 import numpy as np
+from numpy import dtype
 from PIL import Image
+from PIL.Image import Image as PILImage
 
 
 class DataPreprocessor(ABC):
@@ -24,11 +26,11 @@ class ImageBytesPreprocessor(DataPreprocessor):
     """Preprocessor for image data stored as bytes (common in HuggingFace datasets)."""
 
     def __init__(
-        self,
-        target_mode: Optional[str] = None,
-        normalize: bool = True,
-        normalization_factor: float = 255.0,
-        target_size: Optional[tuple] = None,
+            self,
+            target_mode: Optional[str] = None,
+            normalize: bool = True,
+            normalization_factor: float = 255.0,
+            target_size: Optional[tuple] = None,
     ):
         """
         Initialize image bytes preprocessor.
@@ -57,7 +59,8 @@ class ImageBytesPreprocessor(DataPreprocessor):
                         return self._is_image_bytes(value)
         return False
 
-    def _is_image_bytes(self, data: bytes) -> bool:
+    @staticmethod
+    def _is_image_bytes(data: bytes) -> bool:
         """Check if bytes represent an image."""
         # Common image file signatures
         image_signatures = [
@@ -88,7 +91,7 @@ class ImageBytesPreprocessor(DataPreprocessor):
 
                 # Convert bytes to PIL Image
                 try:
-                    img = Image.open(io.BytesIO(image_bytes))
+                    img: PILImage = Image.open(io.BytesIO(image_bytes))
 
                     # Convert mode if specified
                     if self.target_mode and hasattr(img, "convert"):
@@ -121,11 +124,11 @@ class ImagePreprocessor(DataPreprocessor):
     """Preprocessor for PIL Image data with configurable parameters."""
 
     def __init__(
-        self,
-        target_mode: Optional[str] = None,
-        normalize: bool = True,
-        normalization_factor: float = 255.0,
-        target_size: Optional[tuple] = None,
+            self,
+            target_mode: Optional[str] = None,
+            normalize: bool = True,
+            normalization_factor: float = 255.0,
+            target_size: Optional[tuple] = None,
     ):
         """
         Initialize image preprocessor.
@@ -149,7 +152,7 @@ class ImagePreprocessor(DataPreprocessor):
         """Preprocess PIL images."""
         processed = []
         for item in data:
-            img = item
+            img: PILImage = item
 
             # Convert mode if specified
             if self.target_mode and hasattr(img, "convert"):
@@ -175,9 +178,9 @@ class DictPreprocessor(DataPreprocessor):
     """Preprocessor for dictionary data with configurable key extraction."""
 
     def __init__(
-        self,
-        key_extractors: Dict[str, Callable[[Any], np.ndarray]],
-        primary_key: Optional[str] = None,
+            self,
+            key_extractors: Dict[str, Callable[[Any], np.ndarray]],
+            primary_key: Optional[str] = None,
     ):
         """
         Initialize dictionary preprocessor.
@@ -224,7 +227,7 @@ class DictPreprocessor(DataPreprocessor):
 class NumericPreprocessor(DataPreprocessor):
     """Preprocessor for numeric data."""
 
-    def __init__(self, dtype: np.dtype = np.float32):
+    def __init__(self, dtype: dtype[Any] = np.dtype(np.float32)):
         """
         Initialize numeric preprocessor.
 
@@ -249,7 +252,7 @@ class NumericPreprocessor(DataPreprocessor):
 class TensorPreprocessor(DataPreprocessor):
     """Preprocessor for tensor/array data."""
 
-    def __init__(self, dtype: np.dtype = np.float32):
+    def __init__(self, dtype: dtype[Any] = np.dtype(np.float32)):
         """
         Initialize tensor preprocessor.
 
@@ -310,7 +313,8 @@ class GenericDataPreprocessor:
         else:
             self.preprocessors = preprocessors
 
-    def _preprocess_image_from_dict(self, img_data: Any) -> np.ndarray:
+    @staticmethod
+    def _preprocess_image_from_dict(img_data: Any) -> np.ndarray:
         """Helper to preprocess image data extracted from dictionary."""
         if hasattr(img_data, "convert") or isinstance(img_data, Image.Image):
             return np.array(img_data, dtype=np.float32) / 255.0
@@ -363,7 +367,7 @@ class GenericDataPreprocessor:
         )
 
     def add_preprocessor(
-        self, preprocessor: DataPreprocessor, priority: int = -1
+            self, preprocessor: DataPreprocessor, priority: int = -1
     ) -> None:
         """
         Add a custom preprocessor.
@@ -380,7 +384,7 @@ class GenericDataPreprocessor:
 
 # Dataset-specific factory functions for common use cases
 def create_image_preprocessor(
-    grayscale: bool = False, normalize: bool = True, target_size: Optional[tuple] = None
+        grayscale: bool = False, normalize: bool = True, target_size: Optional[tuple] = None
 ) -> GenericDataPreprocessor:
     """Create preprocessor optimized for image datasets."""
     target_mode = "L" if grayscale else None
@@ -422,7 +426,7 @@ def create_text_preprocessor() -> GenericDataPreprocessor:
             },
             primary_key="input_ids",
         ),
-        NumericPreprocessor(dtype=np.int64),
+        NumericPreprocessor(dtype=np.dtype(np.int64)),
     ]
 
     return GenericDataPreprocessor(preprocessors)
@@ -446,11 +450,11 @@ def create_tabular_preprocessor() -> GenericDataPreprocessor:
 
 # Helper functions
 def _process_dict_image(
-    img_data: Any, target_mode: Optional[str], normalize: bool
+        img_data: Any, target_mode: Optional[str], normalize: bool
 ) -> np.ndarray:
     """Process image data extracted from dictionary."""
     if hasattr(img_data, "convert") or isinstance(img_data, Image.Image):
-        img = img_data
+        img: PILImage = img_data
         if target_mode and hasattr(img, "convert"):
             img = img.convert(target_mode)
         img_array = np.array(img, dtype=np.float32)
@@ -464,14 +468,14 @@ def _process_dict_image(
 
 
 def _process_image_bytes(
-    img_bytes: bytes,
-    target_mode: Optional[str],
-    normalize: bool,
-    target_size: Optional[tuple],
+        img_bytes: bytes,
+        target_mode: Optional[str],
+        normalize: bool,
+        target_size: Optional[tuple],
 ) -> np.ndarray:
     """Process image bytes into numpy array."""
     try:
-        img = Image.open(io.BytesIO(img_bytes))
+        img: PILImage = Image.open(io.BytesIO(img_bytes))
 
         if target_mode and hasattr(img, "convert"):
             img = img.convert(target_mode)
