@@ -5,17 +5,21 @@ Optimized for 5-node AWS G5.2XLARGE cluster (5 GPUs, 40 vCPUs, 160GB RAM total)
 """
 
 import argparse
+import csv
+import json
 import logging
 import os
 import subprocess
 import sys
+import time
 import traceback
-from dataclasses import dataclass
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any
-
+from typing import Dict, List, Optional, Tuple, Any
 import pandas as pd
+import itertools
 
 
 @dataclass
@@ -43,7 +47,6 @@ class ExperimentConfig:
     # Cluster configuration
     actors_per_node: int = 2
     cpus_per_actor: float = 1.5
-    memory_per_actor: int = 3000  # MB
 
     def __post_init__(self):
         """Set derived parameters based on configuration"""
@@ -129,19 +132,15 @@ class ExperimentConfig:
             # Centralized learning
             self.actors_per_node = 1
             self.cpus_per_actor = 4.0  # Can use more resources
-            self.memory_per_actor = 8000  # More memory for single actor
         elif self.scale <= 10:
             self.actors_per_node = 2
             self.cpus_per_actor = 1.5
-            self.memory_per_actor = 3000
         elif self.scale <= 20:
             self.actors_per_node = 4
             self.cpus_per_actor = 1.8
-            self.memory_per_actor = 3500
         else:
             self.actors_per_node = 6
             self.cpus_per_actor = 1.2
-            self.memory_per_actor = 2500
 
 
 @dataclass
@@ -377,7 +376,6 @@ class ExperimentRunner:
             "--log_level", "INFO",
             "--actors_per_node", str(config.actors_per_node),
             "--cpus_per_actor", str(config.cpus_per_actor),
-            "--memory_per_actor", str(config.memory_per_actor),
             "--placement_strategy", "spread",
         ]
 
