@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.aggregation.strategy_factory import AggregationStrategyFactory
 from murmura.aggregation.strategy_interface import AggregationStrategy
+from murmura.orchestration.cluster_manager import ClusterManager
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.privacy.dp_config import DifferentialPrivacyConfig
 from murmura.privacy.dp_aggregation_strategies import create_dp_enhanced_strategy
@@ -109,22 +110,24 @@ class DPAggregationStrategyFactory(AggregationStrategyFactory):
 class DPClusterManager:
     """
     Enhanced cluster manager with differential privacy support.
-
-    This extends the base ClusterManager to handle DP-specific operations
-    like privacy budget tracking and client-side noise addition.
+    Fixed to properly delegate all methods to base manager.
     """
 
-    def __init__(self, config: DPOrchestrationConfig):
+    def __init__(self, config):
         # Import here to avoid circular imports
-        from murmura.orchestration.cluster_manager import ClusterManager
-
         self.base_manager = ClusterManager(config)
-        self.dp_config = config.differential_privacy
+        self.dp_config = getattr(config, 'differential_privacy', None)
         self.privacy_accountant: Optional[PrivacyAccountant] = None
 
         # Initialize privacy accountant if DP is enabled
-        if config.is_dp_enabled():
-            total_eps, total_delta = config.get_total_privacy_budget()
+        if self.dp_config is not None:
+            if hasattr(config, 'get_total_privacy_budget'):
+                total_eps, total_delta = config.get_total_privacy_budget()
+            else:
+                # Fallback calculation
+                total_eps = self.dp_config.epsilon * (self.dp_config.total_rounds or 100)
+                total_delta = self.dp_config.delta or 1e-5
+
             self.privacy_accountant = create_privacy_accountant(
                 accountant_type=self.dp_config.accountant.value,
                 total_epsilon=total_eps,
@@ -134,81 +137,59 @@ class DPClusterManager:
     def set_aggregation_strategy(self, aggregation_config: AggregationConfig,
                                  topology_config: Optional[Any] = None) -> None:
         """Set aggregation strategy with DP enhancement if configured."""
-        # Create DP-enhanced strategy
-        strategy = DPAggregationStrategyFactory.create(
-            config=aggregation_config,
-            topology_config=topology_config,
-            dp_config=self.dp_config,
-            privacy_accountant=self.privacy_accountant
-        )
+        from murmura.aggregation.strategy_factory import AggregationStrategyFactory
+
+        # Create base strategy first
+        base_strategy = AggregationStrategyFactory.create(aggregation_config, topology_config)
+
+        # Enhance with DP if configured
+        if self.dp_config is not None:
+            strategy = create_dp_enhanced_strategy(
+                base_strategy,
+                self.dp_config,
+                self.privacy_accountant
+            )
+        else:
+            strategy = base_strategy
 
         # Set the strategy on the base manager
         self.base_manager.aggregation_strategy = strategy
-        self.base_manager._initialize_coordinator()
+
+        # Initialize coordinator if we have topology manager
+        if self.base_manager.topology_manager:
+            self.base_manager._initialize_coordinator()
 
     def aggregate_model_parameters(self, weights: Optional[List[float]] = None,
                                    round_number: Optional[int] = None,
                                    sampling_rate: Optional[float] = None) -> Dict[str, Any]:
         """
         Aggregate model parameters with DP support.
-
-        Args:
-            weights: Client weights
-            round_number: Current round number
-            sampling_rate: Client sampling rate for privacy amplification
-
-        Returns:
-            Aggregated parameters
         """
         if not hasattr(self.base_manager, 'topology_coordinator') or self.base_manager.topology_coordinator is None:
             raise ValueError("Topology coordinator not initialized. Call set_aggregation_strategy first.")
 
-        # Enhanced aggregation with DP parameters
-        if hasattr(self.base_manager.aggregation_strategy, 'aggregate'):
-            # Check if this is a DP-enhanced strategy
-            if hasattr(self.base_manager.aggregation_strategy, 'dp_config'):
-                # Pass additional DP parameters
-                return self.base_manager.aggregation_strategy.aggregate(
-                    parameters_list=self._collect_client_parameters(),
-                    weights=weights,
-                    round_number=round_number,
-                    sampling_rate=sampling_rate
-                )
-            else:
-                # Standard aggregation
-                return self.base_manager.topology_coordinator.coordinate_aggregation(weights)
+        # Use the base manager's aggregation with enhanced parameters if DP is enabled
+        if (hasattr(self.base_manager.aggregation_strategy, 'aggregate') and
+                hasattr(self.base_manager.aggregation_strategy, 'dp_config')):
+
+            # This is a DP-enhanced strategy, collect parameters manually
+            import ray
+            parameter_tasks = []
+            for actor in self.base_manager.actors:
+                parameter_tasks.append(actor.get_model_parameters.remote())
+
+            parameters_list = ray.get(parameter_tasks)
+
+            # Pass additional DP parameters
+            return self.base_manager.aggregation_strategy.aggregate(
+                parameters_list=parameters_list,
+                weights=weights,
+                round_number=round_number,
+                sampling_rate=sampling_rate
+            )
         else:
+            # Standard aggregation
             return self.base_manager.topology_coordinator.coordinate_aggregation(weights)
-
-    def _collect_client_parameters(self) -> List[Dict[str, Any]]:
-        """Collect parameters from all clients."""
-        import ray
-
-        parameter_tasks = []
-        for actor in self.base_manager.actors:
-            parameter_tasks.append(actor.get_model_parameters.remote())
-
-        return ray.get(parameter_tasks)
-
-    def apply_client_side_dp(self, noise_scale: float) -> None:
-        """
-        Apply client-side differential privacy (Local DP).
-
-        This instructs all clients to add noise to their parameters
-        before transmission, implementing Local DP.
-        """
-        if not self.dp_config or not self.dp_config.is_local_dp():
-            raise ValueError("Client-side DP requires Local DP configuration")
-
-        import ray
-
-        # Instruct all clients to add noise
-        noise_tasks = []
-        for actor in self.base_manager.actors:
-            noise_tasks.append(actor.apply_local_dp_noise.remote(noise_scale))
-
-        # Wait for all clients to add noise
-        ray.get(noise_tasks)
 
     def get_privacy_summary(self) -> Dict[str, Any]:
         """Get comprehensive privacy summary from all components."""
@@ -232,10 +213,13 @@ class DPClusterManager:
 
         return summary
 
-    # Delegate other methods to base manager
+    # CRITICAL: Properly delegate ALL methods to base manager
     def __getattr__(self, name):
         """Delegate unknown attributes to base manager."""
-        return getattr(self.base_manager, name)
+        if hasattr(self.base_manager, name):
+            return getattr(self.base_manager, name)
+        else:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
 
 class DPVirtualClientActor:
@@ -318,14 +302,11 @@ class DPVirtualClientActor:
 
 def integrate_dp_with_learning_process(learning_process_class):
     """
-    Decorator to integrate differential privacy with learning processes.
-
-    This modifies learning process classes to support DP-enhanced training
-    while maintaining compatibility with existing code.
+    Fixed decorator to integrate differential privacy with learning processes.
     """
 
     class DPEnhancedLearningProcess(learning_process_class):
-        """DP-enhanced learning process."""
+        """DP-enhanced learning process with proper initialization."""
 
         def __init__(self, config, dataset, model):
             # Ensure we have DP configuration
@@ -336,6 +317,7 @@ def integrate_dp_with_learning_process(learning_process_class):
                 self.dp_enabled = False
                 self.dp_config = None
 
+            # CRITICAL: Call parent constructor first
             super().__init__(config, dataset, model)
 
         def initialize(self, num_actors, topology_config, aggregation_config, partitioner):
@@ -345,9 +327,89 @@ def integrate_dp_with_learning_process(learning_process_class):
                 from murmura.privacy.dp_integration import DPClusterManager
                 self.cluster_manager = DPClusterManager(self.config)
 
-                # Create actors and set up aggregation with DP
-                self.cluster_manager.create_actors(num_actors, topology_config)
+                # CRITICAL: Follow the same initialization sequence as base class
+                self.logger.info("=== Initializing DP-Enhanced Learning Process ===")
+
+                # Update config with actor count if needed
+                if hasattr(self.config, "num_actors"):
+                    self.config.num_actors = num_actors
+
+                # Set up aggregation strategy FIRST
+                self.logger.info("Setting up DP-enhanced aggregation strategy...")
                 self.cluster_manager.set_aggregation_strategy(aggregation_config, topology_config)
+
+                # Create actors
+                self.logger.info(f"Creating {num_actors} virtual clients...")
+                self.cluster_manager.create_actors(num_actors, topology_config)
+
+                # Emit initial state event
+                from murmura.visualization.training_event import InitialStateEvent
+                self.training_monitor.emit_event(
+                    InitialStateEvent(
+                        topology_type=topology_config.topology_type.value,
+                        num_nodes=num_actors
+                    )
+                )
+
+                # Set topology for observers
+                for observer in self.training_monitor.observers:
+                    if hasattr(observer, "set_topology"):
+                        observer.set_topology(self.cluster_manager.topology_manager)
+
+                # Partition and distribute data
+                self.logger.info("Partitioning dataset...")
+                split = self.get_config_value("split", "train")
+                partitioner.partition(self.dataset, split)
+
+                self.logger.info("Distributing data partitions...")
+                partitions = list(self.dataset.get_partitions(split).values())
+
+                cluster_stats = self.cluster_manager.get_cluster_stats()
+                self.cluster_manager.distribute_data(
+                    partitions,
+                    metadata={
+                        "split": split,
+                        "dataset": self.get_config_value("dataset_name", "unknown"),
+                        "topology": topology_config.topology_type.value,
+                        "cluster_nodes": cluster_stats["cluster_info"]["total_nodes"],
+                        "is_multinode": cluster_stats["cluster_info"]["is_multinode"],
+                    },
+                )
+
+                # Distribute dataset
+                self.logger.info("Distributing dataset...")
+                feature_columns = self.get_config_value("feature_columns", None)
+                label_column = self.get_config_value("label_column", None)
+
+                if feature_columns is None or label_column is None:
+                    raise ValueError(
+                        "feature_columns and label_column must be specified in configuration"
+                    )
+
+                self.cluster_manager.distribute_dataset(
+                    self.dataset, feature_columns=feature_columns, label_column=label_column
+                )
+
+                # CRITICAL: Distribute model - this was missing!
+                self.logger.info("Distributing model...")
+                self.cluster_manager.distribute_model(self.model)
+
+                # Validate actor state
+                self.logger.info("Validating actor dataset distribution...")
+                validation_results = self.cluster_manager.validate_actor_dataset_state()
+
+                if validation_results["invalid_actors"] > 0:
+                    error_msg = (
+                        f"Dataset distribution validation failed: "
+                        f"{validation_results['invalid_actors']}/{validation_results['total_actors']} "
+                        f"actors are not properly configured."
+                    )
+                    self.logger.error(error_msg)
+                    for error in validation_results["errors"][:5]:  # Show first 5 errors
+                        self.logger.error(f"  {error}")
+                    raise RuntimeError(error_msg)
+
+                self.logger.info("DP-enhanced learning process initialized successfully.")
             else:
                 # Use standard initialization
                 super().initialize(num_actors, topology_config, aggregation_config, partitioner)

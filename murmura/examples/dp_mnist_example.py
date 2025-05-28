@@ -1,36 +1,23 @@
 #!/usr/bin/env python3
 """
-Example: Differential Privacy Enhanced MNIST Federated Learning
-
-This example demonstrates how to use the differential privacy features
-with the murmura framework for privacy-preserving federated learning.
-
-It shows both Central DP (server-side noise) and Local DP (client-side noise)
-configurations with comprehensive privacy monitoring.
+Fixed DP MNIST Example - addresses the "Model is not set" error
 """
 
 import argparse
 import logging
-from typing import Dict, Any
 
 import torch
 import torch.nn as nn
 
-# Murmura framework imports
-from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
-from murmura.network_management.topology import TopologyConfig, TopologyType
-from murmura.node.resource_config import RayClusterConfig, ResourceConfig
-# Differential Privacy imports
 from murmura.privacy.dp_config import (
     DifferentialPrivacyConfig, DPMechanism, NoiseApplication,
     ClippingStrategy, DPAccountant
 )
 from murmura.privacy.dp_integration import (
-    DPOrchestrationConfig, create_dp_federated_learning_process,
-    create_dp_decentralized_learning_process
+    DPOrchestrationConfig, create_dp_federated_learning_process
 )
 
 
@@ -63,28 +50,19 @@ class MNISTModel(PyTorchModel):
 
 
 def setup_logging(log_level: str = "INFO") -> None:
-    """Set up logging configuration with privacy-specific loggers."""
+    """Set up logging configuration."""
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler("dp_mnist_training.log"),
+            logging.FileHandler("dp_mnist_training_fixed.log"),
         ],
     )
 
-    # Set specific privacy logger levels
-    logging.getLogger("murmura.privacy").setLevel(logging.INFO)
-    logging.getLogger("murmura.privacy.accountant").setLevel(logging.DEBUG)
 
-
-def create_central_dp_config(args) -> DifferentialPrivacyConfig:
-    """
-    Create Central Differential Privacy configuration.
-
-    Central DP adds noise at the server after aggregation,
-    providing better utility than Local DP.
-    """
+def create_dp_config(args) -> DifferentialPrivacyConfig:
+    """Create differential privacy configuration."""
     return DifferentialPrivacyConfig(
         # Core privacy parameters
         epsilon=args.epsilon,
@@ -92,15 +70,15 @@ def create_central_dp_config(args) -> DifferentialPrivacyConfig:
 
         # Mechanism configuration
         mechanism=DPMechanism.GAUSSIAN,
-        noise_application=NoiseApplication.SERVER_SIDE,
+        noise_application=NoiseApplication.SERVER_SIDE,  # Central DP
 
         # Clipping configuration
-        clipping_strategy=ClippingStrategy.ADAPTIVE,  # Automatic threshold adjustment
+        clipping_strategy=ClippingStrategy.ADAPTIVE,
         clipping_norm=args.clipping_norm,
-        target_quantile=0.5,  # Clip at median gradient norm
+        target_quantile=0.5,
 
         # Privacy accounting
-        accountant=DPAccountant.RDP,  # Rényi DP for tighter bounds
+        accountant=DPAccountant.RDP,
 
         # Client sampling for privacy amplification
         client_sampling_rate=args.client_sampling_rate,
@@ -114,127 +92,16 @@ def create_central_dp_config(args) -> DifferentialPrivacyConfig:
     )
 
 
-def create_local_dp_config(args) -> DifferentialPrivacyConfig:
-    """
-    Create Local Differential Privacy configuration.
-
-    Local DP adds noise at each client before transmission,
-    providing privacy without trusting the server.
-    """
-    return DifferentialPrivacyConfig(
-        # Core privacy parameters - higher epsilon needed for same utility
-        epsilon=args.epsilon * 2.0,  # Local DP requires more noise
-        delta=args.delta,
-
-        # Mechanism configuration
-        mechanism=DPMechanism.GAUSSIAN,
-        noise_application=NoiseApplication.CLIENT_SIDE,
-
-        # Clipping configuration
-        clipping_strategy=ClippingStrategy.FIXED,  # Fixed threshold for client-side
-        clipping_norm=args.clipping_norm,
-
-        # Privacy accounting
-        accountant=DPAccountant.ZCDP,  # Simpler accounting for local DP
-
-        # Per-client privacy
-        per_client_clipping=True,
-        max_clients_per_user=1,
-
-        # Monitoring
-        enable_privacy_monitoring=True,
-        privacy_budget_warning_threshold=0.8,
-
-        # Total rounds
-        total_rounds=args.rounds,
-    )
-
-
-def analyze_privacy_utility_tradeoff(results: Dict[str, Any]) -> None:
-    """
-    Analyze and report on privacy-utility trade-offs.
-
-    Args:
-        results: Training results including privacy summary
-    """
-    logger = logging.getLogger("murmura.privacy.analysis")
-
-    # Extract metrics
-    initial_acc = results['initial_metrics']['accuracy']
-    final_acc = results['final_metrics']['accuracy']
-    accuracy_improvement = results['accuracy_improvement']
-
-    # Extract privacy information
-    if 'privacy_summary' in results:
-        privacy_info = results['privacy_summary']
-
-        logger.info("=== Privacy-Utility Analysis ===")
-
-        # Privacy guarantees
-        if 'config' in privacy_info:
-            config = privacy_info['config']
-            logger.info(f"Privacy Mechanism: {config['mechanism']}")
-            logger.info(f"Privacy Parameters: ε={config['epsilon']}, δ={config.get('delta', 'N/A')}")
-            logger.info(f"Noise Application: {config['noise_application']}")
-            logger.info(f"Clipping Strategy: {config['clipping_strategy']}")
-
-        # Privacy consumption
-        if 'accountant' in privacy_info:
-            accountant = privacy_info['accountant']
-            spent = accountant['spent']
-            total = accountant['total_budget']
-            utilization = accountant['utilization']
-
-            logger.info(f"Privacy Budget Used: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f} "
-                        f"({utilization['epsilon_used_pct']:.1f}%)")
-            logger.info(f"Delta Budget Used: δ={spent['delta']:.2e}/{total['delta']:.2e} "
-                        f"({utilization['delta_used_pct']:.1f}%)")
-
-        # Utility impact
-        logger.info(f"Model Performance:")
-        logger.info(f"  Initial Accuracy: {initial_acc:.4f}")
-        logger.info(f"  Final Accuracy: {final_acc:.4f}")
-        logger.info(f"  Improvement: {accuracy_improvement:.4f}")
-
-        # Privacy-utility assessment
-        if accuracy_improvement > 0.1:
-            utility_assessment = "Excellent - minimal impact from DP"
-        elif accuracy_improvement > 0.05:
-            utility_assessment = "Good - acceptable DP impact"
-        elif accuracy_improvement > 0.01:
-            utility_assessment = "Fair - noticeable DP impact"
-        else:
-            utility_assessment = "Poor - significant DP impact, consider tuning parameters"
-
-        logger.info(f"Privacy-Utility Assessment: {utility_assessment}")
-
-        # Recommendations
-        logger.info("=== Recommendations ===")
-        if 'config' in privacy_info:
-            epsilon = privacy_info['config']['epsilon']
-            if epsilon < 0.1:
-                logger.info("- Very strong privacy (ε < 0.1) may significantly impact utility")
-                logger.info("- Consider increasing ε slightly or using privacy amplification techniques")
-            elif epsilon > 10.0:
-                logger.info("- Weak privacy (ε > 10.0) provides limited privacy protection")
-                logger.info("- Consider decreasing ε for stronger privacy guarantees")
-
-            if privacy_info['config']['noise_application'] == 'client_side':
-                logger.info("- Using Local DP - consider Central DP for better utility if server can be trusted")
-            else:
-                logger.info("- Using Central DP - good utility-privacy balance")
-
-
 def main():
-    """Main function for DP-enhanced MNIST federated learning."""
+    """Main function for fixed DP-enhanced MNIST federated learning."""
     parser = argparse.ArgumentParser(
-        description="Differential Privacy Enhanced MNIST Federated Learning"
+        description="Fixed Differential Privacy Enhanced MNIST Federated Learning"
     )
 
     # Core federated learning arguments
     parser.add_argument("--num_actors", type=int, default=5,
                         help="Number of virtual clients")
-    parser.add_argument("--rounds", type=int, default=10,
+    parser.add_argument("--rounds", type=int, default=5,  # Reduced for testing
                         help="Number of federated learning rounds")
     parser.add_argument("--epochs", type=int, default=1,
                         help="Local epochs per round")
@@ -244,81 +111,65 @@ def main():
                         help="Learning rate")
 
     # Differential Privacy arguments
-    parser.add_argument("--dp_mode", type=str, choices=["central", "local", "none"],
-                        default="central", help="Differential privacy mode")
     parser.add_argument("--epsilon", type=float, default=1.0,
-                        help="Privacy budget (ε). Lower = stronger privacy")
+                        help="Privacy budget (ε)")
     parser.add_argument("--delta", type=float, default=1e-5,
                         help="Failure probability (δ)")
     parser.add_argument("--clipping_norm", type=float, default=1.0,
                         help="Gradient clipping threshold")
     parser.add_argument("--client_sampling_rate", type=float, default=0.1,
-                        help="Client sampling rate for privacy amplification")
-
-    # Learning configuration
-    parser.add_argument("--topology", type=str, default="star",
-                        choices=["star", "ring", "complete"],
-                        help="Network topology")
-    parser.add_argument("--aggregation", type=str, default="fedavg",
-                        choices=["fedavg", "trimmed_mean"],
-                        help="Aggregation strategy")
-    parser.add_argument("--partition_strategy", type=str, default="dirichlet",
-                        choices=["dirichlet", "iid"],
-                        help="Data partitioning strategy")
-    parser.add_argument("--alpha", type=float, default=0.5,
-                        help="Dirichlet concentration parameter")
+                        help="Client sampling rate")
 
     # System configuration
     parser.add_argument("--log_level", type=str, default="INFO",
                         choices=["DEBUG", "INFO", "WARNING", "ERROR"])
-    parser.add_argument("--save_path", type=str, default="dp_mnist_model.pt",
+    parser.add_argument("--save_path", type=str, default="dp_mnist_model_fixed.pt",
                         help="Path to save final model")
 
     args = parser.parse_args()
 
     # Set up logging
     setup_logging(args.log_level)
-    logger = logging.getLogger("murmura.dp_mnist_example")
+    logger = logging.getLogger("murmura.dp_mnist_example_fixed")
 
     try:
-        # Create differential privacy configuration
-        dp_config = None
-        if args.dp_mode == "central":
-            dp_config = create_central_dp_config(args)
-            logger.info("Using Central Differential Privacy (server-side noise)")
-        elif args.dp_mode == "local":
-            dp_config = create_local_dp_config(args)
-            logger.info("Using Local Differential Privacy (client-side noise)")
-        else:
-            logger.info("Differential Privacy disabled")
+        # Create DP configuration
+        dp_config = create_dp_config(args)
+        logger.info("Created DP configuration")
 
         # Create enhanced orchestration configuration
+        from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+        from murmura.network_management.topology import TopologyConfig, TopologyType
+        from murmura.node.resource_config import RayClusterConfig, ResourceConfig
+
         config = DPOrchestrationConfig(
             # Core FL parameters
             num_actors=args.num_actors,
-            partition_strategy=args.partition_strategy,
-            alpha=args.alpha,
+            partition_strategy="dirichlet",
+            alpha=0.5,
             split="train",
 
-            # Network topology
+            # CRITICAL: Must specify feature and label columns
+            feature_columns=["image"],  # MNIST images
+            label_column="label",       # MNIST labels
+
+            # Network topology (centralized for Central DP)
             topology=TopologyConfig(
-                topology_type=TopologyType(args.topology),
+                topology_type=TopologyType.STAR,
                 hub_index=0
             ),
 
             # Aggregation strategy
             aggregation=AggregationConfig(
-                strategy_type=AggregationStrategyType(args.aggregation)
+                strategy_type=AggregationStrategyType.FEDAVG
             ),
 
             # Dataset configuration
             dataset_name="mnist",
-            feature_columns=["image"],
-            label_column="label",
 
             # Ray cluster configuration
             ray_cluster=RayClusterConfig(
-                namespace="murmura_dp_mnist",
+                namespace="murmura_dp_mnist_fixed",
                 logging_level=args.log_level
             ),
 
@@ -331,6 +182,8 @@ def main():
             differential_privacy=dp_config,
             enable_privacy_dashboard=True
         )
+
+        logger.info("Created orchestration configuration")
 
         logger.info("=== Loading MNIST Dataset ===")
         train_dataset = MDataset.load_dataset_with_multinode_support(
@@ -346,6 +199,7 @@ def main():
         )
 
         train_dataset.merge_splits(test_dataset)
+        logger.info("Loaded and merged MNIST dataset")
 
         logger.info("=== Creating MNIST Model ===")
         model = MNISTModel()
@@ -358,29 +212,19 @@ def main():
             optimizer_kwargs={"lr": args.lr},
             input_shape=input_shape,
         )
+        logger.info("Created model wrapper")
 
         logger.info("=== Setting Up DP-Enhanced Learning Process ===")
-        # Create appropriate learning process based on topology
-        if args.topology in ["star", "complete"] or args.dp_mode == "central":
-            # Federated learning with Central DP
-            learning_process = create_dp_federated_learning_process(
-                config, train_dataset, global_model
-            )
-            logger.info("Created DP-enhanced Federated Learning Process")
-        else:
-            # Decentralized learning with Local DP
-            if args.dp_mode == "central":
-                logger.warning("Forcing Local DP for decentralized topology")
-                config.differential_privacy.noise_application = NoiseApplication.CLIENT_SIDE
-
-            learning_process = create_dp_decentralized_learning_process(
-                config, train_dataset, global_model
-            )
-            logger.info("Created DP-enhanced Decentralized Learning Process")
+        learning_process = create_dp_federated_learning_process(
+            config, train_dataset, global_model
+        )
+        logger.info("Created DP-enhanced learning process")
 
         # Initialize the learning process
         partitioner = PartitionerFactory.create(config)
+        logger.info("Created partitioner")
 
+        logger.info("=== Initializing Learning Process ===")
         learning_process.initialize(
             num_actors=config.num_actors,
             topology_config=config.topology,
@@ -389,36 +233,24 @@ def main():
         )
 
         # Log privacy configuration
-        if dp_config:
-            privacy_desc = dp_config.get_privacy_description()
-            utility_impact = dp_config.estimate_utility_impact()
+        privacy_desc = dp_config.get_privacy_description()
+        utility_impact = dp_config.estimate_utility_impact()
 
-            logger.info("=== Privacy Configuration ===")
-            logger.info(f"Privacy Guarantee: {privacy_desc}")
-            logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
-            logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
-            logger.info(f"Communication Impact: {utility_impact['communication']}")
+        logger.info("=== Privacy Configuration ===")
+        logger.info(f"Privacy Guarantee: {privacy_desc}")
+        logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
+        logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
+        logger.info(f"Communication Impact: {utility_impact['communication']}")
 
         logger.info("=== Starting DP-Enhanced Training ===")
         logger.info(f"Clients: {args.num_actors}")
         logger.info(f"Rounds: {args.rounds}")
-        logger.info(f"Topology: {args.topology}")
-        logger.info(f"Aggregation: {args.aggregation}")
-        logger.info(f"DP Mode: {args.dp_mode}")
-
-        # Set training parameters
-        config_dict = {
-            "rounds": args.rounds,
-            "epochs": args.epochs,
-            "batch_size": args.batch_size,
-            "test_split": "test"
-        }
+        logger.info(f"Topology: star")
+        logger.info(f"Aggregation: fedavg")
+        logger.info(f"DP Mode: central")
 
         # Execute training
         results = learning_process.execute()
-
-        # Analyze privacy-utility trade-off
-        analyze_privacy_utility_tradeoff(results)
 
         # Save model
         logger.info("=== Saving Model ===")

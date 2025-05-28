@@ -224,6 +224,14 @@ class DifferentialPrivacyConfig(BaseModel):
         """Check if this configuration uses Local Differential Privacy."""
         return self.noise_application == NoiseApplication.CLIENT_SIDE
 
+    def is_client_side(self) -> bool:
+        """Check if this configuration uses client-side noise application (Local DP)."""
+        return self.noise_application == NoiseApplication.CLIENT_SIDE
+
+    def is_server_side(self) -> bool:
+        """Check if this configuration uses server-side noise application (Central DP)."""
+        return self.noise_application == NoiseApplication.SERVER_SIDE
+
     def get_privacy_description(self) -> str:
         """Get human-readable description of privacy guarantees."""
         if self.delta is None:
