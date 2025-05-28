@@ -324,6 +324,8 @@ def main() -> None:
             dataset_name="mnist",  # Fixed to MNIST
             ray_cluster=ray_cluster_config,
             resources=resource_config,
+            feature_columns=["image"],
+            label_column="label",
         )
 
         logger.info("=== Loading MNIST Dataset ===")
@@ -483,7 +485,7 @@ def main() -> None:
 
             # Generate visualizations if requested
             if visualizer and (
-                args.create_animation or args.create_frames or args.create_summary
+                    args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
