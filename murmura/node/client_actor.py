@@ -434,7 +434,9 @@ class VirtualClientActor:
                             self.mdataset.merge_splits(dataset)
                             self.logger.debug(f"Merged split: {split_name}")
                         except Exception as e3:
-                            self.logger.error(f"Failed to merge split {split_name}: {e3}")
+                            self.logger.error(
+                                f"Failed to merge split {split_name}: {e3}"
+                            )
 
                     self.logger.info(
                         f"Successfully loaded {len(loaded_datasets)} splits individually"
@@ -446,10 +448,14 @@ class VirtualClientActor:
                 self._apply_dataset_preprocessing(preprocessing_info)
 
             # Restore partitions from metadata
-            if partitions:
+            if (
+                partitions and self.mdataset is not None
+            ):  # FIXED: Check mdataset is not None
                 self.logger.debug("Restoring partitions from metadata...")
                 for split_name, split_partitions in partitions.items():
-                    if self.mdataset is not None and split_name in self.mdataset.available_splits:
+                    if (
+                        split_name in self.mdataset.available_splits
+                    ):  # Now safe to access
                         try:
                             self.mdataset.add_partitions(split_name, split_partitions)
                             self.logger.debug(
@@ -468,7 +474,7 @@ class VirtualClientActor:
             if not self.mdataset:
                 raise RuntimeError("Dataset loading resulted in None")
 
-            if not self.mdataset.available_splits:
+            if not self.mdataset.available_splits:  # Now safe to access
                 raise RuntimeError("Loaded dataset has no available splits")
 
             # Mark as successfully loaded
@@ -480,14 +486,21 @@ class VirtualClientActor:
             self.logger.info(f"Label column: {self.label_column}")
 
             # Validate that the required columns exist after preprocessing
-            if self.data_partition and self.split in self.mdataset.available_splits:
-                split_dataset = self.mdataset.get_split(self.split)
+            if (
+                self.data_partition is not None
+                and self.mdataset is not None
+                and self.split in self.mdataset.available_splits
+            ):  # FIXED: All None checks
+                split_dataset = self.mdataset.get_split(self.split)  # Now safe
                 dataset_columns = split_dataset.column_names
 
                 self.logger.debug(f"Dataset columns after loading: {dataset_columns}")
 
                 # Check if label column exists
-                if self.label_column not in dataset_columns:
+                if (
+                    self.label_column is not None
+                    and self.label_column not in dataset_columns
+                ):  # FIXED: None check
                     self.logger.error(
                         f"Label column '{self.label_column}' not found in dataset columns: {dataset_columns}"
                     )
@@ -496,9 +509,11 @@ class VirtualClientActor:
                     )
 
                 # Check if feature columns exist
-                if self.feature_columns is not None:
+                if self.feature_columns is not None:  # FIXED: None check
                     missing_features = [
-                        col for col in self.feature_columns if col not in dataset_columns
+                        col
+                        for col in self.feature_columns
+                        if col not in dataset_columns
                     ]
                     if missing_features:
                         self.logger.error(
@@ -578,22 +593,25 @@ class VirtualClientActor:
                         example[target_column] = 0
                     return example
 
-                # Apply to all splits
-                for split_name in self.mdataset.available_splits:
-                    self.logger.debug(f"Applying label encoding to split: {split_name}")
-                    split_dataset = self.mdataset.get_split(split_name)
+                # Apply to all splits - with proper None check
+                if self.mdataset is not None:  # FIXED: None check
+                    for split_name in self.mdataset.available_splits:
+                        self.logger.debug(
+                            f"Applying label encoding to split: {split_name}"
+                        )
+                        split_dataset = self.mdataset.get_split(split_name)
 
-                    # Check if target column already exists
-                    if target_column not in split_dataset.column_names:
-                        processed_split = split_dataset.map(add_label_column)
-                        self.mdataset._splits[split_name] = processed_split
-                        self.logger.debug(
-                            f"Added {target_column} column to split {split_name}"
-                        )
-                    else:
-                        self.logger.debug(
-                            f"Target column {target_column} already exists in split {split_name}"
-                        )
+                        # Check if target column already exists
+                        if target_column not in split_dataset.column_names:
+                            processed_split = split_dataset.map(add_label_column)
+                            self.mdataset._splits[split_name] = processed_split
+                            self.logger.debug(
+                                f"Added {target_column} column to split {split_name}"
+                            )
+                        else:
+                            self.logger.debug(
+                                f"Target column {target_column} already exists in split {split_name}"
+                            )
 
                 self.logger.info("Label encoding applied successfully")
 
@@ -680,8 +698,14 @@ class VirtualClientActor:
 
             raise ValueError(error_msg)
 
-        # Step 4: Extract data
+        # Step 4: Extract data - NOW ALL VARIABLES ARE GUARANTEED NON-NULL
         try:
+            # These are now guaranteed to be non-None due to validation above
+            assert self.mdataset is not None
+            assert self.data_partition is not None
+            assert self.feature_columns is not None
+            assert self.label_column is not None
+
             split_dataset = self.mdataset.get_split(self.split)
             partition_dataset = split_dataset.select(self.data_partition)
 
@@ -690,7 +714,10 @@ class VirtualClientActor:
                 feature_data = partition_dataset[self.feature_columns[0]]
 
                 # Use model's preprocessor if available
-                if hasattr(self.model, "data_preprocessor"):
+                if (
+                    self.model is not None  # FIXED: None check
+                    and hasattr(self.model, "data_preprocessor")
+                ):
                     if self.model.data_preprocessor is not None:
                         try:
                             data_list = (
@@ -718,7 +745,10 @@ class VirtualClientActor:
                 processed_columns = []
                 for col in self.feature_columns:
                     col_data = partition_dataset[col]
-                    if hasattr(self.model, "data_preprocessor"):
+                    if (
+                        self.model is not None  # FIXED: None check
+                        and hasattr(self.model, "data_preprocessor")
+                    ):
                         if self.model.data_preprocessor is not None:
                             try:
                                 col_features = (
@@ -752,9 +782,9 @@ class VirtualClientActor:
                 # Emergency fallback
                 unique_labels = sorted(set(label_data))
                 label_map = {label: idx for idx, label in enumerate(unique_labels)}
-                labels = np.array(
-                    [label_map[label] for label in label_data], dtype=np.int64
-                )
+                # FIXED: Proper numpy array creation
+                labels_list = [label_map[label] for label in label_data]
+                labels = np.array(labels_list, dtype=np.int64)
                 self.logger.warning(f"Emergency label encoding applied: {label_map}")
             else:
                 labels = np.array(label_data, dtype=np.int64)
@@ -764,20 +794,26 @@ class VirtualClientActor:
             )
 
             # Log label distribution for debugging
-            unique_labels, counts = np.unique(labels, return_counts=True)
-            self.logger.debug(f"Label distribution: {dict(zip(unique_labels, counts))}")
+            unique_labels_arr, counts = np.unique(labels, return_counts=True)
+            self.logger.debug(
+                f"Label distribution: {dict(zip(unique_labels_arr, counts))}"
+            )
 
             return features, labels
 
         except Exception as e:
             self.logger.error(f"Error during data extraction: {e}")
             self.logger.error(f"  - split: {self.split}")
-            self.logger.error(
-                f"  - available splits: {self.mdataset.available_splits if self.mdataset else 'N/A'}"
-            )
-            self.logger.error(
-                f"  - partition size: {len(self.data_partition) if self.data_partition else 0}"
-            )
+            if self.mdataset is not None:  # FIXED: None check
+                self.logger.error(
+                    f"  - available splits: {self.mdataset.available_splits}"
+                )
+            else:
+                self.logger.error("  - mdataset is None")
+            if self.data_partition is not None:  # FIXED: None check
+                self.logger.error(f"  - partition size: {len(self.data_partition)}")
+            else:
+                self.logger.error("  - data_partition is None")
             raise RuntimeError(
                 f"Data extraction failed on node {self.node_info['node_id']}: {e}"
             )
@@ -794,7 +830,7 @@ class VirtualClientActor:
 
         try:
             self.logger.debug(
-                f"Starting training with {len(self.data_partition)} samples"
+                f"Starting training with {len(self.data_partition) if self.data_partition else 0} samples"
             )
 
             # Extract callback if provided
@@ -857,7 +893,7 @@ class VirtualClientActor:
 
         try:
             self.logger.debug(
-                f"Starting evaluation with {len(self.data_partition)} samples"
+                f"Starting evaluation with {len(self.data_partition) if self.data_partition else 0} samples"
             )
 
             features, labels = self._get_partition_data()

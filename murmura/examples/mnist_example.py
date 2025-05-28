@@ -55,7 +55,7 @@ def create_mnist_preprocessor():
     Create MNIST-specific data preprocessor.
     """
     try:
-        from murmura.data_processing.generic_preprocessor import (
+        from murmura.data_processing.generic_preprocessor import (  # type: ignore[import-untyped]
             create_image_preprocessor,
         )
 

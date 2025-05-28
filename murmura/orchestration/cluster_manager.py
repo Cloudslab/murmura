@@ -224,9 +224,9 @@ class ClusterManager:
             actor_options.update(resource_requirements)
 
             try:
-                actor = VirtualClientActor.options(**actor_options).remote(
-                    f"client_{i}"
-                )
+                # FIXED: VirtualClientActor.options() call with proper typing
+                actor_class = VirtualClientActor.options(**actor_options)
+                actor = actor_class.remote(f"client_{i}")
                 self.actors.append(actor)
 
                 # Log actor creation with node information
@@ -535,7 +535,8 @@ class ClusterManager:
             return stored_preprocessing
 
         # PRIORITY 2: Try to detect preprocessing by examining the dataset
-        preprocessing_info = {}
+        # FIXED: Proper type annotation
+        preprocessing_info: Dict[str, Any] = {}
 
         try:
             # Check if we have any split to examine
@@ -585,8 +586,8 @@ class ClusterManager:
                             # Extract the full mapping by examining the entire split
                             logger.debug("Extracting label mapping from dataset...")
 
-                            # Get all unique combinations of source -> target
-                            mapping = {}
+                            # FIXED: Proper type annotation for mapping
+                            mapping: Dict[str, int] = {}
 
                             # Sample more data to build the mapping (don't load entire dataset)
                             sample_size = min(
@@ -700,9 +701,15 @@ class ClusterManager:
                         validation_results["actor_details"].append(actor_detail)
 
                         if is_valid:
-                            validation_results["valid_actors"] += 1
+                            # FIXED: explicit addition
+                            validation_results["valid_actors"] = (
+                                validation_results["valid_actors"] + 1
+                            )
                         else:
-                            validation_results["invalid_actors"] += 1
+                            # FIXED: explicit addition
+                            validation_results["invalid_actors"] = (
+                                validation_results["invalid_actors"] + 1
+                            )
 
                             # Create detailed error message
                             missing_items = []
@@ -723,7 +730,10 @@ class ClusterManager:
                             validation_results["errors"].append(error_msg)
 
                     except Exception as detail_error:
-                        validation_results["invalid_actors"] += 1
+                        # FIXED: explicit addition
+                        validation_results["invalid_actors"] = (
+                            validation_results["invalid_actors"] + 1
+                        )
                         error_msg = f"Actor {actual_idx} detail processing error: {detail_error}"
                         validation_results["errors"].append(error_msg)
                         logger.error(error_msg)
@@ -736,7 +746,10 @@ class ClusterManager:
 
                 # Mark all actors in this batch as unreachable
                 for i in range(batch_start, batch_end):
-                    validation_results["unreachable_actors"] += 1
+                    # FIXED: explicit addition
+                    validation_results["unreachable_actors"] = (
+                        validation_results["unreachable_actors"] + 1
+                    )
                     error_msg = f"Actor {i} unreachable: {batch_error}"
                     validation_results["errors"].append(error_msg)
 
@@ -993,8 +1006,8 @@ class ClusterManager:
 
             try:
                 batch_results = ray.get(
-                    batch_tasks, timeout=600
-                )  # 10 min timeout for training
+                    batch_tasks, timeout=1800
+                )  # 30 min timeout for training
                 all_results.extend(batch_results)
 
                 logging.getLogger("murmura").debug(
@@ -1023,8 +1036,8 @@ class ClusterManager:
 
             try:
                 batch_results = ray.get(
-                    batch_tasks, timeout=300
-                )  # 5 min timeout for evaluation
+                    batch_tasks, timeout=900
+                )  # 15 min timeout for evaluation
                 all_results.extend(batch_results)
 
             except Exception as e:
