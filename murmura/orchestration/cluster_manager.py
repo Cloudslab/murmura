@@ -219,15 +219,15 @@ class ClusterManager:
         self.actors = []
         for i in range(num_actors):
             try:
-                # FIXED: Proper VirtualClientActor.options() call using ray.remote
-                actor_ref = ray.remote(**resource_requirements)(
-                    VirtualClientActor
-                ).remote(f"client_{i}")
+                if resource_requirements:
+                    actor_ref = VirtualClientActor.options(**resource_requirements).remote(f"client_{i}")
+                else:
+                    actor_ref = VirtualClientActor.remote(f"client_{i}")
                 self.actors.append(actor_ref)
 
                 # Log actor creation with node information
                 if (
-                    i % 10 == 0 or i == num_actors - 1
+                        i % 10 == 0 or i == num_actors - 1
                 ):  # Log every 10th actor and the last one
                     logging.getLogger("murmura").info(
                         f"Created actors {i + 1}/{num_actors}"
