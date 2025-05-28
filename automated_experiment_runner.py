@@ -1,118 +1,153 @@
 #!/usr/bin/env python3
 """
-Automated Murmura Experimentation Script
-========================================
-
-This script implements the comprehensive experimentation plan for comparing
-centralized, federated, and decentralized learning paradigms across diverse domains.
-
-Hardware Configuration:
-- 5x AWS G5.2XLARGE instances
-- 1 GPU, 8 vCPUs, 32 GiB RAM per instance
-- Total: 5 GPUs, 40 vCPUs, 160 GiB RAM
-
-Experiment Design:
-- Core Three-Way Comparison (Priority 1)
-- Topology-Privacy Interaction Analysis (Priority 2)
-- Scalability Analysis (Priority 3)
-- Robustness Stress Tests (Priority 4)
+Automated Murmura Experiment Runner for Three-Way Paradigm Comparison
+Optimized for 5-node AWS G5.2XLARGE cluster (5 GPUs, 40 vCPUs, 160GB RAM total)
 """
 
 import argparse
-import json
 import logging
 import os
-import signal
 import subprocess
 import sys
-import time
 import traceback
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
-import numpy as np
 import pandas as pd
 
 
+@dataclass
 class ExperimentConfig:
-    """Configuration for the experiment runner."""
+    """Configuration for a single experiment"""
+    paradigm: str  # centralized, federated, decentralized
+    dataset: str  # mnist, ham10000
+    topology: str  # star, ring, complete, random
+    heterogeneity: str  # iid, moderate_noniid, extreme_noniid
+    privacy: str  # none, moderate_dp, strong_dp
+    scale: int  # 5, 10, 20
 
-    def __init__(self):
-        # Hardware constraints
-        self.total_gpus = 5
-        self.total_cpus = 40
-        self.total_memory_gb = 160
+    # Derived parameters
+    aggregation_strategy: str = ""
+    alpha: float = 1.0
+    epsilon: float = 1.0
+    delta: float = 1e-5
 
-        # Experiment parameters - optimized for hardware
-        # Reduced from original plan to fit hardware constraints while maintaining quality
-        self.paradigms = ["centralized", "federated", "decentralized"]
-        self.topologies = ["star", "ring", "complete"]  # Removed "random" for time
-        self.data_heterogeneity = ["iid", "moderate_noniid", "extreme_noniid"]
-        self.privacy_levels = ["none", "moderate_dp", "strong_dp"]
-        self.network_scales = [5, 10, 15]  # Reduced from [5, 10, 20] for faster execution
+    # Execution parameters
+    rounds: int = 10
+    local_epochs: int = 2
+    batch_size: int = 32
+    learning_rate: float = 0.001
 
-        # Training parameters - reduced for faster execution
-        self.training_rounds = 5  # Reduced from 10 for faster execution
-        self.local_epochs = 2
-        self.batch_size = 32
-        self.learning_rate = 0.001
+    # Cluster configuration
+    actors_per_node: int = 2
+    cpus_per_actor: float = 1.5
+    memory_per_actor: int = 3000  # MB
 
-        # Datasets
-        self.datasets = ["mnist", "ham10000"]
+    def __post_init__(self):
+        """Set derived parameters based on configuration"""
+        # Set aggregation strategy based on paradigm
+        if self.paradigm == "centralized":
+            self.aggregation_strategy = "fedavg"  # No aggregation needed
+        elif self.paradigm == "federated":
+            self.aggregation_strategy = "fedavg"
+        elif self.paradigm == "decentralized":
+            self.aggregation_strategy = "gossip_avg"
 
-        # Alpha values for Dirichlet distribution
-        self.alpha_mapping = {
-            "iid": 100.0,  # High alpha = more IID
-            "moderate_noniid": 0.5,
-            "extreme_noniid": 0.1
-        }
+        # Set alpha based on heterogeneity
+        if self.heterogeneity == "iid":
+            self.alpha = 1000.0  # Effectively IID
+        elif self.heterogeneity == "moderate_noniid":
+            self.alpha = 0.5
+        elif self.heterogeneity == "extreme_noniid":
+            self.alpha = 0.1
 
-        # Privacy parameters
-        self.privacy_mapping = {
-            "none": None,
-            "moderate_dp": {"epsilon": 1.0, "delta": 1e-5},
-            "strong_dp": {"epsilon": 0.1, "delta": 1e-6}
-        }
+        # Set privacy parameters
+        if self.privacy == "moderate_dp":
+            self.epsilon = 1.0
+            self.delta = 1e-5
+        elif self.privacy == "strong_dp":
+            self.epsilon = 0.1
+            self.delta = 1e-6
 
-        # Timeout settings (in seconds)
-        self.experiment_timeout = 1800  # 30 minutes per experiment
-        self.total_timeout = 86400  # 24 hours total
+        # Adjust parameters for decentralized learning
+        if self.paradigm == "decentralized":
+            # Increase epsilon for Local DP (less efficient than Central DP)
+            if self.privacy == "moderate_dp":
+                self.epsilon = 2.0
+            elif self.privacy == "strong_dp":
+                self.epsilon = 0.5
+
+        # Set resource allocation based on scale
+        if self.scale <= 10:
+            self.actors_per_node = 2
+            self.cpus_per_actor = 1.5
+            self.memory_per_actor = 3000
+        elif self.scale <= 20:
+            self.actors_per_node = 4
+            self.cpus_per_actor = 1.8
+            self.memory_per_actor = 3500
+        else:
+            self.actors_per_node = 6
+            self.cpus_per_actor = 1.2
+            self.memory_per_actor = 2500
+
+
+@dataclass
+class ExperimentResult:
+    """Results from a single experiment"""
+    config: ExperimentConfig
+    success: bool
+    start_time: str
+    end_time: str
+    duration_minutes: float
+
+    # Performance metrics
+    initial_accuracy: float = 0.0
+    final_accuracy: float = 0.0
+    accuracy_improvement: float = 0.0
+    convergence_rounds: int = 0
+
+    # Efficiency metrics
+    total_communication_mb: float = 0.0
+    communication_per_round: float = 0.0
+    training_time_minutes: float = 0.0
+
+    # Privacy metrics (if applicable)
+    privacy_epsilon_spent: float = 0.0
+    privacy_delta_spent: float = 0.0
+    privacy_budget_utilization: float = 0.0
+
+    # Error information
+    error_message: str = ""
+    error_type: str = ""
 
 
 class ExperimentRunner:
-    """Main experiment runner class."""
+    """Main experiment runner class"""
 
-    def __init__(self, config: ExperimentConfig, output_dir: str = "./experiment_results"):
-        self.config = config
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+    def __init__(self, base_dir: str, ray_address: str = None, max_parallel: int = 2):
+        self.base_dir = Path(base_dir)
+        self.ray_address = ray_address
+        self.max_parallel = max_parallel
+        self.results_dir = self.base_dir / "experiment_results"
+        self.logs_dir = self.base_dir / "experiment_logs"
+
+        # Create directories
+        self.results_dir.mkdir(parents=True, exist_ok=True)
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
 
         # Setup logging
         self.setup_logging()
 
-        # Results storage
-        self.results = []
-        self.failed_experiments = []
-
-        # Timing
-        self.start_time = None
-        self.experiment_count = 0
-        self.total_experiments = 0
-
-        # Signal handling for graceful shutdown
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
-
-        # Ray cluster info
-        self.ray_address = os.environ.get("RAY_ADDRESS")
-        if not self.ray_address:
-            self.logger.warning("RAY_ADDRESS not set. Will attempt to auto-detect cluster.")
+        # Track experiment state
+        self.completed_experiments = set()
+        self.failed_experiments = set()
 
     def setup_logging(self):
-        """Setup comprehensive logging."""
-        log_file = self.output_dir / f"experiment_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        """Setup centralized logging"""
+        log_file = self.logs_dir / f"experiment_runner_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
         logging.basicConfig(
             level=logging.INFO,
@@ -123,578 +158,554 @@ class ExperimentRunner:
             ]
         )
 
-        self.logger = logging.getLogger("ExperimentRunner")
-        self.logger.info(f"Experiment runner initialized. Logging to {log_file}")
+        self.logger = logging.getLogger(__name__)
 
-    def signal_handler(self, signum, frame):
-        """Handle shutdown signals gracefully."""
-        self.logger.info(f"Received signal {signum}. Saving results and shutting down...")
-        self.save_results()
-        sys.exit(0)
+    def generate_experiment_configs(self, experiment_set: str) -> List[ExperimentConfig]:
+        """Generate all experiment configurations for a given set"""
+        configs = []
 
-    def generate_experiment_sets(self) -> List[Dict[str, Any]]:
-        """Generate all experiment configurations based on the plan."""
-        experiments = []
+        if experiment_set == "core":
+            # Set A: Core Three-Way Comparison (Priority 1)
+            # Reduced from full factorial for practical execution
+            paradigms = ["centralized", "federated", "decentralized"]
+            datasets = ["mnist", "ham10000"]
 
-        # Set A: Core Three-Way Comparison (PRIORITY 1)
-        self.logger.info("Generating Set A: Core Three-Way Comparison experiments")
-        set_a = self.generate_set_a()
-        experiments.extend(set_a)
+            # Strategic subset to maximize insights while keeping execution time reasonable
+            core_combinations = [
+                # Key topology comparisons
+                ("star", "iid", "none", 10),
+                ("ring", "iid", "none", 10),
+                ("complete", "iid", "none", 10),
 
-        # Set B: Topology-Privacy Interaction (PRIORITY 2) - Reduced scope
-        self.logger.info("Generating Set B: Topology-Privacy Interaction experiments")
-        set_b = self.generate_set_b()
-        experiments.extend(set_b)
+                # Heterogeneity analysis
+                ("star", "moderate_noniid", "none", 10),
+                ("star", "extreme_noniid", "none", 10),
+                ("ring", "moderate_noniid", "none", 10),
 
-        # Set C: Scalability Analysis (PRIORITY 3) - Reduced scope
-        self.logger.info("Generating Set C: Scalability Analysis experiments")
-        set_c = self.generate_set_c()
-        experiments.extend(set_c)
+                # Privacy analysis
+                ("star", "moderate_noniid", "moderate_dp", 10),
+                ("star", "moderate_noniid", "strong_dp", 10),
+                ("ring", "moderate_noniid", "moderate_dp", 10),
 
-        # Shuffle experiments to distribute load
-        np.random.shuffle(experiments)
+                # Scale analysis
+                ("star", "moderate_noniid", "none", 5),
+                ("star", "moderate_noniid", "none", 20),
+                ("ring", "moderate_noniid", "none", 20),
+            ]
 
-        self.logger.info(f"Generated {len(experiments)} total experiments")
-        return experiments
+            for paradigm in paradigms:
+                for dataset in datasets:
+                    for topology, heterogeneity, privacy, scale in core_combinations:
+                        # Skip invalid combinations
+                        if paradigm == "centralized" and topology != "star":
+                            continue
+                        if paradigm == "decentralized" and topology == "star":
+                            continue
 
-    def generate_set_a(self) -> List[Dict[str, Any]]:
-        """Generate Set A: Core Three-Way Comparison experiments."""
-        experiments = []
+                        configs.append(ExperimentConfig(
+                            paradigm=paradigm,
+                            dataset=dataset,
+                            topology=topology,
+                            heterogeneity=heterogeneity,
+                            privacy=privacy,
+                            scale=scale
+                        ))
 
-        for dataset in self.config.datasets:
-            for paradigm in self.config.paradigms:
-                for topology in self.config.topologies:
-                    for heterogeneity in self.config.data_heterogeneity:
-                        for privacy in self.config.privacy_levels:
-                            for scale in self.config.network_scales:
-                                # Skip invalid combinations
-                                if not self.is_valid_combination(paradigm, topology, privacy):
-                                    continue
+        elif experiment_set == "topology_privacy":
+            # Set B: Topology-Privacy Interaction Analysis (Priority 2)
+            paradigms = ["federated", "decentralized"]  # Focus on distributed paradigms
+            datasets = ["mnist", "ham10000"]
+            topologies = ["star", "ring", "complete"]
+            privacy_levels = ["none", "moderate_dp", "strong_dp"]
 
-                                exp = {
-                                    "set": "A",
-                                    "dataset": dataset,
-                                    "paradigm": paradigm,
-                                    "topology": topology,
-                                    "heterogeneity": heterogeneity,
-                                    "privacy": privacy,
-                                    "scale": scale,
-                                    "priority": 1
-                                }
-                                experiments.append(exp)
+            for paradigm in paradigms:
+                for dataset in datasets:
+                    for topology in topologies:
+                        for privacy in privacy_levels:
+                            # Skip invalid combinations
+                            if paradigm == "decentralized" and topology == "star":
+                                continue
 
-        self.logger.info(f"Set A: Generated {len(experiments)} experiments")
-        return experiments
+                            configs.append(ExperimentConfig(
+                                paradigm=paradigm,
+                                dataset=dataset,
+                                topology=topology,
+                                heterogeneity="moderate_noniid",  # Fixed
+                                privacy=privacy,
+                                scale=10  # Fixed
+                            ))
 
-    def generate_set_b(self) -> List[Dict[str, Any]]:
-        """Generate Set B: Topology-Privacy Interaction experiments (reduced scope)."""
-        experiments = []
+        elif experiment_set == "scalability":
+            # Set C: Scalability Analysis (Priority 3)
+            paradigms = ["centralized", "federated", "decentralized"]
+            datasets = ["mnist", "ham10000"]
+            scales = [5, 10, 15, 20]
 
-        # Focus on federated learning for topology-privacy interactions
-        for dataset in self.config.datasets:
-            for topology in self.config.topologies:
-                for privacy in self.config.privacy_levels:
-                    if privacy == "none":  # Skip non-private experiments for this set
-                        continue
+            for paradigm in paradigms:
+                for dataset in datasets:
+                    for scale in scales:
+                        topology = "ring" if paradigm == "decentralized" else "star"
 
-                    exp = {
-                        "set": "B",
-                        "dataset": dataset,
-                        "paradigm": "federated",  # Focus on federated for cleaner results
-                        "topology": topology,
-                        "heterogeneity": "moderate_noniid",  # Fixed heterogeneity
-                        "privacy": privacy,
-                        "scale": 10,  # Fixed scale
-                        "priority": 2
-                    }
-                    experiments.append(exp)
+                        configs.append(ExperimentConfig(
+                            paradigm=paradigm,
+                            dataset=dataset,
+                            topology=topology,
+                            heterogeneity="moderate_noniid",  # Fixed
+                            privacy="none",  # Fixed
+                            scale=scale
+                        ))
 
-        self.logger.info(f"Set B: Generated {len(experiments)} experiments")
-        return experiments
+        self.logger.info(f"Generated {len(configs)} configurations for {experiment_set} experiment set")
+        return configs
 
-    def generate_set_c(self) -> List[Dict[str, Any]]:
-        """Generate Set C: Scalability Analysis experiments (reduced scope)."""
-        experiments = []
+    def get_example_script_path(self, config: ExperimentConfig) -> str:
+        """Get the appropriate example script path"""
+        base_path = "murmura/examples"
 
-        # Test scalability with ring topology and moderate non-IID
-        for dataset in self.config.datasets:
-            for paradigm in self.config.paradigms:
-                for scale in [5, 10, 15, 20]:  # Extended scale range
-                    exp = {
-                        "set": "C",
-                        "dataset": dataset,
-                        "paradigm": paradigm,
-                        "topology": "ring",  # Fixed topology
-                        "heterogeneity": "moderate_noniid",  # Fixed heterogeneity
-                        "privacy": "none",  # No privacy for cleaner scalability results
-                        "scale": scale,
-                        "priority": 3
-                    }
-                    experiments.append(exp)
-
-        self.logger.info(f"Set C: Generated {len(experiments)} experiments")
-        return experiments
-
-    def is_valid_combination(self, paradigm: str, topology: str, privacy: str) -> bool:
-        """Check if paradigm-topology-privacy combination is valid."""
-        # Decentralized learning constraints
-        if paradigm == "decentralized":
-            # Decentralized only works with certain topologies
-            if topology not in ["ring", "complete"]:
-                return False
-            # Decentralized with privacy requires local DP
-            if privacy != "none":
-                return True  # We'll handle local DP in the experiment
-
-        # Centralized learning constraints
-        if paradigm == "centralized":
-            # Centralized typically uses star topology
-            if topology != "star":
-                return False
-
-        return True
-
-    def run_experiments(self, experiments: List[Dict[str, Any]], max_parallel: int = 2):
-        """Run all experiments with proper resource management."""
-        self.total_experiments = len(experiments)
-        self.start_time = time.time()
-
-        self.logger.info(f"Starting {self.total_experiments} experiments with max {max_parallel} parallel")
-
-        # Group experiments by priority
-        priority_groups = {}
-        for exp in experiments:
-            priority = exp.get("priority", 1)
-            if priority not in priority_groups:
-                priority_groups[priority] = []
-            priority_groups[priority].append(exp)
-
-        # Run experiments by priority
-        for priority in sorted(priority_groups.keys()):
-            exp_group = priority_groups[priority]
-            self.logger.info(f"Running Priority {priority} experiments ({len(exp_group)} experiments)")
-
-            # Use ThreadPoolExecutor for parallel execution
-            with ThreadPoolExecutor(max_workers=max_parallel) as executor:
-                future_to_exp = {
-                    executor.submit(self.run_single_experiment, exp): exp
-                    for exp in exp_group
-                }
-
-                for future in as_completed(future_to_exp, timeout=self.config.total_timeout):
-                    exp = future_to_exp[future]
-                    try:
-                        result = future.result(timeout=self.config.experiment_timeout)
-                        if result:
-                            self.results.append(result)
-                            self.logger.info(f"Completed experiment {self.experiment_count + 1}/{self.total_experiments}")
-                        else:
-                            self.failed_experiments.append(exp)
-                            self.logger.error(f"Experiment failed: {exp}")
-                    except Exception as e:
-                        self.logger.error(f"Experiment {exp} failed with error: {e}")
-                        self.failed_experiments.append(exp)
-
-                    self.experiment_count += 1
-
-                    # Save progress every 10 experiments
-                    if self.experiment_count % 10 == 0:
-                        self.save_partial_results()
-
-        self.logger.info(f"All experiments completed. {len(self.results)} successful, {len(self.failed_experiments)} failed")
-
-    def run_single_experiment(self, exp: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Run a single experiment configuration."""
-        exp_id = self.generate_experiment_id(exp)
-        self.logger.info(f"Starting experiment: {exp_id}")
-
-        try:
-            # Build command
-            cmd = self.build_experiment_command(exp)
-
-            # Run experiment with timeout
-            start_time = time.time()
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=self.config.experiment_timeout,
-                check=False  # Don't raise exception on non-zero exit
-            )
-
-            execution_time = time.time() - start_time
-
-            # Parse results
-            if result.returncode == 0:
-                metrics = self.parse_experiment_output(result.stdout)
-                if metrics:
-                    metrics.update(exp)
-                    metrics["experiment_id"] = exp_id
-                    metrics["execution_time"] = execution_time
-                    metrics["timestamp"] = datetime.now().isoformat()
-
-                    self.logger.info(f"Experiment {exp_id} completed successfully in {execution_time:.2f}s")
-                    return metrics
-                else:
-                    self.logger.error(f"Experiment {exp_id} failed to parse output")
-                    return None
+        if config.paradigm == "centralized":
+            # Use regular federated examples for centralized (they support star topology)
+            if config.privacy != "none":
+                script = f"dp_{config.dataset}_example.py"
             else:
-                self.logger.error(f"Experiment {exp_id} failed with return code {result.returncode}")
-                self.logger.error(f"STDERR: {result.stderr}")
-                return None
+                script = f"{config.dataset}_example.py"
+        elif config.paradigm == "federated":
+            if config.privacy != "none":
+                script = f"dp_{config.dataset}_example.py"
+            else:
+                script = f"{config.dataset}_example.py"
+        elif config.paradigm == "decentralized":
+            if config.privacy != "none":
+                script = f"dp_decentralized_{config.dataset}_example.py"
+            else:
+                script = f"decentralized_{config.dataset}_example.py"
 
-        except subprocess.TimeoutExpired:
-            self.logger.error(f"Experiment {exp_id} timed out after {self.config.experiment_timeout}s")
-            return None
-        except Exception as e:
-            self.logger.error(f"Experiment {exp_id} failed with exception: {e}")
-            self.logger.error(traceback.format_exc())
-            return None
+        return os.path.join(base_path, script)
 
-    def build_experiment_command(self, exp: Dict[str, Any]) -> List[str]:
-        """Build the command to run a single experiment."""
-        dataset = exp["dataset"]
-        paradigm = exp["paradigm"]
-        privacy = exp["privacy"]
+    def build_command(self, config: ExperimentConfig, experiment_id: str) -> List[str]:
+        """Build the command to run an experiment"""
+        script_path = self.get_example_script_path(config)
 
-        # Determine which script to use based on paradigm and privacy
-        if dataset == "mnist":
-            if paradigm == "decentralized":
-                if privacy != "none":
-                    script = "murmura/examples/dp_decentralized_mnist_example.py"
-                else:
-                    script = "murmura/examples/decentralized_mnist_example.py"
-            else:  # centralized or federated
-                if privacy != "none":
-                    script = "murmura/examples/dp_mnist_example.py"
-                else:
-                    script = "murmura/examples/mnist_example.py"
-        else:  # ham10000
-            if paradigm == "decentralized":
-                if privacy != "none":
-                    script = "murmura/examples/dp_decentralized_skin_lesion_example.py"
-                else:
-                    script = "murmura/examples/decentralized_skin_lesion_example.py"
-            else:  # centralized or federated
-                if privacy != "none":
-                    script = "murmura/examples/dp_skin_lesion_example.py"
-                else:
-                    script = "murmura/examples/skin_lesion_example.py"
+        # Base command
+        cmd = [
+            sys.executable, script_path,
+            "--num_actors", str(config.scale),
+            "--partition_strategy", "dirichlet",
+            "--alpha", str(config.alpha),
+            "--min_partition_size", "50",
+            "--rounds", str(config.rounds),
+            "--epochs", str(config.local_epochs),
+            "--batch_size", str(config.batch_size),
+            "--lr", str(config.learning_rate),
+            "--topology", config.topology,
+            "--aggregation_strategy", config.aggregation_strategy,
+            "--log_level", "INFO",
+            "--actors_per_node", str(config.actors_per_node),
+            "--cpus_per_actor", str(config.cpus_per_actor),
+            "--memory_per_actor", str(config.memory_per_actor),
+            "--placement_strategy", "spread",
+        ]
 
-        # Build command
-        cmd = ["python", script]
+        # Add Ray cluster configuration
+        if self.ray_address:
+            cmd.extend(["--ray_address", self.ray_address])
 
-        # Add arguments based on script type
-        if "dp_" in script:
-            # DP scripts have different argument structure
-            self._add_dp_script_args(cmd, exp)
-        elif "decentralized" in script:
-            # Decentralized scripts have different argument structure
-            self._add_decentralized_script_args(cmd, exp)
-        else:
-            # Regular federated/centralized scripts
-            self._add_regular_script_args(cmd, exp)
-
-        return cmd
-
-    def _add_dp_script_args(self, cmd: List[str], exp: Dict[str, Any]) -> None:
-        """Add arguments for DP scripts."""
-        # Core arguments that DP scripts accept
         cmd.extend([
-            "--num_actors", str(exp["scale"]),
-            "--rounds", str(self.config.training_rounds),
-            "--epochs", str(self.config.local_epochs),
-            "--batch_size", str(self.config.batch_size),
-            "--lr", str(self.config.learning_rate),
-            "--log_level", "WARNING",
+            "--ray_namespace", f"murmura_exp_{experiment_id}",
+            "--auto_detect_cluster"
         ])
 
         # Privacy parameters
-        if exp["privacy"] != "none":
-            privacy_params = self.config.privacy_mapping[exp["privacy"]]
+        if config.privacy != "none":
             cmd.extend([
-                "--epsilon", str(privacy_params["epsilon"]),
-                "--delta", str(privacy_params["delta"]),
+                "--epsilon", str(config.epsilon),
+                "--delta", str(config.delta),
                 "--clipping_norm", "1.0",
-                "--client_sampling_rate", "0.5",
+                "--client_sampling_rate", "0.8" if config.paradigm != "decentralized" else "1.0"
             ])
 
-        # Topology for decentralized DP scripts
-        if "decentralized" in cmd[1]:
+        # Dataset-specific parameters
+        if config.dataset == "ham10000":
             cmd.extend([
-                "--topology", exp["topology"],
-                "--aggregation_strategy", "gossip_avg",
-                "--mixing_parameter", "0.5",
+                "--dataset_name", "marmal88/skin_cancer",
+                "--image_size", "128",
+                "--widen_factor", "8",
+                "--depth", "16",
+                "--dropout", "0.3",
+                "--weight_decay", "1e-4"
             ])
 
-        # Data partitioning
-        if exp["heterogeneity"] != "iid":
-            cmd.extend([
-                "--partition_strategy", "dirichlet",
-                "--alpha", str(self.config.alpha_mapping[exp["heterogeneity"]])
-            ])
-        else:
-            cmd.extend(["--partition_strategy", "iid"])
+        # Paradigm-specific parameters
+        if config.paradigm == "decentralized":
+            cmd.extend(["--mixing_parameter", "0.5"])
 
-    def _add_decentralized_script_args(self, cmd: List[str], exp: Dict[str, Any]) -> None:
-        """Add arguments for decentralized scripts."""
-        cmd.extend([
-            "--num_actors", str(exp["scale"]),
-            "--rounds", str(self.config.training_rounds),
-            "--epochs", str(self.config.local_epochs),
-            "--batch_size", str(self.config.batch_size),
-            "--lr", str(self.config.learning_rate),
-            "--topology", exp["topology"],
-            "--aggregation_strategy", "gossip_avg",
-            "--mixing_parameter", "0.5",
-            "--log_level", "WARNING",
-        ])
+        # Save path
+        save_path = self.results_dir / f"{experiment_id}_model.pt"
+        cmd.extend(["--save_path", str(save_path)])
 
-        # Data partitioning
-        if exp["heterogeneity"] != "iid":
-            cmd.extend([
-                "--partition_strategy", "dirichlet",
-                "--alpha", str(self.config.alpha_mapping[exp["heterogeneity"]])
-            ])
-        else:
-            cmd.extend(["--partition_strategy", "iid"])
+        return cmd
 
-        # Ray cluster parameters (decentralized scripts support these)
-        if self.ray_address:
-            cmd.extend(["--ray_address", self.ray_address])
-
-        cmd.extend([
-            "--auto_detect_cluster",
-            "--placement_strategy", "spread",
-            "--cpus_per_actor", str(max(1.0, min(4.0, self.config.total_cpus / exp["scale"]))),
-        ])
-
-        # GPU allocation for decentralized scripts
-        if exp["scale"] <= self.config.total_gpus:
-            cmd.extend(["--gpus_per_actor", "1"])
-
-    def _add_regular_script_args(self, cmd: List[str], exp: Dict[str, Any]) -> None:
-        """Add arguments for regular federated/centralized scripts."""
-        cmd.extend([
-            "--num_actors", str(exp["scale"]),
-            "--rounds", str(self.config.training_rounds),
-            "--epochs", str(self.config.local_epochs),
-            "--batch_size", str(self.config.batch_size),
-            "--lr", str(self.config.learning_rate),
-            "--topology", exp["topology"],
-            "--aggregation_strategy", "fedavg",
-            "--log_level", "WARNING",
-        ])
-
-        # Data partitioning
-        if exp["heterogeneity"] != "iid":
-            cmd.extend([
-                "--partition_strategy", "dirichlet",
-                "--alpha", str(self.config.alpha_mapping[exp["heterogeneity"]])
-            ])
-        else:
-            cmd.extend(["--partition_strategy", "iid"])
-
-        # Ray cluster parameters
-        if self.ray_address:
-            cmd.extend(["--ray_address", self.ray_address])
-
-        cmd.extend([
-            "--auto_detect_cluster",
-            "--placement_strategy", "spread",
-            "--cpus_per_actor", str(max(1.0, min(4.0, self.config.total_cpus / exp["scale"]))),
-        ])
-
-        # GPU allocation
-        if exp["scale"] <= self.config.total_gpus:
-            cmd.extend(["--gpus_per_actor", "1"])
-
-    def generate_experiment_id(self, exp: Dict[str, Any]) -> str:
-        """Generate a unique experiment ID."""
-        components = [
-            exp["set"],
-            exp["dataset"],
-            exp["paradigm"],
-            exp["topology"],
-            exp["heterogeneity"],
-            exp["privacy"],
-            str(exp["scale"])
-        ]
-        return "_".join(components)
-
-    def parse_experiment_output(self, output: str) -> Optional[Dict[str, Any]]:
-        """Parse experiment output to extract metrics."""
+    def parse_experiment_output(self, output: str, config: ExperimentConfig) -> Dict[str, Any]:
+        """Parse experiment output to extract metrics"""
         metrics = {}
 
+        lines = output.split('\n')
+        for line in lines:
+            line = line.strip()
+
+            # Extract accuracy metrics
+            if "Initial accuracy:" in line:
+                try:
+                    metrics['initial_accuracy'] = float(line.split(':')[1].strip())
+                except:
+                    pass
+            elif "Final accuracy:" in line:
+                try:
+                    metrics['final_accuracy'] = float(line.split(':')[1].strip())
+                except:
+                    pass
+            elif "Accuracy improvement:" in line:
+                try:
+                    metrics['accuracy_improvement'] = float(line.split(':')[1].strip())
+                except:
+                    pass
+
+            # Extract privacy metrics (if applicable)
+            elif "Privacy Spent:" in line and config.privacy != "none":
+                try:
+                    # Parse "ε=X.XXXX/Y.YYYY, δ=Z.ZZe-XX/W.WWe-XX"
+                    parts = line.split(':')[1].strip()
+                    eps_part = parts.split(',')[0].strip()
+                    delta_part = parts.split(',')[1].strip()
+
+                    eps_spent = float(eps_part.split('=')[1].split('/')[0])
+                    delta_spent = float(delta_part.split('=')[1].split('/')[0])
+
+                    metrics['privacy_epsilon_spent'] = eps_spent
+                    metrics['privacy_delta_spent'] = delta_spent
+                except:
+                    pass
+
+            elif "Privacy Budget Utilization:" in line and config.privacy != "none":
+                try:
+                    # Parse "ε=XX.X%, δ=XX.X%"
+                    parts = line.split(':')[1].strip()
+                    eps_util = float(parts.split(',')[0].split('=')[1].replace('%', ''))
+                    metrics['privacy_budget_utilization'] = eps_util
+                except:
+                    pass
+
+        return metrics
+
+    def run_single_experiment(self, config: ExperimentConfig, experiment_id: str) -> ExperimentResult:
+        """Run a single experiment"""
+        start_time = datetime.now()
+
+        self.logger.info(f"Starting experiment {experiment_id}: {config.paradigm}-{config.dataset}-{config.topology}")
+
+        # Build command
+        cmd = self.build_command(config, experiment_id)
+
+        # Setup logging for this experiment
+        log_file = self.logs_dir / f"{experiment_id}.log"
+
         try:
-            lines = output.strip().split('\n')
+            # Run the experiment
+            with open(log_file, 'w') as f:
+                process = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=3600,  # 1 hour timeout
+                    cwd=self.base_dir
+                )
 
-            for line in lines:
-                # Look for key metrics in the output
-                if "Initial accuracy:" in line or "Initial Test Accuracy:" in line:
-                    try:
-                        # Extract percentage value
-                        parts = line.split(':')[-1].strip().replace('%', '')
-                        metrics["initial_accuracy"] = float(parts) / 100.0
-                    except (ValueError, IndexError):
-                        pass
+                output = process.stdout
+                f.write(output)
 
-                elif "Final accuracy:" in line or "Final Test Accuracy:" in line:
-                    try:
-                        parts = line.split(':')[-1].strip().replace('%', '')
-                        metrics["final_accuracy"] = float(parts) / 100.0
-                    except (ValueError, IndexError):
-                        pass
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds() / 60.0
 
-                elif "Accuracy improvement:" in line or "Accuracy Improvement:" in line:
-                    try:
-                        parts = line.split(':')[-1].strip().replace('%', '')
-                        metrics["accuracy_improvement"] = float(parts) / 100.0
-                    except (ValueError, IndexError):
-                        pass
+            if process.returncode == 0:
+                # Success - parse metrics
+                metrics = self.parse_experiment_output(output, config)
 
-                elif "Privacy Spent:" in line:
-                    try:
-                        # Extract epsilon and delta values
-                        parts = line.split("Privacy Spent:")[-1].strip()
-                        if "ε=" in parts and "δ=" in parts:
-                            eps_part = parts.split("ε=")[1].split(",")[0].strip()
-                            delta_part = parts.split("δ=")[1].split(",")[0].strip()
-                            metrics["privacy_epsilon_spent"] = float(eps_part.split("/")[0])
-                            metrics["privacy_delta_spent"] = float(delta_part.split("/")[0])
-                    except (ValueError, IndexError):
-                        pass
+                result = ExperimentResult(
+                    config=config,
+                    success=True,
+                    start_time=start_time.isoformat(),
+                    end_time=end_time.isoformat(),
+                    duration_minutes=duration,
+                    **metrics
+                )
 
-                elif "Training completed and resources cleaned up" in line:
-                    metrics["completed_successfully"] = True
+                self.logger.info(f"Experiment {experiment_id} completed successfully in {duration:.1f} minutes")
 
-            # Validate that we have essential metrics
-            if "final_accuracy" in metrics and "initial_accuracy" in metrics:
-                return metrics
             else:
-                return None
+                # Failure
+                error_msg = f"Process exited with code {process.returncode}"
+                result = ExperimentResult(
+                    config=config,
+                    success=False,
+                    start_time=start_time.isoformat(),
+                    end_time=end_time.isoformat(),
+                    duration_minutes=duration,
+                    error_message=error_msg,
+                    error_type="subprocess_error"
+                )
+
+                self.logger.error(f"Experiment {experiment_id} failed: {error_msg}")
+
+        except subprocess.TimeoutExpired:
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds() / 60.0
+
+            result = ExperimentResult(
+                config=config,
+                success=False,
+                start_time=start_time.isoformat(),
+                end_time=end_time.isoformat(),
+                duration_minutes=duration,
+                error_message="Experiment timed out after 1 hour",
+                error_type="timeout"
+            )
+
+            self.logger.error(f"Experiment {experiment_id} timed out after 1 hour")
 
         except Exception as e:
-            self.logger.error(f"Error parsing experiment output: {e}")
-            return None
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds() / 60.0
 
-    def save_partial_results(self):
-        """Save partial results during execution."""
-        if self.results:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            partial_file = self.output_dir / f"partial_results_{timestamp}.csv"
-            df = pd.DataFrame(self.results)
-            df.to_csv(partial_file, index=False)
-            self.logger.info(f"Saved partial results to {partial_file}")
+            result = ExperimentResult(
+                config=config,
+                success=False,
+                start_time=start_time.isoformat(),
+                end_time=end_time.isoformat(),
+                duration_minutes=duration,
+                error_message=str(e),
+                error_type=type(e).__name__
+            )
 
-    def save_results(self):
-        """Save final results to CSV and JSON."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.logger.error(f"Experiment {experiment_id} failed with exception: {e}")
+            self.logger.error(traceback.format_exc())
 
-        # Save successful results
-        if self.results:
-            # CSV format
-            df = pd.DataFrame(self.results)
-            csv_file = self.output_dir / f"experiment_results_{timestamp}.csv"
-            df.to_csv(csv_file, index=False)
+        return result
 
-            # Excel format with multiple sheets
-            excel_file = self.output_dir / f"experiment_results_{timestamp}.xlsx"
-            with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name='All_Results', index=False)
+    def save_results(self, results: List[ExperimentResult], output_file: str):
+        """Save results to CSV/Excel file"""
+        # Convert results to flat dictionaries
+        data = []
+        for result in results:
+            row = {
+                # Experiment configuration
+                'experiment_id': f"{result.config.paradigm}_{result.config.dataset}_{result.config.topology}_{result.config.heterogeneity}_{result.config.privacy}_{result.config.scale}",
+                'paradigm': result.config.paradigm,
+                'dataset': result.config.dataset,
+                'topology': result.config.topology,
+                'heterogeneity': result.config.heterogeneity,
+                'privacy': result.config.privacy,
+                'scale': result.config.scale,
+                'aggregation_strategy': result.config.aggregation_strategy,
+                'alpha': result.config.alpha,
+                'epsilon': result.config.epsilon,
+                'delta': result.config.delta,
 
-                # Create summary sheets
-                if len(df) > 0:
-                    # Summary by paradigm
-                    paradigm_summary = df.groupby(['paradigm', 'dataset']).agg({
-                        'final_accuracy': ['mean', 'std', 'count'],
-                        'accuracy_improvement': ['mean', 'std'],
-                        'execution_time': ['mean', 'std']
-                    }).round(4)
-                    paradigm_summary.to_excel(writer, sheet_name='Paradigm_Summary')
+                # Execution metadata
+                'success': result.success,
+                'start_time': result.start_time,
+                'end_time': result.end_time,
+                'duration_minutes': result.duration_minutes,
 
-                    # Summary by topology
-                    topology_summary = df.groupby(['topology', 'dataset']).agg({
-                        'final_accuracy': ['mean', 'std', 'count'],
-                        'accuracy_improvement': ['mean', 'std'],
-                        'execution_time': ['mean', 'std']
-                    }).round(4)
-                    topology_summary.to_excel(writer, sheet_name='Topology_Summary')
+                # Performance metrics
+                'initial_accuracy': result.initial_accuracy,
+                'final_accuracy': result.final_accuracy,
+                'accuracy_improvement': result.accuracy_improvement,
+                'convergence_rounds': result.convergence_rounds,
 
-                    # Summary by privacy
-                    privacy_summary = df.groupby(['privacy', 'dataset']).agg({
-                        'final_accuracy': ['mean', 'std', 'count'],
-                        'accuracy_improvement': ['mean', 'std'],
-                        'execution_time': ['mean', 'std']
-                    }).round(4)
-                    privacy_summary.to_excel(writer, sheet_name='Privacy_Summary')
+                # Efficiency metrics
+                'total_communication_mb': result.total_communication_mb,
+                'communication_per_round': result.communication_per_round,
+                'training_time_minutes': result.training_time_minutes,
 
-            self.logger.info(f"Saved results to {csv_file} and {excel_file}")
+                # Privacy metrics
+                'privacy_epsilon_spent': result.privacy_epsilon_spent,
+                'privacy_delta_spent': result.privacy_delta_spent,
+                'privacy_budget_utilization': result.privacy_budget_utilization,
 
-        # Save failed experiments
-        if self.failed_experiments:
-            failed_file = self.output_dir / f"failed_experiments_{timestamp}.json"
-            with open(failed_file, 'w') as f:
-                json.dump(self.failed_experiments, f, indent=2)
-            self.logger.info(f"Saved failed experiments to {failed_file}")
+                # Error information
+                'error_message': result.error_message,
+                'error_type': result.error_type,
+            }
+            data.append(row)
 
-        # Save summary statistics
-        summary = {
-            "total_experiments": self.total_experiments,
-            "successful_experiments": len(self.results),
-            "failed_experiments": len(self.failed_experiments),
-            "success_rate": len(self.results) / self.total_experiments if self.total_experiments > 0 else 0,
-            "total_execution_time": time.time() - self.start_time if self.start_time else 0,
-            "timestamp": timestamp
-        }
+        # Save to CSV
+        df = pd.DataFrame(data)
 
-        summary_file = self.output_dir / f"experiment_summary_{timestamp}.json"
-        with open(summary_file, 'w') as f:
-            json.dump(summary, f, indent=2)
+        if output_file.endswith('.xlsx'):
+            df.to_excel(output_file, index=False)
+        else:
+            df.to_csv(output_file, index=False)
 
-        self.logger.info(f"Experiment summary: {summary}")
+        self.logger.info(f"Results saved to {output_file}")
+
+        # Print summary
+        total_experiments = len(results)
+        successful_experiments = sum(1 for r in results if r.success)
+        failed_experiments = total_experiments - successful_experiments
+
+        self.logger.info(f"Experiment Summary:")
+        self.logger.info(f"  Total experiments: {total_experiments}")
+        self.logger.info(f"  Successful: {successful_experiments}")
+        self.logger.info(f"  Failed: {failed_experiments}")
+        self.logger.info(f"  Success rate: {successful_experiments/total_experiments*100:.1f}%")
+
+        if failed_experiments > 0:
+            self.logger.info("Failed experiments:")
+            for result in results:
+                if not result.success:
+                    exp_id = f"{result.config.paradigm}_{result.config.dataset}_{result.config.topology}_{result.config.privacy}_{result.config.scale}"
+                    self.logger.info(f"  {exp_id}: {result.error_type} - {result.error_message}")
+
+    def run_experiments(self, experiment_set: str, output_file: str, resume: bool = False):
+        """Run all experiments in a set"""
+        # Generate configurations
+        configs = self.generate_experiment_configs(experiment_set)
+
+        # Load existing results if resuming
+        completed_results = []
+        if resume and os.path.exists(output_file):
+            try:
+                if output_file.endswith('.xlsx'):
+                    existing_df = pd.read_excel(output_file)
+                else:
+                    existing_df = pd.read_csv(output_file)
+
+                # Convert back to results for completed experiments
+                # This is simplified - you might want to implement full conversion
+                completed_experiment_ids = set(existing_df['experiment_id'].tolist())
+                configs = [c for c in configs if self.get_experiment_id(c) not in completed_experiment_ids]
+
+                self.logger.info(f"Resuming: {len(completed_experiment_ids)} experiments already completed")
+
+            except Exception as e:
+                self.logger.warning(f"Could not load existing results: {e}")
+
+        self.logger.info(f"Running {len(configs)} experiments with max {self.max_parallel} parallel")
+
+        # Group configs by execution priority (fail fast on critical experiments)
+        priority_configs = []
+        regular_configs = []
+
+        for config in configs:
+            # Prioritize simple, fast experiments first to validate setup
+            if (config.dataset == "mnist" and
+                    config.scale <= 10 and
+                    config.privacy == "none" and
+                    config.heterogeneity == "iid"):
+                priority_configs.append(config)
+            else:
+                regular_configs.append(config)
+
+        all_configs = priority_configs + regular_configs
+        results = []
+
+        # Run experiments
+        for i, config in enumerate(all_configs):
+            experiment_id = self.get_experiment_id(config)
+
+            self.logger.info(f"Progress: {i+1}/{len(all_configs)} - Running {experiment_id}")
+
+            result = self.run_single_experiment(config, experiment_id)
+            results.append(result)
+
+            # Fail fast: if first 3 experiments fail, stop
+            if i < 3 and not result.success:
+                self.logger.error(f"Early failure detected. Stopping experiment suite.")
+                self.logger.error(f"Fix the issue with {experiment_id} before continuing.")
+                break
+
+            # Save intermediate results every 5 experiments
+            if (i + 1) % 5 == 0:
+                temp_file = output_file.replace('.', f'_temp_{i+1}.')
+                self.save_results(results, temp_file)
+
+        # Save final results
+        all_results = completed_results + results
+        self.save_results(all_results, output_file)
+
+        return all_results
+
+    def get_experiment_id(self, config: ExperimentConfig) -> str:
+        """Generate unique experiment ID"""
+        return f"{config.paradigm}_{config.dataset}_{config.topology}_{config.heterogeneity}_{config.privacy}_{config.scale}"
 
 
 def main():
-    """Main execution function."""
-    parser = argparse.ArgumentParser(description="Automated Murmura Experimentation")
-    parser.add_argument("--output_dir", default="./experiment_results",
-                        help="Output directory for results")
-    parser.add_argument("--max_parallel", type=int, default=2,
-                        help="Maximum parallel experiments")
-    parser.add_argument("--dry_run", action="store_true",
-                        help="Generate experiment plan without execution")
-    parser.add_argument("--priority", type=int, choices=[1, 2, 3], default=None,
-                        help="Run only experiments of specific priority")
+    """Main entry point"""
+    parser = argparse.ArgumentParser(description="Automated Murmura Experiment Runner")
+
+    parser.add_argument("--experiment_set",
+                        choices=["core", "topology_privacy", "scalability", "all"],
+                        default="core",
+                        help="Which experiment set to run")
+
+    parser.add_argument("--base_dir",
+                        type=str,
+                        default="/home/ubuntu/murmura",
+                        help="Base directory containing Murmura framework")
+
+    parser.add_argument("--output_file",
+                        type=str,
+                        default="experiment_results.csv",
+                        help="Output file for results (CSV or Excel)")
+
+    parser.add_argument("--ray_address",
+                        type=str,
+                        default=None,
+                        help="Ray cluster head node address")
+
+    parser.add_argument("--max_parallel",
+                        type=int,
+                        default=1,
+                        help="Maximum parallel experiments (be conservative with cluster resources)")
+
+    parser.add_argument("--resume",
+                        action="store_true",
+                        help="Resume from existing results file")
 
     args = parser.parse_args()
 
-    # Initialize configuration and runner
-    config = ExperimentConfig()
-    runner = ExperimentRunner(config, args.output_dir)
+    # Create runner
+    runner = ExperimentRunner(
+        base_dir=args.base_dir,
+        ray_address=args.ray_address,
+        max_parallel=args.max_parallel
+    )
 
-    # Generate experiment plan
-    runner.logger.info("Generating experiment plan...")
-    experiments = runner.generate_experiment_sets()
-
-    # Filter by priority if specified
-    if args.priority:
-        experiments = [exp for exp in experiments if exp.get("priority") == args.priority]
-        runner.logger.info(f"Filtered to {len(experiments)} experiments with priority {args.priority}")
-
-    if args.dry_run:
-        # Save experiment plan and exit
-        plan_file = Path(args.output_dir) / "experiment_plan.json"
-        with open(plan_file, 'w') as f:
-            json.dump(experiments, f, indent=2)
-        runner.logger.info(f"Experiment plan saved to {plan_file}")
-        return
+    # Determine which experiment sets to run
+    if args.experiment_set == "all":
+        experiment_sets = ["core", "topology_privacy", "scalability"]
+    else:
+        experiment_sets = [args.experiment_set]
 
     # Run experiments
-    try:
-        runner.run_experiments(experiments, args.max_parallel)
-    finally:
-        runner.save_results()
+    all_results = []
+    for exp_set in experiment_sets:
+        output_file = args.output_file.replace('.', f'_{exp_set}.')
+        runner.logger.info(f"Starting {exp_set} experiment set")
+
+        results = runner.run_experiments(
+            experiment_set=exp_set,
+            output_file=output_file,
+            resume=args.resume
+        )
+        all_results.extend(results)
+
+    # Save combined results if running multiple sets
+    if len(experiment_sets) > 1:
+        runner.save_results(all_results, args.output_file)
+
+    runner.logger.info("Experiment suite completed!")
 
 
 if __name__ == "__main__":
