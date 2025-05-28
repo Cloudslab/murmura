@@ -49,7 +49,7 @@ class ExperimentConfig:
         """Set derived parameters based on configuration"""
         # Set aggregation strategy based on paradigm
         if self.paradigm == "centralized":
-            self.aggregation_strategy = "fedavg"  # No aggregation needed
+            self.aggregation_strategy = "fedavg"  # Not really used for centralized
         elif self.paradigm == "federated":
             self.aggregation_strategy = "fedavg"
         elif self.paradigm == "decentralized":
@@ -79,31 +79,58 @@ class ExperimentConfig:
             elif self.privacy == "strong_dp":
                 self.epsilon = 0.5
 
-        # Dataset-specific training adjustments
-        if self.dataset == "ham10000":
-            # Medical images need more training
-            self.rounds = 75  # More rounds for complex medical data
-            self.local_epochs = 4  # More local training
-            self.learning_rate = 0.0005  # Lower LR for stability
-        elif self.dataset == "mnist":
-            # MNIST converges faster
-            self.rounds = 40  # Sufficient for MNIST
-            self.local_epochs = 3
-            self.learning_rate = 0.001
+        # CRITICAL: Different training paradigms need different configurations
+        if self.paradigm == "centralized":
+            # Traditional centralized learning: 1 actor, 1 round, many epochs
+            self.scale = 1  # Override scale - only 1 actor needed
+            self.rounds = 1  # No communication rounds needed
 
-        # Privacy-specific adjustments
-        if self.privacy != "none":
-            # DP requires more rounds due to noise
-            self.rounds = int(self.rounds * 1.5)  # 50% more rounds for DP
-            self.learning_rate *= 0.8  # Slightly lower LR for stability with noise
+            # Set epochs based on dataset
+            if self.dataset == "ham10000":
+                self.local_epochs = 100  # Equivalent training to distributed case
+                self.learning_rate = 0.0005
+            elif self.dataset == "mnist":
+                self.local_epochs = 60   # Equivalent training to distributed case
+                self.learning_rate = 0.001
 
-        # Scale-specific adjustments
-        if self.scale >= 20:
-            # More actors can handle more local work
-            self.local_epochs += 1
+            # Privacy adjustments for centralized
+            if self.privacy != "none":
+                # Central DP is more efficient, can use more epochs
+                self.local_epochs = int(self.local_epochs * 1.2)
+                self.learning_rate *= 0.9
+
+        else:
+            # Federated/Decentralized learning: multiple rounds, fewer local epochs
+            # Dataset-specific training adjustments
+            if self.dataset == "ham10000":
+                # Medical images need more training
+                self.rounds = 75  # More rounds for complex medical data
+                self.local_epochs = 4  # More local training
+                self.learning_rate = 0.0005  # Lower LR for stability
+            elif self.dataset == "mnist":
+                # MNIST converges faster
+                self.rounds = 40  # Sufficient for MNIST
+                self.local_epochs = 3
+                self.learning_rate = 0.001
+
+            # Privacy-specific adjustments for distributed learning
+            if self.privacy != "none":
+                # DP requires more rounds due to noise
+                self.rounds = int(self.rounds * 1.5)  # 50% more rounds for DP
+                self.learning_rate *= 0.8  # Slightly lower LR for stability with noise
+
+            # Scale-specific adjustments
+            if self.scale >= 20:
+                # More actors can handle more local work
+                self.local_epochs += 1
 
         # Set resource allocation based on scale
-        if self.scale <= 10:
+        if self.scale <= 1:
+            # Centralized learning
+            self.actors_per_node = 1
+            self.cpus_per_actor = 4.0  # Can use more resources
+            self.memory_per_actor = 8000  # More memory for single actor
+        elif self.scale <= 10:
             self.actors_per_node = 2
             self.cpus_per_actor = 1.5
             self.memory_per_actor = 3000
@@ -195,12 +222,12 @@ class ExperimentRunner:
 
             # Strategic subset to maximize insights while keeping execution time reasonable
             core_combinations = [
-                # Key topology comparisons
+                # Key topology comparisons (only relevant for distributed paradigms)
                 ("star", "iid", "none", 10),
                 ("ring", "iid", "none", 10),
                 ("complete", "iid", "none", 10),
 
-                # Heterogeneity analysis
+                # Heterogeneity analysis (only relevant for distributed paradigms)
                 ("star", "moderate_noniid", "none", 10),
                 ("star", "extreme_noniid", "none", 10),
                 ("ring", "moderate_noniid", "none", 10),
@@ -210,20 +237,40 @@ class ExperimentRunner:
                 ("star", "moderate_noniid", "strong_dp", 10),
                 ("ring", "moderate_noniid", "moderate_dp", 10),
 
-                # Scale analysis
+                # Scale analysis (only relevant for distributed paradigms)
                 ("star", "moderate_noniid", "none", 5),
                 ("star", "moderate_noniid", "none", 20),
                 ("ring", "moderate_noniid", "none", 20),
+
+                # Centralized baselines (topology and scale don't matter, but we test key scenarios)
+                ("star", "iid", "none", 1),  # Basic centralized
+                ("star", "iid", "moderate_dp", 1),  # Centralized with DP
+                ("star", "iid", "strong_dp", 1),  # Centralized with strong DP
             ]
 
             for paradigm in paradigms:
                 for dataset in datasets:
                     for topology, heterogeneity, privacy, scale in core_combinations:
                         # Skip invalid combinations
-                        if paradigm == "centralized" and topology != "star":
-                            continue
-                        if paradigm == "decentralized" and topology == "star":
-                            continue
+                        if paradigm == "centralized":
+                            # For centralized, only include the centralized-specific combinations
+                            if not (topology == "star" and scale == 1):
+                                continue
+                            # Heterogeneity doesn't matter for centralized (no partitioning)
+                            if heterogeneity != "iid":
+                                continue
+                        elif paradigm == "federated":
+                            # Skip centralized-only combinations
+                            if scale == 1:
+                                continue
+                            # Federated can use star topology
+                        elif paradigm == "decentralized":
+                            # Skip centralized-only combinations
+                            if scale == 1:
+                                continue
+                            # Decentralized cannot use star topology
+                            if topology == "star":
+                                continue
 
                         configs.append(ExperimentConfig(
                             paradigm=paradigm,
@@ -320,21 +367,32 @@ class ExperimentRunner:
         cmd = [
             sys.executable, script_path,
             "--num_actors", str(config.scale),
-            "--partition_strategy", "dirichlet",
+            "--partition_strategy", "dirichlet" if config.paradigm != "centralized" else "iid",
             "--alpha", str(config.alpha),
             "--min_partition_size", "50",
             "--rounds", str(config.rounds),
             "--epochs", str(config.local_epochs),
             "--batch_size", str(config.batch_size),
             "--lr", str(config.learning_rate),
-            "--topology", config.topology,
-            "--aggregation_strategy", config.aggregation_strategy,
             "--log_level", "INFO",
             "--actors_per_node", str(config.actors_per_node),
             "--cpus_per_actor", str(config.cpus_per_actor),
             "--memory_per_actor", str(config.memory_per_actor),
             "--placement_strategy", "spread",
         ]
+
+        # Add topology and aggregation only for distributed learning
+        if config.paradigm != "centralized":
+            cmd.extend([
+                "--topology", config.topology,
+                "--aggregation_strategy", config.aggregation_strategy,
+            ])
+        else:
+            # Centralized learning always uses star topology (though it doesn't matter much)
+            cmd.extend([
+                "--topology", "star",
+                "--aggregation_strategy", "fedavg",
+            ])
 
         # Add Ray cluster configuration
         if self.ray_address:
