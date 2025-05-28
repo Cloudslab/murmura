@@ -99,7 +99,12 @@ class TorchModelWrapper(ModelInterface):
                 # Convert data to list if it's not already - fix type handling
                 processed_data: Union[List[Any], np.ndarray]
                 if isinstance(data, np.ndarray) and data.dtype == np.object_:
-                    processed_data = data.tolist()
+                    processed_data_raw = data.tolist()
+                    # Ensure we always get a list, even if tolist() returns a scalar
+                    if isinstance(processed_data_raw, list):
+                        processed_data = processed_data_raw
+                    else:
+                        processed_data = [processed_data_raw]
                 elif hasattr(data, "__iter__") and not isinstance(data, (str, bytes)):
                     processed_data = list(data)
                 else:

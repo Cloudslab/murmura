@@ -218,16 +218,12 @@ class ClusterManager:
 
         self.actors = []
         for i in range(num_actors):
-            actor_options = {}
-
-            # Add resource requirements
-            actor_options.update(resource_requirements)
-
             try:
-                # FIXED: VirtualClientActor.options() call with proper typing
-                actor_class = VirtualClientActor.options(**actor_options)
-                actor = actor_class.remote(f"client_{i}")
-                self.actors.append(actor)
+                # FIXED: Proper VirtualClientActor.options() call using ray.remote
+                actor_ref = ray.remote(**resource_requirements)(
+                    VirtualClientActor
+                ).remote(f"client_{i}")
+                self.actors.append(actor_ref)
 
                 # Log actor creation with node information
                 if (
@@ -628,7 +624,8 @@ class ClusterManager:
         logger = logging.getLogger("murmura")
         logger.info("Validating actor dataset state across cluster...")
 
-        validation_results = {
+        # FIXED: Proper type annotations for validation_results
+        validation_results: Dict[str, Any] = {
             "total_actors": len(self.actors),
             "valid_actors": 0,
             "invalid_actors": 0,
@@ -698,18 +695,13 @@ class ClusterManager:
                             "dataset_name": actor_info.get("dataset_name", "unknown"),
                         }
 
+                        # FIXED: Direct access to known dictionary keys
                         validation_results["actor_details"].append(actor_detail)
 
                         if is_valid:
-                            # FIXED: explicit addition
-                            validation_results["valid_actors"] = (
-                                validation_results["valid_actors"] + 1
-                            )
+                            validation_results["valid_actors"] += 1
                         else:
-                            # FIXED: explicit addition
-                            validation_results["invalid_actors"] = (
-                                validation_results["invalid_actors"] + 1
-                            )
+                            validation_results["invalid_actors"] += 1
 
                             # Create detailed error message
                             missing_items = []
@@ -730,10 +722,7 @@ class ClusterManager:
                             validation_results["errors"].append(error_msg)
 
                     except Exception as detail_error:
-                        # FIXED: explicit addition
-                        validation_results["invalid_actors"] = (
-                            validation_results["invalid_actors"] + 1
-                        )
+                        validation_results["invalid_actors"] += 1
                         error_msg = f"Actor {actual_idx} detail processing error: {detail_error}"
                         validation_results["errors"].append(error_msg)
                         logger.error(error_msg)
@@ -746,10 +735,7 @@ class ClusterManager:
 
                 # Mark all actors in this batch as unreachable
                 for i in range(batch_start, batch_end):
-                    # FIXED: explicit addition
-                    validation_results["unreachable_actors"] = (
-                        validation_results["unreachable_actors"] + 1
-                    )
+                    validation_results["unreachable_actors"] += 1
                     error_msg = f"Actor {i} unreachable: {batch_error}"
                     validation_results["errors"].append(error_msg)
 
@@ -762,14 +748,13 @@ class ClusterManager:
         logger.info(f"  Unreachable actors: {validation_results['unreachable_actors']}")
 
         # Log first few errors for debugging
-        if validation_results["errors"]:
+        errors_list = validation_results["errors"]
+        if len(errors_list) > 0:
             logger.error("Actor validation errors found:")
-            for error in validation_results["errors"][:5]:  # Show first 5 errors
+            for error in errors_list[:5]:  # Show first 5 errors
                 logger.error(f"  {error}")
-            if len(validation_results["errors"]) > 5:
-                logger.error(
-                    f"  ... and {len(validation_results['errors']) - 5} more errors"
-                )
+            if len(errors_list) > 5:
+                logger.error(f"  ... and {len(errors_list) - 5} more errors")
 
         return validation_results
 
