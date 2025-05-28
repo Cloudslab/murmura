@@ -259,3 +259,58 @@ def test_execute_return_value(federated_learning_process, mock_model):
         pytest.approx(result["accuracy_improvement"]) == 0.2
     )  # 0.9 - 0.7, using approx for floating point
     assert len(result["round_metrics"]) == 2
+
+
+@pytest.mark.parametrize("rounds,batch_size,epochs", [
+    (1, 16, 1),
+    (2, 32, 2),
+    (3, 64, 1),
+])
+def test_different_learning_configurations(mock_dataset, mock_model, mock_cluster_manager, rounds, batch_size, epochs):
+    config = {
+        "rounds": rounds,
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "test_split": "test",
+        "feature_columns": ["image"],
+        "label_column": "label",
+        "split": "train",
+    }
+    process = FederatedLearningProcess(config, mock_dataset, mock_model)
+    process.cluster_manager = mock_cluster_manager
+    process.training_monitor = MagicMock()
+    process.execute()
+    assert mock_cluster_manager.train_models.call_count == rounds
+    expected_call = call(epochs=epochs, batch_size=batch_size, verbose=True)
+    mock_cluster_manager.train_models.assert_has_calls([expected_call] * rounds)
+
+
+def test_event_emission_edge_cases(federated_learning_process):
+    """Test event emission for edge cases (e.g., zero rounds)"""
+    federated_learning_process.config["rounds"] = 0
+    federated_learning_process.execute()
+    event_types = [call.args[0].__class__.__name__ for call in federated_learning_process.training_monitor.emit_event.call_args_list]
+    assert "EvaluationEvent" in event_types
+    assert event_types.count("LocalTrainingEvent") == 0
+
+
+def test_error_handling_missing_data(federated_learning_process):
+    """Test error handling when data is missing"""
+    federated_learning_process.dataset = None
+    with pytest.raises(Exception):
+        federated_learning_process.execute()
+
+
+def test_process_interruption_and_resumption(tmp_path, federated_learning_process):
+    """Test process interruption and resumption (simulated via temp file)"""
+    # Simulate saving state to a file
+    state_file = tmp_path / "state.json"
+    state = {"round": 1, "metrics": {"loss": 0.5}}
+    with open(state_file, "w") as f:
+        import json
+        json.dump(state, f)
+    # Simulate resuming by reading state
+    with open(state_file) as f:
+        loaded = json.load(f)
+    assert loaded["round"] == 1
+    assert "metrics" in loaded

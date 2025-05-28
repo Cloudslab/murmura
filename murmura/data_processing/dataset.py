@@ -175,7 +175,10 @@ class MDataset:
         return self._partitions.get(split_name, {})
 
     def add_partitions(self, split_name: str, partitions: Dict[int, List[int]]) -> None:
-        """Store partitions for a specific split"""
+        """Store partitions for a specific split. Enforce that all partition values are lists of indices."""
+        for k, v in partitions.items():
+            if not isinstance(v, list):
+                raise TypeError(f"Partition for key {k} must be a list of indices, got {type(v)}")
         self._partitions[split_name] = partitions
 
     def list_partitioned_splits(self) -> List[str]:

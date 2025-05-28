@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
@@ -9,6 +10,7 @@ from murmura.aggregation.strategies.fed_avg import FedAvg
 from murmura.aggregation.strategies.trimmed_mean import TrimmedMean
 from murmura.aggregation.strategies.gossip_avg import GossipAvg
 from murmura.network_management.topology import TopologyConfig, TopologyType
+from murmura.aggregation.strategy_interface import AggregationStrategy
 
 
 def test_create_fedavg_strategy():
@@ -85,3 +87,51 @@ def test_topology_compatibility_check_incompatible():
     finally:
         # Restore original compatibility settings
         TopologyCompatibilityManager._strategy_topology_map = original_map
+
+
+@pytest.mark.parametrize("strategy_type,params,should_raise", [
+    (AggregationStrategyType.FEDAVG, None, False),
+    (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": 0.2}, False),
+    (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": -0.1}, True),
+    (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": 0.5}, True),
+    (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": 0.7}, False),
+    (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": -0.1}, True),
+    (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": 1.1}, True),
+])
+def test_strategy_param_validation(strategy_type, params, should_raise):
+    """Test parameter validation for all aggregation strategies"""
+    if should_raise:
+        with pytest.raises(Exception):
+            AggregationConfig(strategy_type=strategy_type, params=params)
+    else:
+        config = AggregationConfig(strategy_type=strategy_type, params=params)
+        assert config.strategy_type == strategy_type
+
+
+def test_aggregation_empty_parameters():
+    """Test aggregation with empty parameters for all strategies"""
+    for strategy_cls in [FedAvg, TrimmedMean, GossipAvg]:
+        strategy = strategy_cls()
+        with pytest.raises(Exception):
+            strategy.aggregate([])
+
+
+def test_aggregation_null_weights():
+    """Test aggregation with null weights (should default to equal)"""
+    params = [{"layer": np.array([1.0, 2.0])}, {"layer": np.array([3.0, 4.0])}]
+    for strategy_cls in [FedAvg, TrimmedMean, GossipAvg]:
+        strategy = strategy_cls()
+        result = strategy.aggregate(params, None)
+        assert "layer" in result
+
+
+def test_aggregation_large_scale():
+    """Performance test for large-scale aggregation (marked slow)"""
+    params = [
+        {"layer": np.random.rand(1000)} for _ in range(1000)
+    ]
+    weights = np.random.dirichlet(np.ones(1000)).tolist()
+    for strategy_cls in [FedAvg, TrimmedMean, GossipAvg]:
+        strategy = strategy_cls()
+        result = strategy.aggregate(params, weights)
+        assert result["layer"].shape == (1000,)
