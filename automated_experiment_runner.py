@@ -355,27 +355,28 @@ class ExperimentRunner:
         """Build the command to run a single experiment."""
         dataset = exp["dataset"]
         paradigm = exp["paradigm"]
+        privacy = exp["privacy"]
 
-        # Determine which script to use
+        # Determine which script to use based on paradigm and privacy
         if dataset == "mnist":
             if paradigm == "decentralized":
-                if exp["privacy"] != "none":
+                if privacy != "none":
                     script = "murmura/examples/dp_decentralized_mnist_example.py"
                 else:
                     script = "murmura/examples/decentralized_mnist_example.py"
             else:  # centralized or federated
-                if exp["privacy"] != "none":
+                if privacy != "none":
                     script = "murmura/examples/dp_mnist_example.py"
                 else:
                     script = "murmura/examples/mnist_example.py"
         else:  # ham10000
             if paradigm == "decentralized":
-                if exp["privacy"] != "none":
+                if privacy != "none":
                     script = "murmura/examples/dp_decentralized_skin_lesion_example.py"
                 else:
                     script = "murmura/examples/decentralized_skin_lesion_example.py"
             else:  # centralized or federated
-                if exp["privacy"] != "none":
+                if privacy != "none":
                     script = "murmura/examples/dp_skin_lesion_example.py"
                 else:
                     script = "murmura/examples/skin_lesion_example.py"
@@ -383,7 +384,60 @@ class ExperimentRunner:
         # Build command
         cmd = ["python", script]
 
-        # Add common parameters
+        # Add arguments based on script type
+        if "dp_" in script:
+            # DP scripts have different argument structure
+            self._add_dp_script_args(cmd, exp)
+        elif "decentralized" in script:
+            # Decentralized scripts have different argument structure
+            self._add_decentralized_script_args(cmd, exp)
+        else:
+            # Regular federated/centralized scripts
+            self._add_regular_script_args(cmd, exp)
+
+        return cmd
+
+    def _add_dp_script_args(self, cmd: List[str], exp: Dict[str, Any]) -> None:
+        """Add arguments for DP scripts."""
+        # Core arguments that DP scripts accept
+        cmd.extend([
+            "--num_actors", str(exp["scale"]),
+            "--rounds", str(self.config.training_rounds),
+            "--epochs", str(self.config.local_epochs),
+            "--batch_size", str(self.config.batch_size),
+            "--lr", str(self.config.learning_rate),
+            "--log_level", "WARNING",
+        ])
+
+        # Privacy parameters
+        if exp["privacy"] != "none":
+            privacy_params = self.config.privacy_mapping[exp["privacy"]]
+            cmd.extend([
+                "--epsilon", str(privacy_params["epsilon"]),
+                "--delta", str(privacy_params["delta"]),
+                "--clipping_norm", "1.0",
+                "--client_sampling_rate", "0.5",
+            ])
+
+        # Topology for decentralized DP scripts
+        if "decentralized" in cmd[1]:
+            cmd.extend([
+                "--topology", exp["topology"],
+                "--aggregation_strategy", "gossip_avg",
+                "--mixing_parameter", "0.5",
+            ])
+
+        # Data partitioning
+        if exp["heterogeneity"] != "iid":
+            cmd.extend([
+                "--partition_strategy", "dirichlet",
+                "--alpha", str(self.config.alpha_mapping[exp["heterogeneity"]])
+            ])
+        else:
+            cmd.extend(["--partition_strategy", "iid"])
+
+    def _add_decentralized_script_args(self, cmd: List[str], exp: Dict[str, Any]) -> None:
+        """Add arguments for decentralized scripts."""
         cmd.extend([
             "--num_actors", str(exp["scale"]),
             "--rounds", str(self.config.training_rounds),
@@ -391,60 +445,69 @@ class ExperimentRunner:
             "--batch_size", str(self.config.batch_size),
             "--lr", str(self.config.learning_rate),
             "--topology", exp["topology"],
-            "--partition_strategy", "dirichlet" if exp["heterogeneity"] != "iid" else "iid",
-            "--log_level", "WARNING",  # Reduce log verbosity
+            "--aggregation_strategy", "gossip_avg",
+            "--mixing_parameter", "0.5",
+            "--log_level", "WARNING",
         ])
 
-        # Add heterogeneity parameter
+        # Data partitioning
         if exp["heterogeneity"] != "iid":
-            alpha = self.config.alpha_mapping[exp["heterogeneity"]]
-            cmd.extend(["--alpha", str(alpha)])
-
-        # Add privacy parameters
-        if exp["privacy"] != "none":
-            privacy_params = self.config.privacy_mapping[exp["privacy"]]
             cmd.extend([
-                "--epsilon", str(privacy_params["epsilon"]),
-                "--delta", str(privacy_params["delta"])
+                "--partition_strategy", "dirichlet",
+                "--alpha", str(self.config.alpha_mapping[exp["heterogeneity"]])
             ])
-
-        # Add Ray cluster parameters
-        if self.ray_address:
-            cmd.extend(["--ray_address", self.ray_address])
-
-        cmd.extend([
-            "--auto_detect_cluster",
-            "--placement_strategy", "spread",
-        ])
-
-        # Resource allocation based on experiment scale
-        # CPU allocation - ensure reasonable minimum while avoiding oversubscription
-        cpus_per_actor = max(1.0, min(4.0, self.config.total_cpus / exp["scale"]))
-
-        # GPU allocation - Ray requires whole numbers for GPUs > 1
-        if exp["scale"] <= self.config.total_gpus:
-            gpus_per_actor = 1  # 1 GPU per actor when we have enough
         else:
-            gpus_per_actor = 0  # No GPU allocation when we don't have enough
+            cmd.extend(["--partition_strategy", "iid"])
 
-        cmd.extend([
-            "--cpus_per_actor", str(cpus_per_actor),
-        ])
-
-        # Only add GPU allocation if we're allocating GPUs
-        if gpus_per_actor > 0:
-            cmd.extend(["--gpus_per_actor", str(gpus_per_actor)])
-
-        # Add Ray cluster parameters
+        # Ray cluster parameters (decentralized scripts support these)
         if self.ray_address:
             cmd.extend(["--ray_address", self.ray_address])
 
         cmd.extend([
             "--auto_detect_cluster",
             "--placement_strategy", "spread",
+            "--cpus_per_actor", str(max(1.0, min(4.0, self.config.total_cpus / exp["scale"]))),
         ])
 
-        return cmd
+        # GPU allocation for decentralized scripts
+        if exp["scale"] <= self.config.total_gpus:
+            cmd.extend(["--gpus_per_actor", "1"])
+
+    def _add_regular_script_args(self, cmd: List[str], exp: Dict[str, Any]) -> None:
+        """Add arguments for regular federated/centralized scripts."""
+        cmd.extend([
+            "--num_actors", str(exp["scale"]),
+            "--rounds", str(self.config.training_rounds),
+            "--epochs", str(self.config.local_epochs),
+            "--batch_size", str(self.config.batch_size),
+            "--lr", str(self.config.learning_rate),
+            "--topology", exp["topology"],
+            "--aggregation_strategy", "fedavg",
+            "--log_level", "WARNING",
+        ])
+
+        # Data partitioning
+        if exp["heterogeneity"] != "iid":
+            cmd.extend([
+                "--partition_strategy", "dirichlet",
+                "--alpha", str(self.config.alpha_mapping[exp["heterogeneity"]])
+            ])
+        else:
+            cmd.extend(["--partition_strategy", "iid"])
+
+        # Ray cluster parameters
+        if self.ray_address:
+            cmd.extend(["--ray_address", self.ray_address])
+
+        cmd.extend([
+            "--auto_detect_cluster",
+            "--placement_strategy", "spread",
+            "--cpus_per_actor", str(max(1.0, min(4.0, self.config.total_cpus / exp["scale"]))),
+        ])
+
+        # GPU allocation
+        if exp["scale"] <= self.config.total_gpus:
+            cmd.extend(["--gpus_per_actor", "1"])
 
     def generate_experiment_id(self, exp: Dict[str, Any]) -> str:
         """Generate a unique experiment ID."""
