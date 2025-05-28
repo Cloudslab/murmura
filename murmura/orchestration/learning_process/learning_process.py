@@ -65,11 +65,11 @@ class LearningProcess(ABC):
         self.logger.debug(f"Registered observer: {observer.__class__.__name__}")
 
     def initialize(
-            self,
-            num_actors: int,
-            topology_config: TopologyConfig,
-            aggregation_config: AggregationConfig,
-            partitioner: Partitioner,
+        self,
+        num_actors: int,
+        topology_config: TopologyConfig,
+        aggregation_config: AggregationConfig,
+        partitioner: Partitioner,
     ) -> None:
         """
         Initialize the learning process with enhanced dataset distribution strategies and validation.
@@ -190,17 +190,25 @@ class LearningProcess(ABC):
             self.logger.error(f"Actor validation failed: {e}")
             # Try to get additional debug information
             try:
-                self.logger.error("Attempting to gather debug information from actors...")
-                for i, actor in enumerate(self.cluster_manager.actors[:3]):  # Sample first 3 actors
+                self.logger.error(
+                    "Attempting to gather debug information from actors..."
+                )
+                for i, actor in enumerate(
+                    self.cluster_manager.actors[:3]
+                ):  # Sample first 3 actors
                     try:
                         debug_info = ray.get(actor.get_data_info.remote(), timeout=5)
                         self.logger.error(f"Actor {i} debug info: {debug_info}")
                     except Exception as debug_e:
-                        self.logger.error(f"Could not get debug info from actor {i}: {debug_e}")
+                        self.logger.error(
+                            f"Could not get debug info from actor {i}: {debug_e}"
+                        )
             except Exception:
                 pass  # Ignore debug information gathering errors
 
-            raise RuntimeError(f"Learning process initialization failed during actor validation: {e}")
+            raise RuntimeError(
+                f"Learning process initialization failed during actor validation: {e}"
+            )
 
         self.logger.info("Learning process initialized successfully.")
 

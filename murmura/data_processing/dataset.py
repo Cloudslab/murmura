@@ -367,9 +367,11 @@ class MDataset:
         Enhanced custom serialization for Ray/pickle compatibility with better error handling.
         """
         # For HuggingFace datasets, prefer metadata reconstruction to avoid serializing large files
-        if (self._dataset_metadata.get("source") == DatasetSource.HUGGING_FACE and
-                not self._dataset_metadata.get("converted_to_serializable", False)):
-
+        if self._dataset_metadata.get(
+            "source"
+        ) == DatasetSource.HUGGING_FACE and not self._dataset_metadata.get(
+            "converted_to_serializable", False
+        ):
             # Ensure metadata is complete before attempting reconstruction
             required_metadata = ["source", "dataset_name"]
             if all(key in self._dataset_metadata for key in required_metadata):
@@ -387,7 +389,7 @@ class MDataset:
 
     @classmethod
     def reconstruct_from_metadata(
-            cls, metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]
+        cls, metadata: Dict[str, Any], partitions: Dict[str, Dict[int, List[int]]]
     ):
         """
         Reconstruct dataset from metadata on remote nodes with enhanced error handling.
@@ -404,7 +406,9 @@ class MDataset:
             dataset_source = metadata["source"]
 
             if dataset_source == DatasetSource.HUGGING_FACE:
-                logger.info(f"Reconstructing HuggingFace dataset '{metadata['dataset_name']}' on remote node")
+                logger.info(
+                    f"Reconstructing HuggingFace dataset '{metadata['dataset_name']}' on remote node"
+                )
 
                 # Extract parameters with defaults
                 dataset_name = metadata["dataset_name"]
@@ -414,7 +418,9 @@ class MDataset:
                 # Clean kwargs to avoid duplicate parameters
                 clean_kwargs = {k: v for k, v in kwargs.items() if k != "dataset_name"}
 
-                logger.debug(f"Dataset parameters: name={dataset_name}, split={split}, kwargs={clean_kwargs}")
+                logger.debug(
+                    f"Dataset parameters: name={dataset_name}, split={split}, kwargs={clean_kwargs}"
+                )
 
                 try:
                     if split is None:
@@ -425,7 +431,9 @@ class MDataset:
                     else:
                         # Load specific split(s)
                         logger.debug(f"Loading specific split(s): {split}")
-                        hf_dataset = load_dataset(dataset_name, split=split, **clean_kwargs)
+                        hf_dataset = load_dataset(
+                            dataset_name, split=split, **clean_kwargs
+                        )
 
                         if isinstance(hf_dataset, list) and isinstance(split, list):
                             # Multiple splits loaded as list
@@ -436,22 +444,32 @@ class MDataset:
                         else:
                             # Single split or single dataset
                             split_name = split if isinstance(split, str) else "train"
-                            dataset = cls(DatasetDict({split_name: hf_dataset}), metadata)
+                            dataset = cls(
+                                DatasetDict({split_name: hf_dataset}), metadata
+                            )
 
                     # Restore partitions if provided
                     if partitions:
                         dataset._partitions = partitions.copy()
-                        logger.debug(f"Restored partitions for {len(partitions)} splits")
+                        logger.debug(
+                            f"Restored partitions for {len(partitions)} splits"
+                        )
 
-                    logger.info("Dataset reconstruction completed successfully on remote node")
+                    logger.info(
+                        "Dataset reconstruction completed successfully on remote node"
+                    )
                     return dataset
 
                 except Exception as e:
                     logger.error(f"HuggingFace dataset loading failed: {e}")
-                    raise RuntimeError(f"Failed to load HuggingFace dataset '{dataset_name}': {e}")
+                    raise RuntimeError(
+                        f"Failed to load HuggingFace dataset '{dataset_name}': {e}"
+                    )
 
             else:
-                raise ValueError(f"Unsupported dataset source for reconstruction: {dataset_source}")
+                raise ValueError(
+                    f"Unsupported dataset source for reconstruction: {dataset_source}"
+                )
 
         except Exception as e:
             logger.error(f"Dataset reconstruction failed on remote node: {e}")

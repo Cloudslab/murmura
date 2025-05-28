@@ -373,10 +373,10 @@ class ClusterManager:
             return False
 
     def _distribute_dataset_metadata_only(
-            self,
-            dataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Distribute only dataset metadata for lazy loading with enhanced validation and error handling.
@@ -386,7 +386,9 @@ class ClusterManager:
 
         # Validate inputs
         if feature_columns is None or label_column is None:
-            raise ValueError("feature_columns and label_column must be provided for lazy dataset distribution")
+            raise ValueError(
+                "feature_columns and label_column must be provided for lazy dataset distribution"
+            )
 
         if not isinstance(feature_columns, list) or not feature_columns:
             raise ValueError("feature_columns must be a non-empty list")
@@ -404,15 +406,12 @@ class ClusterManager:
             "dataset_source": dataset.dataset_metadata.get("source"),
             "dataset_name": dataset.dataset_metadata.get("dataset_name"),
             "dataset_kwargs": dataset.dataset_metadata.get("kwargs", {}),
-
             # Structure info - with validation
             "available_splits": dataset.available_splits,
             "partitions": dataset.partitions,
-
             # Column information - explicitly included
             "feature_columns": feature_columns.copy(),
             "label_column": label_column,
-
             # Reconstruction strategy
             "lazy_loading": True,
             "reconstruction_strategy": "on_demand",
@@ -420,9 +419,13 @@ class ClusterManager:
 
         # Validate the metadata we're about to send
         required_fields = ["dataset_source", "dataset_name", "available_splits"]
-        missing_fields = [field for field in required_fields if not dataset_metadata.get(field)]
+        missing_fields = [
+            field for field in required_fields if not dataset_metadata.get(field)
+        ]
         if missing_fields:
-            raise ValueError(f"Dataset metadata missing required fields: {missing_fields}")
+            raise ValueError(
+                f"Dataset metadata missing required fields: {missing_fields}"
+            )
 
         # Ensure we have partitions
         if not dataset_metadata["partitions"]:
@@ -435,7 +438,9 @@ class ClusterManager:
         logger.info(f"Distributing lazy metadata to {len(self.actors)} actors")
         logger.info(f"Dataset: {dataset_metadata['dataset_name']}")
         logger.info(f"Splits: {dataset_metadata['available_splits']}")
-        logger.info(f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned")
+        logger.info(
+            f"Partitions: {len(dataset_metadata['partitions'])} splits partitioned"
+        )
         logger.info(f"Feature columns: {feature_columns}")
         logger.info(f"Label column: {label_column}")
 
@@ -463,8 +468,12 @@ class ClusterManager:
 
                 successful_actors += 1
 
-                if (i + 1) % 5 == 0 or i == len(self.actors) - 1:  # Log progress every 5 actors
-                    logger.info(f"Successfully distributed metadata to {successful_actors}/{i + 1} actors")
+                if (i + 1) % 5 == 0 or i == len(
+                    self.actors
+                ) - 1:  # Log progress every 5 actors
+                    logger.info(
+                        f"Successfully distributed metadata to {successful_actors}/{i + 1} actors"
+                    )
 
             except Exception as e:
                 error_msg = f"Failed to distribute metadata to actor {i}: {e}"
@@ -472,7 +481,9 @@ class ClusterManager:
                 logger.error(f"  - Actor index: {i}")
                 logger.error(f"  - Feature columns: {feature_columns}")
                 logger.error(f"  - Label column: {label_column}")
-                logger.error(f"  - Dataset name: {dataset_metadata.get('dataset_name')}")
+                logger.error(
+                    f"  - Dataset name: {dataset_metadata.get('dataset_name')}"
+                )
                 failed_actors.append((i, str(e)))
 
         # Report results
@@ -486,7 +497,9 @@ class ClusterManager:
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
-        logger.info(f"Successfully distributed metadata to all {successful_actors} actors")
+        logger.info(
+            f"Successfully distributed metadata to all {successful_actors} actors"
+        )
 
     def validate_actor_dataset_state(self) -> Dict[str, Any]:
         """
@@ -501,7 +514,7 @@ class ClusterManager:
             "invalid_actors": 0,
             "unreachable_actors": 0,
             "errors": [],
-            "actor_details": []
+            "actor_details": [],
         }
 
         # Use smaller batches for validation to avoid overwhelming the cluster
@@ -528,29 +541,32 @@ class ClusterManager:
                         # Validate required fields with more specific checks
                         has_data_partition = actor_info.get("data_size", 0) > 0
                         has_feature_columns = (
-                                actor_info.get("feature_columns") is not None and
-                                len(actor_info.get("feature_columns", [])) > 0
+                            actor_info.get("feature_columns") is not None
+                            and len(actor_info.get("feature_columns", [])) > 0
                         )
                         has_label_column = (
-                                actor_info.get("label_column") is not None and
-                                actor_info.get("label_column") != ""
+                            actor_info.get("label_column") is not None
+                            and actor_info.get("label_column") != ""
                         )
-                        has_dataset_ready = (
-                                actor_info.get("has_dataset", False) or
-                                actor_info.get("lazy_loading", False)
-                        )
+                        has_dataset_ready = actor_info.get(
+                            "has_dataset", False
+                        ) or actor_info.get("lazy_loading", False)
 
-                        is_valid = all([
-                            has_data_partition,
-                            has_feature_columns,
-                            has_label_column,
-                            has_dataset_ready
-                        ])
+                        is_valid = all(
+                            [
+                                has_data_partition,
+                                has_feature_columns,
+                                has_label_column,
+                                has_dataset_ready,
+                            ]
+                        )
 
                         actor_detail = {
                             "actor_id": actual_idx,
                             "client_id": actor_info.get("client_id"),
-                            "node_id": actor_info.get("node_info", {}).get("node_id", "unknown"),
+                            "node_id": actor_info.get("node_info", {}).get(
+                                "node_id", "unknown"
+                            ),
                             "is_valid": is_valid,
                             "data_partition_size": actor_info.get("data_size", 0),
                             "has_feature_columns": has_feature_columns,
@@ -595,7 +611,9 @@ class ClusterManager:
 
             except Exception as batch_error:
                 # Handle batch timeout or other errors
-                logger.error(f"Batch validation failed for actors {batch_start}-{batch_end-1}: {batch_error}")
+                logger.error(
+                    f"Batch validation failed for actors {batch_start}-{batch_end - 1}: {batch_error}"
+                )
 
                 # Mark all actors in this batch as unreachable
                 for i in range(batch_start, batch_end):
@@ -605,7 +623,9 @@ class ClusterManager:
 
         # Log comprehensive validation summary
         logger.info("Actor validation complete:")
-        logger.info(f"  Valid actors: {validation_results['valid_actors']}/{validation_results['total_actors']}")
+        logger.info(
+            f"  Valid actors: {validation_results['valid_actors']}/{validation_results['total_actors']}"
+        )
         logger.info(f"  Invalid actors: {validation_results['invalid_actors']}")
         logger.info(f"  Unreachable actors: {validation_results['unreachable_actors']}")
 
@@ -615,7 +635,9 @@ class ClusterManager:
             for error in validation_results["errors"][:5]:  # Show first 5 errors
                 logger.error(f"  {error}")
             if len(validation_results["errors"]) > 5:
-                logger.error(f"  ... and {len(validation_results['errors']) - 5} more errors")
+                logger.error(
+                    f"  ... and {len(validation_results['errors']) - 5} more errors"
+                )
 
         return validation_results
 

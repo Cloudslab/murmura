@@ -100,7 +100,10 @@ class OrchestrationConfig(BaseModel):
             )
 
         # Validate that label_column is a non-empty string
-        if not isinstance(self.label_column, str) or len(self.label_column.strip()) == 0:
+        if (
+            not isinstance(self.label_column, str)
+            or len(self.label_column.strip()) == 0
+        ):
             raise ValueError(
                 "label_column must be a non-empty string. "
                 f"Got: {self.label_column} (type: {type(self.label_column)})"
