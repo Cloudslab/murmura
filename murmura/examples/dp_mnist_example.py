@@ -1,25 +1,26 @@
+#!/usr/bin/env python3
+"""
+DP-Enhanced MNIST Example - Central Differential Privacy for Federated Learning
+Updated to include all arguments from the regular MNIST example for consistency.
+"""
+
 import argparse
 import os
 import logging
+
 import torch
 import torch.nn as nn
 
-from murmura.aggregation.aggregation_config import (
-    AggregationConfig,
-    AggregationStrategyType,
-)
-from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
-from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
-from murmura.node.resource_config import RayClusterConfig, ResourceConfig
-from murmura.orchestration.learning_process.decentralized_learning_process import (
-    DecentralizedLearningProcess,
+from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
+from murmura.privacy.dp_config import (
+    DifferentialPrivacyConfig, DPMechanism, NoiseApplication,
+    ClippingStrategy, DPAccountant
 )
-from murmura.network_management.topology_compatibility import (
-    TopologyCompatibilityManager,
+from murmura.privacy.dp_integration import (
+    DPOrchestrationConfig, create_dp_federated_learning_process
 )
-from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
 
@@ -70,33 +71,62 @@ def create_mnist_preprocessor():
         )
     except ImportError:
         # Generic preprocessor not available, use automatic detection
-        logging.getLogger("murmura.decentralized_mnist_example").info(
+        logging.getLogger("murmura.dp_mnist_example").info(
             "Using automatic data type detection"
         )
         return None
 
 
 def setup_logging(log_level: str = "INFO") -> None:
-    """Set up logging configuration"""
+    """Set up logging configuration."""
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler("decentralized_mnist.log"),
+            logging.FileHandler("dp_mnist_federated.log"),
         ],
     )
 
 
-def main() -> None:
-    """
-    MNIST Decentralized Learning with Multi-Node Support
-    """
-    parser = argparse.ArgumentParser(
-        description="MNIST Decentralized Learning with Multi-Node Support"
+def create_dp_config(args) -> DifferentialPrivacyConfig:
+    """Create differential privacy configuration."""
+    return DifferentialPrivacyConfig(
+        # Core privacy parameters
+        epsilon=args.epsilon,
+        delta=args.delta,
+
+        # Mechanism configuration
+        mechanism=DPMechanism.GAUSSIAN,
+        noise_application=NoiseApplication.SERVER_SIDE,  # Central DP
+
+        # Clipping configuration
+        clipping_strategy=ClippingStrategy.ADAPTIVE,
+        clipping_norm=args.clipping_norm,
+        target_quantile=0.5,
+
+        # Privacy accounting
+        accountant=DPAccountant.RDP,
+
+        # Client sampling for privacy amplification
+        client_sampling_rate=args.client_sampling_rate,
+
+        # Monitoring
+        enable_privacy_monitoring=True,
+        privacy_budget_warning_threshold=0.8,
+
+        # Total rounds for budget allocation
+        total_rounds=args.rounds,
     )
 
-    # Core learning arguments
+
+def main():
+    """Main function for DP-enhanced MNIST federated learning."""
+    parser = argparse.ArgumentParser(
+        description="DP-Enhanced MNIST Federated Learning with Multi-Node Support"
+    )
+
+    # Core federated learning arguments (from regular MNIST example)
     parser.add_argument(
         "--num_actors", type=int, default=10, help="Total number of virtual clients"
     )
@@ -124,29 +154,32 @@ def main() -> None:
     parser.add_argument(
         "--aggregation_strategy",
         type=str,
-        choices=["gossip_avg"],  # Only decentralized strategies
-        default="gossip_avg",
-        help="Aggregation strategy to use (only decentralized strategies)",
+        choices=["fedavg", "trimmed_mean"],
+        default="fedavg",
+        help="Aggregation strategy to use",
     )
     parser.add_argument(
-        "--mixing_parameter",
+        "--trim_ratio",
         type=float,
-        default=0.5,
-        help="Mixing parameter for gossip_avg strategy (0.5 = equal mixing)",
+        default=0.1,
+        help="Trim ratio for trimmed_mean strategy",
     )
 
-    # Topology arguments (only decentralized-compatible topologies)
+    # Topology arguments (from regular MNIST example)
     parser.add_argument(
         "--topology",
         type=str,
-        default="ring",  # Default to ring for decentralized learning
-        choices=["ring", "complete", "line", "custom"],
-        help="Network topology between clients (decentralized-compatible only)",
+        default="star",
+        choices=["star", "ring", "complete", "line", "custom"],
+        help="Network topology between clients",
+    )
+    parser.add_argument(
+        "--hub_index", type=int, default=0, help="Hub node index for star topology"
     )
 
-    # Training arguments
+    # Training arguments (from regular MNIST example)
     parser.add_argument(
-        "--rounds", type=int, default=5, help="Number of learning rounds"
+        "--rounds", type=int, default=5, help="Number of federated learning rounds"
     )
     parser.add_argument(
         "--epochs", type=int, default=1, help="Number of local epochs per round"
@@ -158,11 +191,11 @@ def main() -> None:
     parser.add_argument(
         "--save_path",
         type=str,
-        default="mnist_decentralized_model.pt",
+        default="dp_mnist_federated_model.pt",
         help="Path to save the final model",
     )
 
-    # Multi-node Ray cluster arguments
+    # Multi-node Ray cluster arguments (from regular MNIST example)
     parser.add_argument(
         "--ray_address",
         type=str,
@@ -172,7 +205,7 @@ def main() -> None:
     parser.add_argument(
         "--ray_namespace",
         type=str,
-        default="murmura_decentralized",
+        default="murmura_dp_mnist",
         help="Ray namespace for isolation",
     )
     parser.add_argument(
@@ -212,14 +245,14 @@ def main() -> None:
         help="Auto-detect Ray cluster from environment variables",
     )
 
-    # MNIST-specific arguments
+    # MNIST-specific arguments (from regular MNIST example)
     parser.add_argument(
         "--debug_data",
         action="store_true",
         help="Print debug information about MNIST data format",
     )
 
-    # Logging and monitoring arguments
+    # Logging and monitoring arguments (from regular MNIST example)
     parser.add_argument(
         "--log_level",
         type=str,
@@ -239,7 +272,7 @@ def main() -> None:
         help="Interval (rounds) for actor health checks",
     )
 
-    # Visualization arguments
+    # Visualization arguments (from regular MNIST example)
     parser.add_argument(
         "--vis_dir",
         type=str,
@@ -265,32 +298,40 @@ def main() -> None:
         "--fps", type=int, default=2, help="Frames per second for animation"
     )
 
+    # DP-specific arguments
+    parser.add_argument(
+        "--epsilon", type=float, default=1.0,
+        help="Privacy budget (ε) - lower values = stronger privacy"
+    )
+    parser.add_argument(
+        "--delta", type=float, default=1e-5,
+        help="Failure probability (δ) - should be < 1/dataset_size"
+    )
+    parser.add_argument(
+        "--clipping_norm", type=float, default=1.0,
+        help="Gradient clipping threshold for DP"
+    )
+    parser.add_argument(
+        "--client_sampling_rate", type=float, default=0.1,
+        help="Client sampling rate for privacy amplification"
+    )
+
     args = parser.parse_args()
 
     # Set up logging
     setup_logging(args.log_level)
-    logger = logging.getLogger("murmura.decentralized_mnist_example")
-
-    # Check compatibility of topology and strategy before proceeding
-    topology_type = TopologyType(args.topology)
-    strategy_type = AggregationStrategyType(args.aggregation_strategy)
-
-    # Validate decentralized compatibility
-    from murmura.aggregation.strategies.gossip_avg import GossipAvg
-
-    if not TopologyCompatibilityManager.is_compatible(GossipAvg, topology_type):
-        compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(
-            GossipAvg
-        )
-        logger.error(
-            f"Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}."
-        )
-        logger.error(
-            f"Compatible topologies: {[t.value for t in compatible_topologies]}"
-        )
-        return
+    logger = logging.getLogger("murmura.dp_mnist_example")
 
     try:
+        # Create DP configuration
+        dp_config = create_dp_config(args)
+        logger.info("Created DP configuration")
+
+        # Create enhanced orchestration configuration
+        from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+        from murmura.network_management.topology import TopologyConfig, TopologyType
+        from murmura.node.resource_config import RayClusterConfig, ResourceConfig
+
         # Create enhanced configuration with multi-node support
         ray_cluster_config = RayClusterConfig(
             address=args.ray_address,
@@ -307,26 +348,43 @@ def main() -> None:
             placement_strategy=args.placement_strategy,
         )
 
-        config = OrchestrationConfig(
+        config = DPOrchestrationConfig(
+            # Core FL parameters
             num_actors=args.num_actors,
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
             split=args.split,
+
+            # Network topology
             topology=TopologyConfig(
-                topology_type=topology_type,
-                hub_index=0,  # Not used for decentralized topologies
+                topology_type=TopologyType(args.topology),
+                hub_index=args.hub_index
             ),
+
+            # Aggregation strategy
             aggregation=AggregationConfig(
-                strategy_type=strategy_type,
-                params={"mixing_parameter": args.mixing_parameter},
+                strategy_type=AggregationStrategyType(args.aggregation_strategy),
+                params={"trim_ratio": args.trim_ratio}
+                if args.aggregation_strategy == "trimmed_mean"
+                else None,
             ),
+
+            # Dataset configuration
             dataset_name="mnist",  # Fixed to MNIST
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-            feature_columns=["image"],
-            label_column="label",
+
+            # CRITICAL: Must specify feature and label columns
+            feature_columns=["image"],  # MNIST images
+            label_column="label",       # MNIST labels
+
+            # Differential Privacy configuration
+            differential_privacy=dp_config,
+            enable_privacy_dashboard=True
         )
+
+        logger.info("Created DP orchestration configuration")
 
         logger.info("=== Loading MNIST Dataset ===")
         # Load MNIST Dataset for training and testing
@@ -365,19 +423,13 @@ def main() -> None:
             except Exception as e:
                 logger.error(f"Error debugging MNIST data format: {e}")
 
-        logger.info("=== Creating Data Partitions ===")
-        # Create partitioner
-        partitioner = PartitionerFactory.create(config)
-
         logger.info("=== Creating MNIST Model ===")
-        # Create the MNIST model
         model = MNISTModel()
         input_shape = (1, 28, 28)  # MNIST: 1 channel, 28x28 pixels
 
         # Create MNIST-specific data preprocessor
         mnist_preprocessor = create_mnist_preprocessor()
 
-        # Create model wrapper with MNIST-specific configuration
         global_model = TorchModelWrapper(
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
@@ -386,40 +438,38 @@ def main() -> None:
             input_shape=input_shape,
             data_preprocessor=mnist_preprocessor,
         )
+        logger.info("Created model wrapper")
 
-        logger.info("=== Setting Up Decentralized Learning Process ===")
-        # Create learning process with enhanced config
-        learning_process = DecentralizedLearningProcess(
-            config=config,
-            dataset=train_dataset,
-            model=global_model,
+        logger.info("=== Setting Up DP-Enhanced Learning Process ===")
+        learning_process = create_dp_federated_learning_process(
+            config, train_dataset, global_model
         )
+        logger.info("Created DP-enhanced learning process")
 
-        # Set up visualization BEFORE executing the learning process
+        # Set up visualization if requested
         visualizer = None
         if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
-            # Create visualization directory
             vis_dir = os.path.join(
-                args.vis_dir,
-                f"decentralized_mnist_{args.topology}_{args.aggregation_strategy}",
+                args.vis_dir, f"dp_mnist_{args.topology}_{args.aggregation_strategy}"
             )
             os.makedirs(vis_dir, exist_ok=True)
 
-            # Create visualizer
             visualizer = NetworkVisualizer(output_dir=vis_dir)
-
-            # Register visualizer with learning process
             learning_process.register_observer(visualizer)
             logger.info("Registered visualizer with learning process")
 
         try:
             # Initialize the learning process
+            partitioner = PartitionerFactory.create(config)
+            logger.info("Created partitioner")
+
+            logger.info("=== Initializing Learning Process ===")
             learning_process.initialize(
                 num_actors=config.num_actors,
                 topology_config=config.topology,
                 aggregation_config=config.aggregation,
-                partitioner=partitioner,
+                partitioner=partitioner
             )
 
             # Get and log cluster information
@@ -440,20 +490,33 @@ def main() -> None:
                 f"Has placement group: {cluster_summary.get('has_placement_group', False)}"
             )
 
+            # Log privacy configuration
+            privacy_desc = dp_config.get_privacy_description()
+            utility_impact = dp_config.estimate_utility_impact()
+
+            logger.info("=== Privacy Configuration ===")
+            logger.info(f"Privacy Guarantee: {privacy_desc}")
+            logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
+            logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
+            logger.info(f"Communication Impact: {utility_impact['communication']}")
+            logger.info(f"DP Mode: Central (server-side noise)")
+
             # Print initial summary
-            logger.info("=== MNIST Decentralized Learning Setup ===")
+            logger.info("=== DP-Enhanced MNIST Federated Learning Setup ===")
             logger.info("Dataset: MNIST")
             logger.info(f"Partitioning: {config.partition_strategy}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Aggregation strategy: {config.aggregation.strategy_type}")
             logger.info(f"Topology: {config.topology.topology_type}")
+            logger.info(f"Privacy: Central DP (ε={args.epsilon}, δ={args.delta})")
+            logger.info(f"Clipping norm: {args.clipping_norm}")
+            logger.info(f"Client sampling rate: {args.client_sampling_rate}")
             logger.info(f"Rounds: {args.rounds}")
             logger.info(f"Local epochs: {args.epochs}")
             logger.info(f"Batch size: {args.batch_size}")
             logger.info(f"Learning rate: {args.lr}")
-            logger.info(f"Mixing parameter: {args.mixing_parameter}")
 
-            logger.info("=== Starting MNIST Decentralized Learning ===")
+            logger.info("=== Starting DP-Enhanced MNIST Federated Learning ===")
 
             # Monitor initial resource usage if enabled
             if args.monitor_resources:
@@ -462,7 +525,7 @@ def main() -> None:
                     f"Initial resource usage: {initial_resources.get('resource_utilization', {})}"
                 )
 
-            # Execute the learning process with enhanced monitoring
+            # Execute training
             results = learning_process.execute()
 
             # Perform periodic health checks and resource monitoring during training
@@ -492,30 +555,29 @@ def main() -> None:
                 if args.create_animation:
                     logger.info("Creating animation...")
                     visualizer.render_training_animation(
-                        filename=f"decentralized_mnist_{args.topology}_{args.aggregation_strategy}_animation.mp4",
+                        filename=f"dp_mnist_{args.topology}_{args.aggregation_strategy}_animation.mp4",
                         fps=args.fps,
                     )
 
                 if args.create_frames:
                     logger.info("Creating frame sequence...")
                     visualizer.render_frame_sequence(
-                        prefix=f"decentralized_mnist_{args.topology}_{args.aggregation_strategy}_step"
+                        prefix=f"dp_mnist_{args.topology}_{args.aggregation_strategy}_step"
                     )
 
                 if args.create_summary:
                     logger.info("Creating summary plot...")
                     visualizer.render_summary_plot(
-                        filename=f"decentralized_mnist_{args.topology}_{args.aggregation_strategy}_summary.png"
+                        filename=f"dp_mnist_{args.topology}_{args.aggregation_strategy}_summary.png"
                     )
 
             # Save the final model
             logger.info("=== Saving Final Model ===")
-            save_path = args.save_path
-            global_model.save(save_path)
-            logger.info(f"MNIST model saved to '{save_path}'")
+            global_model.save(args.save_path)
+            logger.info(f"DP-enhanced MNIST model saved to '{args.save_path}'")
 
             # Print final results with enhanced cluster context
-            logger.info("=== MNIST Decentralized Training Results ===")
+            logger.info("=== DP-Enhanced MNIST Training Results ===")
             logger.info(
                 f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
             )
@@ -532,6 +594,24 @@ def main() -> None:
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
+            # Privacy summary
+            if 'privacy_summary' in results:
+                privacy_summary = results['privacy_summary']
+                if privacy_summary['dp_enabled']:
+                    logger.info("Differential Privacy: ENABLED (Central DP)")
+                    if 'accountant' in privacy_summary:
+                        spent = privacy_summary['accountant']['spent']
+                        total = privacy_summary['accountant']['total_budget']
+                        logger.info(f"Privacy Spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
+                                    f"δ={spent['delta']:.2e}/{total['delta']:.2e}")
+
+                        # Calculate privacy budget utilization
+                        eps_utilization = (spent['epsilon'] / total['epsilon']) * 100
+                        delta_utilization = (spent['delta'] / total['delta']) * 100
+                        logger.info(f"Privacy Budget Utilization: ε={eps_utilization:.1f}%, δ={delta_utilization:.1f}%")
+                else:
+                    logger.info("Differential Privacy: DISABLED")
+
             # Log topology-specific results
             if "topology" in results:
                 topology_info = results["topology"]
@@ -544,11 +624,16 @@ def main() -> None:
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"MNIST Decentralized Learning Process failed: {str(e)}")
+        logger.error(f"DP-enhanced MNIST federated learning failed: {e}")
         import traceback
-
         traceback.print_exc()
         raise
+
+    finally:
+        # Clean up
+        if 'learning_process' in locals():
+            learning_process.shutdown()
+        logger.info("Training completed and resources cleaned up")
 
 
 if __name__ == "__main__":
