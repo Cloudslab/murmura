@@ -2,6 +2,7 @@
 """
 Automated Murmura Experiment Runner for Three-Way Paradigm Comparison
 Optimized for 5-node AWS G5.2XLARGE cluster (5 GPUs, 40 vCPUs, 160GB RAM total)
+Modified to write each experiment result immediately upon completion
 """
 
 import argparse
@@ -473,6 +474,100 @@ class ExperimentRunner:
 
         return metrics
 
+    def result_to_dict(self, result: ExperimentResult) -> Dict[str, Any]:
+        """Convert ExperimentResult to dictionary for CSV/Excel"""
+        return {
+            # Experiment configuration
+            'experiment_id': f"{result.config.paradigm}_{result.config.dataset}_{result.config.topology}_{result.config.heterogeneity}_{result.config.privacy}_{result.config.scale}",
+            'paradigm': result.config.paradigm,
+            'dataset': result.config.dataset,
+            'topology': result.config.topology,
+            'heterogeneity': result.config.heterogeneity,
+            'privacy': result.config.privacy,
+            'scale': result.config.scale,
+            'aggregation_strategy': result.config.aggregation_strategy,
+            'alpha': result.config.alpha,
+            'epsilon': result.config.epsilon,
+            'delta': result.config.delta,
+
+            # Execution metadata
+            'success': result.success,
+            'start_time': result.start_time,
+            'end_time': result.end_time,
+            'duration_minutes': result.duration_minutes,
+
+            # Performance metrics
+            'initial_accuracy': result.initial_accuracy,
+            'final_accuracy': result.final_accuracy,
+            'accuracy_improvement': result.accuracy_improvement,
+            'convergence_rounds': result.convergence_rounds,
+
+            # Efficiency metrics
+            'total_communication_mb': result.total_communication_mb,
+            'communication_per_round': result.communication_per_round,
+            'training_time_minutes': result.training_time_minutes,
+
+            # Privacy metrics
+            'privacy_epsilon_spent': result.privacy_epsilon_spent,
+            'privacy_delta_spent': result.privacy_delta_spent,
+            'privacy_budget_utilization': result.privacy_budget_utilization,
+
+            # Error information
+            'error_message': result.error_message,
+            'error_type': result.error_type,
+        }
+
+    def append_result_to_file(self, result: ExperimentResult, output_file: str):
+        """Append a single result to the output file immediately"""
+        row_data = self.result_to_dict(result)
+
+        try:
+            # Check if file exists and has content
+            file_exists = os.path.exists(output_file)
+
+            if output_file.endswith('.xlsx'):
+                if file_exists:
+                    # Read existing data
+                    try:
+                        df_existing = pd.read_excel(output_file)
+                        # Append new row
+                        df_new = pd.concat([df_existing, pd.DataFrame([row_data])], ignore_index=True)
+                    except Exception as e:
+                        self.logger.warning(f"Error reading existing Excel file: {e}. Creating new file.")
+                        df_new = pd.DataFrame([row_data])
+                else:
+                    # Create new DataFrame
+                    df_new = pd.DataFrame([row_data])
+
+                # Save to Excel
+                df_new.to_excel(output_file, index=False)
+
+            else:  # CSV format
+                df_row = pd.DataFrame([row_data])
+
+                if file_exists:
+                    # Append to existing CSV
+                    df_row.to_csv(output_file, mode='a', header=False, index=False)
+                else:
+                    # Create new CSV with header
+                    df_row.to_csv(output_file, mode='w', header=True, index=False)
+
+            self.logger.info(f"Result appended to {output_file}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to append result to {output_file}: {e}")
+            # Save to a backup file
+            backup_file = output_file.replace('.', f'_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.')
+            try:
+                df_backup = pd.DataFrame([row_data])
+                if backup_file.endswith('.xlsx'):
+                    df_backup.to_excel(backup_file, index=False)
+                else:
+                    df_backup.to_csv(backup_file, index=False)
+                self.logger.info(f"Result saved to backup file: {backup_file}")
+            except Exception as backup_e:
+                self.logger.error(f"Failed to save backup result: {backup_e}")
+
     def run_single_experiment(self, config: ExperimentConfig, experiment_id: str) -> ExperimentResult:
         """Run a single experiment"""
         start_time = datetime.now()
@@ -571,49 +666,7 @@ class ExperimentRunner:
     def save_results(self, results: List[ExperimentResult], output_file: str):
         """Save results to CSV/Excel file"""
         # Convert results to flat dictionaries
-        data = []
-        for result in results:
-            row = {
-                # Experiment configuration
-                'experiment_id': f"{result.config.paradigm}_{result.config.dataset}_{result.config.topology}_{result.config.heterogeneity}_{result.config.privacy}_{result.config.scale}",
-                'paradigm': result.config.paradigm,
-                'dataset': result.config.dataset,
-                'topology': result.config.topology,
-                'heterogeneity': result.config.heterogeneity,
-                'privacy': result.config.privacy,
-                'scale': result.config.scale,
-                'aggregation_strategy': result.config.aggregation_strategy,
-                'alpha': result.config.alpha,
-                'epsilon': result.config.epsilon,
-                'delta': result.config.delta,
-
-                # Execution metadata
-                'success': result.success,
-                'start_time': result.start_time,
-                'end_time': result.end_time,
-                'duration_minutes': result.duration_minutes,
-
-                # Performance metrics
-                'initial_accuracy': result.initial_accuracy,
-                'final_accuracy': result.final_accuracy,
-                'accuracy_improvement': result.accuracy_improvement,
-                'convergence_rounds': result.convergence_rounds,
-
-                # Efficiency metrics
-                'total_communication_mb': result.total_communication_mb,
-                'communication_per_round': result.communication_per_round,
-                'training_time_minutes': result.training_time_minutes,
-
-                # Privacy metrics
-                'privacy_epsilon_spent': result.privacy_epsilon_spent,
-                'privacy_delta_spent': result.privacy_delta_spent,
-                'privacy_budget_utilization': result.privacy_budget_utilization,
-
-                # Error information
-                'error_message': result.error_message,
-                'error_type': result.error_type,
-            }
-            data.append(row)
+        data = [self.result_to_dict(result) for result in results]
 
         # Save to CSV
         df = pd.DataFrame(data)
@@ -649,7 +702,6 @@ class ExperimentRunner:
         configs = self.generate_experiment_configs(experiment_set)
 
         # Load existing results if resuming
-        completed_results = []
         if resume and os.path.exists(output_file):
             try:
                 if output_file.endswith('.xlsx'):
@@ -657,8 +709,7 @@ class ExperimentRunner:
                 else:
                     existing_df = pd.read_csv(output_file)
 
-                # Convert back to results for completed experiments
-                # This is simplified - you might want to implement full conversion
+                # Get completed experiment IDs
                 completed_experiment_ids = set(existing_df['experiment_id'].tolist())
                 configs = [c for c in configs if self.get_experiment_id(c) not in completed_experiment_ids]
 
@@ -695,22 +746,38 @@ class ExperimentRunner:
             result = self.run_single_experiment(config, experiment_id)
             results.append(result)
 
+            # MODIFIED: Append result immediately to file
+            self.append_result_to_file(result, output_file)
+
             # Fail fast: if first 3 experiments fail, stop
             if i < 3 and not result.success:
                 self.logger.error(f"Early failure detected. Stopping experiment suite.")
                 self.logger.error(f"Fix the issue with {experiment_id} before continuing.")
                 break
 
-            # Save intermediate results every 5 experiments
-            if (i + 1) % 5 == 0:
-                temp_file = output_file.replace('.', f'_temp_{i+1}.')
-                self.save_results(results, temp_file)
+        # Final summary (results are already saved individually)
+        self.print_final_summary(results)
 
-        # Save final results
-        all_results = completed_results + results
-        self.save_results(all_results, output_file)
+        return results
 
-        return all_results
+    def print_final_summary(self, results: List[ExperimentResult]):
+        """Print final experiment summary"""
+        total_experiments = len(results)
+        successful_experiments = sum(1 for r in results if r.success)
+        failed_experiments = total_experiments - successful_experiments
+
+        self.logger.info(f"Final Experiment Summary:")
+        self.logger.info(f"  Total experiments: {total_experiments}")
+        self.logger.info(f"  Successful: {successful_experiments}")
+        self.logger.info(f"  Failed: {failed_experiments}")
+        self.logger.info(f"  Success rate: {successful_experiments/total_experiments*100:.1f}%")
+
+        if failed_experiments > 0:
+            self.logger.info("Failed experiments:")
+            for result in results:
+                if not result.success:
+                    exp_id = f"{result.config.paradigm}_{result.config.dataset}_{result.config.topology}_{result.config.privacy}_{result.config.scale}"
+                    self.logger.info(f"  {exp_id}: {result.error_type} - {result.error_message}")
 
     def get_experiment_id(self, config: ExperimentConfig) -> str:
         """Generate unique experiment ID"""
