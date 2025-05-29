@@ -13,12 +13,12 @@ import traceback
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import pandas as pd
 
-from murmura.visualization.training_event import TrainingEvent, EvaluationEvent
 from murmura.visualization.training_observer import TrainingObserver
+from murmura.visualization.training_event import TrainingEvent, EvaluationEvent
 
 
 class ExperimentMetricsCollector(TrainingObserver):
@@ -592,7 +592,7 @@ class EnhancedExperimentRunner:
         self.logger.info(f"Starting experiment {experiment_id} via subprocess: {config.paradigm}-{config.dataset}-{config.topology}")
 
         # Build command (same as original)
-        script_path = self.get_example_script_path(config, experiment_id)
+        script_path = self.get_example_script_path(config)
         cmd = self.build_command(config, experiment_id)
 
         # Setup logging for this experiment
@@ -707,7 +707,7 @@ class EnhancedExperimentRunner:
             return self.run_single_experiment_subprocess(config, experiment_id)
 
     @staticmethod
-    def get_example_script_path(config: ExperimentConfig) -> str:
+    def get_example_script_path(config: ExperimentConfig, experiment_id: str = None) -> str:
         """Get the appropriate example script path"""
         base_path = "murmura/examples"
         dataset_script_map = {
