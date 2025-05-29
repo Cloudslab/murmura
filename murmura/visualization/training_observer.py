@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict
 
 from murmura.visualization.training_event import TrainingEvent
 
@@ -37,7 +37,7 @@ class TrainingMonitor:
         """
         self.observers.append(observer)
 
-    def emit_event(self, event: TrainingEvent) -> None:
+    def emit_event(self, event: TrainingEvent) -> Dict | None:
         """
         Emit a training event to all registered observers.
 

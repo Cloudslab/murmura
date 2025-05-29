@@ -23,37 +23,147 @@ from murmura.visualization.training_event import TrainingEvent, EvaluationEvent
 
 class ExperimentMetricsCollector(TrainingObserver):
     """
-    Observer that collects metrics during training experiments.
-    This replaces the fragile log parsing approach.
+    Enhanced observer that collects comprehensive metrics during training experiments.
+    Captures all data used by the visualization system for detailed analysis.
     """
 
     def __init__(self):
-        self.metrics = {}
+        # Core metrics tracking
         self.round_metrics = []
         self.initial_metrics = None
         self.final_metrics = None
         self.training_start_time = None
         self.training_end_time = None
+
+        # Detailed event tracking (same as NetworkVisualizer)
+        self.accuracy_history = {}  # round -> accuracy
+        self.loss_history = {}  # round -> loss
+        self.parameter_history = {}  # node -> [parameter_norms]
+        self.convergence_history = []  # [convergence_values]
+
+        # Training process tracking
+        self.local_training_events = []
+        self.parameter_transfer_events = []
+        self.aggregation_events = []
+        self.model_update_events = []
+
+        # Network topology info
+        self.topology_type = None
+        self.num_nodes = 0
+        self.aggregation_strategy = None
+
+        # Communication and efficiency metrics
+        self.total_parameter_transfers = 0
+        self.communication_rounds = 0
+        self.active_nodes_per_round = {}
+
+        # Training dynamics
+        self.epochs_per_round = {}
+        self.batch_metrics = {}
 
     def reset(self):
         """Reset collector for a new experiment"""
-        self.metrics = {}
-        self.round_metrics = []
-        self.initial_metrics = None
-        self.final_metrics = None
-        self.training_start_time = None
-        self.training_end_time = None
+        self.__init__()
 
     def on_event(self, event: TrainingEvent) -> None:
-        """Handle training events to collect metrics"""
-        if isinstance(event, EvaluationEvent):
-            # Store round metrics
+        """Handle training events to collect comprehensive metrics"""
+        from murmura.visualization.training_event import (
+            EvaluationEvent, LocalTrainingEvent, ParameterTransferEvent,
+            AggregationEvent, ModelUpdateEvent, InitialStateEvent
+        )
+
+        if isinstance(event, InitialStateEvent):
+            self.topology_type = event.topology_type
+            self.num_nodes = event.num_nodes
+
+        elif isinstance(event, LocalTrainingEvent):
+            self.local_training_events.append({
+                'round': event.round_num,
+                'timestamp': event.timestamp,
+                'active_nodes': len(event.active_nodes),
+                'total_nodes': self.num_nodes,
+                'node_list': event.active_nodes.copy(),
+                'current_epoch': getattr(event, 'current_epoch', None),
+                'total_epochs': getattr(event, 'total_epochs', None),
+                'metrics': event.metrics.copy() if event.metrics else {}
+            })
+
+            # Track active nodes per round
+            self.active_nodes_per_round[event.round_num] = len(event.active_nodes)
+
+            # Track epochs
+            if hasattr(event, 'total_epochs') and event.total_epochs:
+                self.epochs_per_round[event.round_num] = event.total_epochs
+
+        elif isinstance(event, ParameterTransferEvent):
+            transfer_data = {
+                'round': event.round_num,
+                'timestamp': event.timestamp,
+                'source_nodes': event.source_nodes.copy(),
+                'target_nodes': event.target_nodes.copy(),
+                'num_transfers': len(event.source_nodes) * len(event.target_nodes),
+                'param_summary': event.param_summary.copy() if event.param_summary else {}
+            }
+            self.parameter_transfer_events.append(transfer_data)
+
+            # Track total transfers for communication overhead
+            self.total_parameter_transfers += transfer_data['num_transfers']
+
+            # Store parameter norms for convergence analysis
+            for node, summary in event.param_summary.items():
+                if node not in self.parameter_history:
+                    self.parameter_history[node] = []
+
+                if isinstance(summary, dict) and 'norm' in summary:
+                    self.parameter_history[node].append(summary['norm'])
+                elif isinstance(summary, dict) and 'mean' in summary:
+                    # Use mean as fallback for parameter tracking
+                    self.parameter_history[node].append(abs(summary['mean']))
+                else:
+                    # Fallback for raw parameter data
+                    self.parameter_history[node].append(1.0)
+
+        elif isinstance(event, AggregationEvent):
+            self.aggregation_events.append({
+                'round': event.round_num,
+                'timestamp': event.timestamp,
+                'participating_nodes': len(event.participating_nodes),
+                'node_list': event.participating_nodes.copy(),
+                'aggregator_node': event.aggregator_node,
+                'strategy_name': event.strategy_name
+            })
+
+            # Track aggregation strategy
+            if not self.aggregation_strategy:
+                self.aggregation_strategy = event.strategy_name
+
+        elif isinstance(event, ModelUpdateEvent):
+            update_data = {
+                'round': event.round_num,
+                'timestamp': event.timestamp,
+                'updated_nodes': len(event.updated_nodes),
+                'node_list': event.updated_nodes.copy(),
+                'param_convergence': event.param_convergence
+            }
+            self.model_update_events.append(update_data)
+
+            # Track convergence over time
+            self.convergence_history.append(event.param_convergence)
+
+        elif isinstance(event, EvaluationEvent):
+            # Store detailed round metrics
             metrics_data = {
                 'round': event.round_num,
                 'timestamp': event.timestamp,
                 **event.metrics
             }
             self.round_metrics.append(metrics_data)
+
+            # Track accuracy and loss history (same as NetworkVisualizer)
+            if 'accuracy' in event.metrics:
+                self.accuracy_history[event.round_num] = event.metrics['accuracy']
+            if 'loss' in event.metrics:
+                self.loss_history[event.round_num] = event.metrics['loss']
 
             # Track initial and final metrics
             if event.round_num == 0:
@@ -64,7 +174,10 @@ class ExperimentMetricsCollector(TrainingObserver):
                 self.training_end_time = event.timestamp
 
     def get_experiment_results(self) -> Dict[str, Any]:
-        """Extract final experiment results"""
+        """Extract comprehensive experiment results matching visualization system"""
+        # Add numpy import for statistical calculations
+        import numpy as np
+
         if not self.initial_metrics or not self.final_metrics:
             return {
                 'initial_accuracy': 0.0,
@@ -75,28 +188,125 @@ class ExperimentMetricsCollector(TrainingObserver):
                 'error': 'No metrics collected'
             }
 
-        # Calculate metrics
+        # Basic performance metrics
         initial_acc = self.initial_metrics.get('accuracy', 0.0)
         final_acc = self.final_metrics.get('accuracy', 0.0)
+        initial_loss = self.initial_metrics.get('loss', 0.0)
+        final_loss = self.final_metrics.get('loss', 0.0)
         improvement = final_acc - initial_acc
 
-        # Count convergence rounds (rounds with meaningful training)
+        # Training dynamics
         convergence_rounds = len([m for m in self.round_metrics if m['round'] > 0])
+        actual_rounds = max(self.accuracy_history.keys()) if self.accuracy_history else 0
 
         # Calculate training time
         training_time = 0.0
         if self.training_start_time and self.training_end_time:
             training_time = (self.training_end_time - self.training_start_time) / 60.0
 
+        # Communication and efficiency metrics
+        avg_active_nodes = np.mean(list(self.active_nodes_per_round.values())) if self.active_nodes_per_round else 0
+        communication_efficiency = self.total_parameter_transfers / max(1, actual_rounds) if actual_rounds > 0 else 0
+
+        # Parameter convergence analysis
+        final_convergence = self.convergence_history[-1] if self.convergence_history else 0.0
+        avg_convergence = np.mean(self.convergence_history) if self.convergence_history else 0.0
+        convergence_trend = 'improving' if len(self.convergence_history) > 1 and self.convergence_history[-1] < self.convergence_history[0] else 'stable'
+
+        # Accuracy and loss trends
+        accuracy_trend = 'improving' if final_acc > initial_acc else 'degrading'
+        loss_trend = 'improving' if final_loss < initial_loss else 'degrading'
+
+        # Calculate accuracy/loss statistics over rounds
+        accuracy_values = list(self.accuracy_history.values())
+        loss_values = list(self.loss_history.values())
+
+        accuracy_std = np.std(accuracy_values) if len(accuracy_values) > 1 else 0.0
+        loss_std = np.std(loss_values) if len(loss_values) > 1 else 0.0
+
+        accuracy_max = max(accuracy_values) if accuracy_values else final_acc
+        accuracy_min = min(accuracy_values) if accuracy_values else initial_acc
+        loss_max = max(loss_values) if loss_values else initial_loss
+        loss_min = min(loss_values) if loss_values else final_loss
+
+        # Parameter diversity (measure of how different nodes' parameters are)
+        parameter_diversity = 0.0
+        if len(self.parameter_history) > 1:
+            # Calculate standard deviation across nodes for final round
+            final_params = []
+            for node_params in self.parameter_history.values():
+                if node_params:
+                    final_params.append(node_params[-1])
+            parameter_diversity = np.std(final_params) if len(final_params) > 1 else 0.0
+
+        # Training stability (consistency of improvements)
+        accuracy_improvements = []
+        if len(accuracy_values) > 1:
+            for i in range(1, len(accuracy_values)):
+                accuracy_improvements.append(accuracy_values[i] - accuracy_values[i-1])
+        training_stability = 1.0 / (1.0 + np.std(accuracy_improvements)) if accuracy_improvements else 1.0
+
         return {
+            # Basic performance metrics
             'initial_accuracy': initial_acc,
             'final_accuracy': final_acc,
             'accuracy_improvement': improvement,
+            'initial_loss': initial_loss,
+            'final_loss': final_loss,
+            'loss_reduction': initial_loss - final_loss,
+
+            # Training process metrics
             'convergence_rounds': convergence_rounds,
+            'actual_rounds': actual_rounds,
             'training_time_minutes': training_time,
-            'initial_loss': self.initial_metrics.get('loss', 0.0),
-            'final_loss': self.final_metrics.get('loss', 0.0),
-            'round_metrics': self.round_metrics.copy()
+            'time_per_round': training_time / max(1, actual_rounds),
+
+            # Accuracy statistics
+            'accuracy_max': accuracy_max,
+            'accuracy_min': accuracy_min,
+            'accuracy_std': accuracy_std,
+            'accuracy_trend': accuracy_trend,
+
+            # Loss statistics
+            'loss_max': loss_max,
+            'loss_min': loss_min,
+            'loss_std': loss_std,
+            'loss_trend': loss_trend,
+
+            # Network and topology metrics
+            'topology_type': self.topology_type or 'unknown',
+            'num_nodes': self.num_nodes,
+            'aggregation_strategy': self.aggregation_strategy or 'unknown',
+            'avg_active_nodes_per_round': avg_active_nodes,
+            'node_participation_rate': avg_active_nodes / max(1, self.num_nodes),
+
+            # Communication metrics
+            'total_parameter_transfers': self.total_parameter_transfers,
+            'parameter_transfers_per_round': communication_efficiency,
+            'total_local_training_events': len(self.local_training_events),
+            'total_aggregation_events': len(self.aggregation_events),
+            'total_model_updates': len(self.model_update_events),
+
+            # Convergence metrics
+            'final_parameter_convergence': final_convergence,
+            'avg_parameter_convergence': avg_convergence,
+            'parameter_diversity': parameter_diversity,
+            'convergence_trend': convergence_trend,
+
+            # Training dynamics
+            'training_stability': training_stability,
+            'rounds_with_improvement': len([i for i in accuracy_improvements if i > 0]) if accuracy_improvements else 0,
+            'max_single_round_improvement': max(accuracy_improvements) if accuracy_improvements else 0.0,
+
+            # Detailed data for further analysis
+            'round_metrics': self.round_metrics.copy(),
+            'accuracy_history': self.accuracy_history.copy(),
+            'loss_history': self.loss_history.copy(),
+            'convergence_history': self.convergence_history.copy(),
+            'parameter_history_summary': {
+                node: {'count': len(params), 'final': params[-1] if params else 0.0, 'trend': 'stable' if len(params) < 2 else ('increasing' if params[-1] > params[0] else 'decreasing')}
+                for node, params in self.parameter_history.items()
+            }
         }
 
 
@@ -551,7 +761,7 @@ class EnhancedExperimentRunner:
                     initial_loss=collected_metrics['initial_loss'],
                     final_loss=collected_metrics['final_loss'],
                     training_time_minutes=collected_metrics['training_time_minutes'],
-                    round_metrics=collected_metrics['round_metrics']
+                    round_metrics=[collected_metrics]  # Store all enhanced metrics in round_metrics
                 )
                 self.logger.info(f"Experiment {experiment_id} completed successfully in {duration:.1f} minutes")
             else:
@@ -835,9 +1045,9 @@ class EnhancedExperimentRunner:
         return metrics
 
     def result_to_dict(self, result: ExperimentResult) -> Dict[str, Any]:
-        """Convert ExperimentResult to dictionary for CSV/Excel"""
-        return {
-            # Experiment configuration
+        """Convert ExperimentResult to dictionary for CSV/Excel with comprehensive metrics"""
+        base_dict = {
+            # Experiment identification
             'experiment_id': f"{result.config.paradigm}_{result.config.dataset}_{result.config.topology}_{result.config.heterogeneity}_{result.config.privacy}_{result.config.scale}",
             'paradigm': result.config.paradigm,
             'dataset': result.config.dataset,
@@ -845,10 +1055,16 @@ class EnhancedExperimentRunner:
             'heterogeneity': result.config.heterogeneity,
             'privacy': result.config.privacy,
             'scale': result.config.scale,
+
+            # Configuration parameters
             'aggregation_strategy': result.config.aggregation_strategy,
             'alpha': result.config.alpha,
             'epsilon': result.config.epsilon,
             'delta': result.config.delta,
+            'rounds_configured': result.config.rounds,
+            'epochs_configured': result.config.local_epochs,
+            'batch_size_configured': result.config.batch_size,
+            'learning_rate_configured': result.config.learning_rate,
 
             # Execution metadata
             'success': result.success,
@@ -856,20 +1072,20 @@ class EnhancedExperimentRunner:
             'end_time': result.end_time,
             'duration_minutes': result.duration_minutes,
 
-            # Performance metrics
+            # Basic performance metrics
             'initial_accuracy': result.initial_accuracy,
             'final_accuracy': result.final_accuracy,
             'accuracy_improvement': result.accuracy_improvement,
-            'convergence_rounds': result.convergence_rounds,
             'initial_loss': result.initial_loss,
             'final_loss': result.final_loss,
-
-            # Efficiency metrics
+            'convergence_rounds': result.convergence_rounds,
             'training_time_minutes': result.training_time_minutes,
+
+            # Standard efficiency metrics
             'total_communication_mb': result.total_communication_mb,
             'communication_per_round': result.communication_per_round,
 
-            # Privacy metrics
+            # Standard privacy metrics
             'privacy_epsilon_spent': result.privacy_epsilon_spent,
             'privacy_delta_spent': result.privacy_delta_spent,
             'privacy_budget_utilization': result.privacy_budget_utilization,
@@ -878,6 +1094,106 @@ class EnhancedExperimentRunner:
             'error_message': result.error_message,
             'error_type': result.error_type,
         }
+
+        # Add all the enhanced metrics if they exist in the round_metrics
+        if result.round_metrics and len(result.round_metrics) > 0:
+            # Try to extract enhanced metrics from the first round_metrics entry
+            first_metrics = result.round_metrics[0] if isinstance(result.round_metrics, list) else result.round_metrics
+
+            # If round_metrics contains the enhanced data, extract it
+            if isinstance(first_metrics, dict):
+                enhanced_metrics = [
+                    'loss_reduction', 'actual_rounds', 'time_per_round',
+                    'accuracy_max', 'accuracy_min', 'accuracy_std', 'accuracy_trend',
+                    'loss_max', 'loss_min', 'loss_std', 'loss_trend',
+                    'topology_type', 'num_nodes', 'avg_active_nodes_per_round', 'node_participation_rate',
+                    'total_parameter_transfers', 'parameter_transfers_per_round',
+                    'total_local_training_events', 'total_aggregation_events', 'total_model_updates',
+                    'final_parameter_convergence', 'avg_parameter_convergence', 'parameter_diversity', 'convergence_trend',
+                    'training_stability', 'rounds_with_improvement', 'max_single_round_improvement'
+                ]
+
+                for metric in enhanced_metrics:
+                    if metric in first_metrics:
+                        base_dict[metric] = first_metrics[metric]
+                    else:
+                        # Set reasonable defaults for missing enhanced metrics
+                        if 'accuracy' in metric or 'loss' in metric:
+                            base_dict[metric] = 0.0
+                        elif 'trend' in metric:
+                            base_dict[metric] = 'unknown'
+                        elif 'total' in metric or 'count' in metric:
+                            base_dict[metric] = 0
+                        elif 'rate' in metric or 'time' in metric or 'parameter' in metric:
+                            base_dict[metric] = 0.0
+                        else:
+                            base_dict[metric] = 0.0
+            else:
+                # Set defaults for all enhanced metrics if not available
+                enhanced_defaults = {
+                    'loss_reduction': result.initial_loss - result.final_loss if result.initial_loss and result.final_loss else 0.0,
+                    'actual_rounds': result.convergence_rounds,
+                    'time_per_round': result.training_time_minutes / max(1, result.convergence_rounds) if result.training_time_minutes and result.convergence_rounds else 0.0,
+                    'accuracy_max': result.final_accuracy,
+                    'accuracy_min': result.initial_accuracy,
+                    'accuracy_std': 0.0,
+                    'accuracy_trend': 'improving' if result.accuracy_improvement > 0 else 'stable',
+                    'loss_max': result.initial_loss,
+                    'loss_min': result.final_loss,
+                    'loss_std': 0.0,
+                    'loss_trend': 'improving' if (result.initial_loss - result.final_loss) > 0 else 'stable',
+                    'topology_type': result.config.topology,
+                    'num_nodes': result.config.scale,
+                    'avg_active_nodes_per_round': result.config.scale,
+                    'node_participation_rate': 1.0,
+                    'total_parameter_transfers': 0,
+                    'parameter_transfers_per_round': 0.0,
+                    'total_local_training_events': result.convergence_rounds,
+                    'total_aggregation_events': result.convergence_rounds,
+                    'total_model_updates': result.convergence_rounds,
+                    'final_parameter_convergence': 0.0,
+                    'avg_parameter_convergence': 0.0,
+                    'parameter_diversity': 0.0,
+                    'convergence_trend': 'stable',
+                    'training_stability': 1.0,
+                    'rounds_with_improvement': result.convergence_rounds if result.accuracy_improvement > 0 else 0,
+                    'max_single_round_improvement': result.accuracy_improvement / max(1, result.convergence_rounds) if result.accuracy_improvement > 0 else 0.0,
+                }
+                base_dict.update(enhanced_defaults)
+        else:
+            # If no round_metrics at all, use basic defaults
+            enhanced_defaults = {
+                'loss_reduction': result.initial_loss - result.final_loss if result.initial_loss and result.final_loss else 0.0,
+                'actual_rounds': result.convergence_rounds,
+                'time_per_round': result.training_time_minutes / max(1, result.convergence_rounds) if result.training_time_minutes and result.convergence_rounds else 0.0,
+                'accuracy_max': result.final_accuracy,
+                'accuracy_min': result.initial_accuracy,
+                'accuracy_std': 0.0,
+                'accuracy_trend': 'improving' if result.accuracy_improvement > 0 else 'stable',
+                'loss_max': result.initial_loss,
+                'loss_min': result.final_loss,
+                'loss_std': 0.0,
+                'loss_trend': 'improving' if (result.initial_loss - result.final_loss) > 0 else 'stable',
+                'topology_type': result.config.topology,
+                'num_nodes': result.config.scale,
+                'avg_active_nodes_per_round': result.config.scale,
+                'node_participation_rate': 1.0,
+                'total_parameter_transfers': 0,
+                'parameter_transfers_per_round': 0.0,
+                'total_local_training_events': result.convergence_rounds,
+                'total_aggregation_events': result.convergence_rounds,
+                'total_model_updates': result.convergence_rounds,
+                'final_parameter_convergence': 0.0,
+                'avg_parameter_convergence': 0.0,
+                'parameter_diversity': 0.0,
+                'convergence_trend': 'stable',
+                'training_stability': 1.0,
+                'rounds_with_improvement': result.convergence_rounds if result.accuracy_improvement > 0 else 0,
+                'max_single_round_improvement': result.accuracy_improvement / max(1, result.convergence_rounds) if result.accuracy_improvement > 0 else 0.0,
+            }
+            base_dict.update(enhanced_defaults)
+
+        return base_dict
 
     def append_result_to_file(self, result: ExperimentResult, output_file: str):
         """Append a single result to the output file immediately"""
