@@ -475,31 +475,85 @@ class ExperimentRunner:
         return cmd
 
     def parse_experiment_output(self, output: str, config: ExperimentConfig) -> Dict[str, Any]:
-        """Parse experiment output to extract metrics"""
+        """Parse experiment output to extract metrics - FIXED VERSION"""
         metrics = {}
 
         lines = output.split('\n')
         for line in lines:
             line = line.strip()
 
-            # Extract accuracy metrics
-            if "Initial accuracy:" in line:
+            # FIXED: Extract accuracy metrics with proper decimal parsing
+            if "Initial Test Accuracy:" in line:
                 try:
+                    # Parse "Initial Test Accuracy: 5.39%"
+                    accuracy_str = line.split(':')[1].strip().replace('%', '')
+                    metrics['initial_accuracy'] = float(accuracy_str) / 100.0  # Convert percentage to decimal
+                except Exception as e:
+                    print(f"Failed to parse initial accuracy: {line}, error: {e}")
+
+            elif "Final Test Accuracy:" in line:
+                try:
+                    # Parse "Final Test Accuracy: 98.93%"
+                    accuracy_str = line.split(':')[1].strip().replace('%', '')
+                    metrics['final_accuracy'] = float(accuracy_str) / 100.0  # Convert percentage to decimal
+                except Exception as e:
+                    print(f"Failed to parse final accuracy: {line}, error: {e}")
+
+            elif "Accuracy Improvement:" in line:
+                try:
+                    # Parse "Accuracy Improvement: 93.54%"
+                    improvement_str = line.split(':')[1].strip().replace('%', '')
+                    metrics['accuracy_improvement'] = float(improvement_str) / 100.0  # Convert percentage to decimal
+                except Exception as e:
+                    print(f"Failed to parse accuracy improvement: {line}, error: {e}")
+
+            # ADDED: Extract initial accuracy from different format
+            elif "Initial accuracy:" in line:
+                try:
+                    # Parse "Initial accuracy: 0.0539"
                     metrics['initial_accuracy'] = float(line.split(':')[1].strip())
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Failed to parse initial accuracy (decimal format): {line}, error: {e}")
+
             elif "Final accuracy:" in line:
                 try:
+                    # Parse "Final accuracy: 0.9893"
                     metrics['final_accuracy'] = float(line.split(':')[1].strip())
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Failed to parse final accuracy (decimal format): {line}, error: {e}")
+
             elif "Accuracy improvement:" in line:
                 try:
+                    # Parse "Accuracy improvement: 0.9354"
                     metrics['accuracy_improvement'] = float(line.split(':')[1].strip())
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Failed to parse accuracy improvement (decimal format): {line}, error: {e}")
 
-            # Extract privacy metrics (if applicable)
+            # ADDED: Extract training duration
+            elif "Training completed with" in line and "rounds" in line:
+                try:
+                    # Parse "Training completed with 1 rounds of 60 epochs each"
+                    parts = line.split()
+                    rounds_idx = parts.index("rounds")
+                    if rounds_idx > 0:
+                        metrics['convergence_rounds'] = int(parts[rounds_idx - 1])
+                except Exception as e:
+                    print(f"Failed to parse convergence rounds: {line}, error: {e}")
+
+            # ADDED: Extract loss metrics
+            elif "Global Model Test Loss:" in line:
+                try:
+                    # Parse "Global Model Test Loss: 0.1287"
+                    metrics['final_loss'] = float(line.split(':')[1].strip())
+                except Exception as e:
+                    print(f"Failed to parse final loss: {line}, error: {e}")
+
+            # ADDED: Extract training time from duration
+            elif "duration_minutes" in str(config.__dict__):
+                # This should be calculated from start/end times in the runner
+                pass
+
+            # EXISTING: Privacy metrics parsing (if applicable)
             elif "Privacy Spent:" in line and config.privacy != "none":
                 try:
                     # Parse "ε=X.XXXX/Y.YYYY, δ=Z.ZZe-XX/W.WWe-XX"
@@ -512,8 +566,8 @@ class ExperimentRunner:
 
                     metrics['privacy_epsilon_spent'] = eps_spent
                     metrics['privacy_delta_spent'] = delta_spent
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Failed to parse privacy metrics: {line}, error: {e}")
 
             elif "Privacy Budget Utilization:" in line and config.privacy != "none":
                 try:
@@ -521,10 +575,114 @@ class ExperimentRunner:
                     parts = line.split(':')[1].strip()
                     eps_util = float(parts.split(',')[0].split('=')[1].replace('%', ''))
                     metrics['privacy_budget_utilization'] = eps_util
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Failed to parse privacy utilization: {line}, error: {e}")
 
         return metrics
+
+    def run_single_experiment(self, config: ExperimentConfig, experiment_id: str) -> ExperimentResult:
+        """Run a single experiment - UPDATED to capture training time"""
+        start_time = datetime.now()
+
+        self.logger.info(f"Starting experiment {experiment_id}: {config.paradigm}-{config.dataset}-{config.topology}")
+
+        # Build command
+        cmd = self.build_command(config, experiment_id)
+
+        # Setup logging for this experiment
+        log_file = self.logs_dir / f"{experiment_id}.log"
+
+        try:
+            # Run the experiment
+            with open(log_file, 'w') as f:
+                process = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=3600,  # 1 hour timeout
+                    cwd=self.base_dir
+                )
+
+                output = process.stdout
+                f.write(output)
+
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds() / 60.0
+
+            if process.returncode == 0:
+                # Success - parse metrics
+                metrics = self.parse_experiment_output(output, config)
+
+                # ADDED: Calculate training time from actual duration minus setup overhead
+                estimated_setup_time = 1.0  # Assume 1 minute for setup
+                training_time = max(0.0, duration - estimated_setup_time)
+                metrics['training_time_minutes'] = training_time
+
+                # ADDED: Set convergence rounds to total rounds if not parsed
+                if 'convergence_rounds' not in metrics:
+                    metrics['convergence_rounds'] = config.rounds
+
+                result = ExperimentResult(
+                    config=config,
+                    success=True,
+                    start_time=start_time.isoformat(),
+                    end_time=end_time.isoformat(),
+                    duration_minutes=duration,
+                    **metrics
+                )
+
+                self.logger.info(f"Experiment {experiment_id} completed successfully in {duration:.1f} minutes")
+
+            else:
+                # Failure
+                error_msg = f"Process exited with code {process.returncode}"
+                result = ExperimentResult(
+                    config=config,
+                    success=False,
+                    start_time=start_time.isoformat(),
+                    end_time=end_time.isoformat(),
+                    duration_minutes=duration,
+                    error_message=error_msg,
+                    error_type="subprocess_error"
+                )
+
+                self.logger.error(f"Experiment {experiment_id} failed: {error_msg}")
+
+        except subprocess.TimeoutExpired:
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds() / 60.0
+
+            result = ExperimentResult(
+                config=config,
+                success=False,
+                start_time=start_time.isoformat(),
+                end_time=end_time.isoformat(),
+                duration_minutes=duration,
+                error_message="Experiment timed out after 1 hour",
+                error_type="timeout"
+            )
+
+            self.logger.error(f"Experiment {experiment_id} timed out after 1 hour")
+
+        except Exception as e:
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds() / 60.0
+
+            result = ExperimentResult(
+                config=config,
+                success=False,
+                start_time=start_time.isoformat(),
+                end_time=end_time.isoformat(),
+                duration_minutes=duration,
+                error_message=str(e),
+                error_type=type(e).__name__
+            )
+
+            self.logger.error(f"Experiment {experiment_id} failed with exception: {e}")
+            self.logger.error(traceback.format_exc())
+
+        return result
 
     def result_to_dict(self, result: ExperimentResult) -> Dict[str, Any]:
         """Convert ExperimentResult to dictionary for CSV/Excel"""
@@ -619,101 +777,6 @@ class ExperimentRunner:
                 self.logger.info(f"Result saved to backup file: {backup_file}")
             except Exception as backup_e:
                 self.logger.error(f"Failed to save backup result: {backup_e}")
-
-    def run_single_experiment(self, config: ExperimentConfig, experiment_id: str) -> ExperimentResult:
-        """Run a single experiment"""
-        start_time = datetime.now()
-
-        self.logger.info(f"Starting experiment {experiment_id}: {config.paradigm}-{config.dataset}-{config.topology}")
-
-        # Build command
-        cmd = self.build_command(config, experiment_id)
-
-        # Setup logging for this experiment
-        log_file = self.logs_dir / f"{experiment_id}.log"
-
-        try:
-            # Run the experiment
-            with open(log_file, 'w') as f:
-                process = subprocess.run(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    timeout=3600,  # 1 hour timeout
-                    cwd=self.base_dir
-                )
-
-                output = process.stdout
-                f.write(output)
-
-            end_time = datetime.now()
-            duration = (end_time - start_time).total_seconds() / 60.0
-
-            if process.returncode == 0:
-                # Success - parse metrics
-                metrics = self.parse_experiment_output(output, config)
-
-                result = ExperimentResult(
-                    config=config,
-                    success=True,
-                    start_time=start_time.isoformat(),
-                    end_time=end_time.isoformat(),
-                    duration_minutes=duration,
-                    **metrics
-                )
-
-                self.logger.info(f"Experiment {experiment_id} completed successfully in {duration:.1f} minutes")
-
-            else:
-                # Failure
-                error_msg = f"Process exited with code {process.returncode}"
-                result = ExperimentResult(
-                    config=config,
-                    success=False,
-                    start_time=start_time.isoformat(),
-                    end_time=end_time.isoformat(),
-                    duration_minutes=duration,
-                    error_message=error_msg,
-                    error_type="subprocess_error"
-                )
-
-                self.logger.error(f"Experiment {experiment_id} failed: {error_msg}")
-
-        except subprocess.TimeoutExpired:
-            end_time = datetime.now()
-            duration = (end_time - start_time).total_seconds() / 60.0
-
-            result = ExperimentResult(
-                config=config,
-                success=False,
-                start_time=start_time.isoformat(),
-                end_time=end_time.isoformat(),
-                duration_minutes=duration,
-                error_message="Experiment timed out after 1 hour",
-                error_type="timeout"
-            )
-
-            self.logger.error(f"Experiment {experiment_id} timed out after 1 hour")
-
-        except Exception as e:
-            end_time = datetime.now()
-            duration = (end_time - start_time).total_seconds() / 60.0
-
-            result = ExperimentResult(
-                config=config,
-                success=False,
-                start_time=start_time.isoformat(),
-                end_time=end_time.isoformat(),
-                duration_minutes=duration,
-                error_message=str(e),
-                error_type=type(e).__name__
-            )
-
-            self.logger.error(f"Experiment {experiment_id} failed with exception: {e}")
-            self.logger.error(traceback.format_exc())
-
-        return result
 
     def save_results(self, results: List[ExperimentResult], output_file: str):
         """Save results to CSV/Excel file"""
