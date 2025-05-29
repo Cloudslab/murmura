@@ -202,98 +202,83 @@ class ExperimentRunner:
         self.logger = logging.getLogger(__name__)
 
     def generate_experiment_configs(self, experiment_set: str) -> List[ExperimentConfig]:
-        """Generate all experiment configurations for a given set"""
+        """Generate all experiment configurations for a given set with proper topology-strategy compatibility"""
         configs = []
 
         if experiment_set == "core":
             # Set A: Core Three-Way Comparison (Priority 1)
-            # Reduced from full factorial for practical execution
+            # FIXED: Proper topology-strategy compatibility matrix
+
             paradigms = ["centralized", "federated", "decentralized"]
             datasets = ["mnist", "ham10000"]
 
-            # Strategic subset to maximize insights while keeping execution time reasonable
-            core_combinations = [
-                # Key topology comparisons (only relevant for distributed paradigms)
-                ("star", "iid", "none", 10),
-                ("ring", "iid", "none", 10),
-                ("complete", "iid", "none", 10),
+            # Define valid topology-paradigm combinations
+            valid_combinations = {
+                "centralized": {
+                    # Centralized can work with star (hub aggregates) or complete (global view)
+                    "topologies": ["star", "complete"],
+                    "heterogeneity": ["iid"],  # Centralized typically uses all data
+                    "privacy": ["none", "moderate_dp", "strong_dp"],
+                    "scales": [1]  # Centralized uses single node
+                },
+                "federated": {
+                    # Federated (FedAvg) needs centralized coordination - star or complete
+                    "topologies": ["star", "complete"],
+                    "heterogeneity": ["iid", "moderate_noniid", "extreme_noniid"],
+                    "privacy": ["none", "moderate_dp", "strong_dp"],
+                    "scales": [5, 10, 20]
+                },
+                "decentralized": {
+                    # Decentralized (GossipAvg) works with all topologies EXCEPT star
+                    "topologies": ["ring", "complete", "line"],
+                    "heterogeneity": ["iid", "moderate_noniid", "extreme_noniid"],
+                    "privacy": ["none", "moderate_dp", "strong_dp"],
+                    "scales": [5, 10, 20]
+                }
+            }
 
-                # Heterogeneity analysis (only relevant for distributed paradigms)
-                ("star", "moderate_noniid", "none", 10),
-                ("star", "extreme_noniid", "none", 10),
-                ("ring", "moderate_noniid", "none", 10),
-
-                # Privacy analysis
-                ("star", "moderate_noniid", "moderate_dp", 10),
-                ("star", "moderate_noniid", "strong_dp", 10),
-                ("ring", "moderate_noniid", "moderate_dp", 10),
-
-                # Scale analysis (only relevant for distributed paradigms)
-                ("star", "moderate_noniid", "none", 5),
-                ("star", "moderate_noniid", "none", 20),
-                ("ring", "moderate_noniid", "none", 20),
-
-                # Centralized baselines (topology and scale don't matter, but we test key scenarios)
-                ("star", "iid", "none", 1),  # Basic centralized
-                ("star", "iid", "moderate_dp", 1),  # Centralized with DP
-                ("star", "iid", "strong_dp", 1),  # Centralized with strong DP
-            ]
-
+            # Generate configurations following compatibility rules
             for paradigm in paradigms:
                 for dataset in datasets:
-                    for topology, heterogeneity, privacy, scale in core_combinations:
-                        # Skip invalid combinations
-                        if paradigm == "centralized":
-                            # For centralized, only include the centralized-specific combinations
-                            if not (topology == "star" and scale == 1):
-                                continue
-                            # Heterogeneity doesn't matter for centralized (no partitioning)
-                            if heterogeneity != "iid":
-                                continue
-                        elif paradigm == "federated":
-                            # Skip centralized-only combinations
-                            if scale == 1:
-                                continue
-                            # Federated can use star topology
-                        elif paradigm == "decentralized":
-                            # Skip centralized-only combinations
-                            if scale == 1:
-                                continue
-                            # Decentralized cannot use star topology
-                            if topology == "star":
-                                continue
+                    paradigm_config = valid_combinations[paradigm]
 
-                        configs.append(ExperimentConfig(
-                            paradigm=paradigm,
-                            dataset=dataset,
-                            topology=topology,
-                            heterogeneity=heterogeneity,
-                            privacy=privacy,
-                            scale=scale
-                        ))
+                    for topology in paradigm_config["topologies"]:
+                        for heterogeneity in paradigm_config["heterogeneity"]:
+                            for privacy in paradigm_config["privacy"]:
+                                for scale in paradigm_config["scales"]:
+                                    configs.append(ExperimentConfig(
+                                        paradigm=paradigm,
+                                        dataset=dataset,
+                                        topology=topology,
+                                        heterogeneity=heterogeneity,
+                                        privacy=privacy,
+                                        scale=int(scale)
+                                    ))
 
         elif experiment_set == "topology_privacy":
             # Set B: Topology-Privacy Interaction Analysis (Priority 2)
-            paradigms = ["federated", "decentralized"]  # Focus on distributed paradigms
+            # FIXED: Only test distributed paradigms with valid topologies
+
+            # Define paradigm-topology compatibility for distributed learning
+            paradigm_topology_map = {
+                "federated": ["star", "complete"],    # FedAvg needs centralized coordination
+                "decentralized": ["ring", "complete", "line"]  # GossipAvg works with peer-to-peer
+            }
+
             datasets = ["mnist", "ham10000"]
-            topologies = ["star", "ring", "complete"]
             privacy_levels = ["none", "moderate_dp", "strong_dp"]
 
-            for paradigm in paradigms:
+            for paradigm, valid_topologies in paradigm_topology_map.items():
                 for dataset in datasets:
-                    for topology in topologies:
+                    for topology in valid_topologies:
                         for privacy in privacy_levels:
-                            # Skip invalid combinations
-                            if paradigm == "decentralized" and topology == "star":
-                                continue
-
                             configs.append(ExperimentConfig(
                                 paradigm=paradigm,
                                 dataset=dataset,
                                 topology=topology,
-                                heterogeneity="moderate_noniid",  # Fixed
+                                heterogeneity="moderate_noniid",  # Fixed per plan
                                 privacy=privacy,
-                                scale=10  # Fixed
+                                scale=10  # Fixed per plan
                             ))
 
         elif experiment_set == "scalability":
@@ -305,21 +290,88 @@ class ExperimentRunner:
             for paradigm in paradigms:
                 for dataset in datasets:
                     for scale in scales:
-                        topology = "ring" if paradigm == "decentralized" else "star"
+                        # Choose appropriate topology for each paradigm
+                        if paradigm == "centralized":
+                            topology = "star"
+                            actual_scale = 1  # Centralized uses single node
+                        elif paradigm == "federated":
+                            topology = "star"  # FedAvg works best with star
+                            actual_scale = scale
+                        else:  # decentralized
+                            topology = "ring"  # Ring is good for scalability testing
+                            actual_scale = scale
 
                         configs.append(ExperimentConfig(
                             paradigm=paradigm,
                             dataset=dataset,
                             topology=topology,
-                            heterogeneity="moderate_noniid",  # Fixed
-                            privacy="none",  # Fixed
-                            scale=scale
+                            heterogeneity="moderate_noniid",  # Fixed per plan
+                            privacy="none",  # Fixed per plan
+                            scale=actual_scale
                         ))
 
-        self.logger.info(f"Generated {len(configs)} configurations for {experiment_set} experiment set")
-        return configs
+        elif experiment_set == "robustness":
+            # Set D: Robustness Stress Tests (Priority 4) - NEW
+            paradigms = ["federated", "decentralized"]  # Focus on distributed paradigms
+            datasets = ["mnist", "ham10000"]
 
-    def get_example_script_path(self, config: ExperimentConfig) -> str:
+            # Test different robustness scenarios
+            robustness_configs = [
+                {"scenario": "node_dropout", "topology": "star", "paradigm": "federated"},
+                {"scenario": "node_dropout", "topology": "ring", "paradigm": "decentralized"},
+                {"scenario": "network_partition", "topology": "complete", "paradigm": "federated"},
+                {"scenario": "network_partition", "topology": "complete", "paradigm": "decentralized"},
+                {"scenario": "byzantine_nodes", "topology": "star", "paradigm": "federated"},
+                {"scenario": "byzantine_nodes", "topology": "ring", "paradigm": "decentralized"},
+            ]
+
+            for dataset in datasets:
+                for config in robustness_configs:
+                    configs.append(ExperimentConfig(
+                        paradigm=config["paradigm"],
+                        dataset=dataset,
+                        topology=config["topology"],
+                        heterogeneity="moderate_noniid",
+                        privacy="none",  # Focus on robustness, not privacy
+                        scale=10
+                    ))
+
+        self.logger.info(f"Generated {len(configs)} configurations for {experiment_set} experiment set")
+
+        # CRITICAL: Validate all configurations for topology-strategy compatibility
+        validated_configs = []
+        for config in configs:
+            if self._validate_topology_strategy_compatibility(config):
+                validated_configs.append(config)
+            else:
+                self.logger.warning(f"Skipping invalid configuration: {config.paradigm} + {config.topology}")
+
+        self.logger.info(f"Validated {len(validated_configs)} compatible configurations")
+        return validated_configs
+
+    def _validate_topology_strategy_compatibility(self, config: ExperimentConfig) -> bool:
+        """Validate that the paradigm-topology combination is valid"""
+
+        # Define compatibility matrix
+        compatibility_matrix = {
+            "centralized": ["star", "complete"],
+            "federated": ["star", "complete"],      # FedAvg needs centralized coordination
+            "decentralized": ["ring", "complete", "line"]  # GossipAvg works peer-to-peer
+        }
+
+        valid_topologies = compatibility_matrix.get(config.paradigm, [])
+        is_valid = config.topology in valid_topologies
+
+        if not is_valid:
+            self.logger.error(
+                f"INVALID COMBINATION: {config.paradigm} paradigm cannot use {config.topology} topology. "
+                f"Valid topologies for {config.paradigm}: {valid_topologies}"
+            )
+
+        return is_valid
+
+    @staticmethod
+    def get_example_script_path(config: ExperimentConfig) -> str:
         """Get the appropriate example script path"""
         base_path = "murmura/examples"
 
