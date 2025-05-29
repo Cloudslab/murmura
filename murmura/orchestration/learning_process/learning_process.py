@@ -112,7 +112,7 @@ class LearningProcess(ABC):
                 observer.set_topology(self.cluster_manager.topology_manager)
 
         self.logger.info("Partitioning dataset...")
-        split = self.get_config_value("split", "train")
+        split = self.config.split
         partitioner.partition(self.dataset, split)
 
         self.logger.info("Distributing data partitions...")
@@ -121,7 +121,7 @@ class LearningProcess(ABC):
             partitions,
             metadata={
                 "split": split,
-                "dataset": self.get_config_value("dataset_name", "unknown"),
+                "dataset": self.config.dataset_name,
                 "topology": topology_config.topology_type.value,
                 "cluster_nodes": cluster_stats["cluster_info"]["total_nodes"],
                 "is_multinode": cluster_stats["cluster_info"]["is_multinode"],
@@ -132,8 +132,8 @@ class LearningProcess(ABC):
         self.logger.info("Distributing dataset...")
 
         # Get feature and label columns from config - these MUST be set
-        feature_columns = self.get_config_value("feature_columns", None)
-        label_column = self.get_config_value("label_column", None)
+        feature_columns = self.config.feature_columns
+        label_column = self.config.label_column
 
         # Validate that columns are specified
         if feature_columns is None:
@@ -333,6 +333,14 @@ class LearningProcess(ABC):
             split=config_dict.get("split", "train"),
             ray_cluster=ray_cluster_config,
             resources=resource_config,
+            # ADDED: Training parameters from dict
+            rounds=config_dict.get("rounds", 5),
+            epochs=config_dict.get("epochs", 1),
+            batch_size=config_dict.get("batch_size", 32),
+            learning_rate=config_dict.get("learning_rate", 0.001),
+            test_split=config_dict.get("test_split", "test"),
+            monitor_resources=config_dict.get("monitor_resources", False),
+            health_check_interval=config_dict.get("health_check_interval", 5),
         )
 
         return orchestration_config

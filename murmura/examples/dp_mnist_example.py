@@ -15,11 +15,15 @@ from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
 from murmura.privacy.dp_config import (
-    DifferentialPrivacyConfig, DPMechanism, NoiseApplication,
-    ClippingStrategy, DPAccountant
+    DifferentialPrivacyConfig,
+    DPMechanism,
+    NoiseApplication,
+    ClippingStrategy,
+    DPAccountant,
 )
 from murmura.privacy.dp_integration import (
-    DPOrchestrationConfig, create_dp_federated_learning_process
+    DPOrchestrationConfig,
+    create_dp_federated_learning_process,
 )
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
@@ -95,26 +99,20 @@ def create_dp_config(args) -> DifferentialPrivacyConfig:
         # Core privacy parameters
         epsilon=args.epsilon,
         delta=args.delta,
-
         # Mechanism configuration
         mechanism=DPMechanism.GAUSSIAN,
         noise_application=NoiseApplication.SERVER_SIDE,  # Central DP
-
         # Clipping configuration
         clipping_strategy=ClippingStrategy.ADAPTIVE,
         clipping_norm=args.clipping_norm,
         target_quantile=0.5,
-
         # Privacy accounting
         accountant=DPAccountant.RDP,
-
         # Client sampling for privacy amplification
         client_sampling_rate=args.client_sampling_rate,
-
         # Monitoring
         enable_privacy_monitoring=True,
         privacy_budget_warning_threshold=0.8,
-
         # Total rounds for budget allocation
         total_rounds=args.rounds,
     )
@@ -300,20 +298,28 @@ def main():
 
     # DP-specific arguments
     parser.add_argument(
-        "--epsilon", type=float, default=1.0,
-        help="Privacy budget (ε) - lower values = stronger privacy"
+        "--epsilon",
+        type=float,
+        default=1.0,
+        help="Privacy budget (ε) - lower values = stronger privacy",
     )
     parser.add_argument(
-        "--delta", type=float, default=1e-5,
-        help="Failure probability (δ) - should be < 1/dataset_size"
+        "--delta",
+        type=float,
+        default=1e-5,
+        help="Failure probability (δ) - should be < 1/dataset_size",
     )
     parser.add_argument(
-        "--clipping_norm", type=float, default=1.0,
-        help="Gradient clipping threshold for DP"
+        "--clipping_norm",
+        type=float,
+        default=1.0,
+        help="Gradient clipping threshold for DP",
     )
     parser.add_argument(
-        "--client_sampling_rate", type=float, default=0.1,
-        help="Client sampling rate for privacy amplification"
+        "--client_sampling_rate",
+        type=float,
+        default=0.1,
+        help="Client sampling rate for privacy amplification",
     )
 
     args = parser.parse_args()
@@ -328,7 +334,10 @@ def main():
         logger.info("Created DP configuration")
 
         # Create enhanced orchestration configuration
-        from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+        from murmura.aggregation.aggregation_config import (
+            AggregationConfig,
+            AggregationStrategyType,
+        )
         from murmura.network_management.topology import TopologyConfig, TopologyType
         from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 
@@ -355,13 +364,10 @@ def main():
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
             split=args.split,
-
             # Network topology
             topology=TopologyConfig(
-                topology_type=TopologyType(args.topology),
-                hub_index=args.hub_index
+                topology_type=TopologyType(args.topology), hub_index=args.hub_index
             ),
-
             # Aggregation strategy
             aggregation=AggregationConfig(
                 strategy_type=AggregationStrategyType(args.aggregation_strategy),
@@ -369,19 +375,23 @@ def main():
                 if args.aggregation_strategy == "trimmed_mean"
                 else None,
             ),
-
             # Dataset configuration
             dataset_name="mnist",  # Fixed to MNIST
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-
             # CRITICAL: Must specify feature and label columns
             feature_columns=["image"],  # MNIST images
-            label_column="label",       # MNIST labels
-
+            label_column="label",  # MNIST labels
+            rounds=args.rounds,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            test_split=args.test_split,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
             # Differential Privacy configuration
             differential_privacy=dp_config,
-            enable_privacy_dashboard=True
+            enable_privacy_dashboard=True,
         )
 
         logger.info("Created DP orchestration configuration")
@@ -469,7 +479,7 @@ def main():
                 num_actors=config.num_actors,
                 topology_config=config.topology,
                 aggregation_config=config.aggregation,
-                partitioner=partitioner
+                partitioner=partitioner,
             )
 
             # Get and log cluster information
@@ -499,7 +509,7 @@ def main():
             logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
             logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
             logger.info(f"Communication Impact: {utility_impact['communication']}")
-            logger.info(f"DP Mode: Central (server-side noise)")
+            logger.info("DP Mode: Central (server-side noise)")
 
             # Print initial summary
             logger.info("=== DP-Enhanced MNIST Federated Learning Setup ===")
@@ -511,10 +521,13 @@ def main():
             logger.info(f"Privacy: Central DP (ε={args.epsilon}, δ={args.delta})")
             logger.info(f"Clipping norm: {args.clipping_norm}")
             logger.info(f"Client sampling rate: {args.client_sampling_rate}")
-            logger.info(f"Rounds: {args.rounds}")
-            logger.info(f"Local epochs: {args.epochs}")
-            logger.info(f"Batch size: {args.batch_size}")
-            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Rounds: {config.rounds}")  # From config, not hardcoded
+            logger.info(f"Local epochs: {config.epochs}")  # From config, not hardcoded
+            logger.info(f"Batch size: {config.batch_size}")
+            logger.info(f"Learning rate: {config.learning_rate}")
+            logger.info(f"Test split: {config.test_split}")
+            logger.info(f"Resource monitoring: {config.monitor_resources}")
+            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
             logger.info("=== Starting DP-Enhanced MNIST Federated Learning ===")
 
@@ -548,7 +561,7 @@ def main():
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
@@ -595,20 +608,24 @@ def main():
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
             # Privacy summary
-            if 'privacy_summary' in results:
-                privacy_summary = results['privacy_summary']
-                if privacy_summary['dp_enabled']:
+            if "privacy_summary" in results:
+                privacy_summary = results["privacy_summary"]
+                if privacy_summary["dp_enabled"]:
                     logger.info("Differential Privacy: ENABLED (Central DP)")
-                    if 'accountant' in privacy_summary:
-                        spent = privacy_summary['accountant']['spent']
-                        total = privacy_summary['accountant']['total_budget']
-                        logger.info(f"Privacy Spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
-                                    f"δ={spent['delta']:.2e}/{total['delta']:.2e}")
+                    if "accountant" in privacy_summary:
+                        spent = privacy_summary["accountant"]["spent"]
+                        total = privacy_summary["accountant"]["total_budget"]
+                        logger.info(
+                            f"Privacy Spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
+                            f"δ={spent['delta']:.2e}/{total['delta']:.2e}"
+                        )
 
                         # Calculate privacy budget utilization
-                        eps_utilization = (spent['epsilon'] / total['epsilon']) * 100
-                        delta_utilization = (spent['delta'] / total['delta']) * 100
-                        logger.info(f"Privacy Budget Utilization: ε={eps_utilization:.1f}%, δ={delta_utilization:.1f}%")
+                        eps_utilization = (spent["epsilon"] / total["epsilon"]) * 100
+                        delta_utilization = (spent["delta"] / total["delta"]) * 100
+                        logger.info(
+                            f"Privacy Budget Utilization: ε={eps_utilization:.1f}%, δ={delta_utilization:.1f}%"
+                        )
                 else:
                     logger.info("Differential Privacy: DISABLED")
 
@@ -626,12 +643,13 @@ def main():
     except Exception as e:
         logger.error(f"DP-enhanced MNIST federated learning failed: {e}")
         import traceback
+
         traceback.print_exc()
         raise
 
     finally:
         # Clean up
-        if 'learning_process' in locals():
+        if "learning_process" in locals():
             learning_process.shutdown()
         logger.info("Training completed and resources cleaned up")
 

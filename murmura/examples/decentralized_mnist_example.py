@@ -326,6 +326,13 @@ def main() -> None:
             resources=resource_config,
             feature_columns=["image"],
             label_column="label",
+            rounds=args.rounds,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            test_split=args.test_split,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
         )
 
         logger.info("=== Loading MNIST Dataset ===")
@@ -447,11 +454,13 @@ def main() -> None:
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Aggregation strategy: {config.aggregation.strategy_type}")
             logger.info(f"Topology: {config.topology.topology_type}")
-            logger.info(f"Rounds: {args.rounds}")
-            logger.info(f"Local epochs: {args.epochs}")
-            logger.info(f"Batch size: {args.batch_size}")
-            logger.info(f"Learning rate: {args.lr}")
-            logger.info(f"Mixing parameter: {args.mixing_parameter}")
+            logger.info(f"Rounds: {config.rounds}")
+            logger.info(f"Local epochs: {config.epochs}")
+            logger.info(f"Batch size: {config.batch_size}")
+            logger.info(f"Learning rate: {config.learning_rate}")
+            logger.info(f"Test split: {config.test_split}")
+            logger.info(f"Resource monitoring: {config.monitor_resources}")
+            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
             logger.info("=== Starting MNIST Decentralized Learning ===")
 
@@ -485,7 +494,7 @@ def main() -> None:
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
@@ -531,6 +540,9 @@ def main() -> None:
             )
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
+            logger.info(
+                f"Training completed with {config.rounds} rounds of {config.epochs} epochs each"
+            )
 
             # Log topology-specific results
             if "topology" in results:

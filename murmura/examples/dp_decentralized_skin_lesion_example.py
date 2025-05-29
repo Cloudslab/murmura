@@ -36,11 +36,15 @@ from murmura.network_management.topology_compatibility import (
 )
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 from murmura.privacy.dp_config import (
-    DifferentialPrivacyConfig, DPMechanism, NoiseApplication,
-    ClippingStrategy, DPAccountant
+    DifferentialPrivacyConfig,
+    DPMechanism,
+    NoiseApplication,
+    ClippingStrategy,
+    DPAccountant,
 )
 from murmura.privacy.dp_integration import (
-    DPOrchestrationConfig, create_dp_decentralized_learning_process
+    DPOrchestrationConfig,
+    create_dp_decentralized_learning_process,
 )
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
@@ -62,16 +66,16 @@ class BasicBlock(PyTorchModel):
         self.drop_rate = drop_rate
         self.equalInOut = in_planes == out_planes
         self.convShortcut = (
-                (not self.equalInOut)
-                and nn.Conv2d(
-            in_planes,
-            out_planes,
-            kernel_size=1,
-            stride=stride,
-            padding=0,
-            bias=False,
-        )
-                or None
+            (not self.equalInOut)
+            and nn.Conv2d(
+                in_planes,
+                out_planes,
+                kernel_size=1,
+                stride=stride,
+                padding=0,
+                bias=False,
+            )
+            or None
         )
 
     def forward(self, x):
@@ -104,7 +108,7 @@ class NetworkBlock(PyTorchModel):
                     out_planes,
                     i == 0 and stride or 1,
                     drop_rate,
-                    )
+                )
             )
         return nn.Sequential(*layers)
 
@@ -240,37 +244,30 @@ def create_dp_config(args) -> DifferentialPrivacyConfig:
         # Core privacy parameters - stricter for medical data but balanced for Local DP
         epsilon=args.epsilon,
         delta=args.delta,
-
         # CRITICAL: Decentralized learning requires Local DP (client-side noise)
         mechanism=DPMechanism.GAUSSIAN,
         noise_application=NoiseApplication.CLIENT_SIDE,  # Local DP for decentralized
-
         # Clipping configuration - adaptive for medical images
         clipping_strategy=ClippingStrategy.ADAPTIVE,
         clipping_norm=args.clipping_norm,
         target_quantile=0.5,
-
         # Privacy accounting
         accountant=DPAccountant.RDP,
-
         # Client sampling (less effective with Local DP but still included)
         client_sampling_rate=args.client_sampling_rate,
-
         # Medical-specific privacy settings
         per_client_clipping=True,
         max_clients_per_user=1,  # Each client represents one hospital/institution
-
         # Monitoring
         enable_privacy_monitoring=True,
         privacy_budget_warning_threshold=0.8,
-
         # Total rounds for budget allocation
         total_rounds=args.rounds,
     )
 
 
 def add_integer_labels_to_dataset(
-        dataset: MDataset, logger: logging.Logger
+    dataset: MDataset, logger: logging.Logger
 ) -> tuple[list[str], int, dict[str, int]]:
     """
     Add integer label column to dataset by converting string dx categories.
@@ -336,8 +333,8 @@ def add_integer_labels_to_dataset(
 
         # CRITICAL: Store preprocessing information in dataset metadata for multi-node compatibility
         if (
-                not hasattr(dataset, "_dataset_metadata")
-                or dataset._dataset_metadata is None
+            not hasattr(dataset, "_dataset_metadata")
+            or dataset._dataset_metadata is None
         ):
             dataset._dataset_metadata = {}
 
@@ -403,7 +400,10 @@ def main() -> None:
 
     # Core decentralized learning arguments (from regular decentralized skin lesion example)
     parser.add_argument(
-        "--num_actors", type=int, default=6, help="Number of virtual clients (hospitals)"
+        "--num_actors",
+        type=int,
+        default=6,
+        help="Number of virtual clients (hospitals)",
     )
     parser.add_argument(
         "--partition_strategy",
@@ -412,7 +412,10 @@ def main() -> None:
         help="Data partitioning strategy",
     )
     parser.add_argument(
-        "--alpha", type=float, default=0.3, help="Dirichlet concentration parameter (lower = more heterogeneous)"
+        "--alpha",
+        type=float,
+        default=0.3,
+        help="Dirichlet concentration parameter (lower = more heterogeneous)",
     )
     parser.add_argument(
         "--min_partition_size",
@@ -574,6 +577,12 @@ def main() -> None:
         action="store_true",
         help="Monitor and log resource usage during training",
     )
+    parser.add_argument(
+        "--health_check_interval",
+        type=int,
+        default=5,
+        help="Interval (rounds) for actor health checks",
+    )
 
     # Visualization arguments (from regular decentralized skin lesion example)
     parser.add_argument(
@@ -597,23 +606,31 @@ def main() -> None:
         action="store_true",
         help="Create summary plot of the training process",
     )
+    parser.add_argument(
+        "--fps", type=int, default=2, help="Frames per second for animation"
+    )
 
     # DP-specific arguments - Medical-grade privacy with Local DP
     parser.add_argument(
-        "--epsilon", type=float, default=3.0,
-        help="Privacy budget per client per round (ε) - higher for Local DP in medical setting"
+        "--epsilon",
+        type=float,
+        default=3.0,
+        help="Privacy budget per client per round (ε) - higher for Local DP in medical setting",
     )
     parser.add_argument(
-        "--delta", type=float, default=1e-6,
-        help="Failure probability (δ) - lower for medical data"
+        "--delta",
+        type=float,
+        default=1e-6,
+        help="Failure probability (δ) - lower for medical data",
     )
     parser.add_argument(
-        "--clipping_norm", type=float, default=1.0,
-        help="Gradient clipping threshold"
+        "--clipping_norm", type=float, default=1.0, help="Gradient clipping threshold"
     )
     parser.add_argument(
-        "--client_sampling_rate", type=float, default=1.0,
-        help="Client sampling rate (less effective with Local DP)"
+        "--client_sampling_rate",
+        type=float,
+        default=1.0,
+        help="Client sampling rate (less effective with Local DP)",
     )
 
     args = parser.parse_args()
@@ -648,7 +665,9 @@ def main() -> None:
 
         # Create DP configuration for decentralized medical federated learning
         dp_config = create_dp_config(args)
-        logger.info("Created Local DP configuration for decentralized medical federated learning")
+        logger.info(
+            "Created Local DP configuration for decentralized medical federated learning"
+        )
 
         # Validate that we're using Local DP for decentralized learning
         if not dp_config.is_local_dp():
@@ -680,33 +699,34 @@ def main() -> None:
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
             split=args.split,
-
             # CRITICAL: Must specify feature and label columns
             feature_columns=["image"],  # Skin lesion images
-            label_column="label",       # Diagnostic labels
-
+            label_column="label",  # Diagnostic labels
+            rounds=args.rounds,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            test_split=args.test_split,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
             # Network topology (decentralized-compatible)
             topology=TopologyConfig(
                 topology_type=topology_type,
-                hub_index=0  # Not used for decentralized topologies
+                hub_index=0,  # Not used for decentralized topologies
             ),
-
             # Aggregation strategy (decentralized only)
             aggregation=AggregationConfig(
                 strategy_type=strategy_type,
-                params={"mixing_parameter": args.mixing_parameter}
+                params={"mixing_parameter": args.mixing_parameter},
             ),
-
             # Dataset configuration
             dataset_name=args.dataset_name,
-
             # Ray cluster configuration
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-
             # Differential Privacy configuration (Local DP)
             differential_privacy=dp_config,
-            enable_privacy_dashboard=True
+            enable_privacy_dashboard=True,
         )
 
         logger.info("Created DP orchestration configuration for decentralized learning")
@@ -815,7 +835,8 @@ def main() -> None:
         if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
             vis_dir = os.path.join(
-                args.vis_dir, f"dp_decentralized_skin_cancer_{args.topology}_{args.aggregation_strategy}"
+                args.vis_dir,
+                f"dp_decentralized_skin_cancer_{args.topology}_{args.aggregation_strategy}",
             )
             os.makedirs(vis_dir, exist_ok=True)
 
@@ -825,7 +846,9 @@ def main() -> None:
 
         try:
             # Initialize the DP-enhanced decentralized learning process
-            logger.info("=== Initializing DP-Enhanced Decentralized Learning Process ===")
+            logger.info(
+                "=== Initializing DP-Enhanced Decentralized Learning Process ==="
+            )
 
             partitioner = PartitionerFactory.create(config)
             logger.info("Created partitioner")
@@ -879,7 +902,9 @@ def main() -> None:
             logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
             logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
             logger.info(f"Communication Impact: {utility_impact['communication']}")
-            logger.info(f"DP Mode: Local (client-side noise) - Required for decentralized")
+            logger.info(
+                "DP Mode: Local (client-side noise) - Required for decentralized"
+            )
             logger.info(f"Per-client Privacy: {dp_config.per_client_clipping}")
 
             # Print initial summary
@@ -887,32 +912,43 @@ def main() -> None:
             logger.info(f"Dataset: {args.dataset_name}")
             logger.info(f"Partitioning: {config.partition_strategy} (α={args.alpha})")
             logger.info(f"Hospitals: {config.num_actors}")
-            logger.info(f"Aggregation: {config.aggregation.strategy_type} (decentralized)")
+            logger.info(
+                f"Aggregation: {config.aggregation.strategy_type} (decentralized)"
+            )
             logger.info(f"Topology: {config.topology.topology_type}")
             logger.info(f"Mixing parameter: {args.mixing_parameter}")
             logger.info(f"Privacy: Local DP (ε={args.epsilon}, δ={args.delta})")
             logger.info(f"Clipping norm: {args.clipping_norm}")
-            logger.info(f"Rounds: {args.rounds}")
-            logger.info(f"Local epochs: {args.epochs}")
-            logger.info(f"Batch size: {args.batch_size}")
-            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Rounds: {config.rounds}")
+            logger.info(f"Local epochs: {config.epochs}")
+            logger.info(f"Batch size: {config.batch_size}")
+            logger.info(f"Learning rate: {config.learning_rate}")
             logger.info(f"Weight decay: {args.weight_decay}")
             logger.info(f"Device: {device}")
             logger.info(f"Image size: {args.image_size}")
             logger.info(f"Classes ({num_classes}): {dx_categories}")
             logger.info(f"Using feature column: {config.feature_columns}")
             logger.info(f"Using label column: {config.label_column}")
+            logger.info(f"Test split: {config.test_split}")
+            logger.info(f"Resource monitoring: {config.monitor_resources}")
+            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
-            logger.info("=== Starting DP-Enhanced Decentralized Skin Lesion Learning ===")
-            logger.info("Note: In decentralized DP learning, hospitals add noise locally and communicate directly with neighbors")
-            logger.info("No central server coordinates the process - pure peer-to-peer learning with local privacy")
+            logger.info(
+                "=== Starting DP-Enhanced Decentralized Skin Lesion Learning ==="
+            )
+            logger.info(
+                "Note: In decentralized DP learning, hospitals add noise locally and communicate directly with neighbors"
+            )
+            logger.info(
+                "No central server coordinates the process - pure peer-to-peer learning with local privacy"
+            )
 
             # Execute the DP-enhanced decentralized learning process
             results = learning_process.execute()
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
@@ -920,7 +956,7 @@ def main() -> None:
                     logger.info("Creating animation...")
                     visualizer.render_training_animation(
                         filename=f"dp_decentralized_skin_cancer_{args.topology}_{args.aggregation_strategy}_animation.mp4",
-                        fps=2,
+                        fps=args.fps,
                     )
 
                 if args.create_frames:
@@ -972,10 +1008,14 @@ def main() -> None:
                 os.path.dirname(os.path.abspath(save_path)) or ".", exist_ok=True
             )
             torch.save(checkpoint, save_path)
-            logger.info(f"DP-enhanced decentralized skin lesion model saved to '{save_path}'")
+            logger.info(
+                f"DP-enhanced decentralized skin lesion model saved to '{save_path}'"
+            )
 
             # Print final results
-            logger.info("=== DP-Enhanced Decentralized Skin Lesion Training Results ===")
+            logger.info(
+                "=== DP-Enhanced Decentralized Skin Lesion Training Results ==="
+            )
             logger.info(
                 f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
             )
@@ -986,28 +1026,36 @@ def main() -> None:
             logger.info(f"Label mapping: {dx_to_label}")
 
             # Privacy summary
-            if 'privacy_summary' in results:
-                privacy_summary = results['privacy_summary']
-                if privacy_summary['dp_enabled']:
+            if "privacy_summary" in results:
+                privacy_summary = results["privacy_summary"]
+                if privacy_summary["dp_enabled"]:
                     logger.info("Differential Privacy: ENABLED (Local DP)")
-                    if 'accountant' in privacy_summary:
-                        spent = privacy_summary['accountant']['spent']
-                        total = privacy_summary['accountant']['total_budget']
-                        logger.info(f"Privacy Spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
-                                    f"δ={spent['delta']:.2e}/{total['delta']:.2e}")
+                    if "accountant" in privacy_summary:
+                        spent = privacy_summary["accountant"]["spent"]
+                        total = privacy_summary["accountant"]["total_budget"]
+                        logger.info(
+                            f"Privacy Spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
+                            f"δ={spent['delta']:.2e}/{total['delta']:.2e}"
+                        )
 
                         # Calculate privacy budget utilization
-                        eps_utilization = (spent['epsilon'] / total['epsilon']) * 100
-                        delta_utilization = (spent['delta'] / total['delta']) * 100
-                        logger.info(f"Privacy Budget Utilization: ε={eps_utilization:.1f}%, δ={delta_utilization:.1f}%")
+                        eps_utilization = (spent["epsilon"] / total["epsilon"]) * 100
+                        delta_utilization = (spent["delta"] / total["delta"]) * 100
+                        logger.info(
+                            f"Privacy Budget Utilization: ε={eps_utilization:.1f}%, δ={delta_utilization:.1f}%"
+                        )
                 else:
                     logger.info("Differential Privacy: DISABLED")
 
             # Log topology-specific results
             if "topology" in results:
                 topology_info = results["topology"]
-                logger.info(f"Network connections: {len(topology_info.get('adjacency_list', {}))}")
-                logger.info(f"Decentralized topology: {topology_info.get('type', 'unknown')}")
+                logger.info(
+                    f"Network connections: {len(topology_info.get('adjacency_list', {}))}"
+                )
+                logger.info(
+                    f"Decentralized topology: {topology_info.get('type', 'unknown')}"
+                )
 
             # Display detailed metrics if available
             if "round_metrics" in results:
@@ -1030,13 +1078,21 @@ def main() -> None:
 
             # DP-enhanced decentralized learning summary
             logger.info("=== DP-Enhanced Decentralized Learning Summary ===")
-            logger.info(f"Learning paradigm: Fully decentralized with Local DP (no central server)")
-            logger.info(f"Communication pattern: {topology_info.get('type', 'peer-to-peer')} with local noise")
-            logger.info(f"Privacy: Each hospital adds noise locally before sharing (Local DP)")
-            logger.info(f"Data privacy: Medical data never leaves hospital premises")
-            logger.info(f"Parameter privacy: Model updates are noisy before transmission")
-            logger.info(f"Robustness: No single point of failure")
-            logger.info(f"Scalability: Can add hospitals without affecting others")
+            logger.info(
+                "Learning paradigm: Fully decentralized with Local DP (no central server)"
+            )
+            logger.info(
+                f"Communication pattern: {topology_info.get('type', 'peer-to-peer')} with local noise"
+            )
+            logger.info(
+                "Privacy: Each hospital adds noise locally before sharing (Local DP)"
+            )
+            logger.info("Data privacy: Medical data never leaves hospital premises")
+            logger.info(
+                "Parameter privacy: Model updates are noisy before transmission"
+            )
+            logger.info("Robustness: No single point of failure")
+            logger.info("Scalability: Can add hospitals without affecting others")
             logger.info(f"Privacy guarantee: {privacy_desc} per hospital per round")
 
         finally:
@@ -1044,7 +1100,9 @@ def main() -> None:
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"DP-Enhanced Decentralized Skin Lesion Learning Process failed: {str(e)}")
+        logger.error(
+            f"DP-Enhanced Decentralized Skin Lesion Learning Process failed: {str(e)}"
+        )
         import traceback
 
         traceback.print_exc()

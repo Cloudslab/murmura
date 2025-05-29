@@ -209,7 +209,9 @@ class ClusterManager:
                 # Allocate GPUs conservatively
                 if expected_actors_per_node <= median_gpus_per_node:
                     # We can give each actor 1 GPU if we have enough
-                    gpus_per_actor = min(1.0, median_gpus_per_node / expected_actors_per_node)
+                    gpus_per_actor = min(
+                        1.0, median_gpus_per_node / expected_actors_per_node
+                    )
                 else:
                     # More actors than GPUs per node - share GPUs
                     gpus_per_actor = median_gpus_per_node / expected_actors_per_node
@@ -235,7 +237,7 @@ class ClusterManager:
         # Memory allocation
         if self.config.resources.memory_per_actor is not None:
             resource_requirements["memory"] = (
-                    self.config.resources.memory_per_actor * 1024 * 1024
+                self.config.resources.memory_per_actor * 1024 * 1024
             )
 
         logging.getLogger("murmura").info(
