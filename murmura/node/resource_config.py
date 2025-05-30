@@ -17,7 +17,7 @@ class ResourceConfig(BaseModel):
         description="GPU resources per actor. If None, auto-calculated based on available resources.",
     )
     cpus_per_actor: Optional[float] = Field(
-        default=1.0, gt=0.0, description="CPU resources per actor"
+        default=None, gt=0.0, description="CPU resources per actor"
     )
     memory_per_actor: Optional[int] = Field(
         default=None,
