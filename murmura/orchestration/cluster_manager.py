@@ -175,12 +175,10 @@ class ClusterManager:
         else:
             # Auto-calculate based on available resources
             # Use a more conservative approach for multi-node
-            cpus_per_actor = max(
-                0.5, total_cpus / (self.config.num_actors * 1.2)
-            )  # Leave some headroom
+            cpus_per_actor = total_cpus / (self.config.num_actors * 1.1)
             resource_requirements["num_cpus"] = min(
-                cpus_per_actor, 2.0
-            )  # Cap at 2 CPUs per actor
+                cpus_per_actor, 7.0
+            )  # Cap at 7 CPUs per actor
 
         # GPU allocation - FIXED LOGIC
         if self.config.resources.gpus_per_actor is not None:
