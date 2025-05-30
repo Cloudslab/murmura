@@ -191,8 +191,8 @@ class ExperimentRunner:
                 "num_actors": 1,
                 "partition_strategy": "iid",
                 "topology": "star",
-                "rounds": 50,
-                "epochs": 1,
+                "rounds": 1,
+                "epochs": 50,
                 "aggregation_strategy": "fedavg"
             }
         })
@@ -204,8 +204,8 @@ class ExperimentRunner:
                 "num_actors": 1,
                 "partition_strategy": "iid",
                 "topology": "star",
-                "rounds": 50,
-                "epochs": 1,
+                "rounds": 1,
+                "epochs": 50,
                 "aggregation_strategy": "fedavg"
             }
         })
@@ -356,48 +356,90 @@ class ExperimentRunner:
             self.run_experiment(exp["name"], exp["script"], exp["args"], "experiment_3")
 
     def run_experiment_4(self):
-        """Experiment 4: Privacy-Utility Trade-offs"""
+        """Experiment 4: Enhanced Privacy-Utility Trade-offs"""
         self.logger.info("\n" + "="*80)
-        self.logger.info("EXPERIMENT 4: Privacy-Utility Trade-offs")
+        self.logger.info("EXPERIMENT 4: Enhanced Privacy-Utility Trade-offs")
         self.logger.info("="*80)
 
         experiments = []
-        epsilon_values = [0.1, 1.0, 10.0]
+
+        # More comprehensive epsilon values
+        epsilon_values = [0.1, 0.5, 1.0, 3.0, 8.0]
+
+        # Different clipping norms to test
+        clipping_norms = [0.5, 1.0, 2.0]
 
         for epsilon in epsilon_values:
-            # Federated with DP
-            experiments.append({
-                "name": f"Federated_DP_MNIST_epsilon_{epsilon}",
-                "script": "murmura/examples/dp_mnist_example.py",
-                "args": {
-                    "num_actors": 20,
-                    "partition_strategy": "iid",
-                    "topology": "complete",
-                    "rounds": 20,
-                    "epochs": 5,
-                    "aggregation_strategy": "fedavg",
-                    "epsilon": epsilon,
-                    "delta": 1e-5,
-                    "clipping_norm": 1.0
-                }
-            })
+            for clipping_norm in clipping_norms:
+                # Federated with DP - significantly more training
+                experiments.append({
+                    "name": f"Federated_DP_MNIST_eps_{epsilon}_clip_{clipping_norm}",
+                    "script": "murmura/examples/dp_mnist_example.py",
+                    "args": {
+                        "num_actors": 20,
+                        "partition_strategy": "iid",
+                        "topology": "complete",
+                        "rounds": 50,  # Increased from 20
+                        "epochs": 10,  # Increased from 5
+                        "aggregation_strategy": "fedavg",
+                        "epsilon": epsilon,
+                        "delta": 1e-5,
+                        "clipping_norm": clipping_norm,
+                        "lr": 0.01 if epsilon >= 1.0 else 0.005,  # Lower LR for stricter privacy
+                        "batch_size": 32  # Smaller batches often help with DP
+                    }
+                })
 
-            # Decentralized with DP
-            experiments.append({
-                "name": f"Decentralized_DP_MNIST_epsilon_{epsilon}",
-                "script": "murmura/examples/dp_decentralized_mnist_example.py",
+                # Decentralized with DP - even more rounds due to gossip overhead
+                experiments.append({
+                    "name": f"Decentralized_DP_MNIST_eps_{epsilon}_clip_{clipping_norm}",
+                    "script": "murmura/examples/dp_decentralized_mnist_example.py",
+                    "args": {
+                        "num_actors": 20,
+                        "partition_strategy": "iid",
+                        "topology": "ring",  # Ring topology for better comparison
+                        "rounds": 75,  # Even more rounds for decentralized
+                        "epochs": 8,   # Slightly fewer local epochs
+                        "aggregation_strategy": "gossip_avg",
+                        "epsilon": epsilon,
+                        "delta": 1e-5,
+                        "clipping_norm": clipping_norm,
+                        "lr": 0.01 if epsilon >= 1.0 else 0.005,
+                        "batch_size": 32
+                    }
+                })
+
+        # Baseline comparisons with same training budget
+        experiments.extend([
+            {
+                "name": "Federated_MNIST_Extended_Training",
+                "script": "murmura/examples/mnist_example.py",
                 "args": {
                     "num_actors": 20,
                     "partition_strategy": "iid",
                     "topology": "complete",
-                    "rounds": 20,
-                    "epochs": 5,
-                    "aggregation_strategy": "gossip_avg",
-                    "epsilon": epsilon,
-                    "delta": 1e-5,
-                    "clipping_norm": 1.0
+                    "rounds": 50,
+                    "epochs": 10,
+                    "aggregation_strategy": "fedavg",
+                    "lr": 0.01,
+                    "batch_size": 32
                 }
-            })
+            },
+            {
+                "name": "Decentralized_MNIST_Extended_Training",
+                "script": "murmura/examples/decentralized_mnist_example.py",
+                "args": {
+                    "num_actors": 20,
+                    "partition_strategy": "iid",
+                    "topology": "ring",
+                    "rounds": 75,
+                    "epochs": 8,
+                    "aggregation_strategy": "gossip_avg",
+                    "lr": 0.01,
+                    "batch_size": 32
+                }
+            }
+        ])
 
         # Run all experiments
         for exp in experiments:
@@ -405,13 +447,13 @@ class ExperimentRunner:
 
     def run_experiment_5(self):
         """Experiment 5: Combined Effects - 2×2×3 design"""
+        """Experiment 5: Enhanced Combined Effects with proper DP training"""
         self.logger.info("\n" + "="*80)
-        self.logger.info("EXPERIMENT 5: Combined Effects")
+        self.logger.info("EXPERIMENT 5: Enhanced Combined Effects")
         self.logger.info("="*80)
 
         experiments = []
 
-        # 2x2x3: (IID/Non-IID) × (No DP/DP) × (Traditional/Federated/Decentralized)
         data_configs = [
             {"partition_strategy": "iid", "alpha": None, "label": "IID"},
             {"partition_strategy": "dirichlet", "alpha": 0.5, "label": "NonIID"}
@@ -419,12 +461,26 @@ class ExperimentRunner:
 
         privacy_configs = [
             {"dp": False, "label": "NoDP"},
-            {"dp": True, "epsilon": 1.0, "delta": 1e-5, "label": "DP"}
+            {"dp": True, "epsilon": 1.0, "delta": 1e-5, "clipping_norm": 1.0, "label": "DP"}
         ]
 
         for data_cfg in data_configs:
             for privacy_cfg in privacy_configs:
-                # Traditional (simulated)
+                # Determine training parameters based on DP usage
+                if privacy_cfg["dp"]:
+                    base_rounds_fed = 40
+                    base_rounds_decent = 60
+                    base_epochs = 8
+                    learning_rate = 0.005
+                    batch_size = 32
+                else:
+                    base_rounds_fed = 15
+                    base_rounds_decent = 20
+                    base_epochs = 5
+                    learning_rate = 0.01
+                    batch_size = 64
+
+                # Traditional (simulated) - only for non-DP
                 if not privacy_cfg["dp"]:
                     experiments.append({
                         "name": f"Traditional_MNIST_{data_cfg['label']}_{privacy_cfg['label']}",
@@ -434,9 +490,11 @@ class ExperimentRunner:
                             "partition_strategy": data_cfg["partition_strategy"],
                             "alpha": data_cfg["alpha"],
                             "topology": "star",
-                            "rounds": 50,
-                            "epochs": 1,
-                            "aggregation_strategy": "fedavg"
+                            "rounds": 1,
+                            "epochs": base_rounds_fed * base_epochs,  # Equivalent total epochs
+                            "aggregation_strategy": "fedavg",
+                            "lr": learning_rate,
+                            "batch_size": batch_size
                         }
                     })
 
@@ -447,15 +505,17 @@ class ExperimentRunner:
                     "partition_strategy": data_cfg["partition_strategy"],
                     "alpha": data_cfg["alpha"],
                     "topology": "star",
-                    "rounds": 10,
-                    "epochs": 5,
-                    "aggregation_strategy": "fedavg"
+                    "rounds": base_rounds_fed,
+                    "epochs": base_epochs,
+                    "aggregation_strategy": "fedavg",
+                    "lr": learning_rate,
+                    "batch_size": batch_size
                 }
                 if privacy_cfg["dp"]:
                     args.update({
                         "epsilon": privacy_cfg["epsilon"],
                         "delta": privacy_cfg["delta"],
-                        "clipping_norm": 1.0
+                        "clipping_norm": privacy_cfg["clipping_norm"]
                     })
 
                 experiments.append({
@@ -471,15 +531,17 @@ class ExperimentRunner:
                     "partition_strategy": data_cfg["partition_strategy"],
                     "alpha": data_cfg["alpha"],
                     "topology": "ring",
-                    "rounds": 10,
-                    "epochs": 5,
-                    "aggregation_strategy": "gossip_avg"
+                    "rounds": base_rounds_decent,
+                    "epochs": base_epochs,
+                    "aggregation_strategy": "gossip_avg",
+                    "lr": learning_rate,
+                    "batch_size": batch_size
                 }
                 if privacy_cfg["dp"]:
                     args.update({
                         "epsilon": privacy_cfg["epsilon"],
                         "delta": privacy_cfg["delta"],
-                        "clipping_norm": 1.0
+                        "clipping_norm": privacy_cfg["clipping_norm"]
                     })
 
                 experiments.append({
@@ -537,100 +599,133 @@ class ExperimentRunner:
     def run_experiment_7(self):
         """Experiment 7: Dataset Generalization (Medical Dataset)"""
         self.logger.info("\n" + "="*80)
-        self.logger.info("EXPERIMENT 7: Dataset Generalization (Medical Dataset)")
+        self.logger.info("EXPERIMENT 7: Enhanced Medical Dataset")
         self.logger.info("="*80)
 
         experiments = []
 
-        # Key experiments on medical dataset
-        # Baseline comparison
+        # Medical data often needs more careful DP tuning
+        # Privacy configurations specifically tuned for medical data
         experiments.extend([
             {
-                "name": "Federated_SkinLesion_Baseline",
-                "script": "murmura/examples/skin_lesion_example.py",
-                "args": {
-                    "num_actors": 10,
-                    "partition_strategy": "iid",
-                    "topology": "star",
-                    "rounds": 10,
-                    "epochs": 2,
-                    "aggregation_strategy": "fedavg"
-                }
-            },
-            {
-                "name": "Decentralized_SkinLesion_Baseline",
-                "script": "murmura/examples/decentralized_skin_lesion_example.py",
-                "args": {
-                    "num_actors": 10,
-                    "partition_strategy": "iid",
-                    "topology": "ring",
-                    "rounds": 10,
-                    "epochs": 2,
-                    "aggregation_strategy": "gossip_avg"
-                }
-            }
-        ])
-
-        # Heterogeneity
-        experiments.extend([
-            {
-                "name": "Federated_SkinLesion_Heterogeneous",
-                "script": "murmura/examples/skin_lesion_example.py",
-                "args": {
-                    "num_actors": 10,
-                    "partition_strategy": "dirichlet",
-                    "alpha": 0.3,
-                    "topology": "star",
-                    "rounds": 10,
-                    "epochs": 2,
-                    "aggregation_strategy": "fedavg"
-                }
-            },
-            {
-                "name": "Decentralized_SkinLesion_Heterogeneous",
-                "script": "murmura/examples/decentralized_skin_lesion_example.py",
-                "args": {
-                    "num_actors": 10,
-                    "partition_strategy": "dirichlet",
-                    "alpha": 0.3,
-                    "topology": "ring",
-                    "rounds": 10,
-                    "epochs": 2,
-                    "aggregation_strategy": "gossip_avg"
-                }
-            }
-        ])
-
-        # Privacy
-        experiments.extend([
-            {
-                "name": "Federated_DP_SkinLesion",
+                "name": "Federated_DP_SkinLesion_Conservative",
                 "script": "murmura/examples/dp_skin_lesion_example.py",
                 "args": {
                     "num_actors": 10,
                     "partition_strategy": "iid",
                     "topology": "star",
-                    "rounds": 10,
-                    "epochs": 2,
+                    "rounds": 60,  # Much more training
+                    "epochs": 3,   # Fewer local epochs to reduce privacy cost
                     "aggregation_strategy": "fedavg",
-                    "epsilon": 0.5,
+                    "epsilon": 0.1,  # Very strict privacy
                     "delta": 1e-6,
-                    "clipping_norm": 1.0
+                    "clipping_norm": 0.5,  # Tighter clipping
+                    "lr": 0.001,  # Much lower learning rate
+                    "batch_size": 16  # Smaller batches
                 }
             },
             {
-                "name": "Decentralized_DP_SkinLesion",
+                "name": "Federated_DP_SkinLesion_Moderate",
+                "script": "murmura/examples/dp_skin_lesion_example.py",
+                "args": {
+                    "num_actors": 10,
+                    "partition_strategy": "iid",
+                    "topology": "star",
+                    "rounds": 40,
+                    "epochs": 5,
+                    "aggregation_strategy": "fedavg",
+                    "epsilon": 1.0,  # Moderate privacy
+                    "delta": 1e-6,
+                    "clipping_norm": 1.0,
+                    "lr": 0.005,
+                    "batch_size": 32
+                }
+            },
+            {
+                "name": "Federated_DP_SkinLesion_Relaxed",
+                "script": "murmura/examples/dp_skin_lesion_example.py",
+                "args": {
+                    "num_actors": 10,
+                    "partition_strategy": "iid",
+                    "topology": "star",
+                    "rounds": 25,
+                    "epochs": 6,
+                    "aggregation_strategy": "fedavg",
+                    "epsilon": 8.0,  # Relaxed privacy
+                    "delta": 1e-6,
+                    "clipping_norm": 2.0,
+                    "lr": 0.01,
+                    "batch_size": 64
+                }
+            }
+        ])
+
+        # Corresponding decentralized experiments
+        experiments.extend([
+            {
+                "name": "Decentralized_DP_SkinLesion_Conservative",
                 "script": "murmura/examples/dp_decentralized_skin_lesion_example.py",
                 "args": {
                     "num_actors": 10,
                     "partition_strategy": "iid",
                     "topology": "ring",
-                    "rounds": 10,
+                    "rounds": 90,  # Even more for decentralized
                     "epochs": 2,
+                    "aggregation_strategy": "gossip_avg",
+                    "epsilon": 0.3,  # Slightly relaxed for decentralized
+                    "delta": 1e-6,
+                    "clipping_norm": 0.5,
+                    "lr": 0.001,
+                    "batch_size": 16
+                }
+            },
+            {
+                "name": "Decentralized_DP_SkinLesion_Moderate",
+                "script": "murmura/examples/dp_decentralized_skin_lesion_example.py",
+                "args": {
+                    "num_actors": 10,
+                    "partition_strategy": "iid",
+                    "topology": "ring",
+                    "rounds": 60,
+                    "epochs": 4,
                     "aggregation_strategy": "gossip_avg",
                     "epsilon": 3.0,
                     "delta": 1e-6,
-                    "clipping_norm": 1.0
+                    "clipping_norm": 1.0,
+                    "lr": 0.005,
+                    "batch_size": 32
+                }
+            }
+        ])
+
+        # Baseline for comparison with extended training
+        experiments.extend([
+            {
+                "name": "Federated_SkinLesion_Extended",
+                "script": "murmura/examples/skin_lesion_example.py",
+                "args": {
+                    "num_actors": 10,
+                    "partition_strategy": "iid",
+                    "topology": "star",
+                    "rounds": 25,
+                    "epochs": 6,
+                    "aggregation_strategy": "fedavg",
+                    "lr": 0.01,
+                    "batch_size": 64
+                }
+            },
+            {
+                "name": "Decentralized_SkinLesion_Extended",
+                "script": "murmura/examples/decentralized_skin_lesion_example.py",
+                "args": {
+                    "num_actors": 10,
+                    "partition_strategy": "iid",
+                    "topology": "ring",
+                    "rounds": 35,
+                    "epochs": 5,
+                    "aggregation_strategy": "gossip_avg",
+                    "lr": 0.01,
+                    "batch_size": 64
                 }
             }
         ])
