@@ -351,7 +351,15 @@ class NetworkVisualizer(TrainingObserver):
             event_csv_path = os.path.join(self.output_dir, f"{prefix}_events.csv")
             with open(event_csv_path, 'w', newline='', encoding='utf-8') as f:
                 if self.event_log:
-                    writer = csv.DictWriter(f, fieldnames=self.event_log[0].keys())
+                    # Collect all unique fieldnames from all event entries
+                    all_fieldnames = set()
+                    for event in self.event_log:
+                        all_fieldnames.update(event.keys())
+
+                    # Sort fieldnames for consistent column order
+                    fieldnames = sorted(all_fieldnames)
+
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(self.event_log)
             print(f"Event log exported to {event_csv_path}")
@@ -401,7 +409,13 @@ class NetworkVisualizer(TrainingObserver):
             comm_csv_path = os.path.join(self.output_dir, f"{prefix}_communications.csv")
             with open(comm_csv_path, 'w', newline='', encoding='utf-8') as f:
                 if self.communication_log:
-                    writer = csv.DictWriter(f, fieldnames=self.communication_log[0].keys())
+                    # Collect all unique fieldnames
+                    all_fieldnames = set()
+                    for comm in self.communication_log:
+                        all_fieldnames.update(comm.keys())
+
+                    fieldnames = sorted(all_fieldnames)
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(self.communication_log)
             print(f"Communication log exported to {comm_csv_path}")
@@ -412,7 +426,13 @@ class NetworkVisualizer(TrainingObserver):
                 if activities:
                     activity_csv_path = os.path.join(self.output_dir, f"{prefix}_node_{node_id}_activities.csv")
                     with open(activity_csv_path, 'w', newline='', encoding='utf-8') as f:
-                        writer = csv.DictWriter(f, fieldnames=activities[0].keys())
+                        # Collect all unique fieldnames for this node's activities
+                        all_fieldnames = set()
+                        for activity in activities:
+                            all_fieldnames.update(activity.keys())
+
+                        fieldnames = sorted(all_fieldnames)
+                        writer = csv.DictWriter(f, fieldnames=fieldnames)
                         writer.writeheader()
                         writer.writerows(activities)
             print(f"Node activities exported for {len(self.node_activities)} nodes")
@@ -422,7 +442,13 @@ class NetworkVisualizer(TrainingObserver):
             param_update_csv_path = os.path.join(self.output_dir, f"{prefix}_parameter_updates.csv")
             with open(param_update_csv_path, 'w', newline='', encoding='utf-8') as f:
                 if self.parameter_updates:
-                    writer = csv.DictWriter(f, fieldnames=self.parameter_updates[0].keys())
+                    # Collect all unique fieldnames
+                    all_fieldnames = set()
+                    for param_update in self.parameter_updates:
+                        all_fieldnames.update(param_update.keys())
+
+                    fieldnames = sorted(all_fieldnames)
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(self.parameter_updates)
             print(f"Parameter updates exported to {param_update_csv_path}")
