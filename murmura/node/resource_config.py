@@ -11,6 +11,12 @@ class ResourceConfig(BaseModel):
         gt=0,
         description="Number of virtual actors to create per physical node. If None, distributes evenly.",
     )
+
+    auto_calculate_resources: bool = Field(
+        default=True,
+        description="Whether to automatically calculate CPU/GPU allocation based on cluster resources"
+    )
+
     gpus_per_actor: Optional[float] = Field(
         default=None,
         ge=0.0,

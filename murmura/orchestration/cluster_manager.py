@@ -169,8 +169,7 @@ class ClusterManager:
         # Calculate resource allocation per actor
         resource_requirements = {}
 
-        # CPU allocation
-        if self.config.resources.cpus_per_actor is not None:
+        if not self.config.resources.auto_calculate_resources and self.config.resources.cpus_per_actor is not None:
             resource_requirements["num_cpus"] = self.config.resources.cpus_per_actor
         else:
             # Auto-calculate based on available resources
@@ -181,7 +180,7 @@ class ClusterManager:
             )  # Cap at 7 CPUs per actor
 
         # GPU allocation - FIXED LOGIC
-        if self.config.resources.gpus_per_actor is not None:
+        if not self.config.resources.auto_calculate_resources and self.config.resources.gpus_per_actor is not None:
             resource_requirements["num_gpus"] = self.config.resources.gpus_per_actor
         elif total_gpus > 0:
             # FIXED: Calculate based on GPUs available per node, not total cluster GPUs
