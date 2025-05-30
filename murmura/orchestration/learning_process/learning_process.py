@@ -197,7 +197,7 @@ class LearningProcess(ABC):
                     self.cluster_manager.actors[:3]
                 ):  # Sample first 3 actors
                     try:
-                        debug_info = ray.get(actor.get_data_info.remote(), timeout=5)
+                        debug_info = ray.get(actor.get_data_info.remote(), timeout=18000)
                         self.logger.error(f"Actor {i} debug info: {debug_info}")
                     except Exception as debug_e:
                         self.logger.error(
@@ -358,7 +358,7 @@ class LearningProcess(ABC):
             # Check each actor's dataset status
             for i, actor in enumerate(self.cluster_manager.actors):
                 try:
-                    info = ray.get(actor.get_data_info.remote(), timeout=10)
+                    info = ray.get(actor.get_data_info.remote(), timeout=18000)
                     actor_statuses.append(
                         {
                             "actor_id": i,
@@ -505,7 +505,7 @@ class LearningProcess(ABC):
             health_checks = []
             for actor in sample_actors:
                 try:
-                    health = ray.get(actor.health_check.remote(), timeout=10)
+                    health = ray.get(actor.health_check.remote(), timeout=18000)
                     health_checks.append(health)
                 except Exception as e:
                     health_checks.append(
