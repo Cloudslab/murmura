@@ -7,7 +7,10 @@ from murmura.aggregation.strategy_interface import AggregationStrategy
 from murmura.aggregation.coordination_mode import CoordinationMode
 from murmura.privacy.dp_config import DifferentialPrivacyConfig
 from murmura.privacy.dp_mechanisms import DifferentialPrivacyManager
-from murmura.privacy.privacy_accountant import PrivacyAccountant, create_privacy_accountant
+from murmura.privacy.privacy_accountant import (
+    PrivacyAccountant,
+    create_privacy_accountant,
+)
 
 
 class DPAggregationStrategyMixin:
@@ -18,9 +21,12 @@ class DPAggregationStrategyMixin:
     enhanced with differential privacy without modifying the base strategy.
     """
 
-    def __init__(self, base_strategy: AggregationStrategy,
-                 dp_config: DifferentialPrivacyConfig,
-                 privacy_accountant: Optional[PrivacyAccountant] = None):
+    def __init__(
+        self,
+        base_strategy: AggregationStrategy,
+        dp_config: DifferentialPrivacyConfig,
+        privacy_accountant: Optional[PrivacyAccountant] = None,
+    ):
         """
         Initialize DP-enhanced aggregation strategy.
 
@@ -37,8 +43,9 @@ class DPAggregationStrategyMixin:
         if privacy_accountant is None and dp_config.enable_privacy_monitoring:
             privacy_accountant = create_privacy_accountant(
                 accountant_type=dp_config.accountant.value,
-                total_epsilon=dp_config.epsilon * (dp_config.total_rounds or 100),  # Total budget
-                total_delta=dp_config.delta if dp_config.delta is not None else 1e-5
+                total_epsilon=dp_config.epsilon
+                * (dp_config.total_rounds or 100),  # Total budget
+                total_delta=dp_config.delta if dp_config.delta is not None else 1e-5,
             )
 
         # Initialize differential privacy manager
@@ -52,10 +59,13 @@ class DPAggregationStrategyMixin:
         """Inherit coordination mode from base strategy."""
         return self.base_strategy.coordination_mode
 
-    def aggregate(self, parameters_list: List[Dict[str, Any]],
-                  weights: Optional[List[float]] = None,
-                  round_number: Optional[int] = None,
-                  sampling_rate: Optional[float] = None) -> Dict[str, Any]:
+    def aggregate(
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
+        round_number: Optional[int] = None,
+        sampling_rate: Optional[float] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate parameters with differential privacy.
 
@@ -72,25 +82,33 @@ class DPAggregationStrategyMixin:
         dp_parameters, dp_metadata = self.dp_manager.apply_differential_privacy(
             parameters_list=parameters_list,
             round_number=self.current_round,
-            sampling_rate=sampling_rate
+            sampling_rate=sampling_rate,
         )
 
-        self.logger.debug(f"Round {self.current_round}: Applied DP preprocessing to {len(dp_parameters)} parameter sets")
+        self.logger.debug(
+            f"Round {self.current_round}: Applied DP preprocessing to {len(dp_parameters)} parameter sets"
+        )
 
         # Perform base aggregation
         aggregated_params = self.base_strategy.aggregate(dp_parameters, weights)
 
         # For server-side DP, add noise to aggregated parameters
         if self.dp_config.is_central_dp():
-            aggregated_params = self.dp_manager.add_noise_to_aggregated_parameters(aggregated_params)
-            self.logger.debug(f"Round {self.current_round}: Added noise to aggregated parameters")
+            aggregated_params = self.dp_manager.add_noise_to_aggregated_parameters(
+                aggregated_params
+            )
+            self.logger.debug(
+                f"Round {self.current_round}: Added noise to aggregated parameters"
+            )
 
         # Log privacy statistics
         if self.dp_config.enable_privacy_monitoring:
             privacy_summary = self.dp_manager.get_privacy_summary()
             current_spent = privacy_summary["total_privacy_spent"]
-            self.logger.info(f"Round {self.current_round} privacy: "
-                             f"ε={current_spent[0]:.4f}, δ={current_spent[1]:.2e}")
+            self.logger.info(
+                f"Round {self.current_round} privacy: "
+                f"ε={current_spent[0]:.4f}, δ={current_spent[1]:.2e}"
+            )
 
         return aggregated_params
 
@@ -107,9 +125,12 @@ class DPFedAvg(DPAggregationStrategyMixin, AggregationStrategy):
     following the DP-SGD algorithm adapted for federated settings.
     """
 
-    def __init__(self, base_fedavg_strategy: AggregationStrategy,
-                 dp_config: DifferentialPrivacyConfig,
-                 privacy_accountant: Optional[PrivacyAccountant] = None):
+    def __init__(
+        self,
+        base_fedavg_strategy: AggregationStrategy,
+        dp_config: DifferentialPrivacyConfig,
+        privacy_accountant: Optional[PrivacyAccountant] = None,
+    ):
         """
         Initialize DP-FedAvg strategy.
 
@@ -122,7 +143,9 @@ class DPFedAvg(DPAggregationStrategyMixin, AggregationStrategy):
 
         # DP-FedAvg typically uses centralized coordination
         if self.coordination_mode != CoordinationMode.CENTRALIZED:
-            self.logger.warning("DP-FedAvg typically works best with centralized coordination")
+            self.logger.warning(
+                "DP-FedAvg typically works best with centralized coordination"
+            )
 
 
 class DPTrimmedMean(DPAggregationStrategyMixin, AggregationStrategy):
@@ -133,9 +156,12 @@ class DPTrimmedMean(DPAggregationStrategyMixin, AggregationStrategy):
     Particularly useful when clients might be malicious or have corrupted data.
     """
 
-    def __init__(self, base_trimmed_mean_strategy: AggregationStrategy,
-                 dp_config: DifferentialPrivacyConfig,
-                 privacy_accountant: Optional[PrivacyAccountant] = None):
+    def __init__(
+        self,
+        base_trimmed_mean_strategy: AggregationStrategy,
+        dp_config: DifferentialPrivacyConfig,
+        privacy_accountant: Optional[PrivacyAccountant] = None,
+    ):
         """
         Initialize DP-TrimmedMean strategy.
 
@@ -147,7 +173,9 @@ class DPTrimmedMean(DPAggregationStrategyMixin, AggregationStrategy):
         super().__init__(base_trimmed_mean_strategy, dp_config, privacy_accountant)
 
         # Enhanced logging for robust aggregation
-        self.logger.info("Initialized DP-TrimmedMean: combining privacy with Byzantine robustness")
+        self.logger.info(
+            "Initialized DP-TrimmedMean: combining privacy with Byzantine robustness"
+        )
 
 
 class DPGossipAvg(DPAggregationStrategyMixin, AggregationStrategy):
@@ -159,9 +187,12 @@ class DPGossipAvg(DPAggregationStrategyMixin, AggregationStrategy):
     that works with decentralized topologies.
     """
 
-    def __init__(self, base_gossip_strategy: AggregationStrategy,
-                 dp_config: DifferentialPrivacyConfig,
-                 privacy_accountant: Optional[PrivacyAccountant] = None):
+    def __init__(
+        self,
+        base_gossip_strategy: AggregationStrategy,
+        dp_config: DifferentialPrivacyConfig,
+        privacy_accountant: Optional[PrivacyAccountant] = None,
+    ):
         """
         Initialize DP-GossipAvg strategy.
 
@@ -180,12 +211,17 @@ class DPGossipAvg(DPAggregationStrategyMixin, AggregationStrategy):
         super().__init__(base_gossip_strategy, dp_config, privacy_accountant)
 
         # Decentralized DP requires special handling
-        self.logger.info("Initialized DP-GossipAvg: using Local DP for decentralized learning")
+        self.logger.info(
+            "Initialized DP-GossipAvg: using Local DP for decentralized learning"
+        )
 
-    def aggregate(self, parameters_list: List[Dict[str, Any]],
-                  weights: Optional[List[float]] = None,
-                  round_number: Optional[int] = None,
-                  sampling_rate: Optional[float] = None) -> Dict[str, Any]:
+    def aggregate(
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
+        round_number: Optional[int] = None,
+        sampling_rate: Optional[float] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate with Local DP for decentralized learning.
 
@@ -206,10 +242,13 @@ class AdaptiveDPStrategy(AggregationStrategy):
     for better utility-privacy trade-offs.
     """
 
-    def __init__(self, base_strategy: AggregationStrategy,
-                 initial_dp_config: DifferentialPrivacyConfig,
-                 adaptation_schedule: str = "linear",
-                 privacy_accountant: Optional[PrivacyAccountant] = None):
+    def __init__(
+        self,
+        base_strategy: AggregationStrategy,
+        initial_dp_config: DifferentialPrivacyConfig,
+        adaptation_schedule: str = "linear",
+        privacy_accountant: Optional[PrivacyAccountant] = None,
+    ):
         """
         Initialize adaptive DP strategy.
 
@@ -244,19 +283,28 @@ class AdaptiveDPStrategy(AggregationStrategy):
         late_config = self.initial_dp_config.copy()
         late_config.epsilon = self.initial_dp_config.epsilon * 0.5  # Less budget late
 
-        self.dp_managers["early"] = DifferentialPrivacyManager(early_config, self.privacy_accountant)
-        self.dp_managers["late"] = DifferentialPrivacyManager(late_config, self.privacy_accountant)
-        self.dp_managers["standard"] = DifferentialPrivacyManager(self.initial_dp_config, self.privacy_accountant)
+        self.dp_managers["early"] = DifferentialPrivacyManager(
+            early_config, self.privacy_accountant
+        )
+        self.dp_managers["late"] = DifferentialPrivacyManager(
+            late_config, self.privacy_accountant
+        )
+        self.dp_managers["standard"] = DifferentialPrivacyManager(
+            self.initial_dp_config, self.privacy_accountant
+        )
 
     @property
     def coordination_mode(self) -> CoordinationMode:
         """Inherit coordination mode from base strategy."""
         return self.base_strategy.coordination_mode
 
-    def aggregate(self, parameters_list: List[Dict[str, Any]],
-                  weights: Optional[List[float]] = None,
-                  convergence_metric: Optional[float] = None,
-                  round_number: Optional[int] = None) -> Dict[str, Any]:
+    def aggregate(
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
+        convergence_metric: Optional[float] = None,
+        round_number: Optional[int] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate with adaptive privacy budget allocation.
 
@@ -280,8 +328,7 @@ class AdaptiveDPStrategy(AggregationStrategy):
 
         # Apply adaptive DP
         dp_parameters, dp_metadata = current_manager.apply_differential_privacy(
-            parameters_list=parameters_list,
-            round_number=self.current_round
+            parameters_list=parameters_list, round_number=self.current_round
         )
 
         # Perform base aggregation
@@ -289,9 +336,13 @@ class AdaptiveDPStrategy(AggregationStrategy):
 
         # Add noise if using central DP
         if self.initial_dp_config.is_central_dp():
-            aggregated_params = current_manager.add_noise_to_aggregated_parameters(aggregated_params)
+            aggregated_params = current_manager.add_noise_to_aggregated_parameters(
+                aggregated_params
+            )
 
-        self.logger.debug(f"Adaptive DP round {self.current_round}: used {current_manager.__class__.__name__}")
+        self.logger.debug(
+            f"Adaptive DP round {self.current_round}: used {current_manager.__class__.__name__}"
+        )
 
         return aggregated_params
 
@@ -310,7 +361,7 @@ class AdaptiveDPStrategy(AggregationStrategy):
 
         elif self.adaptation_schedule == "exponential":
             # Exponential decay of privacy budget
-            decay_factor = 0.95 ** self.current_round
+            decay_factor = 0.95**self.current_round
             if decay_factor > 0.7:
                 return self.dp_managers["early"]
             elif decay_factor < 0.3:
@@ -321,7 +372,9 @@ class AdaptiveDPStrategy(AggregationStrategy):
         elif self.adaptation_schedule == "convergence-based":
             # Adapt based on convergence rate
             if len(self.convergence_history) >= 5:
-                recent_improvement = abs(self.convergence_history[-1] - self.convergence_history[-5])
+                recent_improvement = abs(
+                    self.convergence_history[-1] - self.convergence_history[-5]
+                )
                 if recent_improvement > 0.01:  # Fast convergence
                     return self.dp_managers["early"]
                 elif recent_improvement < 0.001:  # Slow convergence
@@ -333,9 +386,11 @@ class AdaptiveDPStrategy(AggregationStrategy):
             return self.dp_managers["standard"]
 
 
-def create_dp_enhanced_strategy(base_strategy: AggregationStrategy,
-                                dp_config: DifferentialPrivacyConfig,
-                                privacy_accountant: Optional[PrivacyAccountant] = None) -> AggregationStrategy:
+def create_dp_enhanced_strategy(
+    base_strategy: AggregationStrategy,
+    dp_config: DifferentialPrivacyConfig,
+    privacy_accountant: Optional[PrivacyAccountant] = None,
+) -> AggregationStrategy:
     """
     Factory function to create DP-enhanced aggregation strategies.
 
@@ -376,10 +431,13 @@ class SecureAggregationDPStrategy(AggregationStrategy):
     Provides the utility benefits of central DP without requiring server trust.
     """
 
-    def __init__(self, base_strategy: AggregationStrategy,
-                 dp_config: DifferentialPrivacyConfig,
-                 privacy_accountant: Optional[PrivacyAccountant] = None,
-                 secure_aggregation_threshold: int = 3):
+    def __init__(
+        self,
+        base_strategy: AggregationStrategy,
+        dp_config: DifferentialPrivacyConfig,
+        privacy_accountant: Optional[PrivacyAccountant] = None,
+        secure_aggregation_threshold: int = 3,
+    ):
         """
         Initialize secure aggregation with DP.
 
@@ -396,16 +454,21 @@ class SecureAggregationDPStrategy(AggregationStrategy):
         self.logger = logging.getLogger("murmura.privacy.secure_aggregation")
 
         # This is a simplified implementation - production would need proper cryptographic protocols
-        self.logger.warning("SecureAggregationDPStrategy is a simplified implementation. "
-                            "Production use requires proper cryptographic secure aggregation protocols.")
+        self.logger.warning(
+            "SecureAggregationDPStrategy is a simplified implementation. "
+            "Production use requires proper cryptographic secure aggregation protocols."
+        )
 
     @property
     def coordination_mode(self) -> CoordinationMode:
         """Secure aggregation typically uses centralized coordination."""
         return CoordinationMode.CENTRALIZED
 
-    def aggregate(self, parameters_list: List[Dict[str, Any]],
-                  weights: Optional[List[float]] = None) -> Dict[str, Any]:
+    def aggregate(
+        self,
+        parameters_list: List[Dict[str, Any]],
+        weights: Optional[List[float]] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate with secure aggregation and distributed DP.
 
@@ -417,7 +480,9 @@ class SecureAggregationDPStrategy(AggregationStrategy):
         This simplified version demonstrates the concept.
         """
         if len(parameters_list) < self.secure_threshold:
-            raise ValueError(f"Secure aggregation requires at least {self.secure_threshold} clients")
+            raise ValueError(
+                f"Secure aggregation requires at least {self.secure_threshold} clients"
+            )
 
         # Simulate distributed noise generation (in reality, this would be cryptographic)
         self.logger.debug("Simulating distributed DP noise generation...")
@@ -435,6 +500,8 @@ class SecureAggregationDPStrategy(AggregationStrategy):
                 collective_noise = np.random.normal(0, noise_scale, param_array.shape)
                 aggregated_params[param_name] = param_array + collective_noise
 
-        self.logger.debug("Applied distributed differential privacy via secure aggregation")
+        self.logger.debug(
+            "Applied distributed differential privacy via secure aggregation"
+        )
 
         return aggregated_params

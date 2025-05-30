@@ -511,6 +511,12 @@ def main() -> None:
         action="store_true",
         help="Monitor and log resource usage during training",
     )
+    parser.add_argument(
+        "--health_check_interval",
+        type=int,
+        default=5,
+        help="Interval (rounds) for actor health checks",
+    )
 
     # Visualization arguments
     parser.add_argument(
@@ -533,6 +539,9 @@ def main() -> None:
         "--create_summary",
         action="store_true",
         help="Create summary plot of the training process",
+    )
+    parser.add_argument(
+        "--fps", type=int, default=2, help="Frames per second for animation"
     )
 
     args = parser.parse_args()
@@ -644,6 +653,13 @@ def main() -> None:
             # Skin lesion dataset-specific column configuration
             feature_columns=["image"],  # Skin lesion images are in 'image' column
             label_column="label",  # Use the integer label column we created
+            rounds=args.rounds,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            test_split=args.test_split,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
         )
 
         logger.info("=== Creating Data Partitions ===")
@@ -673,7 +689,10 @@ def main() -> None:
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.Adam,
-            optimizer_kwargs={"lr": args.lr, "weight_decay": args.weight_decay},
+            optimizer_kwargs={
+                "lr": args.lr,  # PASS learning rate from args
+                "weight_decay": args.weight_decay,  # PASS weight decay from args
+            },
             input_shape=input_shape,
             device=device,
             data_preprocessor=skin_lesion_preprocessor,
@@ -750,19 +769,22 @@ def main() -> None:
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Aggregation: {config.aggregation.strategy_type}")
             logger.info(f"Topology: {config.topology.topology_type}")
-            logger.info(f"Rounds: {args.rounds}")
-            logger.info(f"Local epochs: {args.epochs}")
-            logger.info(f"Batch size: {args.batch_size}")
-            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Rounds: {config.rounds}")
+            logger.info(f"Local epochs: {config.epochs}")
+            logger.info(f"Batch size: {config.batch_size}")
+            logger.info(f"Learning rate: {config.learning_rate}")
             logger.info(f"Weight decay: {args.weight_decay}")
             logger.info(f"Device: {device}")
             logger.info(f"Image size: {args.image_size}")
             logger.info(f"Classes ({num_classes}): {dx_categories}")
             logger.info(f"Using feature column: {config.feature_columns}")
             logger.info(f"Using label column: {config.label_column}")
+            logger.info(f"Test split: {config.test_split}")
+            logger.info(f"Resource monitoring: {config.monitor_resources}")
+            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
             logger.info("=== Starting Skin Lesion Federated Learning ===")
-            # Execute the learning process
+            # Execute the learning process (now uses config parameters internally)
             results = learning_process.execute()
 
             # Generate visualizations if requested
@@ -775,7 +797,7 @@ def main() -> None:
                     logger.info("Creating animation...")
                     visualizer.render_training_animation(
                         filename=f"skin_cancer_{args.topology}_{args.aggregation_strategy}_animation.mp4",
-                        fps=2,
+                        fps=args.fps,
                     )
 
                 if args.create_frames:
@@ -828,6 +850,9 @@ def main() -> None:
             logger.info(f"Training device: {device}")
             logger.info(f"Diagnostic categories used: {dx_categories}")
             logger.info(f"Label mapping: {dx_to_label}")
+            logger.info(
+                f"Training completed with {config.rounds} rounds of {config.epochs} epochs each"
+            )
 
             # Display detailed metrics if available
             if "round_metrics" in results:

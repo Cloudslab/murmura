@@ -33,12 +33,16 @@ class TrimmedMean(AggregationStrategy):
         self,
         parameters_list: List[Dict[str, Any]],
         weights: Optional[List[float]] = None,
+        round_number: Optional[int] = None,
+        sampling_rate: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Aggregate parameters using trimmed mean
 
         :param parameters_list: List of parameter dictionaries from clients
         :param weights: Optional list of weights for each client (ignored in this strategy)
+        :param round_number: Optional round number
+        :param sampling_rate: Optional sampling rate
 
         :return: Aggregated parameters as a dictionary
         """

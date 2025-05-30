@@ -8,16 +8,18 @@ from typing import Dict, List, Optional, Tuple, Any
 @dataclass
 class PrivacySpent:
     """Record of privacy budget consumption."""
+
     epsilon: float
     delta: float
     mechanism: str
     round_number: int
-    timestamp: float = field(default_factory=lambda: __import__('time').time())
+    timestamp: float = field(default_factory=lambda: __import__("time").time())
     additional_info: Dict[str, Any] = field(default_factory=dict)
 
 
 class PrivacyBudgetExceeded(Exception):
     """Raised when privacy budget is exceeded."""
+
     pass
 
 
@@ -36,9 +38,14 @@ class PrivacyAccountant(ABC):
         self.logger = logging.getLogger(f"murmura.privacy.{self.__class__.__name__}")
 
     @abstractmethod
-    def add_mechanism(self, mechanism_epsilon: float, mechanism_delta: float = 0.0,
-                      mechanism_name: str = "unknown", round_number: int = 0,
-                      **kwargs) -> None:
+    def add_mechanism(
+        self,
+        mechanism_epsilon: float,
+        mechanism_delta: float = 0.0,
+        mechanism_name: str = "unknown",
+        round_number: int = 0,
+        **kwargs,
+    ) -> None:
         """Add a privacy mechanism to the accountant."""
         pass
 
@@ -52,7 +59,7 @@ class PrivacyAccountant(ABC):
         current_eps, current_delta = self.get_current_privacy_spent()
         return (
             max(0.0, self.total_epsilon - current_eps),
-            max(0.0, self.total_delta - current_delta)
+            max(0.0, self.total_delta - current_delta),
         )
 
     def is_budget_exceeded(self) -> bool:
@@ -65,16 +72,25 @@ class PrivacyAccountant(ABC):
         current_eps, current_delta = self.get_current_privacy_spent()
         return {
             "epsilon_used_pct": min(100.0, (current_eps / self.total_epsilon) * 100),
-            "delta_used_pct": min(100.0, (current_delta / self.total_delta) * 100) if self.total_delta > 0 else 0.0
+            "delta_used_pct": min(100.0, (current_delta / self.total_delta) * 100)
+            if self.total_delta > 0
+            else 0.0,
         }
 
-    def check_and_add_mechanism(self, mechanism_epsilon: float, mechanism_delta: float = 0.0,
-                                mechanism_name: str = "unknown", round_number: int = 0,
-                                **kwargs) -> None:
+    def check_and_add_mechanism(
+        self,
+        mechanism_epsilon: float,
+        mechanism_delta: float = 0.0,
+        mechanism_name: str = "unknown",
+        round_number: int = 0,
+        **kwargs,
+    ) -> None:
         """Add mechanism after checking budget constraints."""
         # Simulate adding the mechanism to check if it would exceed budget
         temp_accountant = self._create_copy()
-        temp_accountant.add_mechanism(mechanism_epsilon, mechanism_delta, mechanism_name, round_number, **kwargs)
+        temp_accountant.add_mechanism(
+            mechanism_epsilon, mechanism_delta, mechanism_name, round_number, **kwargs
+        )
 
         if temp_accountant.is_budget_exceeded():
             current_eps, current_delta = self.get_current_privacy_spent()
@@ -86,7 +102,9 @@ class PrivacyAccountant(ABC):
             )
 
         # If check passes, add the mechanism for real
-        self.add_mechanism(mechanism_epsilon, mechanism_delta, mechanism_name, round_number, **kwargs)
+        self.add_mechanism(
+            mechanism_epsilon, mechanism_delta, mechanism_name, round_number, **kwargs
+        )
 
     @abstractmethod
     def _create_copy(self) -> "PrivacyAccountant":
@@ -112,10 +130,10 @@ class PrivacyAccountant(ABC):
                     "mechanism": entry.mechanism,
                     "epsilon": entry.epsilon,
                     "delta": entry.delta,
-                    "timestamp": entry.timestamp
+                    "timestamp": entry.timestamp,
                 }
                 for entry in self.privacy_history
-            ]
+            ],
         }
 
 
@@ -132,23 +150,32 @@ class BasicAccountant(PrivacyAccountant):
         self.cumulative_epsilon = 0.0
         self.cumulative_delta = 0.0
 
-    def add_mechanism(self, mechanism_epsilon: float, mechanism_delta: float = 0.0,
-                      mechanism_name: str = "unknown", round_number: int = 0,
-                      **kwargs) -> None:
+    def add_mechanism(
+        self,
+        mechanism_epsilon: float,
+        mechanism_delta: float = 0.0,
+        mechanism_name: str = "unknown",
+        round_number: int = 0,
+        **kwargs,
+    ) -> None:
         """Add mechanism using basic composition."""
         self.cumulative_epsilon += mechanism_epsilon
         self.cumulative_delta += mechanism_delta
 
-        self.privacy_history.append(PrivacySpent(
-            epsilon=mechanism_epsilon,
-            delta=mechanism_delta,
-            mechanism=mechanism_name,
-            round_number=round_number,
-            additional_info=kwargs
-        ))
+        self.privacy_history.append(
+            PrivacySpent(
+                epsilon=mechanism_epsilon,
+                delta=mechanism_delta,
+                mechanism=mechanism_name,
+                round_number=round_number,
+                additional_info=kwargs,
+            )
+        )
 
-        self.logger.debug(f"Added mechanism '{mechanism_name}' (ε={mechanism_epsilon:.4f}, δ={mechanism_delta:.2e}). "
-                          f"Total: (ε={self.cumulative_epsilon:.4f}, δ={self.cumulative_delta:.2e})")
+        self.logger.debug(
+            f"Added mechanism '{mechanism_name}' (ε={mechanism_epsilon:.4f}, δ={mechanism_delta:.2e}). "
+            f"Total: (ε={self.cumulative_epsilon:.4f}, δ={self.cumulative_delta:.2e})"
+        )
 
     def get_current_privacy_spent(self) -> Tuple[float, float]:
         """Get current privacy spent using basic composition."""
@@ -171,8 +198,12 @@ class RDPAccountant(PrivacyAccountant):
     Tracks privacy loss at multiple orders α and converts to (ε, δ)-DP when needed.
     """
 
-    def __init__(self, total_epsilon: float, total_delta: float = 1e-5,
-                 orders: Optional[List[float]] = None):
+    def __init__(
+        self,
+        total_epsilon: float,
+        total_delta: float = 1e-5,
+        orders: Optional[List[float]] = None,
+    ):
         super().__init__(total_epsilon, total_delta)
 
         # Default RDP orders following TensorFlow Privacy
@@ -183,10 +214,16 @@ class RDPAccountant(PrivacyAccountant):
         # Track RDP at each order
         self.rdp_eps = {order: 0.0 for order in orders}
 
-    def add_mechanism(self, mechanism_epsilon: float, mechanism_delta: float = 0.0,
-                      mechanism_name: str = "gaussian_mechanism", round_number: int = 0,
-                      noise_multiplier: Optional[float] = None, sampling_rate: Optional[float] = None,
-                      **kwargs) -> None:
+    def add_mechanism(
+        self,
+        mechanism_epsilon: float,
+        mechanism_delta: float = 0.0,
+        mechanism_name: str = "gaussian_mechanism",
+        round_number: int = 0,
+        noise_multiplier: Optional[float] = None,
+        sampling_rate: Optional[float] = None,
+        **kwargs,
+    ) -> None:
         """
         Add mechanism to RDP accountant.
 
@@ -196,7 +233,9 @@ class RDPAccountant(PrivacyAccountant):
 
         if mechanism_name == "gaussian_mechanism" and noise_multiplier is not None:
             # Compute RDP for Gaussian mechanism
-            rdp_eps_per_order = self._compute_gaussian_rdp(noise_multiplier, sampling_rate)
+            rdp_eps_per_order = self._compute_gaussian_rdp(
+                noise_multiplier, sampling_rate
+            )
 
             # Add to cumulative RDP
             for order, rdp_eps in rdp_eps_per_order.items():
@@ -210,25 +249,30 @@ class RDPAccountant(PrivacyAccountant):
                     # Conservative conversion: RDP(α, ε + δ)
                     self.rdp_eps[order] += mechanism_epsilon + mechanism_delta
 
-        self.privacy_history.append(PrivacySpent(
-            epsilon=mechanism_epsilon,
-            delta=mechanism_delta,
-            mechanism=mechanism_name,
-            round_number=round_number,
-            additional_info={
-                "noise_multiplier": noise_multiplier,
-                "sampling_rate": sampling_rate,
-                **kwargs
-            }
-        ))
+        self.privacy_history.append(
+            PrivacySpent(
+                epsilon=mechanism_epsilon,
+                delta=mechanism_delta,
+                mechanism=mechanism_name,
+                round_number=round_number,
+                additional_info={
+                    "noise_multiplier": noise_multiplier,
+                    "sampling_rate": sampling_rate,
+                    **kwargs,
+                },
+            )
+        )
 
         # Log current privacy spent
         current_eps, current_delta = self.get_current_privacy_spent()
-        self.logger.debug(f"Added RDP mechanism '{mechanism_name}'. "
-                          f"Current (ε, δ): ({current_eps:.4f}, {current_delta:.2e})")
+        self.logger.debug(
+            f"Added RDP mechanism '{mechanism_name}'. "
+            f"Current (ε, δ): ({current_eps:.4f}, {current_delta:.2e})"
+        )
 
-    def _compute_gaussian_rdp(self, noise_multiplier: float,
-                              sampling_rate: Optional[float] = None) -> Dict[float, float]:
+    def _compute_gaussian_rdp(
+        self, noise_multiplier: float, sampling_rate: Optional[float] = None
+    ) -> Dict[float, float]:
         """Compute RDP for Gaussian mechanism, optionally with subsampling."""
         rdp_eps = {}
 
@@ -238,7 +282,7 @@ class RDPAccountant(PrivacyAccountant):
                 continue
 
             # Basic Gaussian RDP: ε(α) = α / (2 * σ²)
-            base_rdp = order / (2 * noise_multiplier ** 2)
+            base_rdp = order / (2 * noise_multiplier**2)
 
             # Apply privacy amplification if subsampling
             if sampling_rate is not None and sampling_rate < 1.0:
@@ -256,7 +300,7 @@ class RDPAccountant(PrivacyAccountant):
             return (0.0, 0.0)
 
         # Find optimal order for conversion
-        best_epsilon = float('inf')
+        best_epsilon = float("inf")
 
         for order, rdp_eps in self.rdp_eps.items():
             if order <= 1 or rdp_eps <= 0:
@@ -267,7 +311,7 @@ class RDPAccountant(PrivacyAccountant):
                 epsilon = rdp_eps + math.log(1 / self.total_delta) / (order - 1)
                 best_epsilon = min(best_epsilon, epsilon)
 
-        return (best_epsilon if best_epsilon != float('inf') else 0.0, self.total_delta)
+        return (best_epsilon if best_epsilon != float("inf") else 0.0, self.total_delta)
 
     def _create_copy(self) -> "RDPAccountant":
         """Create a copy for budget checking."""
@@ -289,36 +333,46 @@ class ZCDPAccountant(PrivacyAccountant):
         super().__init__(total_epsilon, total_delta)
         self.cumulative_rho = 0.0
 
-    def add_mechanism(self, mechanism_epsilon: float, mechanism_delta: float = 0.0,
-                      mechanism_name: str = "gaussian_mechanism", round_number: int = 0,
-                      noise_multiplier: Optional[float] = None, **kwargs) -> None:
+    def add_mechanism(
+        self,
+        mechanism_epsilon: float,
+        mechanism_delta: float = 0.0,
+        mechanism_name: str = "gaussian_mechanism",
+        round_number: int = 0,
+        noise_multiplier: Optional[float] = None,
+        **kwargs,
+    ) -> None:
         """Add mechanism to zCDP accountant."""
 
         if mechanism_name == "gaussian_mechanism" and noise_multiplier is not None:
             # For Gaussian mechanism: ρ = 1/(2σ²)
-            rho = 1.0 / (2 * noise_multiplier ** 2)
+            rho = 1.0 / (2 * noise_multiplier**2)
         else:
             # Conservative conversion from (ε, δ)-DP to zCDP
             # This is an approximation - exact conversion is complex
-            rho = mechanism_epsilon ** 2 / 4
+            rho = mechanism_epsilon**2 / 4
 
         self.cumulative_rho += rho
 
-        self.privacy_history.append(PrivacySpent(
-            epsilon=mechanism_epsilon,
-            delta=mechanism_delta,
-            mechanism=mechanism_name,
-            round_number=round_number,
-            additional_info={
-                "rho": rho,
-                "noise_multiplier": noise_multiplier,
-                **kwargs
-            }
-        ))
+        self.privacy_history.append(
+            PrivacySpent(
+                epsilon=mechanism_epsilon,
+                delta=mechanism_delta,
+                mechanism=mechanism_name,
+                round_number=round_number,
+                additional_info={
+                    "rho": rho,
+                    "noise_multiplier": noise_multiplier,
+                    **kwargs,
+                },
+            )
+        )
 
         current_eps, current_delta = self.get_current_privacy_spent()
-        self.logger.debug(f"Added zCDP mechanism '{mechanism_name}' (ρ={rho:.4f}). "
-                          f"Current (ε, δ): ({current_eps:.4f}, {current_delta:.2e})")
+        self.logger.debug(
+            f"Added zCDP mechanism '{mechanism_name}' (ρ={rho:.4f}). "
+            f"Current (ε, δ): ({current_eps:.4f}, {current_delta:.2e})"
+        )
 
     def get_current_privacy_spent(self) -> Tuple[float, float]:
         """Convert zCDP to (ε, δ)-DP."""
@@ -326,7 +380,9 @@ class ZCDPAccountant(PrivacyAccountant):
             return (0.0, 0.0)
 
         # zCDP to (ε, δ)-DP: ε = ρ + 2√(ρ ln(1/δ))
-        epsilon = self.cumulative_rho + 2 * math.sqrt(self.cumulative_rho * math.log(1 / self.total_delta))
+        epsilon = self.cumulative_rho + 2 * math.sqrt(
+            self.cumulative_rho * math.log(1 / self.total_delta)
+        )
         return (epsilon, self.total_delta)
 
     def get_current_rho(self) -> float:
@@ -341,8 +397,9 @@ class ZCDPAccountant(PrivacyAccountant):
         return copy
 
 
-def create_privacy_accountant(accountant_type: str, total_epsilon: float,
-                              total_delta: float = 1e-5, **kwargs) -> PrivacyAccountant:
+def create_privacy_accountant(
+    accountant_type: str, total_epsilon: float, total_delta: float = 1e-5, **kwargs
+) -> PrivacyAccountant:
     """
     Factory function to create privacy accountants.
 
@@ -365,8 +422,10 @@ def create_privacy_accountant(accountant_type: str, total_epsilon: float,
     elif accountant_type == "zcdp":
         return ZCDPAccountant(total_epsilon, total_delta)
     else:
-        raise ValueError(f"Unknown accountant type: {accountant_type}. "
-                         f"Supported types: 'basic', 'rdp', 'zcdp'")
+        raise ValueError(
+            f"Unknown accountant type: {accountant_type}. "
+            f"Supported types: 'basic', 'rdp', 'zcdp'"
+        )
 
 
 class PrivacyMonitor:
@@ -385,17 +444,16 @@ class PrivacyMonitor:
     def check_budget_status(self) -> Dict[str, Any]:
         """Check current budget status and trigger alerts if needed."""
         utilization = self.accountant.get_budget_utilization()
-        status = {
-            "utilization": utilization,
-            "alerts": []
-        }
+        status = {"utilization": utilization, "alerts": []}
 
         epsilon_pct = utilization["epsilon_used_pct"]
         delta_pct = utilization["delta_used_pct"]
 
         # Check for warnings
         if epsilon_pct >= self.warning_threshold * 100:
-            alert = f"Privacy budget warning: {epsilon_pct:.1f}% of epsilon budget consumed"
+            alert = (
+                f"Privacy budget warning: {epsilon_pct:.1f}% of epsilon budget consumed"
+            )
             if "epsilon_warning" not in self.alerts_sent:
                 self.logger.warning(alert)
                 self.alerts_sent.add("epsilon_warning")
@@ -434,5 +492,7 @@ class PrivacyMonitor:
             "privacy_budget": summary,
             "recent_mechanisms": summary["history"][-10:],  # Last 10 mechanisms
             "alerts_count": len(self.alerts_sent),
-            "monitoring_status": "healthy" if not self.accountant.is_budget_exceeded() else "critical"
+            "monitoring_status": "healthy"
+            if not self.accountant.is_budget_exceeded()
+            else "critical",
         }

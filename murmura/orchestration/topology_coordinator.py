@@ -16,10 +16,10 @@ class TopologyCoordinator:
     """
 
     def __init__(
-        self,
-        actors: List[Any],
-        topology_manager: TopologyManager,
-        strategy: AggregationStrategy,
+            self,
+            actors: List[Any],
+            topology_manager: TopologyManager,
+            strategy: AggregationStrategy,
     ):
         self.actors = actors
         self.topology_manager = topology_manager
@@ -29,7 +29,7 @@ class TopologyCoordinator:
         self.coordination_mode = self._determine_coordination_mode()
 
     def coordinate_aggregation(
-        self, weights: Optional[List[float]] = None
+            self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate the aggregation of model parameters based on the topology.
@@ -37,6 +37,15 @@ class TopologyCoordinator:
         :param weights: Optional list of weights for each actor's parameters
         :return: Aggregated model parameters
         """
+        # FIXED: Check if strategy is compatible with topology before proceeding
+        if not self._is_strategy_compatible():
+            raise ValueError(
+                f"Strategy {self.strategy.__class__.__name__} is not compatible with "
+                f"topology {self.topology_type.value}. "
+                f"Centralized strategies (FedAvg, TrimmedMean) require topologies that "
+                f"allow global parameter collection (STAR, COMPLETE)."
+            )
+
         # Dispatch to the appropriate coordinator method based of topology
         if self.topology_type == TopologyType.STAR:
             return self._coordinate_star_topology(weights)
@@ -51,8 +60,20 @@ class TopologyCoordinator:
         else:
             raise ValueError(f"Unsupported topology type: {self.topology_type}")
 
+    def _is_strategy_compatible(self) -> bool:
+        """
+        Check if the current strategy is compatible with the current topology.
+
+        :return: True if compatible, False otherwise
+        """
+        from murmura.network_management.topology_compatibility import TopologyCompatibilityManager
+
+        return TopologyCompatibilityManager.is_compatible(
+            self.strategy.__class__, self.topology_type
+        )
+
     def _coordinate_star_topology(
-        self, weights: Optional[List[float]] = None
+            self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for star topology.
@@ -92,16 +113,26 @@ class TopologyCoordinator:
         return self.strategy.aggregate(parameters_list, adjusted_weights)
 
     def _coordinate_ring_topology(
-        self, weights: Optional[List[float]] = None
+            self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for ring topology.
         In a ring topology, each node communicates with its immediate neighbours.
 
+        FIXED: Only works with decentralized strategies like GossipAvg.
+        Centralized strategies will be caught by compatibility check.
+
         :param weights: Optional list of weights for each actor's parameters
         :return: Aggregated model parameters
         """
-        # Ring topologies generally require decentralized coordination
+        # This should only be reached by decentralized strategies
+        if self.coordination_mode == CoordinationMode.CENTRALIZED:
+            raise ValueError(
+                f"Centralized strategy {self.strategy.__class__.__name__} "
+                f"cannot be used with ring topology. Use STAR or COMPLETE topology instead."
+            )
+
+        # Ring topologies require decentralized coordination
         adjacency = self.topology_manager.adjacency_list
         all_aggregated_params = []
 
@@ -140,7 +171,7 @@ class TopologyCoordinator:
             total_weight = sum(local_weights)
             local_weights = [w / total_weight for w in local_weights]
 
-            # Local aggregation
+            # Local aggregation (only decentralized strategies should reach here)
             local_aggregated = self.strategy.aggregate(local_params_list, local_weights)
             all_aggregated_params.append(local_aggregated)
 
@@ -148,7 +179,7 @@ class TopologyCoordinator:
         return self._combine_aggregated_params(all_aggregated_params)
 
     def _coordinate_complete_topology(
-        self, weights: Optional[List[float]] = None
+            self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for complete topology.
@@ -220,16 +251,25 @@ class TopologyCoordinator:
             return self._combine_aggregated_params(all_aggregated_params)
 
     def _coordinate_line_topology(
-        self, weights: Optional[List[float]] = None
+            self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for line topology.
         In a line topology, each node communicates with its immediate neighbors.
 
+        FIXED: Only works with decentralized strategies like GossipAvg.
+
         :param weights: Optional list of weights for each actor's parameters
         :return: Aggregated model parameters
         """
-        # Line topologies generally require decentralized coordination
+        # This should only be reached by decentralized strategies
+        if self.coordination_mode == CoordinationMode.CENTRALIZED:
+            raise ValueError(
+                f"Centralized strategy {self.strategy.__class__.__name__} "
+                f"cannot be used with line topology. Use STAR or COMPLETE topology instead."
+            )
+
+        # Line topologies require decentralized coordination
         adjacency = self.topology_manager.adjacency_list
         all_aggregated_params = []
 
@@ -274,7 +314,7 @@ class TopologyCoordinator:
         return self._combine_aggregated_params(all_aggregated_params)
 
     def _coordinate_custom_topology(
-        self, weights: Optional[List[float]] = None
+            self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for custom topology.
@@ -283,7 +323,34 @@ class TopologyCoordinator:
         :param weights: Optional list of weights for each actor's parameters
         :return: Aggregated model parameters
         """
-        # Custom topologies generally require decentralized coordination
+        # For custom topologies, we need to check the coordination mode
+        if self.coordination_mode == CoordinationMode.CENTRALIZED:
+            # Check if the custom topology allows centralized aggregation
+            # (i.e., there's a way to collect all parameters)
+            adjacency = self.topology_manager.adjacency_list
+
+            # Simple heuristic: if any node is connected to all others,
+            # we can use centralized aggregation
+            can_centralize = any(
+                len(neighbors) == len(self.actors) - 1
+                for neighbors in adjacency.values()
+            )
+
+            if can_centralize:
+                # Perform centralized aggregation
+                all_params = []
+                for actor in self.actors:
+                    params = ray.get(actor.get_model_parameters.remote())
+                    all_params.append(params)
+                return self.strategy.aggregate(all_params, weights)
+            else:
+                raise ValueError(
+                    f"Centralized strategy {self.strategy.__class__.__name__} "
+                    f"cannot be used with this custom topology. The topology must allow "
+                    f"global parameter collection (e.g., at least one node connected to all others)."
+                )
+
+        # Custom topologies with decentralized strategies
         adjacency = self.topology_manager.adjacency_list
         all_aggregated_params = []
 
@@ -329,7 +396,7 @@ class TopologyCoordinator:
 
     @staticmethod
     def _combine_aggregated_params(
-        aggregated_params_list: List[Dict[str, Any]],
+            aggregated_params_list: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """
         Combine all local aggregated parameters into a single set of parameters.
@@ -366,9 +433,9 @@ class TopologyCoordinator:
 
     @staticmethod
     def create(
-        actors: List[Any],
-        topology_manager: TopologyManager,
-        strategy: AggregationStrategy,
+            actors: List[Any],
+            topology_manager: TopologyManager,
+            strategy: AggregationStrategy,
     ) -> "TopologyCoordinator":
         """
         Factory method to create a TopologyCoordinator instance.

@@ -91,10 +91,12 @@ class DecentralizedLearningProcess(LearningProcess):
             raise ValueError("Learning process not initialized. Call initialize first.")
 
         # Get configuration parameters
-        rounds = self.get_config_value("rounds", 5)
-        epochs = self.get_config_value("epochs", 1)
-        batch_size = self.get_config_value("batch_size", 32)
-        test_split = self.get_config_value("test_split", "test")
+        rounds = self.config.rounds
+        epochs = self.config.epochs
+        batch_size = self.config.batch_size
+        test_split = self.config.test_split
+        monitor_resources = self.config.monitor_resources
+        health_check_interval = self.config.health_check_interval
 
         # Enhanced logging with cluster context
         self.log_training_progress(
@@ -105,8 +107,8 @@ class DecentralizedLearningProcess(LearningProcess):
         test_dataset = self.dataset.get_split(test_split)
 
         # Get feature and label columns from config - these should be set during initialization
-        feature_columns = self.get_config_value("feature_columns", None)
-        label_column = self.get_config_value("label_column", None)
+        feature_columns = self.config.feature_columns
+        label_column = self.config.label_column
 
         # These should never be None if config validation worked properly
         if feature_columns is None or label_column is None:
@@ -147,12 +149,25 @@ class DecentralizedLearningProcess(LearningProcess):
             self.logger.info(f"--- Round {round_num}/{rounds} ---")
 
             # Monitor resource usage if enabled
-            monitor_resources = self.get_config_value("monitor_resources", False)
             if monitor_resources:
                 resource_usage = self.monitor_resource_usage()
                 self.logger.debug(
                     f"Round {round_num} resource usage: {resource_usage.get('resource_utilization', {})}"
                 )
+
+            # UPDATED: Periodic health checks
+            if round_num % health_check_interval == 0:
+                health_status = self.get_actor_health_status()
+                if "error" not in health_status:
+                    self.logger.info(
+                        f"Round {round_num} health check: {health_status['healthy']}/{health_status['sampled_actors']} healthy"
+                    )
+                    if health_status.get("degraded", 0) > 0:
+                        self.logger.warning(
+                            f"Degraded actors: {health_status['degraded']}"
+                        )
+                    if health_status.get("error", 0) > 0:
+                        self.logger.error(f"Error actors: {health_status['error']}")
 
             # 1. Local Training
             self.logger.info(f"Training on clients for {epochs} epochs...")
@@ -229,7 +244,7 @@ class DecentralizedLearningProcess(LearningProcess):
                     )
 
             # Get client data sizes for weighted aggregation
-            split = self.get_config_value("split", "train")
+            split = self.config.split
             partitions = list(self.dataset.get_partitions(split).values())
             client_data_sizes = [len(partition) for partition in partitions]
             weights = [float(size) for size in client_data_sizes]

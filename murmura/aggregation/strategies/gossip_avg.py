@@ -32,6 +32,8 @@ class GossipAvg(AggregationStrategy):
         self,
         parameters_list: List[Dict[str, Any]],
         weights: Optional[List[float]] = None,
+        round_number: Optional[int] = None,
+        sampling_rate: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Aggregate model parameters using the Gossip Averaging algorithm.
@@ -41,6 +43,9 @@ class GossipAvg(AggregationStrategy):
 
         :param parameters_list: List of model parameters from different actors
         :param weights: Optional list of weights for each actor's parameters
+        :param round_number: Optional round number
+        :param sampling_rate: Optional sampling rate
+
         :return: Aggregated model parameters
         """
         if not parameters_list:

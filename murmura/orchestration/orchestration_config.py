@@ -53,6 +53,33 @@ class OrchestrationConfig(BaseModel):
         default_factory=ResourceConfig, description="Resource allocation configuration"
     )
 
+    # ADDED: Training parameters
+    rounds: int = Field(
+        default=5, gt=0, description="Number of federated learning rounds"
+    )
+
+    epochs: int = Field(default=1, gt=0, description="Number of local epochs per round")
+
+    batch_size: int = Field(
+        default=32, gt=0, description="Batch size for local training"
+    )
+
+    learning_rate: float = Field(
+        default=0.001, gt=0.0, description="Learning rate for local training"
+    )
+
+    # ADDED: Test split parameter
+    test_split: str = Field(default="test", description="Test dataset split name")
+
+    # ADDED: Monitoring parameters
+    monitor_resources: bool = Field(
+        default=False, description="Enable resource usage monitoring"
+    )
+
+    health_check_interval: int = Field(
+        default=5, gt=0, description="Interval (rounds) for actor health checks"
+    )
+
     @model_validator(mode="after")
     def validate_multinode_config(self) -> "OrchestrationConfig":
         """Enhanced validation for multi-node configuration and dataset columns"""

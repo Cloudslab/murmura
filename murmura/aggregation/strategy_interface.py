@@ -18,12 +18,16 @@ class AggregationStrategy(ABC):
         self,
         parameters_list: List[Dict[str, Any]],
         weights: Optional[List[float]] = None,
+        round_number: Optional[int] = None,
+        sampling_rate: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Aggregate model parameters from multiple clients.
 
         :param parameters_list: List of model parameters from different clients.
         :param weights: Optional list of weights for each client's parameters.
+        :param round_number: Optional round number.
+        :param sampling_rate: Optional sampling rate.
 
         :return: Aggregated model parameters.
         """

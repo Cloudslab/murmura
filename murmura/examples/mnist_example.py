@@ -229,6 +229,12 @@ def main() -> None:
         action="store_true",
         help="Monitor and log resource usage during training",
     )
+    parser.add_argument(
+        "--health_check_interval",
+        type=int,
+        default=5,
+        help="Interval (rounds) for actor health checks",
+    )
 
     # Visualization arguments
     parser.add_argument(
@@ -252,6 +258,9 @@ def main() -> None:
         action="store_true",
         help="Create summary plot of the training process",
     )
+    parser.add_argument(
+        "--fps", type=int, default=2, help="Frames per second for animation"
+    )
 
     args = parser.parse_args()
 
@@ -260,7 +269,7 @@ def main() -> None:
     logger = logging.getLogger("murmura.mnist_example")
 
     try:
-        # Create enhanced configuration with multi-node support
+        # UPDATED: Create enhanced configuration with ALL parameters passed through
         ray_cluster_config = RayClusterConfig(
             address=args.ray_address,
             namespace=args.ray_namespace,
@@ -296,6 +305,13 @@ def main() -> None:
             resources=resource_config,
             feature_columns=["image"],
             label_column="label",
+            rounds=args.rounds,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            test_split=args.test_split,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
         )
 
         logger.info("=== Loading MNIST Dataset ===")
@@ -352,7 +368,9 @@ def main() -> None:
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.Adam,
-            optimizer_kwargs={"lr": args.lr},
+            optimizer_kwargs={
+                "lr": args.lr,  # PASS learning rate from args
+            },
             input_shape=input_shape,
             data_preprocessor=mnist_preprocessor,
         )
@@ -398,21 +416,24 @@ def main() -> None:
                 f"Total actors: {cluster_summary.get('total_actors', 'unknown')}"
             )
 
-            # Print initial summary
+            # Print initial summary with ACTUAL parameters being used
             logger.info("=== MNIST Federated Learning Setup ===")
             logger.info("Dataset: MNIST")
             logger.info(f"Partitioning: {config.partition_strategy}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Aggregation: {config.aggregation.strategy_type}")
             logger.info(f"Topology: {config.topology.topology_type}")
-            logger.info(f"Rounds: {args.rounds}")
-            logger.info(f"Local epochs: {args.epochs}")
-            logger.info(f"Batch size: {args.batch_size}")
-            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Rounds: {config.rounds}")  # From config, not hardcoded
+            logger.info(f"Local epochs: {config.epochs}")  # From config, not hardcoded
+            logger.info(f"Batch size: {config.batch_size}")
+            logger.info(f"Learning rate: {config.learning_rate}")
+            logger.info(f"Test split: {config.test_split}")
+            logger.info(f"Resource monitoring: {config.monitor_resources}")
+            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
             logger.info("=== Starting MNIST Federated Learning ===")
 
-            # Execute the learning process
+            # Execute the learning process (now uses config parameters internally)
             results = learning_process.execute()
 
             # Generate visualizations if requested
@@ -425,7 +446,7 @@ def main() -> None:
                     logger.info("Creating animation...")
                     visualizer.render_training_animation(
                         filename=f"mnist_{args.topology}_{args.aggregation_strategy}_animation.mp4",
-                        fps=2,
+                        fps=args.fps,
                     )
 
                 if args.create_frames:
@@ -452,6 +473,9 @@ def main() -> None:
             )
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
+            logger.info(
+                f"Training completed with {config.rounds} rounds of {config.epochs} epochs each"
+            )
 
         finally:
             logger.info("=== Shutting Down ===")

@@ -15,11 +15,15 @@ from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
 from murmura.privacy.dp_config import (
-    DifferentialPrivacyConfig, DPMechanism, NoiseApplication,
-    ClippingStrategy, DPAccountant
+    DifferentialPrivacyConfig,
+    DPMechanism,
+    NoiseApplication,
+    ClippingStrategy,
+    DPAccountant,
 )
 from murmura.privacy.dp_integration import (
-    DPOrchestrationConfig, create_dp_decentralized_learning_process
+    DPOrchestrationConfig,
+    create_dp_decentralized_learning_process,
 )
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
@@ -40,9 +44,7 @@ class MNISTModel(PyTorchModel):
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
         self.classifier = nn.Sequential(
-            nn.Linear(64 * 7 * 7, 128),
-            nn.ReLU(),
-            nn.Linear(128, 10)
+            nn.Linear(64 * 7 * 7, 128), nn.ReLU(), nn.Linear(128, 10)
         )
 
     def forward(self, x):
@@ -95,26 +97,20 @@ def create_dp_config(args) -> DifferentialPrivacyConfig:
         # Core privacy parameters
         epsilon=args.epsilon,
         delta=args.delta,
-
         # CRITICAL: Decentralized learning requires Local DP (client-side noise)
         mechanism=DPMechanism.GAUSSIAN,
         noise_application=NoiseApplication.CLIENT_SIDE,  # Local DP for decentralized
-
         # Clipping configuration
         clipping_strategy=ClippingStrategy.ADAPTIVE,
         clipping_norm=args.clipping_norm,
         target_quantile=0.5,
-
         # Privacy accounting
         accountant=DPAccountant.RDP,
-
         # Client sampling for privacy amplification (less effective with Local DP)
         client_sampling_rate=args.client_sampling_rate,
-
         # Monitoring
         enable_privacy_monitoring=True,
         privacy_budget_warning_threshold=0.8,
-
         # Total rounds for budget allocation
         total_rounds=args.rounds,
     )
@@ -297,20 +293,22 @@ def main():
 
     # DP-specific arguments - higher for Local DP
     parser.add_argument(
-        "--epsilon", type=float, default=2.0,
-        help="Privacy budget per client per round (ε) - higher for Local DP"
+        "--epsilon",
+        type=float,
+        default=2.0,
+        help="Privacy budget per client per round (ε) - higher for Local DP",
     )
     parser.add_argument(
-        "--delta", type=float, default=1e-5,
-        help="Failure probability (δ)"
+        "--delta", type=float, default=1e-5, help="Failure probability (δ)"
     )
     parser.add_argument(
-        "--clipping_norm", type=float, default=1.0,
-        help="Gradient clipping threshold"
+        "--clipping_norm", type=float, default=1.0, help="Gradient clipping threshold"
     )
     parser.add_argument(
-        "--client_sampling_rate", type=float, default=0.5,
-        help="Client sampling rate (less effective with Local DP)"
+        "--client_sampling_rate",
+        type=float,
+        default=0.5,
+        help="Client sampling rate (less effective with Local DP)",
     )
 
     args = parser.parse_args()
@@ -322,7 +320,9 @@ def main():
     # Check compatibility of topology and strategy before proceeding
     from murmura.network_management.topology import TopologyType
     from murmura.aggregation.aggregation_config import AggregationStrategyType
-    from murmura.network_management.topology_compatibility import TopologyCompatibilityManager
+    from murmura.network_management.topology_compatibility import (
+        TopologyCompatibilityManager,
+    )
 
     topology_type = TopologyType(args.topology)
     strategy_type = AggregationStrategyType(args.aggregation_strategy)
@@ -355,7 +355,10 @@ def main():
             )
 
         # Create enhanced orchestration configuration
-        from murmura.aggregation.aggregation_config import AggregationConfig, AggregationStrategyType
+        from murmura.aggregation.aggregation_config import (
+            AggregationConfig,
+            AggregationStrategyType,
+        )
         from murmura.network_management.topology import TopologyConfig, TopologyType
         from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 
@@ -382,31 +385,33 @@ def main():
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
             split=args.split,
-
             # CRITICAL: Must specify feature and label columns
             feature_columns=["image"],  # MNIST images
-            label_column="label",       # MNIST labels
-
+            label_column="label",  # MNIST labels
+            rounds=args.rounds,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.lr,
+            test_split=args.test_split,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
             # Network topology (decentralized-compatible)
             topology=TopologyConfig(
                 topology_type=topology_type,
-                hub_index=0  # Not used for decentralized topologies
+                hub_index=0,  # Not used for decentralized topologies
             ),
-
             # Aggregation strategy (decentralized only)
             aggregation=AggregationConfig(
                 strategy_type=AggregationStrategyType.GOSSIP_AVG,
-                params={"mixing_parameter": args.mixing_parameter}
+                params={"mixing_parameter": args.mixing_parameter},
             ),
-
             # Dataset configuration
             dataset_name="mnist",  # Fixed to MNIST
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-
             # Differential Privacy configuration (Local DP)
             differential_privacy=dp_config,
-            enable_privacy_dashboard=True
+            enable_privacy_dashboard=True,
         )
 
         logger.info("Created DP orchestration configuration")
@@ -498,7 +503,7 @@ def main():
                 num_actors=config.num_actors,
                 topology_config=config.topology,
                 aggregation_config=config.aggregation,
-                partitioner=partitioner
+                partitioner=partitioner,
             )
 
             # Get and log cluster information
@@ -528,26 +533,37 @@ def main():
             logger.info(f"Privacy Level: {utility_impact['privacy_level']}")
             logger.info(f"Expected Utility Impact: {utility_impact['utility_impact']}")
             logger.info(f"Communication Impact: {utility_impact['communication']}")
-            logger.info(f"DP Mode: Local (client-side noise) - Required for decentralized")
+            logger.info(
+                "DP Mode: Local (client-side noise) - Required for decentralized"
+            )
 
             # Print initial summary
             logger.info("=== DP-Enhanced Decentralized MNIST Learning Setup ===")
             logger.info("Dataset: MNIST")
             logger.info(f"Partitioning: {config.partition_strategy}")
             logger.info(f"Clients: {config.num_actors}")
-            logger.info(f"Aggregation strategy: {config.aggregation.strategy_type} (decentralized)")
+            logger.info(
+                f"Aggregation strategy: {config.aggregation.strategy_type} (decentralized)"
+            )
             logger.info(f"Topology: {config.topology.topology_type}")
             logger.info(f"Privacy: Local DP (ε={args.epsilon}, δ={args.delta})")
             logger.info(f"Clipping norm: {args.clipping_norm}")
             logger.info(f"Mixing parameter: {args.mixing_parameter}")
-            logger.info(f"Rounds: {args.rounds}")
-            logger.info(f"Local epochs: {args.epochs}")
-            logger.info(f"Batch size: {args.batch_size}")
-            logger.info(f"Learning rate: {args.lr}")
+            logger.info(f"Rounds: {config.rounds}")  # From config, not hardcoded
+            logger.info(f"Local epochs: {config.epochs}")  # From config, not hardcoded
+            logger.info(f"Batch size: {config.batch_size}")
+            logger.info(f"Learning rate: {config.learning_rate}")
+            logger.info(f"Test split: {config.test_split}")
+            logger.info(f"Resource monitoring: {config.monitor_resources}")
+            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
             logger.info("=== Starting DP-Enhanced Decentralized MNIST Learning ===")
-            logger.info("Note: In decentralized DP learning, clients add noise locally and communicate directly with neighbors")
-            logger.info("No central server coordinates the process - pure peer-to-peer learning with local privacy")
+            logger.info(
+                "Note: In decentralized DP learning, clients add noise locally and communicate directly with neighbors"
+            )
+            logger.info(
+                "No central server coordinates the process - pure peer-to-peer learning with local privacy"
+            )
 
             # Monitor initial resource usage if enabled
             if args.monitor_resources:
@@ -579,7 +595,7 @@ def main():
 
             # Generate visualizations if requested
             if visualizer and (
-                    args.create_animation or args.create_frames or args.create_summary
+                args.create_animation or args.create_frames or args.create_summary
             ):
                 logger.info("=== Generating Visualizations ===")
 
@@ -627,31 +643,45 @@ def main():
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
             # Privacy summary
-            if 'privacy_summary' in results:
-                privacy_summary = results['privacy_summary']
-                if privacy_summary['dp_enabled']:
+            if "privacy_summary" in results:
+                privacy_summary = results["privacy_summary"]
+                if privacy_summary["dp_enabled"]:
                     logger.info("Differential Privacy: ENABLED (Local DP)")
-                    if 'accountant' in privacy_summary:
-                        spent = privacy_summary['accountant']['spent']
-                        logger.info(f"Privacy Spent: ε={spent['epsilon']:.4f}, δ={spent['delta']:.2e}")
+                    if "accountant" in privacy_summary:
+                        spent = privacy_summary["accountant"]["spent"]
+                        logger.info(
+                            f"Privacy Spent: ε={spent['epsilon']:.4f}, δ={spent['delta']:.2e}"
+                        )
                 else:
                     logger.info("Differential Privacy: DISABLED")
 
             # Log topology-specific results
             if "topology" in results:
                 topology_info = results["topology"]
-                logger.info(f"Network connections: {len(topology_info.get('adjacency_list', {}))}")
-                logger.info(f"Decentralized topology: {topology_info.get('type', 'unknown')}")
+                logger.info(
+                    f"Network connections: {len(topology_info.get('adjacency_list', {}))}"
+                )
+                logger.info(
+                    f"Decentralized topology: {topology_info.get('type', 'unknown')}"
+                )
 
             # Decentralized learning summary
             logger.info("=== Decentralized DP Learning Summary ===")
-            logger.info(f"Learning paradigm: Fully decentralized with Local DP (no central server)")
-            logger.info(f"Communication pattern: {topology_info.get('type', 'peer-to-peer')} with local noise")
-            logger.info(f"Privacy: Each client adds noise locally before sharing (Local DP)")
-            logger.info(f"Data privacy: Client data never leaves their premises")
-            logger.info(f"Parameter privacy: Model updates are noisy before transmission")
-            logger.info(f"Robustness: No single point of failure")
-            logger.info(f"Scalability: Can add clients without affecting others")
+            logger.info(
+                "Learning paradigm: Fully decentralized with Local DP (no central server)"
+            )
+            logger.info(
+                f"Communication pattern: {topology_info.get('type', 'peer-to-peer')} with local noise"
+            )
+            logger.info(
+                "Privacy: Each client adds noise locally before sharing (Local DP)"
+            )
+            logger.info("Data privacy: Client data never leaves their premises")
+            logger.info(
+                "Parameter privacy: Model updates are noisy before transmission"
+            )
+            logger.info("Robustness: No single point of failure")
+            logger.info("Scalability: Can add clients without affecting others")
             logger.info(f"Privacy guarantee: {privacy_desc} per client per round")
 
         finally:
@@ -661,12 +691,13 @@ def main():
     except Exception as e:
         logger.error(f"DP-enhanced decentralized MNIST learning failed: {e}")
         import traceback
+
         traceback.print_exc()
         raise
 
     finally:
         # Clean up
-        if 'learning_process' in locals():
+        if "learning_process" in locals():
             learning_process.shutdown()
         logger.info("Training completed and resources cleaned up")
 

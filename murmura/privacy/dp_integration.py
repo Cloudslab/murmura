@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.aggregation.strategy_factory import AggregationStrategyFactory
@@ -8,7 +8,10 @@ from murmura.orchestration.cluster_manager import ClusterManager
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.privacy.dp_config import DifferentialPrivacyConfig
 from murmura.privacy.dp_aggregation_strategies import create_dp_enhanced_strategy
-from murmura.privacy.privacy_accountant import create_privacy_accountant, PrivacyAccountant
+from murmura.privacy.privacy_accountant import (
+    create_privacy_accountant,
+    PrivacyAccountant,
+)
 
 
 class DPOrchestrationConfig(OrchestrationConfig):
@@ -22,7 +25,7 @@ class DPOrchestrationConfig(OrchestrationConfig):
     # Differential privacy configuration
     differential_privacy: Optional[DifferentialPrivacyConfig] = Field(
         default=None,
-        description="Differential privacy configuration. If None, DP is disabled."
+        description="Differential privacy configuration. If None, DP is disabled.",
     )
 
     # Privacy budget management
@@ -30,20 +33,19 @@ class DPOrchestrationConfig(OrchestrationConfig):
         default=None,
         gt=0.0,
         description="Total privacy budget for the entire training process. "
-                    "If None, uses differential_privacy.epsilon * total_rounds"
+        "If None, uses differential_privacy.epsilon * total_rounds",
     )
 
     total_privacy_delta: Optional[float] = Field(
         default=None,
         ge=0.0,
         lt=1.0,
-        description="Total failure probability for the entire training process"
+        description="Total failure probability for the entire training process",
     )
 
     # Enhanced monitoring
     enable_privacy_dashboard: bool = Field(
-        default=True,
-        description="Enable real-time privacy monitoring dashboard"
+        default=True, description="Enable real-time privacy monitoring dashboard"
     )
 
     def is_dp_enabled(self) -> bool:
@@ -53,14 +55,14 @@ class DPOrchestrationConfig(OrchestrationConfig):
     def get_total_privacy_budget(self) -> tuple[float, float]:
         """Get total privacy budget as (epsilon, delta)."""
         if not self.is_dp_enabled():
-            return (0.0, 0.0)
+            return 0.0, 0.0
 
         # Calculate total epsilon
         if self.total_privacy_epsilon is not None:
             total_eps = self.total_privacy_epsilon
         else:
-            # Default: per-round epsilon * total rounds
-            rounds = self.differential_privacy.total_rounds or 100
+            # UPDATED: Use rounds from config instead of hardcoded value
+            rounds = self.rounds  # Now available from parent OrchestrationConfig
             total_eps = self.differential_privacy.epsilon * rounds
 
         # Calculate total delta
@@ -81,10 +83,12 @@ class DPAggregationStrategyFactory(AggregationStrategyFactory):
     """
 
     @staticmethod
-    def create(config: AggregationConfig,
-               topology_config: Optional[Any] = None,
-               dp_config: Optional[DifferentialPrivacyConfig] = None,
-               privacy_accountant: Optional[PrivacyAccountant] = None) -> AggregationStrategy:
+    def create(
+        config: AggregationConfig,
+        topology_config: Optional[Any] = None,
+        dp_config: Optional[DifferentialPrivacyConfig] = None,
+        privacy_accountant: Optional[PrivacyAccountant] = None,
+    ) -> AggregationStrategy:
         """
         Create aggregation strategy with optional differential privacy.
 
@@ -102,7 +106,9 @@ class DPAggregationStrategyFactory(AggregationStrategyFactory):
 
         # Enhance with DP if configured
         if dp_config is not None:
-            return create_dp_enhanced_strategy(base_strategy, dp_config, privacy_accountant)
+            return create_dp_enhanced_strategy(
+                base_strategy, dp_config, privacy_accountant
+            )
         else:
             return base_strategy
 
@@ -116,38 +122,42 @@ class DPClusterManager:
     def __init__(self, config):
         # Import here to avoid circular imports
         self.base_manager = ClusterManager(config)
-        self.dp_config = getattr(config, 'differential_privacy', None)
+        self.dp_config = getattr(config, "differential_privacy", None)
         self.privacy_accountant: Optional[PrivacyAccountant] = None
 
         # Initialize privacy accountant if DP is enabled
         if self.dp_config is not None:
-            if hasattr(config, 'get_total_privacy_budget'):
+            if hasattr(config, "get_total_privacy_budget"):
                 total_eps, total_delta = config.get_total_privacy_budget()
             else:
-                # Fallback calculation
-                total_eps = self.dp_config.epsilon * (self.dp_config.total_rounds or 100)
+                # UPDATED: Use actual rounds from config instead of hardcoded value
+                rounds = getattr(config, "rounds", 100)  # Use config rounds or fallback
+                total_eps = self.dp_config.epsilon * rounds
                 total_delta = self.dp_config.delta or 1e-5
 
             self.privacy_accountant = create_privacy_accountant(
                 accountant_type=self.dp_config.accountant.value,
                 total_epsilon=total_eps,
-                total_delta=total_delta
+                total_delta=total_delta,
             )
 
-    def set_aggregation_strategy(self, aggregation_config: AggregationConfig,
-                                 topology_config: Optional[Any] = None) -> None:
+    def set_aggregation_strategy(
+        self,
+        aggregation_config: AggregationConfig,
+        topology_config: Optional[Any] = None,
+    ) -> None:
         """Set aggregation strategy with DP enhancement if configured."""
         from murmura.aggregation.strategy_factory import AggregationStrategyFactory
 
         # Create base strategy first
-        base_strategy = AggregationStrategyFactory.create(aggregation_config, topology_config)
+        base_strategy = AggregationStrategyFactory.create(
+            aggregation_config, topology_config
+        )
 
         # Enhance with DP if configured
         if self.dp_config is not None:
             strategy = create_dp_enhanced_strategy(
-                base_strategy,
-                self.dp_config,
-                self.privacy_accountant
+                base_strategy, self.dp_config, self.privacy_accountant
             )
         else:
             strategy = base_strategy
@@ -159,21 +169,30 @@ class DPClusterManager:
         if self.base_manager.topology_manager:
             self.base_manager._initialize_coordinator()
 
-    def aggregate_model_parameters(self, weights: Optional[List[float]] = None,
-                                   round_number: Optional[int] = None,
-                                   sampling_rate: Optional[float] = None) -> Dict[str, Any]:
+    def aggregate_model_parameters(
+        self,
+        weights: Optional[List[float]] = None,
+        round_number: Optional[int] = None,
+        sampling_rate: Optional[float] = None,
+    ) -> Dict[str, Any]:
         """
         Aggregate model parameters with DP support.
         """
-        if not hasattr(self.base_manager, 'topology_coordinator') or self.base_manager.topology_coordinator is None:
-            raise ValueError("Topology coordinator not initialized. Call set_aggregation_strategy first.")
+        if (
+            not hasattr(self.base_manager, "topology_coordinator")
+            or self.base_manager.topology_coordinator is None
+        ):
+            raise ValueError(
+                "Topology coordinator not initialized. Call set_aggregation_strategy first."
+            )
 
         # Use the base manager's aggregation with enhanced parameters if DP is enabled
-        if (hasattr(self.base_manager.aggregation_strategy, 'aggregate') and
-                hasattr(self.base_manager.aggregation_strategy, 'dp_config')):
-
+        if hasattr(self.base_manager.aggregation_strategy, "aggregate") and hasattr(
+            self.base_manager.aggregation_strategy, "dp_config"
+        ):
             # This is a DP-enhanced strategy, collect parameters manually
             import ray
+
             parameter_tasks = []
             for actor in self.base_manager.actors:
                 parameter_tasks.append(actor.get_model_parameters.remote())
@@ -185,11 +204,13 @@ class DPClusterManager:
                 parameters_list=parameters_list,
                 weights=weights,
                 round_number=round_number,
-                sampling_rate=sampling_rate
+                sampling_rate=sampling_rate,
             )
         else:
             # Standard aggregation
-            return self.base_manager.topology_coordinator.coordinate_aggregation(weights)
+            return self.base_manager.topology_coordinator.coordinate_aggregation(
+                weights
+            )
 
     def get_privacy_summary(self) -> Dict[str, Any]:
         """Get comprehensive privacy summary from all components."""
@@ -201,15 +222,17 @@ class DPClusterManager:
                 "epsilon": self.dp_config.epsilon,
                 "delta": self.dp_config.delta,
                 "noise_application": self.dp_config.noise_application.value,
-                "clipping_strategy": self.dp_config.clipping_strategy.value
+                "clipping_strategy": self.dp_config.clipping_strategy.value,
             }
 
             if self.privacy_accountant is not None:
                 summary["accountant"] = self.privacy_accountant.get_privacy_summary()
 
             # Get strategy-specific privacy info
-            if hasattr(self.base_manager.aggregation_strategy, 'get_privacy_summary'):
-                summary["strategy"] = self.base_manager.aggregation_strategy.get_privacy_summary()
+            if hasattr(self.base_manager.aggregation_strategy, "get_privacy_summary"):
+                summary["strategy"] = (
+                    self.base_manager.aggregation_strategy.get_privacy_summary()
+                )
 
         return summary
 
@@ -219,7 +242,9 @@ class DPClusterManager:
         if hasattr(self.base_manager, name):
             return getattr(self.base_manager, name)
         else:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
 
 
 class DPVirtualClientActor:
@@ -230,7 +255,9 @@ class DPVirtualClientActor:
     for Local Differential Privacy scenarios.
     """
 
-    def __init__(self, base_actor, dp_config: Optional[DifferentialPrivacyConfig] = None):
+    def __init__(
+        self, base_actor, dp_config: Optional[DifferentialPrivacyConfig] = None
+    ):
         self.base_actor = base_actor
         self.dp_config = dp_config
         self.local_privacy_accountant: Optional[PrivacyAccountant] = None
@@ -240,10 +267,12 @@ class DPVirtualClientActor:
             self.local_privacy_accountant = create_privacy_accountant(
                 accountant_type=dp_config.accountant.value,
                 total_epsilon=dp_config.epsilon,
-                total_delta=dp_config.delta or 1e-5
+                total_delta=dp_config.delta or 1e-5,
             )
 
-    def apply_local_dp_noise(self, noise_scale: float, round_number: int = 0) -> Dict[str, Any]:
+    def apply_local_dp_noise(
+        self, noise_scale: float, round_number: int = 0
+    ) -> Dict[str, Any]:
         """
         Apply local differential privacy noise to client parameters.
 
@@ -259,17 +288,19 @@ class DPVirtualClientActor:
 
         # Get current model parameters
         import ray
+
         current_params = ray.get(self.base_actor.get_model_parameters.remote())
 
         # Apply clipping and noise
         from murmura.privacy.dp_mechanisms import DifferentialPrivacyManager
 
-        dp_manager = DifferentialPrivacyManager(self.dp_config, self.local_privacy_accountant)
+        dp_manager = DifferentialPrivacyManager(
+            self.dp_config, self.local_privacy_accountant
+        )
 
         # Apply DP (clipping + noise)
         processed_params, metadata = dp_manager.apply_differential_privacy(
-            parameters_list=[current_params],
-            round_number=round_number
+            parameters_list=[current_params], round_number=round_number
         )
 
         # Update model with noisy parameters
@@ -286,11 +317,13 @@ class DPVirtualClientActor:
             summary["config"] = {
                 "mechanism": self.dp_config.mechanism.value,
                 "epsilon": self.dp_config.epsilon,
-                "delta": self.dp_config.delta
+                "delta": self.dp_config.delta,
             }
 
             if self.local_privacy_accountant:
-                summary["accountant"] = self.local_privacy_accountant.get_privacy_summary()
+                summary["accountant"] = (
+                    self.local_privacy_accountant.get_privacy_summary()
+                )
 
         return summary
 
@@ -310,7 +343,7 @@ def integrate_dp_with_learning_process(learning_process_class):
 
         def __init__(self, config, dataset, model):
             # Ensure we have DP configuration
-            if hasattr(config, 'differential_privacy') and config.differential_privacy:
+            if hasattr(config, "differential_privacy") and config.differential_privacy:
                 self.dp_enabled = True
                 self.dp_config = config.differential_privacy
             else:
@@ -320,11 +353,14 @@ def integrate_dp_with_learning_process(learning_process_class):
             # CRITICAL: Call parent constructor first
             super().__init__(config, dataset, model)
 
-        def initialize(self, num_actors, topology_config, aggregation_config, partitioner):
+        def initialize(
+            self, num_actors, topology_config, aggregation_config, partitioner
+        ):
             """Initialize with DP-enhanced cluster manager."""
             if self.dp_enabled:
                 # Use DP-enhanced cluster manager
                 from murmura.privacy.dp_integration import DPClusterManager
+
                 self.cluster_manager = DPClusterManager(self.config)
 
                 # CRITICAL: Follow the same initialization sequence as base class
@@ -336,7 +372,9 @@ def integrate_dp_with_learning_process(learning_process_class):
 
                 # Set up aggregation strategy FIRST
                 self.logger.info("Setting up DP-enhanced aggregation strategy...")
-                self.cluster_manager.set_aggregation_strategy(aggregation_config, topology_config)
+                self.cluster_manager.set_aggregation_strategy(
+                    aggregation_config, topology_config
+                )
 
                 # Create actors
                 self.logger.info(f"Creating {num_actors} virtual clients...")
@@ -344,10 +382,11 @@ def integrate_dp_with_learning_process(learning_process_class):
 
                 # Emit initial state event
                 from murmura.visualization.training_event import InitialStateEvent
+
                 self.training_monitor.emit_event(
                     InitialStateEvent(
                         topology_type=topology_config.topology_type.value,
-                        num_nodes=num_actors
+                        num_nodes=num_actors,
                     )
                 )
 
@@ -358,7 +397,7 @@ def integrate_dp_with_learning_process(learning_process_class):
 
                 # Partition and distribute data
                 self.logger.info("Partitioning dataset...")
-                split = self.get_config_value("split", "train")
+                split = self.config.split
                 partitioner.partition(self.dataset, split)
 
                 self.logger.info("Distributing data partitions...")
@@ -369,7 +408,7 @@ def integrate_dp_with_learning_process(learning_process_class):
                     partitions,
                     metadata={
                         "split": split,
-                        "dataset": self.get_config_value("dataset_name", "unknown"),
+                        "dataset": self.config.dataset_name,
                         "topology": topology_config.topology_type.value,
                         "cluster_nodes": cluster_stats["cluster_info"]["total_nodes"],
                         "is_multinode": cluster_stats["cluster_info"]["is_multinode"],
@@ -378,8 +417,8 @@ def integrate_dp_with_learning_process(learning_process_class):
 
                 # Distribute dataset
                 self.logger.info("Distributing dataset...")
-                feature_columns = self.get_config_value("feature_columns", None)
-                label_column = self.get_config_value("label_column", None)
+                feature_columns = self.config.feature_columns
+                label_column = self.config.label_column
 
                 if feature_columns is None or label_column is None:
                     raise ValueError(
@@ -387,7 +426,9 @@ def integrate_dp_with_learning_process(learning_process_class):
                     )
 
                 self.cluster_manager.distribute_dataset(
-                    self.dataset, feature_columns=feature_columns, label_column=label_column
+                    self.dataset,
+                    feature_columns=feature_columns,
+                    label_column=label_column,
                 )
 
                 # CRITICAL: Distribute model - this was missing!
@@ -405,34 +446,43 @@ def integrate_dp_with_learning_process(learning_process_class):
                         f"actors are not properly configured."
                     )
                     self.logger.error(error_msg)
-                    for error in validation_results["errors"][:5]:  # Show first 5 errors
+                    for error in validation_results["errors"][
+                        :5
+                    ]:  # Show first 5 errors
                         self.logger.error(f"  {error}")
                     raise RuntimeError(error_msg)
 
-                self.logger.info("DP-enhanced learning process initialized successfully.")
+                self.logger.info(
+                    "DP-enhanced learning process initialized successfully."
+                )
             else:
                 # Use standard initialization
-                super().initialize(num_actors, topology_config, aggregation_config, partitioner)
+                super().initialize(
+                    num_actors, topology_config, aggregation_config, partitioner
+                )
 
         def execute(self) -> Dict[str, Any]:
             """Execute learning process with privacy monitoring."""
             # Get initial privacy summary
-            if self.dp_enabled and hasattr(self.cluster_manager, 'get_privacy_summary'):
+            if self.dp_enabled and hasattr(self.cluster_manager, "get_privacy_summary"):
                 initial_privacy = self.cluster_manager.get_privacy_summary()
-                self.logger.info(f"Starting training with DP: {initial_privacy['config']}")
+                self.logger.info(
+                    f"Starting training with DP - Rounds: {self.config.rounds}, Epochs: {self.config.epochs}"
+                )
+                self.logger.info(f"DP Config: {initial_privacy['config']}")
 
-            # Execute base learning process
+            # Execute base learning process (now uses config parameters)
             results = super().execute()
 
             # Add privacy summary to results
-            if self.dp_enabled and hasattr(self.cluster_manager, 'get_privacy_summary'):
-                results['privacy_summary'] = self.cluster_manager.get_privacy_summary()
+            if self.dp_enabled and hasattr(self.cluster_manager, "get_privacy_summary"):
+                results["privacy_summary"] = self.cluster_manager.get_privacy_summary()
 
                 # Log final privacy consumption
-                final_privacy = results['privacy_summary']
-                if 'accountant' in final_privacy:
-                    spent = final_privacy['accountant']['spent']
-                    total = final_privacy['accountant']['total_budget']
+                final_privacy = results["privacy_summary"]
+                if "accountant" in final_privacy:
+                    spent = final_privacy["accountant"]["spent"]
+                    total = final_privacy["accountant"]["total_budget"]
                     self.logger.info(
                         f"Training completed. Privacy spent: ε={spent['epsilon']:.4f}/{total['epsilon']:.4f}, "
                         f"δ={spent['delta']:.2e}/{total['delta']:.2e}"
@@ -456,13 +506,19 @@ def create_dp_federated_learning_process(config: DPOrchestrationConfig, dataset,
     Returns:
         DP-enhanced federated learning process
     """
-    from murmura.orchestration.learning_process.federated_learning_process import FederatedLearningProcess
+    from murmura.orchestration.learning_process.federated_learning_process import (
+        FederatedLearningProcess,
+    )
 
-    DPFederatedLearningProcess = integrate_dp_with_learning_process(FederatedLearningProcess)
+    DPFederatedLearningProcess = integrate_dp_with_learning_process(
+        FederatedLearningProcess
+    )
     return DPFederatedLearningProcess(config, dataset, model)
 
 
-def create_dp_decentralized_learning_process(config: DPOrchestrationConfig, dataset, model):
+def create_dp_decentralized_learning_process(
+    config: DPOrchestrationConfig, dataset, model
+):
     """
     Convenience function to create a DP-enhanced decentralized learning process.
 
@@ -481,7 +537,11 @@ def create_dp_decentralized_learning_process(config: DPOrchestrationConfig, data
             "Set noise_application=CLIENT_SIDE in differential_privacy config."
         )
 
-    from murmura.orchestration.learning_process.decentralized_learning_process import DecentralizedLearningProcess
+    from murmura.orchestration.learning_process.decentralized_learning_process import (
+        DecentralizedLearningProcess,
+    )
 
-    DPDecentralizedLearningProcess = integrate_dp_with_learning_process(DecentralizedLearningProcess)
+    DPDecentralizedLearningProcess = integrate_dp_with_learning_process(
+        DecentralizedLearningProcess
+    )
     return DPDecentralizedLearningProcess(config, dataset, model)
