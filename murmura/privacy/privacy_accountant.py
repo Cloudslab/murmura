@@ -8,8 +8,8 @@ import numpy as np
 from murmura.privacy.dp_config import DPConfig
 
 try:
-    from opacus.accountants import RDPAccountant
-    from opacus.accountants.utils import get_noise_multiplier
+    from opacus.accountants import RDPAccountant  # type: ignore[import-untyped]
+    from opacus.accountants.utils import get_noise_multiplier  # type: ignore[import-untyped]
 
     OPACUS_AVAILABLE = True
 except ImportError:

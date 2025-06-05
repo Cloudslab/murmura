@@ -459,7 +459,10 @@ def main() -> None:
         # Create model wrapper (DP or regular)
         if args.enable_dp and dp_config:
             logger.info("Creating DP-aware model wrapper")
-            global_model = DPTorchModelWrapper(
+            from typing import Union
+            from murmura.model.pytorch_model import TorchModelWrapper
+            
+            global_model: Union[DPTorchModelWrapper, TorchModelWrapper] = DPTorchModelWrapper(
                 model=model,
                 dp_config=dp_config,
                 loss_fn=nn.CrossEntropyLoss(),
@@ -552,7 +555,7 @@ def main() -> None:
             logger.info(f"Resource monitoring: {config.monitor_resources}")
             logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
-            if args.enable_dp:
+            if args.enable_dp and dp_config is not None:
                 logger.info("=== Differential Privacy Settings ===")
                 logger.info(
                     f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
@@ -617,7 +620,8 @@ def main() -> None:
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
             # Display privacy results if DP was enabled
-            if args.enable_dp and hasattr(global_model, "get_privacy_spent"):
+            privacy_spent = None
+            if args.enable_dp and dp_config is not None and hasattr(global_model, "get_privacy_spent"):
                 logger.info("=== Privacy Results ===")
                 privacy_spent = global_model.get_privacy_spent()
                 logger.info(
@@ -685,10 +689,8 @@ def main() -> None:
                 "results": results,
                 "differential_privacy": {
                     "enabled": args.enable_dp,
-                    "config": dp_config.model_dump() if dp_config else None,
-                    "privacy_spent": privacy_spent
-                    if args.enable_dp and hasattr(global_model, "get_privacy_spent")
-                    else None,
+                    "config": dp_config.model_dump() if dp_config is not None else None,
+                    "privacy_spent": privacy_spent,
                 },
             }
 

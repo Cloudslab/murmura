@@ -11,10 +11,10 @@ from murmura.model.pytorch_model import TorchModelWrapper
 from murmura.privacy.dp_config import DPConfig
 
 try:
-    from opacus import PrivacyEngine
-    from opacus.utils.batch_memory_manager import BatchMemoryManager
-    from opacus.validators import ModuleValidator
-    from opacus.accountants.utils import get_noise_multiplier
+    from opacus import PrivacyEngine  # type: ignore[import-untyped]
+    from opacus.utils.batch_memory_manager import BatchMemoryManager  # type: ignore[import-untyped]
+    from opacus.validators import ModuleValidator  # type: ignore[import-untyped]
+    from opacus.accountants.utils import get_noise_multiplier  # type: ignore[import-untyped]
 
     OPACUS_AVAILABLE = True
 except ImportError:
@@ -226,7 +226,10 @@ class DPTorchModelWrapper(TorchModelWrapper):
         try:
             # Estimate dataset size if not provided
             if dataset_size is None:
-                dataset_size = len(dataloader.dataset)
+                if hasattr(dataloader.dataset, '__len__'):
+                    dataset_size = len(dataloader.dataset)
+                else:
+                    raise ValueError("Dataset size must be provided for datasets without __len__ method")
 
             # Get batch size
             batch_size = dataloader.batch_size or 1
@@ -242,6 +245,9 @@ class DPTorchModelWrapper(TorchModelWrapper):
             )
 
             # Attach privacy engine - try with epsilon target first, fallback to manual
+            if self.privacy_engine is None:
+                raise RuntimeError("Privacy engine not initialized")
+                
             try:
                 (
                     self.model,
@@ -264,6 +270,9 @@ class DPTorchModelWrapper(TorchModelWrapper):
                 self.logger.info("Trying manual privacy engine attachment...")
 
                 # Fallback to manual attachment
+                if self.privacy_engine is None:
+                    raise RuntimeError("Privacy engine not initialized")
+                    
                 (
                     self.model,
                     self.optimizer,
@@ -282,10 +291,11 @@ class DPTorchModelWrapper(TorchModelWrapper):
             self.is_dp_enabled = True
 
             # Log privacy parameters
-            actual_noise = self.privacy_engine.noise_multiplier
-            self.logger.info(
-                f"DP enabled with actual noise multiplier: {actual_noise:.3f}"
-            )
+            if self.privacy_engine is not None:
+                actual_noise = self.privacy_engine.noise_multiplier
+                self.logger.info(
+                    f"DP enabled with actual noise multiplier: {actual_noise:.3f}"
+                )
 
             return private_dataloader
 

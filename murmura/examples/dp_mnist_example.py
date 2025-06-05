@@ -23,6 +23,8 @@ from murmura.visualization.network_visualizer import NetworkVisualizer
 from murmura.privacy.dp_config import DPConfig
 from murmura.privacy.dp_model_wrapper import DPTorchModelWrapper
 from murmura.privacy.privacy_accountant import PrivacyAccountant
+from murmura.model.pytorch_model import TorchModelWrapper
+from typing import Union
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -284,6 +286,7 @@ def main() -> None:
         )  # Use GroupNorm for DP compatibility
 
         # Create model wrapper (DP or regular)
+        global_model: Union[DPTorchModelWrapper, TorchModelWrapper]
         if args.enable_dp and dp_config:
             logger.info("Creating DP-aware model wrapper")
             global_model = DPTorchModelWrapper(
@@ -297,7 +300,6 @@ def main() -> None:
             )
         else:
             logger.info("Creating regular model wrapper")
-            from murmura.model.pytorch_model import TorchModelWrapper
 
             global_model = TorchModelWrapper(
                 model=model,
@@ -351,7 +353,7 @@ def main() -> None:
             logger.info(f"Learning rate: {config.learning_rate}")
             logger.info(f"Device: {device}")
 
-            if args.enable_dp:
+            if args.enable_dp and dp_config is not None:
                 logger.info("=== Differential Privacy Settings ===")
                 logger.info(
                     f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
@@ -390,23 +392,25 @@ def main() -> None:
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
             # Display privacy results if DP was enabled
+            privacy_spent = None
             if args.enable_dp and hasattr(global_model, "get_privacy_spent"):
                 logger.info("=== Privacy Results ===")
                 privacy_spent = global_model.get_privacy_spent()
                 logger.info(
                     f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
                 )
-                logger.info(
-                    f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
-                )
+                if dp_config is not None:
+                    logger.info(
+                        f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                    )
 
-                remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
-                logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
+                    remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
+                    logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
 
-                if privacy_spent["epsilon"] > dp_config.target_epsilon:
-                    logger.warning("Privacy budget exceeded!")
-                else:
-                    logger.info("Privacy budget respected ✓")
+                    if privacy_spent["epsilon"] > dp_config.target_epsilon:
+                        logger.warning("Privacy budget exceeded!")
+                    else:
+                        logger.info("Privacy budget respected ✓")
 
                 # Get privacy summary from accountant
                 if "privacy_accountant" in locals():
