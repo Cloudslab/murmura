@@ -16,10 +16,10 @@ class TopologyCoordinator:
     """
 
     def __init__(
-            self,
-            actors: List[Any],
-            topology_manager: TopologyManager,
-            strategy: AggregationStrategy,
+        self,
+        actors: List[Any],
+        topology_manager: TopologyManager,
+        strategy: AggregationStrategy,
     ):
         self.actors = actors
         self.topology_manager = topology_manager
@@ -29,7 +29,7 @@ class TopologyCoordinator:
         self.coordination_mode = self._determine_coordination_mode()
 
     def coordinate_aggregation(
-            self, weights: Optional[List[float]] = None
+        self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate the aggregation of model parameters based on the topology.
@@ -66,14 +66,16 @@ class TopologyCoordinator:
 
         :return: True if compatible, False otherwise
         """
-        from murmura.network_management.topology_compatibility import TopologyCompatibilityManager
+        from murmura.network_management.topology_compatibility import (
+            TopologyCompatibilityManager,
+        )
 
         return TopologyCompatibilityManager.is_compatible(
             self.strategy.__class__, self.topology_type
         )
 
     def _coordinate_star_topology(
-            self, weights: Optional[List[float]] = None
+        self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for star topology.
@@ -113,7 +115,7 @@ class TopologyCoordinator:
         return self.strategy.aggregate(parameters_list, adjusted_weights)
 
     def _coordinate_ring_topology(
-            self, weights: Optional[List[float]] = None
+        self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for ring topology.
@@ -179,7 +181,7 @@ class TopologyCoordinator:
         return self._combine_aggregated_params(all_aggregated_params)
 
     def _coordinate_complete_topology(
-            self, weights: Optional[List[float]] = None
+        self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for complete topology.
@@ -251,7 +253,7 @@ class TopologyCoordinator:
             return self._combine_aggregated_params(all_aggregated_params)
 
     def _coordinate_line_topology(
-            self, weights: Optional[List[float]] = None
+        self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for line topology.
@@ -314,7 +316,7 @@ class TopologyCoordinator:
         return self._combine_aggregated_params(all_aggregated_params)
 
     def _coordinate_custom_topology(
-            self, weights: Optional[List[float]] = None
+        self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Coordinate aggregation for custom topology.
@@ -396,7 +398,7 @@ class TopologyCoordinator:
 
     @staticmethod
     def _combine_aggregated_params(
-            aggregated_params_list: List[Dict[str, Any]],
+        aggregated_params_list: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """
         Combine all local aggregated parameters into a single set of parameters.
@@ -433,9 +435,9 @@ class TopologyCoordinator:
 
     @staticmethod
     def create(
-            actors: List[Any],
-            topology_manager: TopologyManager,
-            strategy: AggregationStrategy,
+        actors: List[Any],
+        topology_manager: TopologyManager,
+        strategy: AggregationStrategy,
     ) -> "TopologyCoordinator":
         """
         Factory method to create a TopologyCoordinator instance.

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Testing:**
 - `pytest` - Run all tests
-- `pytest tests/path/to/specific_test.py` - Run specific test file
+- `pytest Can tests/path/to/specific_test.py` - Run specific test file
 - `pytest -m "not integration"` - Run tests excluding integration tests that require external resources
 
 **Code Quality:**

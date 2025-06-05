@@ -32,7 +32,7 @@ def test_mdataset_reconstruction():
 
     # Test reconstruction
     try:
-        reconstructed = MDataset.reconstruct_from_metadata(metadata, partitions)
+        MDataset.reconstruct_from_metadata(metadata, partitions)
         print("✓ MDataset reconstruction test passed")
         return True
     except Exception as e:
@@ -164,7 +164,7 @@ def run_mini_integration_test():
 
         dataset = Dataset.from_dict(test_data)
         dataset_dict = DatasetDict({"train": dataset})
-        mdataset = MDataset(dataset_dict)
+        MDataset(dataset_dict)
 
         # Create simple model
         class TestModel(PyTorchModel):
@@ -176,7 +176,7 @@ def run_mini_integration_test():
                 return self.linear(x)
 
         model = TestModel()
-        model_wrapper = TorchModelWrapper(
+        TorchModelWrapper(
             model=model,
             loss_fn=nn.CrossEntropyLoss(),
             optimizer_class=torch.optim.Adam,
@@ -186,7 +186,7 @@ def run_mini_integration_test():
         )
 
         # Create minimal config
-        config = OrchestrationConfig(
+        OrchestrationConfig(
             num_actors=2,
             topology=TopologyConfig(topology_type=TopologyType.STAR),
             aggregation=AggregationConfig(strategy_type=AggregationStrategyType.FEDAVG),

@@ -42,7 +42,9 @@ class TrainingMonitor:
         Emit a training event to all registered observers.
 
         :param event: The training event to emit.
+        :return: None
         """
         self.events.append(event)
         for observer in self.observers:
             observer.on_event(event)
+        return None

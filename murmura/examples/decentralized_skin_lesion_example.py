@@ -12,7 +12,6 @@ import os
 import logging
 import torch
 import torch.nn as nn
-import torch.nn.functional as func
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
@@ -32,8 +31,6 @@ from murmura.orchestration.learning_process.decentralized_learning_process impor
 )
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.visualization.network_visualizer import NetworkVisualizer
-
-
 
 
 def create_skin_lesion_preprocessor(image_size: int = 128):
@@ -585,7 +582,7 @@ def main() -> None:
             num_classes=num_classes,
             widen_factor=args.widen_factor,
             drop_rate=args.dropout,
-            use_dp_compatible_norm=False  # Use BatchNorm for standard training
+            use_dp_compatible_norm=True,  # Use GroupNorm for better compatibility
         )
 
         logger.info(

@@ -6,10 +6,12 @@ from murmura.model.pytorch_model import PyTorchModel
 
 class BasicBlock(PyTorchModel):
     """Basic block for WideResNet with configurable normalization."""
-    
-    def __init__(self, in_planes, out_planes, stride, drop_rate=0.0, use_dp_compatible_norm=False):
+
+    def __init__(
+        self, in_planes, out_planes, stride, drop_rate=0.0, use_dp_compatible_norm=False
+    ):
         super(BasicBlock, self).__init__()
-        
+
         if use_dp_compatible_norm:
             # Use GroupNorm for DP compatibility
             self.bn1 = nn.GroupNorm(min(8, in_planes), in_planes)
@@ -18,7 +20,7 @@ class BasicBlock(PyTorchModel):
             # Use BatchNorm for standard training
             self.bn1 = nn.BatchNorm2d(in_planes)
             self.bn2 = nn.BatchNorm2d(out_planes)
-            
+
         self.relu1 = nn.ReLU(inplace=True)
         self.conv1 = nn.Conv2d(
             in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
@@ -57,15 +59,38 @@ class BasicBlock(PyTorchModel):
 
 class NetworkBlock(PyTorchModel):
     """Network block for WideResNet."""
-    
-    def __init__(self, nb_layers, in_planes, out_planes, block, stride, drop_rate=0.0, use_dp_compatible_norm=False):
+
+    def __init__(
+        self,
+        nb_layers,
+        in_planes,
+        out_planes,
+        block,
+        stride,
+        drop_rate=0.0,
+        use_dp_compatible_norm=False,
+    ):
         super(NetworkBlock, self).__init__()
         self.layer = self.make_layer(
-            block, in_planes, out_planes, nb_layers, stride, drop_rate, use_dp_compatible_norm
+            block,
+            in_planes,
+            out_planes,
+            nb_layers,
+            stride,
+            drop_rate,
+            use_dp_compatible_norm,
         )
 
     @staticmethod
-    def make_layer(block, in_planes, out_planes, nb_layers, stride, drop_rate, use_dp_compatible_norm):
+    def make_layer(
+        block,
+        in_planes,
+        out_planes,
+        nb_layers,
+        stride,
+        drop_rate,
+        use_dp_compatible_norm,
+    ):
         layers = []
         for i in range(int(nb_layers)):
             layers.append(
@@ -89,7 +114,14 @@ class WideResNet(PyTorchModel):
     Supports both DP-compatible and standard normalization.
     """
 
-    def __init__(self, depth=16, num_classes=7, widen_factor=8, drop_rate=0.3, use_dp_compatible_norm=False):
+    def __init__(
+        self,
+        depth=16,
+        num_classes=7,
+        widen_factor=8,
+        drop_rate=0.3,
+        use_dp_compatible_norm=False,
+    ):
         super(WideResNet, self).__init__()
         n_channels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]
         assert (depth - 4) % 6 == 0
@@ -101,16 +133,22 @@ class WideResNet(PyTorchModel):
             3, n_channels[0], kernel_size=3, stride=1, padding=1, bias=False
         )
         # Network blocks
-        self.block1 = NetworkBlock(n, n_channels[0], n_channels[1], block, 1, drop_rate, use_dp_compatible_norm)
-        self.block2 = NetworkBlock(n, n_channels[1], n_channels[2], block, 2, drop_rate, use_dp_compatible_norm)
-        self.block3 = NetworkBlock(n, n_channels[2], n_channels[3], block, 2, drop_rate, use_dp_compatible_norm)
-        
+        self.block1 = NetworkBlock(
+            n, n_channels[0], n_channels[1], block, 1, drop_rate, use_dp_compatible_norm
+        )
+        self.block2 = NetworkBlock(
+            n, n_channels[1], n_channels[2], block, 2, drop_rate, use_dp_compatible_norm
+        )
+        self.block3 = NetworkBlock(
+            n, n_channels[2], n_channels[3], block, 2, drop_rate, use_dp_compatible_norm
+        )
+
         # Final normalization and classifier
         if use_dp_compatible_norm:
             self.bn1 = nn.GroupNorm(min(8, n_channels[3]), n_channels[3])
         else:
             self.bn1 = nn.BatchNorm2d(n_channels[3])
-            
+
         self.relu = nn.ReLU(inplace=True)
         self.fc = nn.Linear(n_channels[3], num_classes)
         self.nChannels = n_channels[3]
@@ -120,9 +158,9 @@ class WideResNet(PyTorchModel):
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
-                if hasattr(m, 'weight') and m.weight is not None:
+                if hasattr(m, "weight") and m.weight is not None:
                     m.weight.data.fill_(1)
-                if hasattr(m, 'bias') and m.bias is not None:
+                if hasattr(m, "bias") and m.bias is not None:
                     m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
@@ -157,7 +195,7 @@ class SimpleWideResNet(PyTorchModel):
 
     def __init__(self, num_classes=7, base_channels=16):
         super(SimpleWideResNet, self).__init__()
-        
+
         self.features = nn.Sequential(
             # First block
             nn.Conv2d(3, base_channels, kernel_size=3, padding=1),
@@ -165,25 +203,23 @@ class SimpleWideResNet(PyTorchModel):
             nn.Conv2d(base_channels, base_channels * 2, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
-            
             # Second block
             nn.Conv2d(base_channels * 2, base_channels * 4, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(base_channels * 4, base_channels * 4, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
-            
             # Third block
             nn.Conv2d(base_channels * 4, base_channels * 8, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.AdaptiveAvgPool2d((4, 4)),
         )
-        
+
         self.classifier = nn.Sequential(
             nn.Linear(base_channels * 8 * 4 * 4, 128),
             nn.ReLU(inplace=True),
             nn.Dropout(0.3),
-            nn.Linear(128, num_classes)
+            nn.Linear(128, num_classes),
         )
 
     def forward(self, x):

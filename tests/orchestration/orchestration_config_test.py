@@ -1,6 +1,5 @@
 import pytest
 from pydantic import ValidationError
-import json
 
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.aggregation.aggregation_config import (
@@ -167,18 +166,25 @@ def test_invalid_config_combinations():
     """Test invalid config combinations (e.g., custom topology with missing adjacency)"""
     with pytest.raises(Exception):
         OrchestrationConfig(
-            topology=TopologyConfig(topology_type=TopologyType.CUSTOM, adjacency_list=None)
+            topology=TopologyConfig(
+                topology_type=TopologyType.CUSTOM, adjacency_list=None
+            )
         )
     with pytest.raises(Exception):
         OrchestrationConfig(
-            topology=TopologyConfig(topology_type=TopologyType.CUSTOM, adjacency_list={})
+            topology=TopologyConfig(
+                topology_type=TopologyType.CUSTOM, adjacency_list={}
+            )
         )
 
 
 def test_nested_config_validation():
     """Test validation of nested configuration parameters"""
     config = OrchestrationConfig(
-        aggregation=AggregationConfig(strategy_type=AggregationStrategyType.TRIMMED_MEAN, params={"trim_ratio": 0.2}),
+        aggregation=AggregationConfig(
+            strategy_type=AggregationStrategyType.TRIMMED_MEAN,
+            params={"trim_ratio": 0.2},
+        ),
         topology=TopologyConfig(topology_type=TopologyType.STAR, hub_index=1),
     )
     assert config.aggregation.params["trim_ratio"] == 0.2

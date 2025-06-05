@@ -11,7 +11,7 @@ class MNISTModel(PyTorchModel):
 
     def __init__(self, use_dp_compatible_norm=False):
         super().__init__()
-        
+
         if use_dp_compatible_norm:
             # Use GroupNorm and LayerNorm for DP compatibility
             self.features = nn.Sequential(
@@ -29,7 +29,7 @@ class MNISTModel(PyTorchModel):
                 nn.LayerNorm(128),  # LayerNorm is DP-compatible
                 nn.ReLU(),
                 nn.Dropout(0.3),
-                nn.Linear(128, 10)
+                nn.Linear(128, 10),
             )
         else:
             # Standard architecture with BatchNorm for non-DP training
@@ -48,7 +48,7 @@ class MNISTModel(PyTorchModel):
                 nn.BatchNorm1d(128),
                 nn.ReLU(),
                 nn.Dropout(0.3),
-                nn.Linear(128, 10)
+                nn.Linear(128, 10),
             )
 
     def forward(self, x):
@@ -79,9 +79,7 @@ class SimpleMNISTModel(PyTorchModel):
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
         self.classifier = nn.Sequential(
-            nn.Linear(64 * 7 * 7, 128), 
-            nn.ReLU(), 
-            nn.Linear(128, 10)
+            nn.Linear(64 * 7 * 7, 128), nn.ReLU(), nn.Linear(128, 10)
         )
 
     def forward(self, x):

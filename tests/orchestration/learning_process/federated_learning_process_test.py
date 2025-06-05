@@ -261,12 +261,17 @@ def test_execute_return_value(federated_learning_process, mock_model):
     assert len(result["round_metrics"]) == 2
 
 
-@pytest.mark.parametrize("rounds,batch_size,epochs", [
-    (1, 16, 1),
-    (2, 32, 2),
-    (3, 64, 1),
-])
-def test_different_learning_configurations(mock_dataset, mock_model, mock_cluster_manager, rounds, batch_size, epochs):
+@pytest.mark.parametrize(
+    "rounds,batch_size,epochs",
+    [
+        (1, 16, 1),
+        (2, 32, 2),
+        (3, 64, 1),
+    ],
+)
+def test_different_learning_configurations(
+    mock_dataset, mock_model, mock_cluster_manager, rounds, batch_size, epochs
+):
     config = {
         "rounds": rounds,
         "epochs": epochs,
@@ -289,7 +294,10 @@ def test_event_emission_edge_cases(federated_learning_process):
     """Test event emission for edge cases (e.g., zero rounds)"""
     federated_learning_process.config["rounds"] = 0
     federated_learning_process.execute()
-    event_types = [call.args[0].__class__.__name__ for call in federated_learning_process.training_monitor.emit_event.call_args_list]
+    event_types = [
+        call.args[0].__class__.__name__
+        for call in federated_learning_process.training_monitor.emit_event.call_args_list
+    ]
     assert "EvaluationEvent" in event_types
     assert event_types.count("LocalTrainingEvent") == 0
 
@@ -308,6 +316,7 @@ def test_process_interruption_and_resumption(tmp_path, federated_learning_proces
     state = {"round": 1, "metrics": {"loss": 0.5}}
     with open(state_file, "w") as f:
         import json
+
         json.dump(state, f)
     # Simulate resuming by reading state
     with open(state_file) as f:

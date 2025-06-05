@@ -2,9 +2,9 @@
 """
 DP Decentralized Skin Lesion Classification - Privacy-Preserving Gossip-based Learning for Medical FL
 
-This example demonstrates decentralized federated learning with differential privacy for medical image 
+This example demonstrates decentralized federated learning with differential privacy for medical image
 classification using skin lesion data. Unlike centralized approaches, this uses gossip protocols where
-nodes communicate directly with their neighbors without a central aggregator, while maintaining 
+nodes communicate directly with their neighbors without a central aggregator, while maintaining
 patient privacy through differential privacy.
 """
 
@@ -314,7 +314,10 @@ def main() -> None:
         help="Skin lesion dataset name",
     )
     parser.add_argument(
-        "--widen_factor", type=int, default=4, help="WideResNet widen factor (reduced for DP)"
+        "--widen_factor",
+        type=int,
+        default=4,
+        help="WideResNet widen factor (reduced for DP)",
     )
     parser.add_argument("--depth", type=int, default=16, help="WideResNet depth")
     parser.add_argument(
@@ -335,28 +338,40 @@ def main() -> None:
         "--enable_dp", action="store_true", help="Enable differential privacy"
     )
     parser.add_argument(
-        "--target_epsilon", type=float, default=10.0, help="Target privacy budget (epsilon)"
+        "--target_epsilon",
+        type=float,
+        default=10.0,
+        help="Target privacy budget (epsilon)",
     )
     parser.add_argument(
-        "--target_delta", type=float, default=1e-4, help="Target privacy parameter (delta)"
+        "--target_delta",
+        type=float,
+        default=1e-4,
+        help="Target privacy parameter (delta)",
     )
     parser.add_argument(
         "--max_grad_norm", type=float, default=1.2, help="Gradient clipping norm"
     )
     parser.add_argument(
-        "--noise_multiplier", type=float, default=None, help="Noise multiplier (auto if None)"
+        "--noise_multiplier",
+        type=float,
+        default=None,
+        help="Noise multiplier (auto if None)",
     )
     parser.add_argument(
-        "--enable_client_dp", action="store_true", default=True, help="Enable client-level DP"
+        "--enable_client_dp",
+        action="store_true",
+        default=True,
+        help="Enable client-level DP",
     )
     parser.add_argument(
         "--enable_central_dp", action="store_true", help="Enable central aggregation DP"
     )
     parser.add_argument(
-        "--dp_preset", 
+        "--dp_preset",
         choices=["high_privacy", "medium_privacy", "low_privacy", "custom"],
         default="medium_privacy",
-        help="DP preset configuration"
+        help="DP preset configuration",
     )
 
     # Multi-node Ray cluster arguments
@@ -495,14 +510,14 @@ def main() -> None:
         dp_config = None
         if args.enable_dp:
             logger.info("=== Configuring Differential Privacy ===")
-            
+
             if args.dp_preset == "high_privacy":
                 dp_config = DPConfig(
                     target_epsilon=3.0,  # Very private for medical data
                     target_delta=1e-5,
                     max_grad_norm=0.8,
                     enable_client_dp=True,
-                    enable_central_dp=False
+                    enable_central_dp=False,
                 )
             elif args.dp_preset == "medium_privacy":
                 dp_config = DPConfig.create_for_skin_lesion()
@@ -512,7 +527,7 @@ def main() -> None:
                     target_delta=1e-3,
                     max_grad_norm=2.0,
                     enable_client_dp=True,
-                    enable_central_dp=False
+                    enable_central_dp=False,
                 )
             else:  # custom
                 dp_config = DPConfig(
@@ -523,11 +538,15 @@ def main() -> None:
                     enable_client_dp=args.enable_client_dp,
                     enable_central_dp=args.enable_central_dp,
                 )
-            
-            logger.info(f"DP Configuration: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
+
+            logger.info(
+                f"DP Configuration: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+            )
             logger.info(f"Max grad norm: {dp_config.max_grad_norm}")
-            logger.info(f"Client DP: {dp_config.enable_client_dp}, Central DP: {dp_config.enable_central_dp}")
-            
+            logger.info(
+                f"Client DP: {dp_config.enable_client_dp}, Central DP: {dp_config.enable_central_dp}"
+            )
+
             # Initialize privacy accountant
             privacy_accountant = PrivacyAccountant(dp_config)
         else:
@@ -650,7 +669,7 @@ def main() -> None:
             num_classes=num_classes,
             widen_factor=args.widen_factor,
             drop_rate=args.dropout,
-            use_dp_compatible_norm=True  # Use GroupNorm for DP compatibility
+            use_dp_compatible_norm=True,  # Use GroupNorm for DP compatibility
         )
 
         logger.info(
@@ -682,6 +701,7 @@ def main() -> None:
         else:
             logger.info("Creating regular model wrapper")
             from murmura.model.pytorch_model import TorchModelWrapper
+
             global_model = TorchModelWrapper(
                 model=model,
                 loss_fn=nn.CrossEntropyLoss(),
@@ -708,9 +728,9 @@ def main() -> None:
         if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
             vis_dir = os.path.join(
-                args.vis_dir, 
+                args.vis_dir,
                 f"dp_decentralized_skin_lesion_{args.topology}_{args.aggregation_strategy}"
-                + ("_dp" if args.enable_dp else "_no_dp")
+                + ("_dp" if args.enable_dp else "_no_dp"),
             )
             os.makedirs(vis_dir, exist_ok=True)
 
@@ -781,16 +801,18 @@ def main() -> None:
             logger.info(f"Test split: {config.test_split}")
             logger.info(f"Resource monitoring: {config.monitor_resources}")
             logger.info(f"Health check interval: {config.health_check_interval} rounds")
-            
+
             if args.enable_dp:
                 logger.info("=== Differential Privacy Settings ===")
-                logger.info(f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
+                logger.info(
+                    f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                )
                 logger.info(f"Max gradient norm: {dp_config.max_grad_norm}")
                 logger.info(f"Client DP: {dp_config.enable_client_dp}")
                 logger.info(f"Central DP: {dp_config.enable_central_dp}")
                 logger.info(f"Mechanism: {dp_config.mechanism.value}")
                 logger.info(f"Accounting: {dp_config.accounting_method.value}")
-                
+
                 # Suggest optimal noise if auto-tuning
                 if dp_config.auto_tune_noise and dp_config.noise_multiplier is None:
                     # Estimate dataset size (skin cancer dataset is ~10k samples)
@@ -799,7 +821,7 @@ def main() -> None:
                     suggested_noise = privacy_accountant.suggest_optimal_noise(
                         sample_rate=sample_rate,
                         epochs=args.epochs * args.rounds,
-                        dataset_size=estimated_dataset_size
+                        dataset_size=estimated_dataset_size,
                     )
                     logger.info(f"Suggested noise multiplier: {suggested_noise:.3f}")
             else:
@@ -811,21 +833,27 @@ def main() -> None:
 
             # Display results
             logger.info("=== Training Results ===")
-            logger.info(f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}")
+            logger.info(
+                f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
+            )
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
-            
+
             # Display privacy results if DP was enabled
-            if args.enable_dp and hasattr(global_model, 'get_privacy_spent'):
+            if args.enable_dp and hasattr(global_model, "get_privacy_spent"):
                 logger.info("=== Privacy Results ===")
                 privacy_spent = global_model.get_privacy_spent()
-                logger.info(f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}")
-                logger.info(f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
-                
-                remaining_eps = dp_config.target_epsilon - privacy_spent['epsilon']
+                logger.info(
+                    f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
+                )
+                logger.info(
+                    f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                )
+
+                remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
                 logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
-                
-                if privacy_spent['epsilon'] > dp_config.target_epsilon:
+
+                if privacy_spent["epsilon"] > dp_config.target_epsilon:
                     logger.warning("Privacy budget exceeded!")
                 else:
                     logger.info("Privacy budget respected ✓")
@@ -883,8 +911,10 @@ def main() -> None:
                 "differential_privacy": {
                     "enabled": args.enable_dp,
                     "config": dp_config.model_dump() if dp_config else None,
-                    "privacy_spent": privacy_spent if args.enable_dp and hasattr(global_model, 'get_privacy_spent') else None,
-                }
+                    "privacy_spent": privacy_spent
+                    if args.enable_dp and hasattr(global_model, "get_privacy_spent")
+                    else None,
+                },
             }
 
             os.makedirs(

@@ -54,7 +54,9 @@ class NetworkVisualizer(TrainingObserver):
 
         # New data structures for comprehensive CSV export
         self.event_log: List[Dict[str, Any]] = []  # Complete event log
-        self.node_activities: Dict[int, List[Dict[str, Any]]] = {}  # Per-node activity tracking
+        self.node_activities: Dict[
+            int, List[Dict[str, Any]]
+        ] = {}  # Per-node activity tracking
         self.communication_log: List[Dict[str, Any]] = []  # Communication events
         self.parameter_updates: List[Dict[str, Any]] = []  # Parameter update tracking
 
@@ -80,10 +82,10 @@ class NetworkVisualizer(TrainingObserver):
 
         # Log the event for CSV export
         event_data = {
-            'timestamp': event.timestamp,
-            'round_num': event.round_num,
-            'step_name': event.step_name,
-            'event_type': type(event).__name__
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "step_name": event.step_name,
+            "event_type": type(event).__name__,
         }
 
         frame: Dict[str, Any] = {
@@ -106,10 +108,9 @@ class NetworkVisualizer(TrainingObserver):
             description = "Initial network state"
 
             # Add to event log
-            event_data.update({
-                'topology_type': event.topology_type,
-                'num_nodes': event.num_nodes
-            })
+            event_data.update(
+                {"topology_type": event.topology_type, "num_nodes": event.num_nodes}
+            )
 
         elif isinstance(event, LocalTrainingEvent):
             frame["active_nodes"] = event.active_nodes
@@ -122,23 +123,25 @@ class NetworkVisualizer(TrainingObserver):
                     self.node_activities[node_id] = []
 
                 activity = {
-                    'timestamp': event.timestamp,
-                    'round_num': event.round_num,
-                    'activity_type': 'local_training',
-                    'metrics': event.metrics,
-                    'current_epoch': event.current_epoch,
-                    'total_epochs': event.total_epochs
+                    "timestamp": event.timestamp,
+                    "round_num": event.round_num,
+                    "activity_type": "local_training",
+                    "metrics": event.metrics,
+                    "current_epoch": event.current_epoch,
+                    "total_epochs": event.total_epochs,
                 }
                 self.node_activities[node_id].append(activity)
 
             # Add to event log
-            event_data.update({
-                'active_nodes': ','.join(map(str, event.active_nodes)),
-                'num_active_nodes': len(event.active_nodes),
-                'metrics': str(event.metrics),
-                'current_epoch': event.current_epoch,
-                'total_epochs': event.total_epochs
-            })
+            event_data.update(
+                {
+                    "active_nodes": ",".join(map(str, event.active_nodes)),
+                    "num_active_nodes": len(event.active_nodes),
+                    "metrics": str(event.metrics),
+                    "current_epoch": event.current_epoch,
+                    "total_epochs": event.total_epochs,
+                }
+            )
 
         elif isinstance(event, ParameterTransferEvent):
             for source in event.source_nodes:
@@ -147,12 +150,12 @@ class NetworkVisualizer(TrainingObserver):
 
                     # Log communication
                     comm_data = {
-                        'timestamp': event.timestamp,
-                        'round_num': event.round_num,
-                        'source_node': source,
-                        'target_node': target,
-                        'transfer_type': 'parameter_transfer',
-                        'param_summary': str(event.param_summary.get(source, {}))
+                        "timestamp": event.timestamp,
+                        "round_num": event.round_num,
+                        "source_node": source,
+                        "target_node": target,
+                        "transfer_type": "parameter_transfer",
+                        "param_summary": str(event.param_summary.get(source, {})),
                     }
                     self.communication_log.append(comm_data)
 
@@ -169,40 +172,40 @@ class NetworkVisualizer(TrainingObserver):
 
                     # Only add if this is a new round or first update
                     if not self.parameter_history[node] or current_round > len(
-                            self.parameter_history[node]
+                        self.parameter_history[node]
                     ):
                         self.parameter_history[node].append(norm_value)
                         # Store at which frame this parameter update happened
                         self.parameter_update_frames[node][
                             len(self.parameter_history[node]) - 1
-                            ] = len(self.frames)
+                        ] = len(self.frames)
 
                         # Log parameter update
                         param_update = {
-                            'timestamp': event.timestamp,
-                            'round_num': event.round_num,
-                            'node_id': node,
-                            'parameter_norm': norm_value,
-                            'parameter_summary': str(summary)
+                            "timestamp": event.timestamp,
+                            "round_num": event.round_num,
+                            "node_id": node,
+                            "parameter_norm": norm_value,
+                            "parameter_summary": str(summary),
                         }
                         self.parameter_updates.append(param_update)
                 else:
                     # If we just have raw parameters, use a simple norm
                     if not self.parameter_history[node] or event.round_num > len(
-                            self.parameter_history[node]
+                        self.parameter_history[node]
                     ):
                         self.parameter_history[node].append(1.0)  # Placeholder
                         self.parameter_update_frames[node][
                             len(self.parameter_history[node]) - 1
-                            ] = len(self.frames)
+                        ] = len(self.frames)
 
                         # Log parameter update
                         param_update = {
-                            'timestamp': event.timestamp,
-                            'round_num': event.round_num,
-                            'node_id': node,
-                            'parameter_norm': 1.0,
-                            'parameter_summary': str(summary)
+                            "timestamp": event.timestamp,
+                            "round_num": event.round_num,
+                            "node_id": node,
+                            "parameter_norm": 1.0,
+                            "parameter_summary": str(summary),
                         }
                         self.parameter_updates.append(param_update)
 
@@ -213,13 +216,15 @@ class NetworkVisualizer(TrainingObserver):
             )
 
             # Add to event log
-            event_data.update({
-                'source_nodes': ','.join(map(str, event.source_nodes)),
-                'target_nodes': ','.join(map(str, event.target_nodes)),
-                'num_source_nodes': len(event.source_nodes),
-                'num_target_nodes': len(event.target_nodes),
-                'param_summary': str(event.param_summary)
-            })
+            event_data.update(
+                {
+                    "source_nodes": ",".join(map(str, event.source_nodes)),
+                    "target_nodes": ",".join(map(str, event.target_nodes)),
+                    "num_source_nodes": len(event.source_nodes),
+                    "num_target_nodes": len(event.target_nodes),
+                    "param_summary": str(event.param_summary),
+                }
+            )
 
         elif isinstance(event, AggregationEvent):
             frame["active_nodes"] = event.participating_nodes
@@ -233,12 +238,12 @@ class NetworkVisualizer(TrainingObserver):
 
                         # Log communication to aggregator
                         comm_data = {
-                            'timestamp': event.timestamp,
-                            'round_num': event.round_num,
-                            'source_node': node,
-                            'target_node': event.aggregator_node,
-                            'transfer_type': 'aggregation',
-                            'strategy_name': event.strategy_name
+                            "timestamp": event.timestamp,
+                            "round_num": event.round_num,
+                            "source_node": node,
+                            "target_node": event.aggregator_node,
+                            "transfer_type": "aggregation",
+                            "strategy_name": event.strategy_name,
                         }
                         self.communication_log.append(comm_data)
 
@@ -255,21 +260,25 @@ class NetworkVisualizer(TrainingObserver):
                     self.node_activities[node_id] = []
 
                 activity = {
-                    'timestamp': event.timestamp,
-                    'round_num': event.round_num,
-                    'activity_type': 'aggregation',
-                    'strategy_name': event.strategy_name,
-                    'is_aggregator': node_id == event.aggregator_node
+                    "timestamp": event.timestamp,
+                    "round_num": event.round_num,
+                    "activity_type": "aggregation",
+                    "strategy_name": event.strategy_name,
+                    "is_aggregator": node_id == event.aggregator_node,
                 }
                 self.node_activities[node_id].append(activity)
 
             # Add to event log
-            event_data.update({
-                'participating_nodes': ','.join(map(str, event.participating_nodes)),
-                'aggregator_node': event.aggregator_node,
-                'strategy_name': event.strategy_name,
-                'num_participating_nodes': len(event.participating_nodes)
-            })
+            event_data.update(
+                {
+                    "participating_nodes": ",".join(
+                        map(str, event.participating_nodes)
+                    ),
+                    "aggregator_node": event.aggregator_node,
+                    "strategy_name": event.strategy_name,
+                    "num_participating_nodes": len(event.participating_nodes),
+                }
+            )
 
         elif isinstance(event, ModelUpdateEvent):
             frame["active_nodes"] = event.updated_nodes
@@ -282,19 +291,21 @@ class NetworkVisualizer(TrainingObserver):
                     self.node_activities[node_id] = []
 
                 activity = {
-                    'timestamp': event.timestamp,
-                    'round_num': event.round_num,
-                    'activity_type': 'model_update',
-                    'param_convergence': event.param_convergence
+                    "timestamp": event.timestamp,
+                    "round_num": event.round_num,
+                    "activity_type": "model_update",
+                    "param_convergence": event.param_convergence,
                 }
                 self.node_activities[node_id].append(activity)
 
             # Add to event log
-            event_data.update({
-                'updated_nodes': ','.join(map(str, event.updated_nodes)),
-                'num_updated_nodes': len(event.updated_nodes),
-                'param_convergence': event.param_convergence
-            })
+            event_data.update(
+                {
+                    "updated_nodes": ",".join(map(str, event.updated_nodes)),
+                    "num_updated_nodes": len(event.updated_nodes),
+                    "param_convergence": event.param_convergence,
+                }
+            )
 
         elif isinstance(event, EvaluationEvent):
             frame["metrics"] = event.metrics
@@ -320,11 +331,13 @@ class NetworkVisualizer(TrainingObserver):
                 description += f", Loss: {event.metrics['loss']:.4f}"
 
             # Add to event log
-            event_data.update({
-                'metrics': str(event.metrics),
-                'accuracy': event.metrics.get('accuracy'),
-                'loss': event.metrics.get('loss')
-            })
+            event_data.update(
+                {
+                    "metrics": str(event.metrics),
+                    "accuracy": event.metrics.get("accuracy"),
+                    "loss": event.metrics.get("loss"),
+                }
+            )
 
         # Ensure all metrics data is available for all frames
         frame["all_metrics"] = self.round_metrics.copy()
@@ -349,7 +362,7 @@ class NetworkVisualizer(TrainingObserver):
         # 1. Export main event log
         if self.event_log:
             event_csv_path = os.path.join(self.output_dir, f"{prefix}_events.csv")
-            with open(event_csv_path, 'w', newline='', encoding='utf-8') as f:
+            with open(event_csv_path, "w", newline="", encoding="utf-8") as f:
                 if self.event_log:
                     writer = csv.DictWriter(f, fieldnames=self.event_log[0].keys())
                     writer.writeheader()
@@ -359,18 +372,18 @@ class NetworkVisualizer(TrainingObserver):
         # 2. Export metrics history
         if self.round_metrics:
             metrics_csv_path = os.path.join(self.output_dir, f"{prefix}_metrics.csv")
-            with open(metrics_csv_path, 'w', newline='', encoding='utf-8') as f:
+            with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
                 # Get all unique metric keys
-                all_metric_keys = set()
+                all_metric_keys: set[str] = set()
                 for metrics in self.round_metrics.values():
                     all_metric_keys.update(metrics.keys())
 
-                fieldnames = ['round_num'] + sorted(all_metric_keys)
+                fieldnames = ["round_num"] + sorted(all_metric_keys)
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
 
                 for round_num in sorted(self.round_metrics.keys()):
-                    row = {'round_num': round_num}
+                    row: Dict[str, Any] = {"round_num": round_num}
                     row.update(self.round_metrics[round_num])
                     writer.writerow(row)
             print(f"Metrics history exported to {metrics_csv_path}")
@@ -378,30 +391,41 @@ class NetworkVisualizer(TrainingObserver):
         # 3. Export parameter history
         if self.parameter_history:
             param_csv_path = os.path.join(self.output_dir, f"{prefix}_parameters.csv")
-            with open(param_csv_path, 'w', newline='', encoding='utf-8') as f:
+            with open(param_csv_path, "w", newline="", encoding="utf-8") as f:
                 # Find maximum number of rounds across all nodes
-                max_rounds = max(len(history) for history in self.parameter_history.values())
+                max_rounds = max(
+                    len(history) for history in self.parameter_history.values()
+                )
 
-                fieldnames = ['round_num'] + [f'node_{node_id}' for node_id in sorted(self.parameter_history.keys())]
+                fieldnames = ["round_num"] + [
+                    f"node_{node_id}"
+                    for node_id in sorted(self.parameter_history.keys())
+                ]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
 
                 for round_idx in range(max_rounds):
-                    row = {'round_num': round_idx + 1}
+                    row = {"round_num": round_idx + 1}
                     for node_id in sorted(self.parameter_history.keys()):
                         if round_idx < len(self.parameter_history[node_id]):
-                            row[f'node_{node_id}'] = self.parameter_history[node_id][round_idx]
+                            row[f"node_{node_id}"] = self.parameter_history[node_id][
+                                round_idx
+                            ]
                         else:
-                            row[f'node_{node_id}'] = None
+                            row[f"node_{node_id}"] = None
                     writer.writerow(row)
             print(f"Parameter history exported to {param_csv_path}")
 
         # 4. Export communication log
         if self.communication_log:
-            comm_csv_path = os.path.join(self.output_dir, f"{prefix}_communications.csv")
-            with open(comm_csv_path, 'w', newline='', encoding='utf-8') as f:
+            comm_csv_path = os.path.join(
+                self.output_dir, f"{prefix}_communications.csv"
+            )
+            with open(comm_csv_path, "w", newline="", encoding="utf-8") as f:
                 if self.communication_log:
-                    writer = csv.DictWriter(f, fieldnames=self.communication_log[0].keys())
+                    writer = csv.DictWriter(
+                        f, fieldnames=self.communication_log[0].keys()
+                    )
                     writer.writeheader()
                     writer.writerows(self.communication_log)
             print(f"Communication log exported to {comm_csv_path}")
@@ -410,8 +434,12 @@ class NetworkVisualizer(TrainingObserver):
         if self.node_activities:
             for node_id, activities in self.node_activities.items():
                 if activities:
-                    activity_csv_path = os.path.join(self.output_dir, f"{prefix}_node_{node_id}_activities.csv")
-                    with open(activity_csv_path, 'w', newline='', encoding='utf-8') as f:
+                    activity_csv_path = os.path.join(
+                        self.output_dir, f"{prefix}_node_{node_id}_activities.csv"
+                    )
+                    with open(
+                        activity_csv_path, "w", newline="", encoding="utf-8"
+                    ) as f:
                         writer = csv.DictWriter(f, fieldnames=activities[0].keys())
                         writer.writeheader()
                         writer.writerows(activities)
@@ -419,10 +447,14 @@ class NetworkVisualizer(TrainingObserver):
 
         # 6. Export parameter updates
         if self.parameter_updates:
-            param_update_csv_path = os.path.join(self.output_dir, f"{prefix}_parameter_updates.csv")
-            with open(param_update_csv_path, 'w', newline='', encoding='utf-8') as f:
+            param_update_csv_path = os.path.join(
+                self.output_dir, f"{prefix}_parameter_updates.csv"
+            )
+            with open(param_update_csv_path, "w", newline="", encoding="utf-8") as f:
                 if self.parameter_updates:
-                    writer = csv.DictWriter(f, fieldnames=self.parameter_updates[0].keys())
+                    writer = csv.DictWriter(
+                        f, fieldnames=self.parameter_updates[0].keys()
+                    )
                     writer.writeheader()
                     writer.writerows(self.parameter_updates)
             print(f"Parameter updates exported to {param_update_csv_path}")
@@ -430,22 +462,26 @@ class NetworkVisualizer(TrainingObserver):
         # 7. Export topology information
         if self.topology:
             topology_csv_path = os.path.join(self.output_dir, f"{prefix}_topology.csv")
-            with open(topology_csv_path, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=['node_id', 'connected_nodes', 'degree'])
+            with open(topology_csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(
+                    f, fieldnames=["node_id", "connected_nodes", "degree"]
+                )
                 writer.writeheader()
 
                 for node_id, neighbors in self.topology.items():
-                    writer.writerow({
-                        'node_id': node_id,
-                        'connected_nodes': ','.join(map(str, neighbors)),
-                        'degree': len(neighbors)
-                    })
+                    writer.writerow(
+                        {
+                            "node_id": node_id,
+                            "connected_nodes": ",".join(map(str, neighbors)),
+                            "degree": len(neighbors),
+                        }
+                    )
             print(f"Topology exported to {topology_csv_path}")
 
         print(f"All training data exported to {self.output_dir}")
 
     def render_training_animation(
-            self, filename: str = "training_animation.mp4", fps: int = 1
+        self, filename: str = "training_animation.mp4", fps: int = 1
     ) -> None:
         """
         Creates an animation of the training process and exports data to CSV.

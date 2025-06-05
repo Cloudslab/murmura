@@ -328,7 +328,9 @@ def main() -> None:
 
         logger.info("=== Creating MNIST Model ===")
         # Create the MNIST model
-        model = MNISTModel(use_dp_compatible_norm=False)  # Use BatchNorm for standard training
+        model = MNISTModel(
+            use_dp_compatible_norm=True
+        )  # Use GroupNorm/LayerNorm for better compatibility
         input_shape = (1, 28, 28)  # MNIST: 1 channel, 28x28 pixels
 
         # Create MNIST-specific data preprocessor
