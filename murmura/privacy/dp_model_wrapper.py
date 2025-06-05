@@ -301,10 +301,25 @@ class DPTorchModelWrapper(TorchModelWrapper):
 
             # Log privacy parameters
             if self.privacy_engine is not None:
-                actual_noise = self.privacy_engine.noise_multiplier
-                self.logger.info(
-                    f"DP enabled with actual noise multiplier: {actual_noise:.3f}"
-                )
+                try:
+                    # Try to get noise multiplier from privacy engine
+                    if hasattr(self.privacy_engine, 'noise_multiplier'):
+                        actual_noise = self.privacy_engine.noise_multiplier
+                    elif hasattr(self.privacy_engine, '_noise_multiplier'):
+                        actual_noise = self.privacy_engine._noise_multiplier
+                    elif hasattr(self.privacy_engine, 'accountant') and hasattr(self.privacy_engine.accountant, 'noise_multiplier'):
+                        actual_noise = self.privacy_engine.accountant.noise_multiplier
+                    else:
+                        actual_noise = noise_multiplier  # Use the computed value
+                    
+                    self.logger.info(
+                        f"DP enabled with actual noise multiplier: {actual_noise:.3f}"
+                    )
+                except Exception as e:
+                    self.logger.info(
+                        f"DP enabled with computed noise multiplier: {noise_multiplier:.3f} "
+                        f"(couldn't retrieve from engine: {e})"
+                    )
 
             return private_dataloader
 
@@ -481,12 +496,22 @@ class DPTorchModelWrapper(TorchModelWrapper):
 
     def get_dp_parameters(self) -> Dict[str, Any]:
         """Get DP configuration and current state"""
+        noise_multiplier = None
+        if self.privacy_engine is not None:
+            # Try multiple ways to get noise multiplier
+            if hasattr(self.privacy_engine, 'noise_multiplier'):
+                noise_multiplier = self.privacy_engine.noise_multiplier
+            elif hasattr(self.privacy_engine, '_noise_multiplier'):
+                noise_multiplier = self.privacy_engine._noise_multiplier
+            elif hasattr(self.privacy_engine, 'accountant') and hasattr(self.privacy_engine.accountant, 'noise_multiplier'):
+                noise_multiplier = self.privacy_engine.accountant.noise_multiplier
+        
         return {
             "dp_enabled": self.is_dp_enabled,
             "target_epsilon": self.dp_config.target_epsilon,
             "target_delta": self.dp_config.target_delta,
             "max_grad_norm": self.dp_config.max_grad_norm,
-            "noise_multiplier": getattr(self.privacy_engine, "noise_multiplier", None),
+            "noise_multiplier": noise_multiplier,
             "current_privacy_spent": self.privacy_spent.copy(),
             "privacy_exhausted": self.is_privacy_budget_exhausted(),
         }

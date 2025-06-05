@@ -217,11 +217,17 @@ def main() -> None:
 
             if args.dp_preset == "high_privacy":
                 dp_config = DPConfig.create_high_privacy()
+                # Override with user-specified epsilon if provided and different from default
+                if args.target_epsilon != 8.0:  # 8.0 is the default
+                    dp_config.target_epsilon = args.target_epsilon
             elif args.dp_preset == "medium_privacy":
                 dp_config = DPConfig.create_for_mnist()
+                # Override with user-specified epsilon if provided and different from default
+                if args.target_epsilon != 8.0:  # 8.0 is the default
+                    dp_config.target_epsilon = args.target_epsilon
             elif args.dp_preset == "low_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=16.0,
+                    target_epsilon=args.target_epsilon if args.target_epsilon != 8.0 else 16.0,
                     target_delta=1e-4,
                     max_grad_norm=2.0,
                     enable_client_dp=True,

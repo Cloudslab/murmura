@@ -314,7 +314,7 @@ def main() -> None:
 
             if args.dp_preset == "high_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=3.0,  # Very private for medical data
+                    target_epsilon=args.target_epsilon if args.target_epsilon != 8.0 else 3.0,  # Very private for medical data
                     target_delta=1e-5,
                     max_grad_norm=0.8,
                     enable_client_dp=True,
@@ -322,9 +322,12 @@ def main() -> None:
                 )
             elif args.dp_preset == "medium_privacy":
                 dp_config = DPConfig.create_for_skin_lesion()
+                # Override with user-specified epsilon if provided and different from default
+                if args.target_epsilon != 8.0:  # 8.0 is the default
+                    dp_config.target_epsilon = args.target_epsilon
             elif args.dp_preset == "low_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=20.0,
+                    target_epsilon=args.target_epsilon if args.target_epsilon != 8.0 else 20.0,
                     target_delta=1e-3,
                     max_grad_norm=2.0,
                     enable_client_dp=True,
