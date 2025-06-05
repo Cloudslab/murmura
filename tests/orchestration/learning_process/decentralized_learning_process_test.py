@@ -174,8 +174,8 @@ def test_execute_topology_information(
     # Execute the learning process
     decentralized_learning_process.execute()
 
-    # Verify topology information was requested
-    mock_cluster_manager.get_topology_information.assert_called_once()
+    # Verify topology information was requested (called twice: once in execute, once in get_cluster_summary)
+    assert mock_cluster_manager.get_topology_information.call_count == 2
 
 
 def test_execute_training_rounds(decentralized_learning_process, mock_cluster_manager):
@@ -187,7 +187,7 @@ def test_execute_training_rounds(decentralized_learning_process, mock_cluster_ma
     assert mock_cluster_manager.train_models.call_count == 2
 
     # Verify each training call had the correct parameters
-    expected_call = call(epochs=1, batch_size=32, verbose=True)
+    expected_call = call(client_sampling_rate=1.0, data_sampling_rate=1.0, epochs=1, batch_size=32, verbose=True)
     mock_cluster_manager.train_models.assert_has_calls([expected_call, expected_call])
 
 

@@ -314,7 +314,9 @@ def main() -> None:
 
             if args.dp_preset == "high_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=args.target_epsilon if args.target_epsilon != 8.0 else 3.0,  # Very private for medical data
+                    target_epsilon=args.target_epsilon
+                    if args.target_epsilon != 8.0
+                    else 3.0,  # Very private for medical data
                     target_delta=1e-5,
                     max_grad_norm=0.8,
                     enable_client_dp=True,
@@ -327,7 +329,9 @@ def main() -> None:
                     dp_config.target_epsilon = args.target_epsilon
             elif args.dp_preset == "low_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=args.target_epsilon if args.target_epsilon != 8.0 else 20.0,
+                    target_epsilon=args.target_epsilon
+                    if args.target_epsilon != 8.0
+                    else 20.0,
                     target_delta=1e-3,
                     max_grad_norm=2.0,
                     enable_client_dp=True,
@@ -348,7 +352,7 @@ def main() -> None:
                 dp_config.client_sampling_rate = args.client_sampling_rate
                 dp_config.data_sampling_rate = args.data_sampling_rate
                 dp_config.use_amplification_by_subsampling = True
-                
+
                 logger.info("=== Subsampling Amplification Enabled ===")
                 logger.info(f"Client sampling rate: {args.client_sampling_rate}")
                 logger.info(f"Data sampling rate: {args.data_sampling_rate}")

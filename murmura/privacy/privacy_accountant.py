@@ -154,11 +154,15 @@ class PrivacyAccountant:
 
         # Apply subsampling amplification if requested
         effective_sample_rate = sample_rate
-        if apply_amplification and client_sampling_rate is not None and data_sampling_rate is not None:
+        if (
+            apply_amplification
+            and client_sampling_rate is not None
+            and data_sampling_rate is not None
+        ):
             # Combine client and data sampling rates for amplification
             amplification_factor = client_sampling_rate * data_sampling_rate
             effective_sample_rate = sample_rate * amplification_factor
-            
+
             self.logger.debug(
                 f"Applying subsampling amplification: "
                 f"client_rate={client_sampling_rate:.3f}, data_rate={data_sampling_rate:.3f}, "

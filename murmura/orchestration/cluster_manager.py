@@ -1023,15 +1023,20 @@ class ClusterManager:
             if hasattr(model, "device"):
                 model.device = original_device
 
-    def train_models(self, client_sampling_rate: float = 1.0, data_sampling_rate: float = 1.0, **kwargs) -> List[Dict[str, float]]:
+    def train_models(
+        self,
+        client_sampling_rate: float = 1.0,
+        data_sampling_rate: float = 1.0,
+        **kwargs,
+    ) -> List[Dict[str, float]]:
         """
         Train models on all or a subset of actors with improved error handling.
-        
+
         Args:
             client_sampling_rate: Fraction of clients to sample for training (1.0 = all clients)
             data_sampling_rate: Fraction of local data to sample per client (1.0 = all data)
             **kwargs: Additional training parameters
-            
+
         Returns:
             List of training results from sampled clients
         """
@@ -1039,18 +1044,19 @@ class ClusterManager:
         if client_sampling_rate < 1.0:
             num_clients_to_sample = max(1, int(len(self.actors) * client_sampling_rate))
             import random
+
             sampled_actors = random.sample(self.actors, num_clients_to_sample)
-            
+
             logging.getLogger("murmura").info(
                 f"Client subsampling: selected {num_clients_to_sample}/{len(self.actors)} clients "
                 f"(sampling rate: {client_sampling_rate:.2f})"
             )
         else:
             sampled_actors = self.actors
-            
+
         # Add data sampling rate to kwargs
-        kwargs['data_sampling_rate'] = data_sampling_rate
-            
+        kwargs["data_sampling_rate"] = data_sampling_rate
+
         batch_size = 50
         all_results = []
 

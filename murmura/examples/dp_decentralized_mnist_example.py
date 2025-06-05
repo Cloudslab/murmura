@@ -357,7 +357,9 @@ def main() -> None:
                     dp_config.target_epsilon = args.target_epsilon
             elif args.dp_preset == "low_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=args.target_epsilon if args.target_epsilon != 8.0 else 16.0,
+                    target_epsilon=args.target_epsilon
+                    if args.target_epsilon != 8.0
+                    else 16.0,
                     target_delta=1e-4,
                     max_grad_norm=2.0,
                     enable_client_dp=True,
@@ -386,7 +388,7 @@ def main() -> None:
                 dp_config.client_sampling_rate = args.client_sampling_rate
                 dp_config.data_sampling_rate = args.data_sampling_rate
                 dp_config.use_amplification_by_subsampling = True
-                
+
                 logger.info("=== Subsampling Amplification Enabled ===")
                 logger.info(f"Client sampling rate: {args.client_sampling_rate}")
                 logger.info(f"Data sampling rate: {args.data_sampling_rate}")
@@ -501,16 +503,18 @@ def main() -> None:
             logger.info("Creating DP-aware model wrapper")
             from typing import Union
             from murmura.model.pytorch_model import TorchModelWrapper
-            
-            global_model: Union[DPTorchModelWrapper, TorchModelWrapper] = DPTorchModelWrapper(
-                model=model,
-                dp_config=dp_config,
-                loss_fn=nn.CrossEntropyLoss(),
-                optimizer_class=torch.optim.SGD,  # SGD works better with DP
-                optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
-                input_shape=input_shape,
-                device=device,
-                data_preprocessor=mnist_preprocessor,
+
+            global_model: Union[DPTorchModelWrapper, TorchModelWrapper] = (
+                DPTorchModelWrapper(
+                    model=model,
+                    dp_config=dp_config,
+                    loss_fn=nn.CrossEntropyLoss(),
+                    optimizer_class=torch.optim.SGD,  # SGD works better with DP
+                    optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
+                    input_shape=input_shape,
+                    device=device,
+                    data_preprocessor=mnist_preprocessor,
+                )
             )
         else:
             logger.info("Creating regular model wrapper")
@@ -661,7 +665,11 @@ def main() -> None:
 
             # Display privacy results if DP was enabled
             privacy_spent = None
-            if args.enable_dp and dp_config is not None and hasattr(global_model, "get_privacy_spent"):
+            if (
+                args.enable_dp
+                and dp_config is not None
+                and hasattr(global_model, "get_privacy_spent")
+            ):
                 logger.info("=== Privacy Results ===")
                 privacy_spent = global_model.get_privacy_spent()
                 logger.info(

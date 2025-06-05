@@ -125,8 +125,7 @@ class DPConfig(BaseModel):
     )
 
     use_amplification_by_subsampling: bool = Field(
-        default=False,
-        description="Apply privacy amplification by subsampling theorems"
+        default=False, description="Apply privacy amplification by subsampling theorems"
     )
 
     @model_validator(mode="after")
@@ -222,37 +221,37 @@ class DPConfig(BaseModel):
     def get_amplified_sample_rate(self) -> float:
         """
         Calculate effective sample rate with amplification by subsampling.
-        
+
         Following the approach from DP-SCAFFOLD and similar papers:
         effective_rate = client_sampling_rate * data_sampling_rate
         """
         if not self.use_amplification_by_subsampling:
             return self.sample_rate or 1.0
-            
+
         client_rate = self.client_sampling_rate or 1.0
         data_rate = self.data_sampling_rate or 1.0
-        
+
         return client_rate * data_rate
 
     def get_amplification_factor(self) -> float:
         """
         Get the privacy amplification factor from subsampling.
-        
+
         This is a simplified version - more sophisticated bounds exist
         but require complex mathematical analysis.
         """
         if not self.use_amplification_by_subsampling:
             return 1.0
-            
+
         return self.get_amplified_sample_rate()
 
-    def update_from_orchestration_config(self, orchestration_config) -> 'DPConfig':
+    def update_from_orchestration_config(self, orchestration_config) -> "DPConfig":
         """
         Update DP config with subsampling parameters from orchestration config.
-        
+
         Args:
             orchestration_config: OrchestrationConfig instance
-            
+
         Returns:
             Updated DPConfig instance
         """
@@ -260,5 +259,5 @@ class DPConfig(BaseModel):
             self.client_sampling_rate = orchestration_config.client_sampling_rate
             self.data_sampling_rate = orchestration_config.data_sampling_rate
             self.use_amplification_by_subsampling = True
-            
+
         return self

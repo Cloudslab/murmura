@@ -365,13 +365,13 @@ class NetworkVisualizer(TrainingObserver):
             with open(event_csv_path, "w", newline="", encoding="utf-8") as f:
                 if self.event_log:
                     # Collect all possible field names from all events
-                    all_fieldnames = set()
+                    all_fieldnames: set[str] = set()
                     for event in self.event_log:
                         all_fieldnames.update(event.keys())
-                    
+
                     # Sort fieldnames for consistent column order
                     fieldnames = sorted(all_fieldnames)
-                    
+
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(self.event_log)
@@ -435,10 +435,8 @@ class NetworkVisualizer(TrainingObserver):
                     all_fieldnames = set()
                     for entry in self.communication_log:
                         all_fieldnames.update(entry.keys())
-                    
-                    writer = csv.DictWriter(
-                        f, fieldnames=sorted(list(all_fieldnames))
-                    )
+
+                    writer = csv.DictWriter(f, fieldnames=sorted(list(all_fieldnames)))
                     writer.writeheader()
                     writer.writerows(self.communication_log)
             print(f"Communication log exported to {comm_csv_path}")
