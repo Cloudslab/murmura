@@ -80,6 +80,26 @@ class OrchestrationConfig(BaseModel):
         default=5, gt=0, description="Interval (rounds) for actor health checks"
     )
 
+    # ADDED: Subsampling parameters for privacy amplification
+    client_sampling_rate: float = Field(
+        default=1.0,
+        ge=0.01,
+        le=1.0,
+        description="Fraction of clients to sample per round (l parameter from DP-FL papers)"
+    )
+
+    data_sampling_rate: float = Field(
+        default=1.0,
+        ge=0.01,
+        le=1.0,
+        description="Fraction of local data to sample per client per round (s parameter from DP-FL papers)"
+    )
+
+    enable_subsampling_amplification: bool = Field(
+        default=False,
+        description="Enable privacy amplification by subsampling in DP accounting"
+    )
+
     @model_validator(mode="after")
     def validate_multinode_config(self) -> "OrchestrationConfig":
         """Enhanced validation for multi-node configuration and dataset columns"""

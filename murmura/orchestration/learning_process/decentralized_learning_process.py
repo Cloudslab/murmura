@@ -182,9 +182,13 @@ class DecentralizedLearningProcess(LearningProcess):
                 )
             )
 
-            # Training
+            # Training with subsampling support
             train_metrics = self.cluster_manager.train_models(
-                epochs=epochs, batch_size=batch_size, verbose=True
+                client_sampling_rate=self.config.client_sampling_rate,
+                data_sampling_rate=self.config.data_sampling_rate,
+                epochs=epochs, 
+                batch_size=batch_size, 
+                verbose=True
             )
 
             # Calculate average training metrics

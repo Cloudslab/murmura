@@ -109,6 +109,26 @@ class DPConfig(BaseModel):
         default=True, description="Perform strict privacy validation before training"
     )
 
+    # Subsampling amplification parameters
+    client_sampling_rate: Optional[float] = Field(
+        default=None,
+        description="Client sampling rate for amplification (copied from orchestration config)",
+        ge=0.01,
+        le=1.0,
+    )
+
+    data_sampling_rate: Optional[float] = Field(
+        default=None,
+        description="Data sampling rate for amplification (copied from orchestration config)",
+        ge=0.01,
+        le=1.0,
+    )
+
+    use_amplification_by_subsampling: bool = Field(
+        default=False,
+        description="Apply privacy amplification by subsampling theorems"
+    )
+
     @model_validator(mode="after")
     def validate_dp_config(self) -> "DPConfig":
         """Validate DP configuration parameters"""
@@ -177,3 +197,68 @@ class DPConfig(BaseModel):
             enable_client_dp=True,
             enable_central_dp=False,
         )
+
+    @classmethod
+    def create_with_subsampling(
+        cls,
+        target_epsilon: float = 3.0,
+        client_sampling_rate: float = 0.2,
+        data_sampling_rate: float = 0.2,
+        dataset_size: int = 60000,
+    ) -> "DPConfig":
+        """Create DP config with subsampling amplification (similar to DP-SCAFFOLD paper)"""
+        return cls(
+            target_epsilon=target_epsilon,
+            target_delta=1.0 / dataset_size,  # Paper's approach: δ = 1/(M*R)
+            max_grad_norm=1.0,
+            client_sampling_rate=client_sampling_rate,
+            data_sampling_rate=data_sampling_rate,
+            use_amplification_by_subsampling=True,
+            auto_tune_noise=True,
+            enable_client_dp=True,
+            enable_central_dp=False,
+        )
+
+    def get_amplified_sample_rate(self) -> float:
+        """
+        Calculate effective sample rate with amplification by subsampling.
+        
+        Following the approach from DP-SCAFFOLD and similar papers:
+        effective_rate = client_sampling_rate * data_sampling_rate
+        """
+        if not self.use_amplification_by_subsampling:
+            return self.sample_rate or 1.0
+            
+        client_rate = self.client_sampling_rate or 1.0
+        data_rate = self.data_sampling_rate or 1.0
+        
+        return client_rate * data_rate
+
+    def get_amplification_factor(self) -> float:
+        """
+        Get the privacy amplification factor from subsampling.
+        
+        This is a simplified version - more sophisticated bounds exist
+        but require complex mathematical analysis.
+        """
+        if not self.use_amplification_by_subsampling:
+            return 1.0
+            
+        return self.get_amplified_sample_rate()
+
+    def update_from_orchestration_config(self, orchestration_config) -> 'DPConfig':
+        """
+        Update DP config with subsampling parameters from orchestration config.
+        
+        Args:
+            orchestration_config: OrchestrationConfig instance
+            
+        Returns:
+            Updated DPConfig instance
+        """
+        if orchestration_config.enable_subsampling_amplification:
+            self.client_sampling_rate = orchestration_config.client_sampling_rate
+            self.data_sampling_rate = orchestration_config.data_sampling_rate
+            self.use_amplification_by_subsampling = True
+            
+        return self

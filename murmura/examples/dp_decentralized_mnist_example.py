@@ -262,6 +262,25 @@ def main() -> None:
         help="Path to save the final model",
     )
 
+    # Subsampling arguments for privacy amplification
+    parser.add_argument(
+        "--client_sampling_rate",
+        type=float,
+        default=1.0,
+        help="Fraction of clients to sample per round (for privacy amplification)",
+    )
+    parser.add_argument(
+        "--data_sampling_rate",
+        type=float,
+        default=1.0,
+        help="Fraction of local data to sample per client (for privacy amplification)",
+    )
+    parser.add_argument(
+        "--enable_subsampling_amplification",
+        action="store_true",
+        help="Enable privacy amplification by subsampling",
+    )
+
     # Visualization arguments
     parser.add_argument(
         "--vis_dir",
@@ -356,6 +375,18 @@ def main() -> None:
                 f"Client DP: {dp_config.enable_client_dp}, Central DP: {dp_config.enable_central_dp}"
             )
 
+            # Update DP config with subsampling parameters if enabled
+            if args.enable_subsampling_amplification:
+                dp_config.client_sampling_rate = args.client_sampling_rate
+                dp_config.data_sampling_rate = args.data_sampling_rate
+                dp_config.use_amplification_by_subsampling = True
+                
+                logger.info("=== Subsampling Amplification Enabled ===")
+                logger.info(f"Client sampling rate: {args.client_sampling_rate}")
+                logger.info(f"Data sampling rate: {args.data_sampling_rate}")
+                amplification_factor = dp_config.get_amplification_factor()
+                logger.info(f"Privacy amplification factor: {amplification_factor:.3f}")
+
             # Initialize privacy accountant
             privacy_accountant = PrivacyAccountant(dp_config)
         else:
@@ -403,6 +434,9 @@ def main() -> None:
             test_split=args.test_split,
             monitor_resources=args.monitor_resources,
             health_check_interval=args.health_check_interval,
+            client_sampling_rate=args.client_sampling_rate,
+            data_sampling_rate=args.data_sampling_rate,
+            enable_subsampling_amplification=args.enable_subsampling_amplification,
         )
 
         logger.info("=== Loading MNIST Dataset ===")

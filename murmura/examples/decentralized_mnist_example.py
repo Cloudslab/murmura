@@ -210,6 +210,25 @@ def main() -> None:
         help="Interval (rounds) for actor health checks",
     )
 
+    # Subsampling arguments for privacy amplification
+    parser.add_argument(
+        "--client_sampling_rate",
+        type=float,
+        default=1.0,
+        help="Fraction of clients to sample per round (for privacy amplification)",
+    )
+    parser.add_argument(
+        "--data_sampling_rate",
+        type=float,
+        default=1.0,
+        help="Fraction of local data to sample per client (for privacy amplification)",
+    )
+    parser.add_argument(
+        "--enable_subsampling_amplification",
+        action="store_true",
+        help="Enable privacy amplification by subsampling",
+    )
+
     # Visualization arguments
     parser.add_argument(
         "--vis_dir",
@@ -304,6 +323,9 @@ def main() -> None:
             test_split=args.test_split,
             monitor_resources=args.monitor_resources,
             health_check_interval=args.health_check_interval,
+            client_sampling_rate=args.client_sampling_rate,
+            data_sampling_rate=args.data_sampling_rate,
+            enable_subsampling_amplification=args.enable_subsampling_amplification,
         )
 
         logger.info("=== Loading MNIST Dataset ===")

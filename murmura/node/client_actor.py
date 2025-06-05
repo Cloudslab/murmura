@@ -628,9 +628,12 @@ class VirtualClientActor:
                 f"Dataset preprocessing failed on node {self.node_info['node_id']}: {e}"
             )
 
-    def _get_partition_data(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_partition_data(self, data_sampling_rate: float = 1.0) -> Tuple[np.ndarray, np.ndarray]:
         """
         Extract features and labels from the client's dataset partition with comprehensive validation.
+        
+        Args:
+            data_sampling_rate: Fraction of local data to sample (1.0 = use all data)
         """
         # Step 1: Validate all required components
         validation_errors = []
@@ -708,6 +711,21 @@ class VirtualClientActor:
 
             split_dataset = self.mdataset.get_split(self.split)
             partition_dataset = split_dataset.select(self.data_partition)
+            
+            # Apply data subsampling if requested
+            if data_sampling_rate < 1.0:
+                original_size = len(partition_dataset)
+                num_samples = max(1, int(original_size * data_sampling_rate))
+                
+                # Create random indices for subsampling
+                import random
+                sampled_indices = random.sample(range(original_size), num_samples)
+                partition_dataset = partition_dataset.select(sampled_indices)
+                
+                self.logger.info(
+                    f"Data subsampling: using {num_samples}/{original_size} samples "
+                    f"(sampling rate: {data_sampling_rate:.2f})"
+                )
 
             # Extract features
             if len(self.feature_columns) == 1:
@@ -849,7 +867,9 @@ class VirtualClientActor:
             # Add callback to kwargs
             kwargs["log_epoch_callback"] = log_epoch_callback
 
-            features, labels = self._get_partition_data()
+            # Get data sampling rate from kwargs or use default
+            data_sampling_rate = kwargs.pop('data_sampling_rate', 1.0)
+            features, labels = self._get_partition_data(data_sampling_rate)
 
             # Ensure model is on correct device for multi-node environment
             if hasattr(self.model, "detect_and_set_device"):

@@ -160,6 +160,15 @@ class DPTorchModelWrapper(TorchModelWrapper):
         if sample_rate is None:
             sample_rate = batch_size / dataset_size
 
+        # Apply subsampling amplification if enabled
+        if self.dp_config.use_amplification_by_subsampling:
+            amplified_sample_rate = self.dp_config.get_amplified_sample_rate()
+            self.logger.info(
+                f"Using amplified sample rate: {amplified_sample_rate:.6f} "
+                f"(original: {sample_rate:.6f}, amplification factor: {amplified_sample_rate/sample_rate:.3f})"
+            )
+            sample_rate = amplified_sample_rate
+
         # Limit sample rate to reasonable bounds
         sample_rate = min(sample_rate, 1.0)
         sample_rate = max(sample_rate, 0.001)

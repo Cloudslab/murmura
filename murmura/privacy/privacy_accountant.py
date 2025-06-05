@@ -130,15 +130,21 @@ class PrivacyAccountant:
         sample_rate: float,
         steps: int,
         delta: Optional[float] = None,
+        apply_amplification: bool = False,
+        client_sampling_rate: Optional[float] = None,
+        data_sampling_rate: Optional[float] = None,
     ) -> Tuple[float, float]:
         """
-        Compute privacy spent for given parameters.
+        Compute privacy spent for given parameters with optional subsampling amplification.
 
         Args:
             noise_multiplier: Noise multiplier used in training
-            sample_rate: Subsampling rate
+            sample_rate: Base subsampling rate
             steps: Number of training steps
             delta: Target delta (uses config default if None)
+            apply_amplification: Whether to apply subsampling amplification
+            client_sampling_rate: Client sampling rate (for amplification)
+            data_sampling_rate: Data sampling rate (for amplification)
 
         Returns:
             Tuple of (epsilon, delta) spent
@@ -146,12 +152,26 @@ class PrivacyAccountant:
         if delta is None:
             delta = self.dp_config.target_delta or 1e-5
 
+        # Apply subsampling amplification if requested
+        effective_sample_rate = sample_rate
+        if apply_amplification and client_sampling_rate is not None and data_sampling_rate is not None:
+            # Combine client and data sampling rates for amplification
+            amplification_factor = client_sampling_rate * data_sampling_rate
+            effective_sample_rate = sample_rate * amplification_factor
+            
+            self.logger.debug(
+                f"Applying subsampling amplification: "
+                f"client_rate={client_sampling_rate:.3f}, data_rate={data_sampling_rate:.3f}, "
+                f"amplification_factor={amplification_factor:.3f}, "
+                f"effective_sample_rate={effective_sample_rate:.6f} (vs original {sample_rate:.6f})"
+            )
+
         if self.rdp_accountant and OPACUS_AVAILABLE:
             try:
                 # Use Opacus RDP accountant for precise computation
                 epsilon = self.rdp_accountant.get_epsilon(
                     delta=delta,
-                    sample_rate=sample_rate,
+                    sample_rate=effective_sample_rate,
                     noise_multiplier=noise_multiplier,
                     steps=steps,
                 )
@@ -162,7 +182,7 @@ class PrivacyAccountant:
         # Fallback to approximate computation
         # This is a simplified approximation - use Opacus for production
         sigma = noise_multiplier
-        q = sample_rate
+        q = effective_sample_rate
         T = steps
 
         # Basic composition bound (not tight)
