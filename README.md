@@ -102,11 +102,11 @@ Explore complete examples in the `murmura/examples/` directory:
 
 ## 📊 Supported Aggregation Strategies
 
-| Strategy | Type | Privacy-Enabled | Byzantine-Robust | Best For |
-|----------|------|-----------------|------------------|----------|
-| **FedAvg** | Centralized/Decentralized | ✅ | ❌ | Standard federated learning |
-| **TrimmedMean** | Centralized/Decentralized | ✅ | ✅ | Adversarial environments |
-| **GossipAvg** | Decentralized | ❌ | ❌ | Peer-to-peer networks |
+| Strategy | Type | Privacy-Enabled | Best For |
+|----------|------|-----------------|----------|
+| **FedAvg** | Centralized | ✅ | Standard federated learning |
+| **TrimmedMean** | Centralized | ✅ | Adversarial environments |
+| **GossipAvg** | Decentralized | ✅ | Peer-to-peer networks |
 
 ## 🌐 Network Topologies
 
