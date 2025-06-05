@@ -12,7 +12,8 @@ from murmura.data_processing.partitioner_factory import PartitionerFactory
 def test_create_dirichlet_partitioner():
     """Test creating DirichletPartitioner with valid configuration"""
     config = OrchestrationConfig(
-        num_actors=5, partition_strategy="dirichlet", alpha=0.5, min_partition_size=100
+        num_actors=5, partition_strategy="dirichlet", alpha=0.5, min_partition_size=100,
+        feature_columns=["image"], label_column="label"
     )
 
     partitioner = PartitionerFactory.create(config)
@@ -28,7 +29,7 @@ def test_create_dirichlet_partitioner():
 
 def test_create_iid_partitioner():
     """Test creating IIDPartitioner with valid configuration"""
-    config = OrchestrationConfig(num_actors=10, partition_strategy="iid")
+    config = OrchestrationConfig(num_actors=10, partition_strategy="iid", feature_columns=["image"], label_column="label")
 
     partitioner = PartitionerFactory.create(config)
 
@@ -40,7 +41,7 @@ def test_create_iid_partitioner():
 def test_invalid_strategy_through_config():
     """Test invalid partition strategy via config validation"""
     with pytest.raises(ValidationError) as exc_info:
-        OrchestrationConfig(num_actors=5, partition_strategy="invalid_strategy")
+        OrchestrationConfig(num_actors=5, partition_strategy="invalid_strategy", feature_columns=["image"], label_column="label")
 
     assert "partition_strategy" in str(exc_info.value)
     assert "Input should be 'dirichlet' or 'iid'" in str(exc_info.value)
@@ -53,6 +54,7 @@ def test_dirichlet_parameters_validation():
             num_actors=5,
             partition_strategy="dirichlet",
             alpha=-0.5,  # Invalid alpha
+            feature_columns=["image"], label_column="label"
         )
 
     assert "alpha" in str(exc_info.value)
@@ -61,7 +63,7 @@ def test_dirichlet_parameters_validation():
 
 def test_iid_partitioner_defaults():
     """Test IIDPartitioner uses correct default values"""
-    config = OrchestrationConfig(num_actors=8, partition_strategy="iid")
+    config = OrchestrationConfig(num_actors=8, partition_strategy="iid", feature_columns=["image"], label_column="label")
 
     partitioner = PartitionerFactory.create(config)
 
@@ -73,7 +75,8 @@ def test_iid_partitioner_defaults():
 def test_dirichlet_min_partition_size():
     """Test DirichletPartitioner receives min_partition_size"""
     config = OrchestrationConfig(
-        num_actors=7, partition_strategy="dirichlet", min_partition_size=50
+        num_actors=7, partition_strategy="dirichlet", min_partition_size=50,
+        feature_columns=["image"], label_column="label"
     )
 
     partitioner = cast(DirichletPartitioner, PartitionerFactory.create(config))

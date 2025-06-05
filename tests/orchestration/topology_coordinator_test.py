@@ -5,6 +5,7 @@ import pytest
 
 from murmura.aggregation.coordination_mode import CoordinationMode
 from murmura.aggregation.strategies.fed_avg import FedAvg
+from murmura.aggregation.strategies.gossip_avg import GossipAvg
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.network_management.topology_manager import TopologyManager
 from murmura.orchestration.topology_coordinator import TopologyCoordinator
@@ -80,19 +81,16 @@ def test_coordinate_dispatch_to_correct_topology_method(mock_ray_get, mock_actor
     # Setup mock ray.get
     mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
 
-    # Create a strategy
-    strategy = FedAvg()
-
-    # Test for each topology type
+    # Test for each topology type with compatible strategies
     topology_configs = [
-        (TopologyType.STAR, "_coordinate_star_topology"),
-        (TopologyType.RING, "_coordinate_ring_topology"),
-        (TopologyType.COMPLETE, "_coordinate_complete_topology"),
-        (TopologyType.LINE, "_coordinate_line_topology"),
-        (TopologyType.CUSTOM, "_coordinate_custom_topology"),
+        (TopologyType.STAR, "_coordinate_star_topology", FedAvg()),  # Centralized strategy
+        (TopologyType.COMPLETE, "_coordinate_complete_topology", FedAvg()),  # Centralized strategy
+        (TopologyType.RING, "_coordinate_ring_topology", GossipAvg()),  # Decentralized strategy
+        (TopologyType.LINE, "_coordinate_line_topology", GossipAvg()),  # Decentralized strategy
+        (TopologyType.CUSTOM, "_coordinate_custom_topology", GossipAvg()),  # Decentralized strategy
     ]
 
-    for topology_type, method_name in topology_configs:
+    for topology_type, method_name, strategy in topology_configs:
         # Create topology config - use adjacency list for CUSTOM
         if topology_type == TopologyType.CUSTOM:
             config = TopologyConfig(

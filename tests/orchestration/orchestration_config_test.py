@@ -7,16 +7,20 @@ from murmura.aggregation.aggregation_config import (
     AggregationStrategyType,
 )
 from murmura.network_management.topology import TopologyConfig, TopologyType
+from murmura.node.resource_config import RayClusterConfig
 
 
 def test_default_initialization():
     """Test default initialization of OrchestrationConfig"""
-    config = OrchestrationConfig()
+    config = OrchestrationConfig(
+        feature_columns=["image"], 
+        label_column="label"
+    )
 
     # Check default values
     assert config.num_actors == 10
     assert config.ray_address is None
-    assert config.dataset_name == "mnist"
+    assert config.dataset_name == "unknown"
     assert config.partition_strategy == "dirichlet"
     assert config.alpha == 0.5
     assert config.min_partition_size == 100
@@ -34,10 +38,12 @@ def test_custom_initialization():
     """Test initialization with custom values"""
     config = OrchestrationConfig(
         num_actors=5,
-        ray_address="ray://192.168.1.100:10001",
+        ray_cluster=RayClusterConfig(address="ray://192.168.1.100:10001"),
         dataset_name="cifar10",
         partition_strategy="iid",
         split="test",
+        feature_columns=["image"],
+        label_column="label",
         topology=TopologyConfig(topology_type=TopologyType.STAR, hub_index=1),
         aggregation=AggregationConfig(
             strategy_type=AggregationStrategyType.TRIMMED_MEAN
@@ -59,40 +65,40 @@ def test_custom_initialization():
 def test_invalid_num_actors():
     """Test validation for num_actors"""
     with pytest.raises(ValidationError):
-        OrchestrationConfig(num_actors=0)
+        OrchestrationConfig(num_actors=0, feature_columns=["image"], label_column="label")
 
     with pytest.raises(ValidationError):
-        OrchestrationConfig(num_actors=-5)
+        OrchestrationConfig(num_actors=-5, feature_columns=["image"], label_column="label")
 
 
 def test_invalid_alpha():
     """Test validation for alpha"""
     with pytest.raises(ValidationError):
-        OrchestrationConfig(alpha=0)
+        OrchestrationConfig(alpha=0, feature_columns=["image"], label_column="label")
 
     with pytest.raises(ValidationError):
-        OrchestrationConfig(alpha=-0.5)
+        OrchestrationConfig(alpha=-0.5, feature_columns=["image"], label_column="label")
 
 
 def test_invalid_min_partition_size():
     """Test validation for min_partition_size"""
     with pytest.raises(ValidationError):
-        OrchestrationConfig(min_partition_size=0)
+        OrchestrationConfig(min_partition_size=0, feature_columns=["image"], label_column="label")
 
     with pytest.raises(ValidationError):
-        OrchestrationConfig(min_partition_size=-10)
+        OrchestrationConfig(min_partition_size=-10, feature_columns=["image"], label_column="label")
 
 
 def test_invalid_partition_strategy():
     """Test validation for partition_strategy"""
     with pytest.raises(ValidationError):
-        OrchestrationConfig(partition_strategy="invalid_strategy")
+        OrchestrationConfig(partition_strategy="invalid_strategy", feature_columns=["image"], label_column="label")
 
 
 def test_model_dump():
     """Test the model_dump method for creating config dictionaries"""
     config = OrchestrationConfig(
-        num_actors=5, dataset_name="cifar10", partition_strategy="iid"
+        num_actors=5, dataset_name="cifar10", partition_strategy="iid", feature_columns=["image"], label_column="label"
     )
 
     # Dump the config to dict
@@ -117,7 +123,7 @@ def test_compatibility_with_partitioner():
     """Test that the config can be properly used with a partitioner factory"""
     # Create a config for dirichlet partitioning
     config = OrchestrationConfig(
-        num_actors=3, partition_strategy="dirichlet", alpha=0.1, min_partition_size=50
+        num_actors=3, partition_strategy="dirichlet", alpha=0.1, min_partition_size=50, feature_columns=["image"], label_column="label"
     )
 
     # Check relevant fields for partitioner
@@ -131,7 +137,7 @@ def test_compatibility_with_topology():
     """Test that the config can be properly used with topology manager"""
     # Create a config with a star topology
     config = OrchestrationConfig(
-        topology=TopologyConfig(topology_type=TopologyType.STAR, hub_index=2)
+        topology=TopologyConfig(topology_type=TopologyType.STAR, hub_index=2), feature_columns=["image"], label_column="label"
     )
 
     # Check the topology configuration is properly nested
@@ -147,6 +153,8 @@ def test_config_serialization_deserialization():
         partition_strategy="iid",
         topology=TopologyConfig(topology_type=TopologyType.LINE),
         aggregation=AggregationConfig(strategy_type=AggregationStrategyType.GOSSIP_AVG),
+        feature_columns=["image"],
+        label_column="label"
     )
     dumped = config.model_dump()
     loaded = OrchestrationConfig.model_validate(dumped)
@@ -155,7 +163,7 @@ def test_config_serialization_deserialization():
 
 def test_config_inheritance_and_override():
     """Test config inheritance and override behavior"""
-    base = OrchestrationConfig(num_actors=2)
+    base = OrchestrationConfig(num_actors=2, feature_columns=["image"], label_column="label")
     override = base.model_copy(update={"num_actors": 5, "partition_strategy": "iid"})
     assert override.num_actors == 5
     assert override.partition_strategy == "iid"
@@ -168,13 +176,17 @@ def test_invalid_config_combinations():
         OrchestrationConfig(
             topology=TopologyConfig(
                 topology_type=TopologyType.CUSTOM, adjacency_list=None
-            )
+            ),
+            feature_columns=["image"],
+            label_column="label"
         )
     with pytest.raises(Exception):
         OrchestrationConfig(
             topology=TopologyConfig(
                 topology_type=TopologyType.CUSTOM, adjacency_list={}
-            )
+            ),
+            feature_columns=["image"],
+            label_column="label"
         )
 
 
@@ -186,6 +198,8 @@ def test_nested_config_validation():
             params={"trim_ratio": 0.2},
         ),
         topology=TopologyConfig(topology_type=TopologyType.STAR, hub_index=1),
+        feature_columns=["image"],
+        label_column="label"
     )
     assert config.aggregation.params["trim_ratio"] == 0.2
     assert config.topology.hub_index == 1

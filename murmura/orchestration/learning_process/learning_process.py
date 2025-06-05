@@ -331,6 +331,9 @@ class LearningProcess(ABC):
             alpha=config_dict.get("alpha", 0.5),
             min_partition_size=config_dict.get("min_partition_size", 100),
             split=config_dict.get("split", "train"),
+            # Required dataset configuration
+            feature_columns=config_dict.get("feature_columns", ["image"]),
+            label_column=config_dict.get("label_column", "label"),
             ray_cluster=ray_cluster_config,
             resources=resource_config,
             # ADDED: Training parameters from dict
