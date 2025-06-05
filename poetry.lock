@@ -1754,6 +1754,41 @@ files = [
 ]
 
 [[package]]
+name = "opacus"
+version = "1.5.4"
+description = "Train PyTorch models with Differential Privacy"
+optional = false
+python-versions = ">=3.7.5"
+groups = ["main"]
+markers = "python_version == \"3.11\" or python_version >= \"3.12\""
+files = [
+    {file = "opacus-1.5.4-py3-none-any.whl", hash = "sha256:a0ca27974e825d86635c82f08ebb380a373613c121066bc0b8e29e42d9f961a5"},
+    {file = "opacus-1.5.4.tar.gz", hash = "sha256:ea700808c0a8c3fb7e565ed55b77b3170d6a54cb30e295b255e3877170edc5ca"},
+]
+
+[package.dependencies]
+numpy = ">=1.15"
+opt-einsum = ">=3.3.0"
+scipy = ">=1.2"
+torch = ">=2.0"
+
+[package.extras]
+dev = ["black", "coverage", "datasets", "flake8", "hypothesis", "isort (>=5.0.0)", "jsonargparse[signatures] (>=3.19.3)", "lightning-bolts", "mypy (>=0.760)", "pytest", "pytorch-lightning", "requests (>=2.25.1)", "scikit-learn", "sphinx", "sphinx-autodoc-typehints", "tensorboard", "torch", "torchvision (>=0.9.1)", "tqdm (>=4.40)", "transformers"]
+
+[[package]]
+name = "opt-einsum"
+version = "3.4.0"
+description = "Path optimization of einsum functions."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "python_version == \"3.11\" or python_version >= \"3.12\""
+files = [
+    {file = "opt_einsum-3.4.0-py3-none-any.whl", hash = "sha256:69bb92469f86a1565195ece4ac0323943e83477171b91d24c35afe028a90d7cd"},
+    {file = "opt_einsum-3.4.0.tar.gz", hash = "sha256:96ca72f1b886d148241348783498194c577fa30a8faac108586b14f1ba4473ac"},
+]
+
+[[package]]
 name = "packaging"
 version = "24.2"
 description = "Core utilities for Python packages"
@@ -3435,4 +3470,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "d92661a6b294459394d8e05517db6367bd2ea01f934186592654ac83d9c0d6ce"
+content-hash = "9a833fcf4ea19aba2ebd5ae08e13f0802349387c5fb7de1ea730012f7441c1c8"

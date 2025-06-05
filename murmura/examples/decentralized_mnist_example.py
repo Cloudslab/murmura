@@ -8,7 +8,8 @@ from murmura.aggregation.aggregation_config import (
     AggregationConfig,
     AggregationStrategyType,
 )
-from murmura.model.pytorch_model import PyTorchModel, TorchModelWrapper
+from murmura.model.pytorch_model import TorchModelWrapper
+from murmura.models.mnist_models import MNISTModel
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
@@ -23,34 +24,6 @@ from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.visualization.network_visualizer import NetworkVisualizer
 
 
-class MNISTModel(PyTorchModel):
-    """
-    Simple CNN model for MNIST classification
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-        self.classifier = nn.Sequential(
-            nn.Linear(64 * 7 * 7, 128), nn.ReLU(), nn.Linear(128, 10)
-        )
-
-    def forward(self, x):
-        # Ensure input has the right shape (add channel dimension if needed)
-        if len(x.shape) == 3:
-            x = x.unsqueeze(1)  # Add channel dimension for grayscale
-
-        x = self.features(x)
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
-        return x
 
 
 def create_mnist_preprocessor():
@@ -378,7 +351,7 @@ def main() -> None:
 
         logger.info("=== Creating MNIST Model ===")
         # Create the MNIST model
-        model = MNISTModel()
+        model = MNISTModel(use_dp_compatible_norm=False)  # Use BatchNorm for standard training
         input_shape = (1, 28, 28)  # MNIST: 1 channel, 28x28 pixels
 
         # Create MNIST-specific data preprocessor
