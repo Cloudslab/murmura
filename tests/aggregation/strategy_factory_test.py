@@ -10,7 +10,6 @@ from murmura.aggregation.strategies.fed_avg import FedAvg
 from murmura.aggregation.strategies.trimmed_mean import TrimmedMean
 from murmura.aggregation.strategies.gossip_avg import GossipAvg
 from murmura.network_management.topology import TopologyConfig, TopologyType
-from murmura.aggregation.strategy_interface import AggregationStrategy
 
 
 def test_create_fedavg_strategy():
@@ -89,15 +88,18 @@ def test_topology_compatibility_check_incompatible():
         TopologyCompatibilityManager._strategy_topology_map = original_map
 
 
-@pytest.mark.parametrize("strategy_type,params,should_raise", [
-    (AggregationStrategyType.FEDAVG, None, False),
-    (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": 0.2}, False),
-    (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": -0.1}, True),
-    (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": 0.5}, True),
-    (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": 0.7}, False),
-    (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": -0.1}, True),
-    (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": 1.1}, True),
-])
+@pytest.mark.parametrize(
+    "strategy_type,params,should_raise",
+    [
+        (AggregationStrategyType.FEDAVG, None, False),
+        (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": 0.2}, False),
+        (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": -0.1}, True),
+        (AggregationStrategyType.TRIMMED_MEAN, {"trim_ratio": 0.5}, True),
+        (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": 0.7}, False),
+        (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": -0.1}, True),
+        (AggregationStrategyType.GOSSIP_AVG, {"mixing_parameter": 1.1}, True),
+    ],
+)
 def test_strategy_param_validation(strategy_type, params, should_raise):
     """Test parameter validation for all aggregation strategies"""
     if should_raise:
@@ -127,9 +129,7 @@ def test_aggregation_null_weights():
 
 def test_aggregation_large_scale():
     """Performance test for large-scale aggregation (marked slow)"""
-    params = [
-        {"layer": np.random.rand(1000)} for _ in range(1000)
-    ]
+    params = [{"layer": np.random.rand(1000)} for _ in range(1000)]
     weights = np.random.dirichlet(np.ones(1000)).tolist()
     for strategy_cls in [FedAvg, TrimmedMean, GossipAvg]:
         strategy = strategy_cls()

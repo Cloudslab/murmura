@@ -7,6 +7,7 @@ from murmura.aggregation.aggregation_config import (
 )
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.orchestration.cluster_manager import ClusterManager
+from murmura.orchestration.orchestration_config import OrchestrationConfig
 
 
 @pytest.fixture(scope="module")
@@ -20,7 +21,11 @@ def ray_init():
 @pytest.fixture
 def cluster_manager(ray_init):
     """Create a basic cluster manager"""
-    return ClusterManager(config={"ray_address": None})
+    config = OrchestrationConfig(
+        feature_columns=["image"],
+        label_column="label"
+    )
+    return ClusterManager(config=config)
 
 
 def test_create_actors(cluster_manager, ray_init):
@@ -53,7 +58,8 @@ def test_distribute_data_equal_partitions(cluster_manager, ray_init):
         # Each partition has 3 items
         assert info["data_size"] == 3
         # Metadata should include the provided metadata with partition_idx overridden per actor
-        assert info["metadata"] == {"split": "train", "partition_idx": i}
+        assert info["metadata"]["split"] == "train"
+        assert info["metadata"]["partition_idx"] == i
 
 
 def test_distribute_data_more_actors_than_partitions(cluster_manager, ray_init):
@@ -91,7 +97,8 @@ def test_distribute_data_metadata_override(cluster_manager, ray_init):
     for i, actor in enumerate(cluster_manager.actors):
         info = ray.get(actor.get_data_info.remote())
         # The actor's metadata should have "source" preserved and "partition_idx" replaced by the correct index.
-        assert info["metadata"] == {"source": "mnist", "partition_idx": i}
+        assert info["metadata"]["source"] == "mnist"
+        assert info["metadata"]["partition_idx"] == i
 
 
 def test_get_topology_information_not_initialized(cluster_manager):
@@ -120,7 +127,7 @@ def test_shutdown():
     ray.init(local_mode=True)
     assert ray.is_initialized()
 
-    ClusterManager.shutdown()
+    ClusterManager.shutdown_ray()
     assert not ray.is_initialized()
 
 

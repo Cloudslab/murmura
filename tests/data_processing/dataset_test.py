@@ -330,11 +330,17 @@ def test_hf_load_various_configs():
     """Test HuggingFace dataset loading with different configurations"""
     # Only run if internet is available
     try:
-        ds = MDataset.load(DatasetSource.HUGGING_FACE, dataset_name="mnist", split="train")
+        ds = MDataset.load(
+            DatasetSource.HUGGING_FACE, dataset_name="mnist", split="train"
+        )
         assert "train" in ds.available_splits
-        ds = MDataset.load(DatasetSource.HUGGING_FACE, dataset_name="mnist", split=["train", "test"])
+        ds = MDataset.load(
+            DatasetSource.HUGGING_FACE, dataset_name="mnist", split=["train", "test"]
+        )
         assert set(["train", "test"]).issubset(ds.available_splits)
-        ds = MDataset.load(DatasetSource.HUGGING_FACE, dataset_name="imdb", split="train")
+        ds = MDataset.load(
+            DatasetSource.HUGGING_FACE, dataset_name="imdb", split="train"
+        )
         assert "train" in ds.available_splits
     except Exception:
         pytest.skip("HuggingFace datasets require internet access.")
@@ -342,9 +348,11 @@ def test_hf_load_various_configs():
 
 def test_concurrent_partition_access(sample_mdataset):
     """Test concurrent access to partition methods for thread safety"""
+
     def add_and_get():
         sample_mdataset.add_partitions("train", {0: [1, 2, 3]})
         _ = sample_mdataset.get_partitions("train")
+
     threads = [threading.Thread(target=add_and_get) for _ in range(10)]
     for t in threads:
         t.start()

@@ -1,498 +1,467 @@
 import logging
-import math
-from abc import ABC, abstractmethod
+from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any
+from datetime import datetime
+
+import numpy as np
+
+from murmura.privacy.dp_config import DPConfig
+
+try:
+    from opacus.accountants import RDPAccountant  # type: ignore[import-untyped]
+    from opacus.accountants.utils import get_noise_multiplier  # type: ignore[import-untyped]
+
+    OPACUS_AVAILABLE = True
+except ImportError:
+    OPACUS_AVAILABLE = False
+    RDPAccountant = None
 
 
 @dataclass
 class PrivacySpent:
-    """Record of privacy budget consumption."""
+    """Record of privacy expenditure"""
 
     epsilon: float
     delta: float
-    mechanism: str
-    round_number: int
-    timestamp: float = field(default_factory=lambda: __import__("time").time())
-    additional_info: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.now)
+    round_number: Optional[int] = None
+    client_id: Optional[str] = None
+    context: str = "training"
 
 
-class PrivacyBudgetExceeded(Exception):
-    """Raised when privacy budget is exceeded."""
+@dataclass
+class PrivacyBudget:
+    """Privacy budget tracking"""
 
-    pass
+    total_epsilon: float
+    total_delta: float
+    spent_epsilon: float = 0.0
+    spent_delta: float = 0.0
+
+    @property
+    def remaining_epsilon(self) -> float:
+        return max(0.0, self.total_epsilon - self.spent_epsilon)
+
+    @property
+    def remaining_delta(self) -> float:
+        return max(0.0, self.total_delta - self.spent_delta)
+
+    @property
+    def is_exhausted(self) -> bool:
+        # Only check epsilon exhaustion for standard DP
+        # Delta is typically a fixed parameter, not "spent"
+        return self.spent_epsilon >= self.total_epsilon
+
+    @property
+    def utilization_percentage(self) -> float:
+        return (self.spent_epsilon / self.total_epsilon) * 100.0
 
 
-class PrivacyAccountant(ABC):
+class PrivacyAccountant:
     """
-    Abstract base class for privacy accounting.
+    Comprehensive privacy accountant for federated learning with differential privacy.
 
-    Privacy accountants track cumulative privacy loss across multiple
-    mechanism invocations in federated learning.
+    Tracks privacy expenditure across multiple clients and rounds, supporting
+    both local and central differential privacy.
     """
 
-    def __init__(self, total_epsilon: float, total_delta: float = 0.0):
-        self.total_epsilon = total_epsilon
-        self.total_delta = total_delta
+    def __init__(self, dp_config: DPConfig):
+        """
+        Initialize privacy accountant.
+
+        Args:
+            dp_config: Differential privacy configuration
+        """
+        self.dp_config = dp_config
+        self.logger = logging.getLogger("murmura.privacy_accountant")
+
+        # Privacy budget tracking
+        self.global_budget = PrivacyBudget(
+            total_epsilon=dp_config.target_epsilon,
+            total_delta=dp_config.target_delta or 1e-5,
+        )
+
+        # Per-client privacy tracking
+        self.client_budgets: Dict[str, PrivacyBudget] = {}
         self.privacy_history: List[PrivacySpent] = []
-        self.logger = logging.getLogger(f"murmura.privacy.{self.__class__.__name__}")
 
-    @abstractmethod
-    def add_mechanism(
-        self,
-        mechanism_epsilon: float,
-        mechanism_delta: float = 0.0,
-        mechanism_name: str = "unknown",
-        round_number: int = 0,
-        **kwargs,
-    ) -> None:
-        """Add a privacy mechanism to the accountant."""
-        pass
+        # Opacus integration
+        self.rdp_accountant: Optional[RDPAccountant] = None
+        if OPACUS_AVAILABLE and dp_config.accounting_method.value == "rdp":
+            self._initialize_rdp_accountant()
 
-    @abstractmethod
-    def get_current_privacy_spent(self) -> Tuple[float, float]:
-        """Get current privacy budget consumption as (epsilon, delta)."""
-        pass
-
-    def get_remaining_budget(self) -> Tuple[float, float]:
-        """Get remaining privacy budget as (epsilon, delta)."""
-        current_eps, current_delta = self.get_current_privacy_spent()
-        return (
-            max(0.0, self.total_epsilon - current_eps),
-            max(0.0, self.total_delta - current_delta),
+        self.logger.info(
+            f"Initialized privacy accountant with budget "
+            f"(ε={self.global_budget.total_epsilon}, δ={self.global_budget.total_delta})"
         )
 
-    def is_budget_exceeded(self) -> bool:
-        """Check if privacy budget has been exceeded."""
-        current_eps, current_delta = self.get_current_privacy_spent()
-        return current_eps > self.total_epsilon or current_delta > self.total_delta
+    def _initialize_rdp_accountant(self) -> None:
+        """Initialize RDP accountant from Opacus"""
+        try:
+            if self.dp_config.alphas:
+                self.rdp_accountant = RDPAccountant()
+                # Set custom alphas if provided
+                # Note: This might need adjustment based on Opacus version
+            else:
+                self.rdp_accountant = RDPAccountant()
 
-    def get_budget_utilization(self) -> Dict[str, float]:
-        """Get budget utilization as percentages."""
-        current_eps, current_delta = self.get_current_privacy_spent()
-        return {
-            "epsilon_used_pct": min(100.0, (current_eps / self.total_epsilon) * 100),
-            "delta_used_pct": min(100.0, (current_delta / self.total_delta) * 100)
-            if self.total_delta > 0
-            else 0.0,
-        }
+            self.logger.info("Initialized RDP accountant")
+        except Exception as e:
+            self.logger.warning(f"Could not initialize RDP accountant: {e}")
+            self.rdp_accountant = None
 
-    def check_and_add_mechanism(
+    def create_client_budget(self, client_id: str) -> None:
+        """
+        Create privacy budget for a specific client.
+
+        Args:
+            client_id: Unique client identifier
+        """
+        if client_id not in self.client_budgets:
+            self.client_budgets[client_id] = PrivacyBudget(
+                total_epsilon=self.dp_config.target_epsilon,
+                total_delta=self.dp_config.target_delta or 1e-5,
+            )
+            self.logger.debug(f"Created privacy budget for client {client_id}")
+
+    def compute_privacy_spent(
         self,
-        mechanism_epsilon: float,
-        mechanism_delta: float = 0.0,
-        mechanism_name: str = "unknown",
-        round_number: int = 0,
-        **kwargs,
-    ) -> None:
-        """Add mechanism after checking budget constraints."""
-        # Simulate adding the mechanism to check if it would exceed budget
-        temp_accountant = self._create_copy()
-        temp_accountant.add_mechanism(
-            mechanism_epsilon, mechanism_delta, mechanism_name, round_number, **kwargs
-        )
+        noise_multiplier: float,
+        sample_rate: float,
+        steps: int,
+        delta: Optional[float] = None,
+        apply_amplification: bool = False,
+        client_sampling_rate: Optional[float] = None,
+        data_sampling_rate: Optional[float] = None,
+    ) -> Tuple[float, float]:
+        """
+        Compute privacy spent for given parameters with optional subsampling amplification.
 
-        if temp_accountant.is_budget_exceeded():
-            current_eps, current_delta = self.get_current_privacy_spent()
-            raise PrivacyBudgetExceeded(
-                f"Adding mechanism '{mechanism_name}' would exceed privacy budget. "
-                f"Current: (ε={current_eps:.4f}, δ={current_delta:.2e}), "
-                f"Total: (ε={self.total_epsilon:.4f}, δ={self.total_delta:.2e}), "
-                f"Mechanism: (ε={mechanism_epsilon:.4f}, δ={mechanism_delta:.2e})"
+        Args:
+            noise_multiplier: Noise multiplier used in training
+            sample_rate: Base subsampling rate
+            steps: Number of training steps
+            delta: Target delta (uses config default if None)
+            apply_amplification: Whether to apply subsampling amplification
+            client_sampling_rate: Client sampling rate (for amplification)
+            data_sampling_rate: Data sampling rate (for amplification)
+
+        Returns:
+            Tuple of (epsilon, delta) spent
+        """
+        if delta is None:
+            delta = self.dp_config.target_delta or 1e-5
+
+        # Apply subsampling amplification if requested
+        effective_sample_rate = sample_rate
+        if (
+            apply_amplification
+            and client_sampling_rate is not None
+            and data_sampling_rate is not None
+        ):
+            # Combine client and data sampling rates for amplification
+            amplification_factor = client_sampling_rate * data_sampling_rate
+            effective_sample_rate = sample_rate * amplification_factor
+
+            self.logger.debug(
+                f"Applying subsampling amplification: "
+                f"client_rate={client_sampling_rate:.3f}, data_rate={data_sampling_rate:.3f}, "
+                f"amplification_factor={amplification_factor:.3f}, "
+                f"effective_sample_rate={effective_sample_rate:.6f} (vs original {sample_rate:.6f})"
             )
 
-        # If check passes, add the mechanism for real
-        self.add_mechanism(
-            mechanism_epsilon, mechanism_delta, mechanism_name, round_number, **kwargs
+        if self.rdp_accountant and OPACUS_AVAILABLE:
+            try:
+                # Use Opacus RDP accountant for precise computation
+                epsilon = self.rdp_accountant.get_epsilon(
+                    delta=delta,
+                    sample_rate=effective_sample_rate,
+                    noise_multiplier=noise_multiplier,
+                    steps=steps,
+                )
+                return epsilon, delta
+            except Exception as e:
+                self.logger.warning(f"RDP computation failed: {e}, using approximation")
+
+        # Fallback to approximate computation
+        # This is a simplified approximation - use Opacus for production
+        sigma = noise_multiplier
+        q = effective_sample_rate
+        T = steps
+
+        # Basic composition bound (not tight)
+        epsilon_per_step = (q * q) / (2 * sigma * sigma)
+        epsilon = epsilon_per_step * T
+
+        self.logger.debug(
+            f"Approximate privacy: ε={epsilon:.4f} for {steps} steps (σ={sigma}, q={q})"
         )
 
-    @abstractmethod
-    def _create_copy(self) -> "PrivacyAccountant":
-        """Create a copy of this accountant for budget checking."""
-        pass
+        return epsilon, delta
+
+    def record_training_round(
+        self,
+        client_id: str,
+        noise_multiplier: float,
+        sample_rate: float,
+        steps: int,
+        round_number: int,
+    ) -> PrivacySpent:
+        """
+        Record privacy expenditure for a training round.
+
+        Args:
+            client_id: Client identifier
+            noise_multiplier: Noise multiplier used
+            sample_rate: Subsampling rate
+            steps: Number of steps in this round
+            round_number: Round number
+
+        Returns:
+            PrivacySpent record
+        """
+        # Ensure client budget exists
+        self.create_client_budget(client_id)
+
+        # Compute privacy spent this round
+        epsilon_spent, delta_spent = self.compute_privacy_spent(
+            noise_multiplier=noise_multiplier, sample_rate=sample_rate, steps=steps
+        )
+
+        # Update client budget
+        client_budget = self.client_budgets[client_id]
+        client_budget.spent_epsilon += epsilon_spent
+        # Delta is not accumulated in standard DP - it's a fixed parameter
+        # We track it for reference but don't accumulate it
+        client_budget.spent_delta = delta_spent
+
+        # Update global budget (maximum across clients for worst-case)
+        max_client_epsilon = max(
+            budget.spent_epsilon for budget in self.client_budgets.values()
+        )
+
+        self.global_budget.spent_epsilon = max_client_epsilon
+        # Global delta remains the target delta (not accumulated)
+
+        # Create privacy record
+        privacy_record = PrivacySpent(
+            epsilon=epsilon_spent,
+            delta=delta_spent,
+            round_number=round_number,
+            client_id=client_id,
+            context=f"training_round_{round_number}",
+        )
+
+        self.privacy_history.append(privacy_record)
+
+        self.logger.debug(
+            f"Client {client_id} round {round_number}: "
+            f"spent (ε={epsilon_spent:.4f}, δ={delta_spent:.2e}), "
+            f"total (ε={client_budget.spent_epsilon:.4f}, δ={client_budget.spent_delta:.2e})"
+        )
+
+        return privacy_record
+
+    def record_aggregation_round(
+        self, num_clients: int, noise_multiplier: float, round_number: int
+    ) -> PrivacySpent:
+        """
+        Record privacy expenditure for central aggregation.
+
+        Args:
+            num_clients: Number of participating clients
+            noise_multiplier: Noise multiplier for aggregation
+            round_number: Round number
+
+        Returns:
+            PrivacySpent record
+        """
+        # Central DP typically has different privacy analysis
+        # This is a simplified version
+        epsilon_spent = 1.0 / (noise_multiplier * noise_multiplier)
+        delta_spent = 0.0  # Pure epsilon DP for simplicity
+
+        # Update global budget
+        self.global_budget.spent_epsilon += epsilon_spent
+
+        privacy_record = PrivacySpent(
+            epsilon=epsilon_spent,
+            delta=delta_spent,
+            round_number=round_number,
+            client_id="central_server",
+            context=f"aggregation_round_{round_number}",
+        )
+
+        self.privacy_history.append(privacy_record)
+
+        self.logger.debug(
+            f"Central aggregation round {round_number}: "
+            f"spent (ε={epsilon_spent:.4f}, δ={delta_spent:.2e})"
+        )
+
+        return privacy_record
+
+    def get_global_privacy_spent(self) -> Tuple[float, float]:
+        """Get total global privacy expenditure"""
+        return self.global_budget.spent_epsilon, self.global_budget.spent_delta
+
+    def get_client_privacy_spent(self, client_id: str) -> Tuple[float, float]:
+        """Get privacy expenditure for specific client"""
+        if client_id not in self.client_budgets:
+            return 0.0, 0.0
+
+        budget = self.client_budgets[client_id]
+        return budget.spent_epsilon, budget.spent_delta
+
+    def is_budget_exhausted(self, client_id: Optional[str] = None) -> bool:
+        """
+        Check if privacy budget is exhausted.
+
+        Args:
+            client_id: Check specific client budget, or global if None
+
+        Returns:
+            True if budget is exhausted
+        """
+        if client_id is None:
+            return self.global_budget.is_exhausted
+
+        if client_id not in self.client_budgets:
+            return False
+
+        return self.client_budgets[client_id].is_exhausted
+
+    def get_remaining_budget(
+        self, client_id: Optional[str] = None
+    ) -> Tuple[float, float]:
+        """
+        Get remaining privacy budget.
+
+        Args:
+            client_id: Get specific client budget, or global if None
+
+        Returns:
+            Tuple of (remaining_epsilon, remaining_delta)
+        """
+        if client_id is None:
+            budget = self.global_budget
+        else:
+            if client_id not in self.client_budgets:
+                return (
+                    self.dp_config.target_epsilon,
+                    self.dp_config.target_delta or 1e-5,
+                )
+            budget = self.client_budgets[client_id]
+
+        return budget.remaining_epsilon, budget.remaining_delta
 
     def get_privacy_summary(self) -> Dict[str, Any]:
-        """Get comprehensive privacy summary."""
-        current_eps, current_delta = self.get_current_privacy_spent()
-        remaining_eps, remaining_delta = self.get_remaining_budget()
-        utilization = self.get_budget_utilization()
+        """Get comprehensive privacy summary"""
+        global_eps, global_delta = self.get_global_privacy_spent()
+
+        client_summaries = {}
+        for client_id, budget in self.client_budgets.items():
+            client_summaries[client_id] = {
+                "spent_epsilon": budget.spent_epsilon,
+                "spent_delta": budget.spent_delta,
+                "remaining_epsilon": budget.remaining_epsilon,
+                "remaining_delta": budget.remaining_delta,
+                "utilization_percentage": budget.utilization_percentage,
+                "is_exhausted": budget.is_exhausted,
+            }
 
         return {
-            "total_budget": {"epsilon": self.total_epsilon, "delta": self.total_delta},
-            "spent": {"epsilon": current_eps, "delta": current_delta},
-            "remaining": {"epsilon": remaining_eps, "delta": remaining_delta},
-            "utilization": utilization,
-            "mechanisms_count": len(self.privacy_history),
-            "budget_exceeded": self.is_budget_exceeded(),
-            "history": [
-                {
-                    "round": entry.round_number,
-                    "mechanism": entry.mechanism,
-                    "epsilon": entry.epsilon,
-                    "delta": entry.delta,
-                    "timestamp": entry.timestamp,
-                }
-                for entry in self.privacy_history
-            ],
+            "global_privacy": {
+                "spent_epsilon": global_eps,
+                "spent_delta": global_delta,
+                "remaining_epsilon": self.global_budget.remaining_epsilon,
+                "remaining_delta": self.global_budget.remaining_delta,
+                "utilization_percentage": self.global_budget.utilization_percentage,
+                "is_exhausted": self.global_budget.is_exhausted,
+            },
+            "target_privacy": {
+                "target_epsilon": self.dp_config.target_epsilon,
+                "target_delta": self.dp_config.target_delta,
+            },
+            "client_privacy": client_summaries,
+            "total_rounds": len(
+                set(r.round_number for r in self.privacy_history if r.round_number)
+            ),
+            "total_clients": len(self.client_budgets),
+            "privacy_mechanism": self.dp_config.mechanism.value,
+            "accounting_method": self.dp_config.accounting_method.value,
         }
 
+    def export_privacy_history(self) -> List[Dict[str, Any]]:
+        """Export privacy history for analysis"""
+        return [
+            {
+                "epsilon": record.epsilon,
+                "delta": record.delta,
+                "timestamp": record.timestamp.isoformat(),
+                "round_number": record.round_number,
+                "client_id": record.client_id,
+                "context": record.context,
+            }
+            for record in self.privacy_history
+        ]
 
-class BasicAccountant(PrivacyAccountant):
-    """
-    Basic privacy accountant using simple composition.
-
-    Uses the basic composition theorem: (ε₁, δ₁) + (ε₂, δ₂) = (ε₁ + ε₂, δ₁ + δ₂)
-    This is conservative but simple and always valid.
-    """
-
-    def __init__(self, total_epsilon: float, total_delta: float = 0.0):
-        super().__init__(total_epsilon, total_delta)
-        self.cumulative_epsilon = 0.0
-        self.cumulative_delta = 0.0
-
-    def add_mechanism(
+    def suggest_optimal_noise(
         self,
-        mechanism_epsilon: float,
-        mechanism_delta: float = 0.0,
-        mechanism_name: str = "unknown",
-        round_number: int = 0,
-        **kwargs,
-    ) -> None:
-        """Add mechanism using basic composition."""
-        self.cumulative_epsilon += mechanism_epsilon
-        self.cumulative_delta += mechanism_delta
-
-        self.privacy_history.append(
-            PrivacySpent(
-                epsilon=mechanism_epsilon,
-                delta=mechanism_delta,
-                mechanism=mechanism_name,
-                round_number=round_number,
-                additional_info=kwargs,
-            )
-        )
-
-        self.logger.debug(
-            f"Added mechanism '{mechanism_name}' (ε={mechanism_epsilon:.4f}, δ={mechanism_delta:.2e}). "
-            f"Total: (ε={self.cumulative_epsilon:.4f}, δ={self.cumulative_delta:.2e})"
-        )
-
-    def get_current_privacy_spent(self) -> Tuple[float, float]:
-        """Get current privacy spent using basic composition."""
-        return (self.cumulative_epsilon, self.cumulative_delta)
-
-    def _create_copy(self) -> "BasicAccountant":
-        """Create a copy for budget checking."""
-        copy = BasicAccountant(self.total_epsilon, self.total_delta)
-        copy.cumulative_epsilon = self.cumulative_epsilon
-        copy.cumulative_delta = self.cumulative_delta
-        copy.privacy_history = self.privacy_history.copy()
-        return copy
-
-
-class RDPAccountant(PrivacyAccountant):
-    """
-    Rényi Differential Privacy (RDP) accountant.
-
-    Provides tighter composition bounds for iterative algorithms like SGD.
-    Tracks privacy loss at multiple orders α and converts to (ε, δ)-DP when needed.
-    """
-
-    def __init__(
-        self,
-        total_epsilon: float,
-        total_delta: float = 1e-5,
-        orders: Optional[List[float]] = None,
-    ):
-        super().__init__(total_epsilon, total_delta)
-
-        # Default RDP orders following TensorFlow Privacy
-        if orders is None:
-            orders = [1.1] + list(range(2, 65))
-        self.orders = orders
-
-        # Track RDP at each order
-        self.rdp_eps = {order: 0.0 for order in orders}
-
-    def add_mechanism(
-        self,
-        mechanism_epsilon: float,
-        mechanism_delta: float = 0.0,
-        mechanism_name: str = "gaussian_mechanism",
-        round_number: int = 0,
-        noise_multiplier: Optional[float] = None,
-        sampling_rate: Optional[float] = None,
-        **kwargs,
-    ) -> None:
+        sample_rate: float,
+        epochs: int,
+        dataset_size: int,
+        target_epsilon: Optional[float] = None,
+    ) -> float:
         """
-        Add mechanism to RDP accountant.
+        Suggest optimal noise multiplier for given training parameters.
 
-        For Gaussian mechanism, provide noise_multiplier and optionally sampling_rate
-        for privacy amplification.
+        Args:
+            sample_rate: Subsampling rate
+            epochs: Number of epochs
+            dataset_size: Size of training dataset
+            target_epsilon: Target epsilon (uses config default if None)
+
+        Returns:
+            Suggested noise multiplier
         """
+        if target_epsilon is None:
+            target_epsilon = self.dp_config.target_epsilon
 
-        if mechanism_name == "gaussian_mechanism" and noise_multiplier is not None:
-            # Compute RDP for Gaussian mechanism
-            rdp_eps_per_order = self._compute_gaussian_rdp(
-                noise_multiplier, sampling_rate
-            )
+        target_delta = self.dp_config.target_delta or (1.0 / dataset_size)
 
-            # Add to cumulative RDP
-            for order, rdp_eps in rdp_eps_per_order.items():
-                if order in self.rdp_eps:
-                    self.rdp_eps[order] += rdp_eps
+        # Compute number of steps
+        steps = epochs * (dataset_size // int(dataset_size * sample_rate))
 
-        else:
-            # Fallback: convert (ε, δ)-DP to RDP (conservative)
-            for order in self.orders:
-                if order > 1:
-                    # Conservative conversion: RDP(α, ε + δ)
-                    self.rdp_eps[order] += mechanism_epsilon + mechanism_delta
+        if OPACUS_AVAILABLE:
+            try:
+                noise_multiplier = get_noise_multiplier(
+                    target_epsilon=target_epsilon,
+                    target_delta=target_delta,
+                    sample_rate=sample_rate,
+                    steps=steps,
+                )
 
-        self.privacy_history.append(
-            PrivacySpent(
-                epsilon=mechanism_epsilon,
-                delta=mechanism_delta,
-                mechanism=mechanism_name,
-                round_number=round_number,
-                additional_info={
-                    "noise_multiplier": noise_multiplier,
-                    "sampling_rate": sampling_rate,
-                    **kwargs,
-                },
-            )
+                self.logger.info(
+                    f"Suggested noise multiplier: {noise_multiplier:.3f} "
+                    f"for ε={target_epsilon}, δ={target_delta:.2e}, "
+                    f"{steps} steps"
+                )
+
+                return noise_multiplier
+            except Exception as e:
+                self.logger.warning(f"Could not compute optimal noise: {e}")
+
+        # Fallback approximation
+        # This is very rough - use Opacus in production
+        noise_multiplier = np.sqrt(2 * np.log(1.25 / target_delta)) / target_epsilon
+        noise_multiplier = max(
+            0.1, min(10.0, noise_multiplier)
+        )  # Clamp to reasonable range
+
+        self.logger.warning(
+            f"Using approximate noise multiplier: {noise_multiplier:.3f}. "
+            "Install Opacus for precise computation."
         )
 
-        # Log current privacy spent
-        current_eps, current_delta = self.get_current_privacy_spent()
-        self.logger.debug(
-            f"Added RDP mechanism '{mechanism_name}'. "
-            f"Current (ε, δ): ({current_eps:.4f}, {current_delta:.2e})"
-        )
-
-    def _compute_gaussian_rdp(
-        self, noise_multiplier: float, sampling_rate: Optional[float] = None
-    ) -> Dict[float, float]:
-        """Compute RDP for Gaussian mechanism, optionally with subsampling."""
-        rdp_eps = {}
-
-        for order in self.orders:
-            if order == 1.0:
-                # RDP at order 1 is undefined, skip
-                continue
-
-            # Basic Gaussian RDP: ε(α) = α / (2 * σ²)
-            base_rdp = order / (2 * noise_multiplier**2)
-
-            # Apply privacy amplification if subsampling
-            if sampling_rate is not None and sampling_rate < 1.0:
-                # Simplified amplification (exact formula is more complex)
-                amplified_rdp = base_rdp * sampling_rate * sampling_rate
-                rdp_eps[order] = amplified_rdp
-            else:
-                rdp_eps[order] = base_rdp
-
-        return rdp_eps
-
-    def get_current_privacy_spent(self) -> Tuple[float, float]:
-        """Convert current RDP to (ε, δ)-DP."""
-        if not self.rdp_eps:
-            return (0.0, 0.0)
-
-        # Find optimal order for conversion
-        best_epsilon = float("inf")
-
-        for order, rdp_eps in self.rdp_eps.items():
-            if order <= 1 or rdp_eps <= 0:
-                continue
-
-            # RDP to (ε, δ)-DP conversion: ε = ρ + log(1/δ)/(α-1)
-            if self.total_delta > 0:
-                epsilon = rdp_eps + math.log(1 / self.total_delta) / (order - 1)
-                best_epsilon = min(best_epsilon, epsilon)
-
-        return (best_epsilon if best_epsilon != float("inf") else 0.0, self.total_delta)
-
-    def _create_copy(self) -> "RDPAccountant":
-        """Create a copy for budget checking."""
-        copy = RDPAccountant(self.total_epsilon, self.total_delta, self.orders)
-        copy.rdp_eps = self.rdp_eps.copy()
-        copy.privacy_history = self.privacy_history.copy()
-        return copy
-
-
-class ZCDPAccountant(PrivacyAccountant):
-    """
-    Zero-Concentrated Differential Privacy (zCDP) accountant.
-
-    Simpler than RDP with elegant composition: ρ₁ + ρ₂ = ρ₁ + ρ₂
-    Conversion to (ε, δ)-DP: ε = ρ + 2√(ρ ln(1/δ))
-    """
-
-    def __init__(self, total_epsilon: float, total_delta: float = 1e-5):
-        super().__init__(total_epsilon, total_delta)
-        self.cumulative_rho = 0.0
-
-    def add_mechanism(
-        self,
-        mechanism_epsilon: float,
-        mechanism_delta: float = 0.0,
-        mechanism_name: str = "gaussian_mechanism",
-        round_number: int = 0,
-        noise_multiplier: Optional[float] = None,
-        **kwargs,
-    ) -> None:
-        """Add mechanism to zCDP accountant."""
-
-        if mechanism_name == "gaussian_mechanism" and noise_multiplier is not None:
-            # For Gaussian mechanism: ρ = 1/(2σ²)
-            rho = 1.0 / (2 * noise_multiplier**2)
-        else:
-            # Conservative conversion from (ε, δ)-DP to zCDP
-            # This is an approximation - exact conversion is complex
-            rho = mechanism_epsilon**2 / 4
-
-        self.cumulative_rho += rho
-
-        self.privacy_history.append(
-            PrivacySpent(
-                epsilon=mechanism_epsilon,
-                delta=mechanism_delta,
-                mechanism=mechanism_name,
-                round_number=round_number,
-                additional_info={
-                    "rho": rho,
-                    "noise_multiplier": noise_multiplier,
-                    **kwargs,
-                },
-            )
-        )
-
-        current_eps, current_delta = self.get_current_privacy_spent()
-        self.logger.debug(
-            f"Added zCDP mechanism '{mechanism_name}' (ρ={rho:.4f}). "
-            f"Current (ε, δ): ({current_eps:.4f}, {current_delta:.2e})"
-        )
-
-    def get_current_privacy_spent(self) -> Tuple[float, float]:
-        """Convert zCDP to (ε, δ)-DP."""
-        if self.cumulative_rho <= 0 or self.total_delta <= 0:
-            return (0.0, 0.0)
-
-        # zCDP to (ε, δ)-DP: ε = ρ + 2√(ρ ln(1/δ))
-        epsilon = self.cumulative_rho + 2 * math.sqrt(
-            self.cumulative_rho * math.log(1 / self.total_delta)
-        )
-        return (epsilon, self.total_delta)
-
-    def get_current_rho(self) -> float:
-        """Get current zCDP parameter ρ."""
-        return self.cumulative_rho
-
-    def _create_copy(self) -> "ZCDPAccountant":
-        """Create a copy for budget checking."""
-        copy = ZCDPAccountant(self.total_epsilon, self.total_delta)
-        copy.cumulative_rho = self.cumulative_rho
-        copy.privacy_history = self.privacy_history.copy()
-        return copy
-
-
-def create_privacy_accountant(
-    accountant_type: str, total_epsilon: float, total_delta: float = 1e-5, **kwargs
-) -> PrivacyAccountant:
-    """
-    Factory function to create privacy accountants.
-
-    Args:
-        accountant_type: Type of accountant ('basic', 'rdp', 'zcdp')
-        total_epsilon: Total privacy budget (ε)
-        total_delta: Total failure probability (δ)
-        **kwargs: Additional arguments for specific accountants
-
-    Returns:
-        Configured privacy accountant
-    """
-    accountant_type = accountant_type.lower()
-
-    if accountant_type == "basic":
-        return BasicAccountant(total_epsilon, total_delta)
-    elif accountant_type == "rdp":
-        orders = kwargs.get("orders", None)
-        return RDPAccountant(total_epsilon, total_delta, orders)
-    elif accountant_type == "zcdp":
-        return ZCDPAccountant(total_epsilon, total_delta)
-    else:
-        raise ValueError(
-            f"Unknown accountant type: {accountant_type}. "
-            f"Supported types: 'basic', 'rdp', 'zcdp'"
-        )
-
-
-class PrivacyMonitor:
-    """
-    Real-time privacy budget monitoring for production systems.
-
-    Provides alerts, logging, and telemetry for privacy budget consumption.
-    """
-
-    def __init__(self, accountant: PrivacyAccountant, warning_threshold: float = 0.8):
-        self.accountant = accountant
-        self.warning_threshold = warning_threshold
-        self.logger = logging.getLogger("murmura.privacy.monitor")
-        self.alerts_sent = set()  # Prevent duplicate alerts
-
-    def check_budget_status(self) -> Dict[str, Any]:
-        """Check current budget status and trigger alerts if needed."""
-        utilization = self.accountant.get_budget_utilization()
-        status = {"utilization": utilization, "alerts": []}
-
-        epsilon_pct = utilization["epsilon_used_pct"]
-        delta_pct = utilization["delta_used_pct"]
-
-        # Check for warnings
-        if epsilon_pct >= self.warning_threshold * 100:
-            alert = (
-                f"Privacy budget warning: {epsilon_pct:.1f}% of epsilon budget consumed"
-            )
-            if "epsilon_warning" not in self.alerts_sent:
-                self.logger.warning(alert)
-                self.alerts_sent.add("epsilon_warning")
-            status["alerts"].append(alert)
-
-        if delta_pct >= self.warning_threshold * 100:
-            alert = f"Privacy budget warning: {delta_pct:.1f}% of delta budget consumed"
-            if "delta_warning" not in self.alerts_sent:
-                self.logger.warning(alert)
-                self.alerts_sent.add("delta_warning")
-            status["alerts"].append(alert)
-
-        # Check for budget exceeded
-        if self.accountant.is_budget_exceeded():
-            alert = "CRITICAL: Privacy budget exceeded!"
-            if "budget_exceeded" not in self.alerts_sent:
-                self.logger.error(alert)
-                self.alerts_sent.add("budget_exceeded")
-            status["alerts"].append(alert)
-
-        return status
-
-    def log_mechanism_added(self, mechanism_name: str, round_number: int) -> None:
-        """Log when a new mechanism is added."""
-        utilization = self.accountant.get_budget_utilization()
-        self.logger.info(
-            f"Privacy mechanism '{mechanism_name}' added for round {round_number}. "
-            f"Budget utilization: ε={utilization['epsilon_used_pct']:.1f}%, "
-            f"δ={utilization['delta_used_pct']:.1f}%"
-        )
-
-    def get_telemetry(self) -> Dict[str, Any]:
-        """Get telemetry data for monitoring dashboards."""
-        summary = self.accountant.get_privacy_summary()
-        return {
-            "privacy_budget": summary,
-            "recent_mechanisms": summary["history"][-10:],  # Last 10 mechanisms
-            "alerts_count": len(self.alerts_sent),
-            "monitoring_status": "healthy"
-            if not self.accountant.is_budget_exceeded()
-            else "critical",
-        }
+        return noise_multiplier
