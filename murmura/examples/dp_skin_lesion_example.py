@@ -287,6 +287,12 @@ def main() -> None:
         default="./visualizations",
         help="Directory to save visualizations",
     )
+    parser.add_argument(
+        "--experiment_name",
+        type=str,
+        default=None,
+        help="Custom experiment name for visualization directory (overrides default naming)",
+    )
 
     args = parser.parse_args()
 
@@ -493,11 +499,14 @@ def main() -> None:
         visualizer = None
         if args.create_summary:
             logger.info("=== Setting Up Visualization ===")
-            vis_dir = os.path.join(
-                args.vis_dir,
-                f"dp_skin_lesion_{args.topology}_{args.aggregation_strategy}"
-                + ("_dp" if args.enable_dp else "_no_dp"),
-            )
+            if args.experiment_name:
+                vis_dir = os.path.join(args.vis_dir, args.experiment_name)
+            else:
+                vis_dir = os.path.join(
+                    args.vis_dir,
+                    f"dp_skin_lesion_{args.topology}_{args.aggregation_strategy}"
+                    + ("_dp" if args.enable_dp else "_no_dp"),
+                )
             os.makedirs(vis_dir, exist_ok=True)
             visualizer = NetworkVisualizer(output_dir=vis_dir)
             learning_process.register_observer(visualizer)
