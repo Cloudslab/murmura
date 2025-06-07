@@ -3847,5 +3847,974 @@
       "group_detection_success": true
     },
     "timestamp": "2025-06-07T06:34:09.197564"
+  },
+  {
+    "experiment_id": 13,
+    "experiment_name": "exp_0013_mnist_decentralized_ring_5n_medium_dp",
+    "config": {
+      "config_id": 13,
+      "dataset": "mnist",
+      "attack_strategy": "sensitive_groups",
+      "fl_type": "decentralized",
+      "topology": "ring",
+      "node_count": 5,
+      "dp_setting": {
+        "enabled": true,
+        "epsilon": 8.0,
+        "name": "medium_dp"
+      },
+      "expected_runtime": 90
+    },
+    "status": "success",
+    "runtime_seconds": 40.12447500228882,
+    "attack_results": {
+      "attack_results": [
+        {
+          "communication_matrix": [
+            [
+              0.0,
+              6.0,
+              0.0,
+              0.0,
+              6.0
+            ],
+            [
+              6.0,
+              0.0,
+              6.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              6.0,
+              0.0,
+              6.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              6.0,
+              0.0,
+              6.0
+            ],
+            [
+              6.0,
+              0.0,
+              0.0,
+              6.0,
+              0.0
+            ]
+          ],
+          "node_clusters": {
+            "0": 0,
+            "1": 0,
+            "2": 1,
+            "3": 0,
+            "4": 1
+          },
+          "temporal_patterns": {
+            "0": {
+              "timestamp_std": 0.0001051207436160825,
+              "comm_count": 4.0
+            },
+            "1": {
+              "timestamp_std": 6.338970515572019e-05,
+              "comm_count": 4.0
+            },
+            "2": {
+              "timestamp_std": 5.2155116349352676e-05,
+              "comm_count": 4.0
+            },
+            "3": {
+              "timestamp_std": 4.370913755581172e-05,
+              "comm_count": 4.0
+            },
+            "4": {
+              "timestamp_std": 2.518750062754424e-05,
+              "comm_count": 4.0
+            }
+          },
+          "attack_success_metric": 0.6,
+          "attack_name": "Communication Pattern Attack"
+        },
+        {
+          "node_magnitude_stats": {
+            "0": {
+              "norm_mean": 3.2612353960673013,
+              "norm_std": 0.0014471147053566262,
+              "norm_trend": 0.936269225556633,
+              "mean_of_means": 0.002428895910270512,
+              "mean_of_stds": 0.1921519140402476
+            },
+            "1": {
+              "norm_mean": 3.2713027795155845,
+              "norm_std": 0.0062112028634933,
+              "norm_trend": -0.9949178963737124,
+              "mean_of_means": 0.0018243345354373257,
+              "mean_of_stds": 0.19275465607643127
+            },
+            "2": {
+              "norm_mean": 3.262132485707601,
+              "norm_std": 0.002691478073491229,
+              "norm_trend": 0.9052151717747101,
+              "mean_of_means": 0.0011712412039438884,
+              "mean_of_stds": 0.19221940139929453
+            },
+            "3": {
+              "norm_mean": 3.26063338915507,
+              "norm_std": 0.002043984919964151,
+              "norm_trend": 0.7559153402226252,
+              "mean_of_means": 0.0014492083185662825,
+              "mean_of_stds": 0.1921291003624598
+            },
+            "4": {
+              "norm_mean": 3.2699989477793374,
+              "norm_std": 0.00804089019176337,
+              "norm_trend": 0.9995117021494386,
+              "mean_of_means": 0.0017392259712020557,
+              "mean_of_stds": 0.19267850120862326
+            }
+          },
+          "magnitude_clusters": {
+            "0": 1,
+            "1": 0,
+            "2": 1,
+            "3": 1,
+            "4": 0
+          },
+          "temporal_magnitude": {
+            "0": {
+              "convergence_rate": 0.936269225556633,
+              "stability": 0.0014471147053566262,
+              "final_norm": 3.262535333633423
+            },
+            "1": {
+              "convergence_rate": -0.9949178963737124,
+              "stability": 0.0062112028634933,
+              "final_norm": 3.263292074203491
+            },
+            "2": {
+              "convergence_rate": 0.9052151717747101,
+              "stability": 0.002691478073491229,
+              "final_norm": 3.265925168991089
+            },
+            "3": {
+              "convergence_rate": 0.7559153402226252,
+              "stability": 0.002043984919964151,
+              "final_norm": 3.2615795135498047
+            },
+            "4": {
+              "convergence_rate": 0.9995117021494386,
+              "stability": 0.00804089019176337,
+              "final_norm": 3.2796645164489746
+            }
+          },
+          "attack_success_metric": 0.0014112396389675105,
+          "attack_name": "Parameter Magnitude Attack"
+        },
+        {
+          "topology_features": {
+            "0": {
+              "degree": 2,
+              "position": 0,
+              "is_central": 0,
+              "neighbor_sum": 5
+            },
+            "1": {
+              "degree": 2,
+              "position": 1,
+              "is_central": 0,
+              "neighbor_sum": 2
+            },
+            "2": {
+              "degree": 2,
+              "position": 2,
+              "is_central": 0,
+              "neighbor_sum": 4
+            },
+            "3": {
+              "degree": 2,
+              "position": 3,
+              "is_central": 0,
+              "neighbor_sum": 6
+            },
+            "4": {
+              "degree": 2,
+              "position": 4,
+              "is_central": 0,
+              "neighbor_sum": 3
+            }
+          },
+          "node_characteristics": {
+            "0": {
+              "avg_norm": 3.2612353960673013,
+              "norm_variability": 0.0014471147053566262,
+              "initial_norm": 3.259216547012329,
+              "final_norm": 3.262535333633423
+            },
+            "1": {
+              "avg_norm": 3.2713027795155845,
+              "norm_variability": 0.0062112028634933,
+              "initial_norm": 3.2784290313720703,
+              "final_norm": 3.263292074203491
+            },
+            "2": {
+              "avg_norm": 3.262132485707601,
+              "norm_variability": 0.002691478073491229,
+              "initial_norm": 3.2599573135375977,
+              "final_norm": 3.265925168991089
+            },
+            "3": {
+              "avg_norm": 3.26063338915507,
+              "norm_variability": 0.002043984919964151,
+              "initial_norm": 3.2577948570251465,
+              "final_norm": 3.2615795135498047
+            },
+            "4": {
+              "avg_norm": 3.2699989477793374,
+              "norm_variability": 0.00804089019176337,
+              "initial_norm": 3.2599780559539795,
+              "final_norm": 3.2796645164489746
+            }
+          },
+          "correlations": {
+            "position_vs_norm": 0.21047586103204147,
+            "degree_vs_norm": 0.0,
+            "position_vs_variability": 0.49478785840681605
+          },
+          "topology_predictions": {
+            "0": "even_position",
+            "1": "odd_position",
+            "2": "even_position",
+            "3": "odd_position",
+            "4": "even_position"
+          },
+          "attack_success_metric": 0.49478785840681605,
+          "attack_name": "Topology Structure Attack"
+        }
+      ],
+      "evaluation": {
+        "attack_summaries": [
+          {
+            "attack_name": "Communication Pattern Attack",
+            "success_metric": 0.6,
+            "key_findings": [
+              "Detected 2 distinct communication patterns"
+            ]
+          },
+          {
+            "attack_name": "Parameter Magnitude Attack",
+            "success_metric": 0.0014112396389675105,
+            "key_findings": [
+              "Parameter magnitudes show systematic differences between nodes"
+            ]
+          },
+          {
+            "attack_name": "Topology Structure Attack",
+            "success_metric": 0.49478785840681605,
+            "key_findings": [
+              "Strong topology correlations detected: [('position_vs_variability', np.float64(0.49478785840681605))]"
+            ]
+          }
+        ],
+        "overall_success": true,
+        "best_attack": "Communication Pattern Attack",
+        "attack_indicators": {
+          "max_signal": 0.6
+        }
+      },
+      "visualization_data_summary": {
+        "communications": 60,
+        "parameter_updates": 15,
+        "topology": 5,
+        "metrics": 4
+      }
+    },
+    "evaluation": {
+      "attack_success": true,
+      "confidence_score": 0.6,
+      "attack_type_scores": {
+        "Communication Pattern Attack": 0.6,
+        "Parameter Magnitude Attack": 0.0014112396389675105,
+        "Topology Structure Attack": 0.49478785840681605
+      },
+      "best_attack_type": "Communication Pattern Attack",
+      "topology_specific_metrics": {
+        "topology": "ring",
+        "node_count": 5,
+        "topology_vulnerability_score": 0.6,
+        "communication_complexity": {
+          "total_edges": 5,
+          "max_degree": 2,
+          "avg_degree": 2.0
+        }
+      },
+      "dp_effectiveness_metrics": {
+        "dp_enabled": true,
+        "epsilon": 8.0,
+        "privacy_level": "medium_dp",
+        "dp_protection_effective": false,
+        "signal_strength_with_dp": 0.6,
+        "privacy_budget_utilization": 0.8999999999999999
+      },
+      "scalability_metrics": {
+        "network_size": 5,
+        "size_category": "small",
+        "attack_scalability_score": 0.6
+      },
+      "strategy_specific_findings": [
+        "Detected 2 distinct groups via communication patterns"
+      ],
+      "group_detection_success": true
+    },
+    "timestamp": "2025-06-07T06:34:49.328986"
+  },
+  {
+    "experiment_id": 14,
+    "experiment_name": "exp_0014_mnist_decentralized_complete_5n_medium_dp",
+    "config": {
+      "config_id": 14,
+      "dataset": "mnist",
+      "attack_strategy": "sensitive_groups",
+      "fl_type": "decentralized",
+      "topology": "complete",
+      "node_count": 5,
+      "dp_setting": {
+        "enabled": true,
+        "epsilon": 8.0,
+        "name": "medium_dp"
+      },
+      "expected_runtime": 90
+    },
+    "status": "success",
+    "runtime_seconds": 39.607436656951904,
+    "attack_results": {
+      "attack_results": [
+        {
+          "communication_matrix": [
+            [
+              0.0,
+              6.0,
+              6.0,
+              6.0,
+              6.0
+            ],
+            [
+              6.0,
+              0.0,
+              6.0,
+              6.0,
+              6.0
+            ],
+            [
+              6.0,
+              6.0,
+              0.0,
+              6.0,
+              6.0
+            ],
+            [
+              6.0,
+              6.0,
+              6.0,
+              0.0,
+              6.0
+            ],
+            [
+              6.0,
+              6.0,
+              6.0,
+              6.0,
+              0.0
+            ]
+          ],
+          "node_clusters": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 1
+          },
+          "temporal_patterns": {
+            "0": {
+              "timestamp_std": 0.00010295743211815395,
+              "comm_count": 8.0
+            },
+            "1": {
+              "timestamp_std": 6.915375704982475e-05,
+              "comm_count": 8.0
+            },
+            "2": {
+              "timestamp_std": 5.268187439883268e-05,
+              "comm_count": 8.0
+            },
+            "3": {
+              "timestamp_std": 3.9137354299250184e-05,
+              "comm_count": 8.0
+            },
+            "4": {
+              "timestamp_std": 2.6190436223954808e-05,
+              "comm_count": 8.0
+            }
+          },
+          "attack_success_metric": 0.8,
+          "attack_name": "Communication Pattern Attack"
+        },
+        {
+          "node_magnitude_stats": {
+            "0": {
+              "norm_mean": 3.262203852335612,
+              "norm_std": 0.013415448790081247,
+              "norm_trend": 0.9765866369426164,
+              "mean_of_means": 0.003802135974789659,
+              "mean_of_stds": 0.19218923648198447
+            },
+            "1": {
+              "norm_mean": 3.252225399017334,
+              "norm_std": 0.014145424595097279,
+              "norm_trend": -0.981657151039194,
+              "mean_of_means": 0.00362048150661091,
+              "mean_of_stds": 0.1916049917538961
+            },
+            "2": {
+              "norm_mean": 3.257572889328003,
+              "norm_std": 0.0018618079923630737,
+              "norm_trend": 0.801702725804516,
+              "mean_of_means": 0.0036308374255895615,
+              "mean_of_stds": 0.19191901882489523
+            },
+            "3": {
+              "norm_mean": 3.2593748569488525,
+              "norm_std": 0.008418849868326049,
+              "norm_trend": -0.9996247088133783,
+              "mean_of_means": 0.0036962818509588637,
+              "mean_of_stds": 0.19202478229999542
+            },
+            "4": {
+              "norm_mean": 3.2549264430999756,
+              "norm_std": 0.008326688299378585,
+              "norm_trend": 0.999116264653516,
+              "mean_of_means": 0.003443731926381588,
+              "mean_of_stds": 0.19176724553108215
+            }
+          },
+          "magnitude_clusters": {
+            "0": 1,
+            "1": 0,
+            "2": 1,
+            "3": 1,
+            "4": 0
+          },
+          "temporal_magnitude": {
+            "0": {
+              "convergence_rate": 0.9765866369426142,
+              "stability": 0.013415448790081093,
+              "final_norm": 3.280290365219116
+            },
+            "1": {
+              "convergence_rate": -0.981657151039194,
+              "stability": 0.014145424595097279,
+              "final_norm": 3.2371256351470947
+            },
+            "2": {
+              "convergence_rate": 0.8017027258044621,
+              "stability": 0.0018618079923631988,
+              "final_norm": 3.260187864303589
+            },
+            "3": {
+              "convergence_rate": -0.9996247088133783,
+              "stability": 0.008418849868326049,
+              "final_norm": 3.2492308616638184
+            },
+            "4": {
+              "convergence_rate": 0.999116264653516,
+              "stability": 0.008326688299378585,
+              "final_norm": 3.2648680210113525
+            }
+          },
+          "attack_success_metric": 0.001061770906026864,
+          "attack_name": "Parameter Magnitude Attack"
+        },
+        {
+          "topology_features": {
+            "0": {
+              "degree": 4,
+              "position": 0,
+              "is_central": 1,
+              "neighbor_sum": 10
+            },
+            "1": {
+              "degree": 4,
+              "position": 1,
+              "is_central": 1,
+              "neighbor_sum": 9
+            },
+            "2": {
+              "degree": 4,
+              "position": 2,
+              "is_central": 1,
+              "neighbor_sum": 8
+            },
+            "3": {
+              "degree": 4,
+              "position": 3,
+              "is_central": 1,
+              "neighbor_sum": 7
+            },
+            "4": {
+              "degree": 4,
+              "position": 4,
+              "is_central": 1,
+              "neighbor_sum": 6
+            }
+          },
+          "node_characteristics": {
+            "0": {
+              "avg_norm": 3.262203852335612,
+              "norm_variability": 0.013415448790081093,
+              "initial_norm": 3.248198747634888,
+              "final_norm": 3.280290365219116
+            },
+            "1": {
+              "avg_norm": 3.252225399017334,
+              "norm_variability": 0.014145424595097279,
+              "initial_norm": 3.271139144897461,
+              "final_norm": 3.2371256351470947
+            },
+            "2": {
+              "avg_norm": 3.257572889328003,
+              "norm_variability": 0.0018618079923631988,
+              "initial_norm": 3.2565317153930664,
+              "final_norm": 3.260187864303589
+            },
+            "3": {
+              "avg_norm": 3.2593748569488525,
+              "norm_variability": 0.008418849868326049,
+              "initial_norm": 3.2698450088500977,
+              "final_norm": 3.2492308616638184
+            },
+            "4": {
+              "avg_norm": 3.2549264430999756,
+              "norm_variability": 0.008326688299378585,
+              "initial_norm": 3.244489908218384,
+              "final_norm": 3.2648680210113525
+            }
+          },
+          "correlations": {
+            "position_vs_norm": -0.30281533639597996,
+            "degree_vs_norm": 0.0,
+            "position_vs_variability": -0.5094863276551861
+          },
+          "topology_predictions": {
+            "0": "central_hub",
+            "1": "central_hub",
+            "2": "central_hub",
+            "3": "central_hub",
+            "4": "central_hub"
+          },
+          "attack_success_metric": 0.5094863276551861,
+          "attack_name": "Topology Structure Attack"
+        }
+      ],
+      "evaluation": {
+        "attack_summaries": [
+          {
+            "attack_name": "Communication Pattern Attack",
+            "success_metric": 0.8,
+            "key_findings": [
+              "Detected 2 distinct communication patterns"
+            ]
+          },
+          {
+            "attack_name": "Parameter Magnitude Attack",
+            "success_metric": 0.001061770906026864,
+            "key_findings": [
+              "Parameter magnitudes show systematic differences between nodes"
+            ]
+          },
+          {
+            "attack_name": "Topology Structure Attack",
+            "success_metric": 0.5094863276551861,
+            "key_findings": [
+              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.30281533639597996)), ('position_vs_variability', np.float64(-0.5094863276551861))]"
+            ]
+          }
+        ],
+        "overall_success": true,
+        "best_attack": "Communication Pattern Attack",
+        "attack_indicators": {
+          "max_signal": 0.8
+        }
+      },
+      "visualization_data_summary": {
+        "communications": 120,
+        "parameter_updates": 15,
+        "topology": 5,
+        "metrics": 4
+      }
+    },
+    "evaluation": {
+      "attack_success": true,
+      "confidence_score": 0.8,
+      "attack_type_scores": {
+        "Communication Pattern Attack": 0.8,
+        "Parameter Magnitude Attack": 0.001061770906026864,
+        "Topology Structure Attack": 0.5094863276551861
+      },
+      "best_attack_type": "Communication Pattern Attack",
+      "topology_specific_metrics": {
+        "topology": "complete",
+        "node_count": 5,
+        "topology_vulnerability_score": 0.8,
+        "communication_complexity": {
+          "total_edges": 10,
+          "max_degree": 4,
+          "avg_degree": 4
+        }
+      },
+      "dp_effectiveness_metrics": {
+        "dp_enabled": true,
+        "epsilon": 8.0,
+        "privacy_level": "medium_dp",
+        "dp_protection_effective": false,
+        "signal_strength_with_dp": 0.8,
+        "privacy_budget_utilization": 0.8999999999999999
+      },
+      "scalability_metrics": {
+        "network_size": 5,
+        "size_category": "small",
+        "attack_scalability_score": 0.8
+      },
+      "strategy_specific_findings": [
+        "Detected 2 distinct groups via communication patterns"
+      ],
+      "group_detection_success": true
+    },
+    "timestamp": "2025-06-07T06:35:28.944082"
+  },
+  {
+    "experiment_id": 15,
+    "experiment_name": "exp_0015_mnist_decentralized_line_5n_medium_dp",
+    "config": {
+      "config_id": 15,
+      "dataset": "mnist",
+      "attack_strategy": "sensitive_groups",
+      "fl_type": "decentralized",
+      "topology": "line",
+      "node_count": 5,
+      "dp_setting": {
+        "enabled": true,
+        "epsilon": 8.0,
+        "name": "medium_dp"
+      },
+      "expected_runtime": 90
+    },
+    "status": "success",
+    "runtime_seconds": 39.81952214241028,
+    "attack_results": {
+      "attack_results": [
+        {
+          "communication_matrix": [
+            [
+              0.0,
+              6.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              6.0,
+              0.0,
+              3.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              3.0,
+              0.0,
+              3.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              3.0,
+              0.0,
+              3.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              3.0,
+              0.0
+            ]
+          ],
+          "node_clusters": {
+            "0": 1,
+            "1": 0,
+            "2": 1,
+            "3": 1,
+            "4": 1
+          },
+          "temporal_patterns": {
+            "0": {
+              "timestamp_std": 0.00011182961731991618,
+              "comm_count": 2.0
+            },
+            "1": {
+              "timestamp_std": 5.753526834567156e-05,
+              "comm_count": 3.0
+            },
+            "2": {
+              "timestamp_std": 6.524328538543436e-05,
+              "comm_count": 2.0
+            },
+            "3": {
+              "timestamp_std": 5.495944812397557e-05,
+              "comm_count": 2.0
+            },
+            "4": {
+              "timestamp_std": NaN,
+              "comm_count": 1.0
+            }
+          },
+          "attack_success_metric": 0.8,
+          "attack_name": "Communication Pattern Attack"
+        },
+        {
+          "node_magnitude_stats": {
+            "0": {
+              "norm_mean": 3.2651334603627524,
+              "norm_std": 0.0019653073980313044,
+              "norm_trend": -0.9946818511521018,
+              "mean_of_means": 0.008770069107413292,
+              "mean_of_stds": 0.19219921032587686
+            },
+            "1": {
+              "norm_mean": 3.267230669657389,
+              "norm_std": 0.009808419249441373,
+              "norm_trend": 0.9114052175845946,
+              "mean_of_means": 0.008903572335839272,
+              "mean_of_stds": 0.19231691459814707
+            },
+            "2": {
+              "norm_mean": 3.268018881479899,
+              "norm_std": 0.006197007648521966,
+              "norm_trend": -0.9575220165444097,
+              "mean_of_means": 0.007555225243171056,
+              "mean_of_stds": 0.19241896271705627
+            },
+            "3": {
+              "norm_mean": 3.2587314446767173,
+              "norm_std": 0.0021762236550951614,
+              "norm_trend": 0.9854946900953241,
+              "mean_of_means": 0.007650797565778096,
+              "mean_of_stds": 0.19186832010746002
+            },
+            "4": {
+              "norm_mean": 3.268230756123861,
+              "norm_std": 0.007796938985943457,
+              "norm_trend": -0.8537793343980498,
+              "mean_of_means": 0.008099052434166273,
+              "mean_of_stds": 0.1924110303322474
+            }
+          },
+          "magnitude_clusters": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 1,
+            "4": 0
+          },
+          "temporal_magnitude": {
+            "0": {
+              "convergence_rate": -0.9946818511520955,
+              "stability": 0.001965307398031135,
+              "final_norm": 3.2625961303710938
+            },
+            "1": {
+              "convergence_rate": 0.9114052175845946,
+              "stability": 0.009808419249441373,
+              "final_norm": 3.2810332775115967
+            },
+            "2": {
+              "convergence_rate": -0.9575220165444097,
+              "stability": 0.006197007648521966,
+              "final_norm": 3.2620151042938232
+            },
+            "3": {
+              "convergence_rate": 0.9854946900953295,
+              "stability": 0.002176223655094965,
+              "final_norm": 3.261096954345703
+            },
+            "4": {
+              "convergence_rate": -0.85377933439805,
+              "stability": 0.007796938985943666,
+              "final_norm": 3.25720739364624
+            }
+          },
+          "attack_success_metric": 0.0010847792670521505,
+          "attack_name": "Parameter Magnitude Attack"
+        },
+        {
+          "topology_features": {
+            "0": {
+              "degree": 1,
+              "position": 0,
+              "is_central": 0,
+              "neighbor_sum": 1
+            },
+            "1": {
+              "degree": 1,
+              "position": 1,
+              "is_central": 0,
+              "neighbor_sum": 0
+            },
+            "2": {
+              "degree": 1,
+              "position": 2,
+              "is_central": 0,
+              "neighbor_sum": 1
+            },
+            "3": {
+              "degree": 1,
+              "position": 3,
+              "is_central": 0,
+              "neighbor_sum": 2
+            },
+            "4": {
+              "degree": 1,
+              "position": 4,
+              "is_central": 0,
+              "neighbor_sum": 3
+            }
+          },
+          "node_characteristics": {
+            "0": {
+              "avg_norm": 3.2651334603627524,
+              "norm_variability": 0.001965307398031135,
+              "initial_norm": 3.267384529113769,
+              "final_norm": 3.2625961303710938
+            },
+            "1": {
+              "avg_norm": 3.267230669657389,
+              "norm_variability": 0.009808419249441373,
+              "initial_norm": 3.259136199951172,
+              "final_norm": 3.2810332775115967
+            },
+            "2": {
+              "avg_norm": 3.268018881479899,
+              "norm_variability": 0.006197007648521966,
+              "initial_norm": 3.276549816131592,
+              "final_norm": 3.2620151042938232
+            },
+            "3": {
+              "avg_norm": 3.2587314446767173,
+              "norm_variability": 0.002176223655094965,
+              "initial_norm": 3.2558436393737797,
+              "final_norm": 3.261096954345703
+            },
+            "4": {
+              "avg_norm": 3.268230756123861,
+              "norm_variability": 0.007796938985943666,
+              "initial_norm": 3.2735133171081543,
+              "final_norm": 3.25720739364624
+            }
+          },
+          "correlations": {
+            "position_vs_norm": -0.09200891586743878,
+            "degree_vs_norm": 0.0,
+            "position_vs_variability": 0.18432592802331343
+          },
+          "topology_predictions": {
+            "0": "even_position",
+            "1": "odd_position",
+            "2": "even_position",
+            "3": "odd_position",
+            "4": "even_position"
+          },
+          "attack_success_metric": 0.18432592802331343,
+          "attack_name": "Topology Structure Attack"
+        }
+      ],
+      "evaluation": {
+        "attack_summaries": [
+          {
+            "attack_name": "Communication Pattern Attack",
+            "success_metric": 0.8,
+            "key_findings": [
+              "Detected 2 distinct communication patterns"
+            ]
+          },
+          {
+            "attack_name": "Parameter Magnitude Attack",
+            "success_metric": 0.0010847792670521505,
+            "key_findings": [
+              "Parameter magnitudes show systematic differences between nodes"
+            ]
+          },
+          {
+            "attack_name": "Topology Structure Attack",
+            "success_metric": 0.18432592802331343,
+            "key_findings": [
+              "No significant patterns detected"
+            ]
+          }
+        ],
+        "overall_success": true,
+        "best_attack": "Communication Pattern Attack",
+        "attack_indicators": {
+          "max_signal": 0.8
+        }
+      },
+      "visualization_data_summary": {
+        "communications": 30,
+        "parameter_updates": 15,
+        "topology": 5,
+        "metrics": 4
+      }
+    },
+    "evaluation": {
+      "attack_success": true,
+      "confidence_score": 0.8,
+      "attack_type_scores": {
+        "Communication Pattern Attack": 0.8,
+        "Parameter Magnitude Attack": 0.0010847792670521505,
+        "Topology Structure Attack": 0.18432592802331343
+      },
+      "best_attack_type": "Communication Pattern Attack",
+      "topology_specific_metrics": {
+        "topology": "line",
+        "node_count": 5,
+        "topology_vulnerability_score": 0.8,
+        "communication_complexity": {
+          "total_edges": 4,
+          "max_degree": 2,
+          "avg_degree": 2.0
+        }
+      },
+      "dp_effectiveness_metrics": {
+        "dp_enabled": true,
+        "epsilon": 8.0,
+        "privacy_level": "medium_dp",
+        "dp_protection_effective": false,
+        "signal_strength_with_dp": 0.8,
+        "privacy_budget_utilization": 0.8999999999999999
+      },
+      "scalability_metrics": {
+        "network_size": 5,
+        "size_category": "small",
+        "attack_scalability_score": 0.8
+      },
+      "strategy_specific_findings": [
+        "Detected 2 distinct groups via communication patterns"
+      ],
+      "group_detection_success": true
+    },
+    "timestamp": "2025-06-07T06:36:08.771727"
   }
 ]
