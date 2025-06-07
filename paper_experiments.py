@@ -578,15 +578,22 @@ class PaperExperimentRunner:
         results_file = self.base_output_dir / "results" / "intermediate_results.json"
         
         def convert_types(obj):
-            if hasattr(obj, 'item'):
-                return obj.item()
-            elif hasattr(obj, 'tolist'):
-                return obj.tolist()
-            elif isinstance(obj, np.integer):
-                return int(obj)
-            elif isinstance(obj, np.floating):
-                return float(obj)
-            return str(obj)
+            try:
+                if hasattr(obj, 'item') and obj.size == 1:
+                    return obj.item()
+                elif hasattr(obj, 'tolist'):
+                    return obj.tolist()
+                elif isinstance(obj, np.integer):
+                    return int(obj)
+                elif isinstance(obj, np.floating):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                elif hasattr(obj, '__array__'):
+                    return np.array(obj).tolist()
+                return str(obj)
+            except (ValueError, AttributeError):
+                return str(obj)
         
         with open(results_file, 'w') as f:
             json.dump(self.results, f, indent=2, default=convert_types)
@@ -597,15 +604,22 @@ class PaperExperimentRunner:
         results_file = self.base_output_dir / "results" / f"final_results_{timestamp}.json"
         
         def convert_types(obj):
-            if hasattr(obj, 'item'):
-                return obj.item()
-            elif hasattr(obj, 'tolist'):
-                return obj.tolist()
-            elif isinstance(obj, np.integer):
-                return int(obj)
-            elif isinstance(obj, np.floating):
-                return float(obj)
-            return str(obj)
+            try:
+                if hasattr(obj, 'item') and obj.size == 1:
+                    return obj.item()
+                elif hasattr(obj, 'tolist'):
+                    return obj.tolist()
+                elif isinstance(obj, np.integer):
+                    return int(obj)
+                elif isinstance(obj, np.floating):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                elif hasattr(obj, '__array__'):
+                    return np.array(obj).tolist()
+                return str(obj)
+            except (ValueError, AttributeError):
+                return str(obj)
         
         with open(results_file, 'w') as f:
             json.dump(self.results, f, indent=2, default=convert_types)
