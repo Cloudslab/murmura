@@ -121,10 +121,15 @@ class TopologyCorrelatedPartitioner(Partitioner):
         dataset.add_partitions(split_name, cast(Dict[int, List[int]], self.partitions))
     
     def _create_ring_correlation(self, targets, unique_classes):
-        """Ring: Sequential nodes get sequential classes."""
-        for cls_idx, cls in enumerate(unique_classes):
+        """Ring: Sequential nodes get sequential classes.
+        
+        Fixed to handle cases where num_classes != num_partitions properly.
+        Each node should get exactly one primary class when possible.
+        """
+        # First, assign primary classes to nodes (one class per node when possible)
+        for node_id in range(min(self.num_partitions, len(unique_classes))):
+            cls = unique_classes[node_id]
             cls_indices = np.where(targets == cls)[0]
-            primary_node = cls_idx % self.num_partitions
             
             # Determine how much goes to primary vs other nodes
             n_primary = int(len(cls_indices) * self.correlation_strength)
@@ -132,17 +137,30 @@ class TopologyCorrelatedPartitioner(Partitioner):
             
             self.rng.shuffle(cls_indices)
             
-            # Assign to primary node
-            self.partitions[primary_node].extend(cls_indices[:n_primary].tolist())
+            # Assign primary samples to this node
+            self.partitions[node_id].extend(cls_indices[:n_primary].tolist())
             
-            # Distribute remainder randomly
+            # Distribute remainder to other nodes
             if n_secondary > 0:
-                remaining_nodes = [i for i in range(self.num_partitions) if i != primary_node]
-                secondary_chunks = np.array_split(cls_indices[n_primary:], len(remaining_nodes))
+                other_nodes = [i for i in range(self.num_partitions) if i != node_id]
+                secondary_chunks = np.array_split(cls_indices[n_primary:], len(other_nodes))
                 
-                for node, chunk in zip(remaining_nodes, secondary_chunks):
+                for other_node, chunk in zip(other_nodes, secondary_chunks):
                     if len(chunk) > 0:
-                        self.partitions[node].extend(chunk.tolist())
+                        self.partitions[other_node].extend(chunk.tolist())
+        
+        # Handle remaining classes if more classes than nodes
+        if len(unique_classes) > self.num_partitions:
+            for cls_idx in range(self.num_partitions, len(unique_classes)):
+                cls = unique_classes[cls_idx]
+                cls_indices = np.where(targets == cls)[0]
+                
+                # Distribute these extra classes evenly across all nodes
+                self.rng.shuffle(cls_indices)
+                chunks = np.array_split(cls_indices, self.num_partitions)
+                for node_id, chunk in enumerate(chunks):
+                    if len(chunk) > 0:
+                        self.partitions[node_id].extend(chunk.tolist())
     
     def _create_star_correlation(self, targets, unique_classes):
         """Star: Center node (0) gets mixed data, leaves get specialized."""
@@ -210,21 +228,28 @@ class ImbalancedSensitivePartitioner(Partitioner):
             else:
                 common_indices[cls] = cls_indices
         
-        # Distribute rare classes to designated nodes
+        # Distribute rare classes to create true imbalance
         for cls, indices in rare_indices.items():
             n_rare = max(1, int(len(indices) * self.rarity_factor))
             self.rng.shuffle(indices)
             
-            # Most samples go to rare_class_nodes
+            # Rare samples go ONLY to designated rare_class_nodes
             rare_chunks = np.array_split(indices[:n_rare], len(self.rare_class_nodes))
             for node, chunk in zip(self.rare_class_nodes, rare_chunks):
                 self.partitions[node].extend(chunk.tolist())
             
-            # Remainder distributed normally
+            # Remaining samples go ONLY to non-rare nodes (to maintain imbalance)
             if len(indices) > n_rare:
-                remaining_chunks = np.array_split(indices[n_rare:], self.num_partitions)
-                for node, chunk in enumerate(remaining_chunks):
-                    self.partitions[node].extend(chunk.tolist())
+                non_rare_nodes = [i for i in range(self.num_partitions) if i not in self.rare_class_nodes]
+                if non_rare_nodes:  # Only distribute if there are non-rare nodes
+                    remaining_chunks = np.array_split(indices[n_rare:], len(non_rare_nodes))
+                    for node, chunk in zip(non_rare_nodes, remaining_chunks):
+                        self.partitions[node].extend(chunk.tolist())
+                else:
+                    # If all nodes are rare nodes, distribute remainder among them too
+                    remaining_chunks = np.array_split(indices[n_rare:], len(self.rare_class_nodes))
+                    for node, chunk in zip(self.rare_class_nodes, remaining_chunks):
+                        self.partitions[node].extend(chunk.tolist())
         
         # Distribute common classes normally
         for cls, indices in common_indices.items():
