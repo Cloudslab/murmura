@@ -76,10 +76,12 @@ class PaperExperimentRunner:
         
         configurations = []
         
-        # Experimental parameters
-        datasets = ["mnist", "skin_lesion"]
+        # Experimental parameters with dataset-optimal node counts
+        datasets_and_node_counts = [
+            ("mnist", [5, 10, 15, 20, 25]),      # MNIST: 10 classes, optimal at 10 nodes
+            ("skin_lesion", [5, 7, 10, 15, 20])  # Skin lesion: 7 classes, optimal at 7 nodes
+        ]
         attack_strategies = ["sensitive_groups", "topology_correlated", "imbalanced_sensitive"]
-        node_counts = [5, 10, 15, 20, 25]  # Scale up to 25 nodes
         dp_settings = [
             {"enabled": False, "epsilon": None, "name": "no_dp"},
             {"enabled": True, "epsilon": 16.0, "name": "weak_dp"},
@@ -90,7 +92,7 @@ class PaperExperimentRunner:
         
         config_id = 1
         
-        for dataset in datasets:
+        for dataset, node_counts in datasets_and_node_counts:
             for attack_strategy in attack_strategies:
                 for node_count in node_counts:
                     for dp_setting in dp_settings:
