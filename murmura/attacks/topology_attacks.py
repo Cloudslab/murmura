@@ -366,11 +366,14 @@ class TopologyStructureAttack(TopologyAttack):
         avg_norms = [node_characteristics[node]['avg_norm'] for node in common_nodes]
         norm_vars = [node_characteristics[node]['norm_variability'] for node in common_nodes]
         
-        # Calculate correlations
+        # Calculate correlations (suppress warnings for constant arrays)
+        import warnings
         try:
-            correlations['position_vs_norm'] = pearsonr(positions, avg_norms)[0]
-            correlations['degree_vs_norm'] = pearsonr(degrees, avg_norms)[0]
-            correlations['position_vs_variability'] = pearsonr(positions, norm_vars)[0]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                correlations['position_vs_norm'] = pearsonr(positions, avg_norms)[0]
+                correlations['degree_vs_norm'] = pearsonr(degrees, avg_norms)[0]
+                correlations['position_vs_variability'] = pearsonr(positions, norm_vars)[0]
         except:
             correlations = {'position_vs_norm': 0.0, 'degree_vs_norm': 0.0, 'position_vs_variability': 0.0}
         
