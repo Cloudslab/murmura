@@ -16,6 +16,7 @@ from murmura.visualization.training_event import (
     ModelUpdateEvent,
     EvaluationEvent,
     InitialStateEvent,
+    NetworkStructureEvent,
 )
 from murmura.visualization.training_observer import TrainingObserver
 
@@ -59,6 +60,15 @@ class NetworkVisualizer(TrainingObserver):
         ] = {}  # Per-node activity tracking
         self.communication_log: List[Dict[str, Any]] = []  # Communication events
         self.parameter_updates: List[Dict[str, Any]] = []  # Parameter update tracking
+        
+        # Enhanced network structure data
+        self.network_structure: Optional[Dict[str, Any]] = None
+        self.adjacency_matrix: Optional[List[List[int]]] = None
+        self.node_identifiers: List[str] = []
+        self.edge_weights: Dict[str, float] = {}
+        self.node_attributes: Dict[int, Dict[str, Any]] = {}
+        self.geographic_info: Dict[int, Dict[str, float]] = {}
+        self.organizational_hierarchy: Dict[int, Dict[str, str]] = {}
 
     def set_topology(self, topology_manager: TopologyManager) -> None:
         """
@@ -77,7 +87,7 @@ class NetworkVisualizer(TrainingObserver):
         Args:
             event: The training event to process
         """
-        if self.topology is None and not isinstance(event, InitialStateEvent):
+        if self.topology is None and not isinstance(event, (InitialStateEvent, NetworkStructureEvent)):
             return  # Can't visualize without topology information
 
         # Log the event for CSV export
@@ -101,7 +111,45 @@ class NetworkVisualizer(TrainingObserver):
 
         description = f"Round {event.round_num}: {event.step_name}"
 
-        if isinstance(event, InitialStateEvent):
+        if isinstance(event, NetworkStructureEvent):
+            self.network_type = event.topology_type
+            frame["topology_type"] = event.topology_type
+            frame["num_nodes"] = event.num_nodes
+            description = "Network structure initialization"
+            
+            # Store comprehensive network structure data
+            self.network_structure = event.get_network_summary()
+            self.adjacency_matrix = event.adjacency_matrix
+            self.node_identifiers = event.node_identifiers
+            self.edge_weights = event.edge_weights
+            self.node_attributes = event.node_attributes
+            self.geographic_info = event.geographic_info
+            self.organizational_hierarchy = event.organizational_hierarchy
+            
+            # Add comprehensive data to frame
+            frame["network_structure"] = self.network_structure
+            frame["adjacency_matrix"] = event.adjacency_matrix
+            frame["node_identifiers"] = event.node_identifiers
+            frame["edge_weights"] = event.edge_weights
+            frame["node_attributes"] = event.node_attributes
+            frame["geographic_info"] = event.geographic_info
+            frame["organizational_hierarchy"] = event.organizational_hierarchy
+            
+            # Add to event log with detailed network structure
+            event_data.update({
+                "topology_type": event.topology_type,
+                "num_nodes": event.num_nodes,
+                "network_density": self.network_structure.get("network_density", 0),
+                "total_edges": self.network_structure.get("total_edges", 0),
+                "total_cpu_cores": self.network_structure.get("resource_totals", {}).get("cpu_cores", 0),
+                "total_memory_gb": self.network_structure.get("resource_totals", {}).get("memory_gb", 0),
+                "total_gpus": self.network_structure.get("resource_totals", {}).get("gpu_count", 0),
+                "avg_bandwidth_mbps": self.network_structure.get("resource_totals", {}).get("avg_bandwidth_mbps", 0),
+                "node_type_distribution": str(self.network_structure.get("node_type_distribution", {})),
+                "organizational_entities": self.network_structure.get("organizational_entities", 0),
+            })
+            
+        elif isinstance(event, InitialStateEvent):
             self.network_type = event.topology_type
             frame["topology_type"] = event.topology_type
             frame["num_nodes"] = event.num_nodes
@@ -451,7 +499,12 @@ class NetworkVisualizer(TrainingObserver):
                     with open(
                         activity_csv_path, "w", newline="", encoding="utf-8"
                     ) as f:
-                        writer = csv.DictWriter(f, fieldnames=activities[0].keys())
+                        # Get all possible fieldnames from all activities
+                        all_fieldnames = set()
+                        for activity in activities:
+                            all_fieldnames.update(activity.keys())
+                        
+                        writer = csv.DictWriter(f, fieldnames=sorted(all_fieldnames))
                         writer.writeheader()
                         writer.writerows(activities)
             print(f"Node activities exported for {len(self.node_activities)} nodes")
@@ -470,24 +523,144 @@ class NetworkVisualizer(TrainingObserver):
                     writer.writerows(self.parameter_updates)
             print(f"Parameter updates exported to {param_update_csv_path}")
 
-        # 7. Export topology information
-        if self.topology:
-            topology_csv_path = os.path.join(self.output_dir, f"{prefix}_topology.csv")
-            with open(topology_csv_path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(
-                    f, fieldnames=["node_id", "connected_nodes", "degree"]
-                )
-                writer.writeheader()
-
-                for node_id, neighbors in self.topology.items():
-                    writer.writerow(
-                        {
-                            "node_id": node_id,
-                            "connected_nodes": ",".join(map(str, neighbors)),
-                            "degree": len(neighbors),
-                        }
+        # 7. Export enhanced network structure information
+        if self.network_structure or self.topology:
+            # Basic topology CSV
+            if self.topology:
+                topology_csv_path = os.path.join(self.output_dir, f"{prefix}_topology.csv")
+                with open(topology_csv_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(
+                        f, fieldnames=["node_id", "connected_nodes", "degree"]
                     )
-            print(f"Topology exported to {topology_csv_path}")
+                    writer.writeheader()
+
+                    for node_id, neighbors in self.topology.items():
+                        writer.writerow(
+                            {
+                                "node_id": node_id,
+                                "connected_nodes": ",".join(map(str, neighbors)),
+                                "degree": len(neighbors),
+                            }
+                        )
+                print(f"Topology exported to {topology_csv_path}")
+            
+            # Enhanced network structure CSV
+            if self.network_structure:
+                network_csv_path = os.path.join(self.output_dir, f"{prefix}_network_structure.csv")
+                with open(network_csv_path, "w", newline="", encoding="utf-8") as f:
+                    # Create a single-row CSV with network-wide statistics
+                    fieldnames = [
+                        "topology_type", "num_nodes", "total_edges", "network_density",
+                        "avg_degree", "max_degree", "min_degree", "total_cpu_cores",
+                        "total_memory_gb", "total_gpus", "avg_bandwidth_mbps",
+                        "organizational_entities", "geographic_coverage"
+                    ]
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    
+                    row = {
+                        "topology_type": self.network_structure["topology_type"],
+                        "num_nodes": self.network_structure["num_nodes"],
+                        "total_edges": self.network_structure["total_edges"],
+                        "network_density": self.network_structure["network_density"],
+                        "avg_degree": self.network_structure["node_degrees"]["average"],
+                        "max_degree": self.network_structure["node_degrees"]["maximum"],
+                        "min_degree": self.network_structure["node_degrees"]["minimum"],
+                        "total_cpu_cores": self.network_structure["resource_totals"]["cpu_cores"],
+                        "total_memory_gb": self.network_structure["resource_totals"]["memory_gb"],
+                        "total_gpus": self.network_structure["resource_totals"]["gpu_count"],
+                        "avg_bandwidth_mbps": self.network_structure["resource_totals"]["avg_bandwidth_mbps"],
+                        "organizational_entities": self.network_structure["organizational_entities"],
+                        "geographic_coverage": self.network_structure["geographic_coverage"],
+                    }
+                    writer.writerow(row)
+                print(f"Network structure exported to {network_csv_path}")
+            
+            # Adjacency matrix CSV
+            if self.adjacency_matrix:
+                adj_matrix_csv_path = os.path.join(self.output_dir, f"{prefix}_adjacency_matrix.csv")
+                with open(adj_matrix_csv_path, "w", newline="", encoding="utf-8") as f:
+                    fieldnames = ["node_id"] + [f"connects_to_{i}" for i in range(len(self.adjacency_matrix))]
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    
+                    for i, adj_row in enumerate(self.adjacency_matrix):
+                        csv_row: Dict[str, Any] = {"node_id": i}
+                        for j, connection in enumerate(adj_row):
+                            csv_row[f"connects_to_{j}"] = connection
+                        writer.writerow(csv_row)
+                print(f"Adjacency matrix exported to {adj_matrix_csv_path}")
+            
+            # Node attributes CSV
+            if self.node_attributes:
+                node_attrs_csv_path = os.path.join(self.output_dir, f"{prefix}_node_attributes.csv")
+                with open(node_attrs_csv_path, "w", newline="", encoding="utf-8") as f:
+                    # Get all possible attribute keys
+                    all_attr_keys: set[str] = set()
+                    for attrs in self.node_attributes.values():
+                        all_attr_keys.update(attrs.keys())
+                    
+                    fieldnames = ["node_id", "node_identifier"] + sorted(all_attr_keys)
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    
+                    for node_id, attrs in self.node_attributes.items():
+                        row = {
+                            "node_id": node_id,
+                            "node_identifier": self.node_identifiers[node_id] if node_id < len(self.node_identifiers) else f"node_{node_id}"
+                        }
+                        row.update(attrs)
+                        writer.writerow(row)
+                print(f"Node attributes exported to {node_attrs_csv_path}")
+            
+            # Edge weights CSV
+            if self.edge_weights:
+                edge_weights_csv_path = os.path.join(self.output_dir, f"{prefix}_edge_weights.csv")
+                with open(edge_weights_csv_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=["edge", "weight"])
+                    writer.writeheader()
+                    
+                    for edge, weight in self.edge_weights.items():
+                        writer.writerow({"edge": edge, "weight": weight})
+                print(f"Edge weights exported to {edge_weights_csv_path}")
+            
+            # Geographic information CSV
+            if self.geographic_info:
+                geo_csv_path = os.path.join(self.output_dir, f"{prefix}_geographic_info.csv")
+                with open(geo_csv_path, "w", newline="", encoding="utf-8") as f:
+                    # Get all possible geographic keys
+                    all_geo_keys: set[str] = set()
+                    for geo_data in self.geographic_info.values():
+                        all_geo_keys.update(geo_data.keys())
+                    
+                    fieldnames = ["node_id"] + sorted(all_geo_keys)
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    
+                    for node_id, geo_data in self.geographic_info.items():
+                        row = {"node_id": node_id}
+                        row.update(geo_data)
+                        writer.writerow(row)
+                print(f"Geographic information exported to {geo_csv_path}")
+            
+            # Organizational hierarchy CSV
+            if self.organizational_hierarchy:
+                org_csv_path = os.path.join(self.output_dir, f"{prefix}_organizational_hierarchy.csv")
+                with open(org_csv_path, "w", newline="", encoding="utf-8") as f:
+                    # Get all possible organizational keys
+                    all_org_keys: set[str] = set()
+                    for org_data in self.organizational_hierarchy.values():
+                        all_org_keys.update(org_data.keys())
+                    
+                    fieldnames = ["node_id"] + sorted(all_org_keys)
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    
+                    for node_id, org_data in self.organizational_hierarchy.items():
+                        row = {"node_id": node_id}
+                        row.update(org_data)
+                        writer.writerow(row)
+                print(f"Organizational hierarchy exported to {org_csv_path}")
 
         print(f"All training data exported to {self.output_dir}")
 

@@ -4,101 +4,164 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-**Testing:**
-- `pytest` - Run all tests
-- `pytest Can tests/path/to/specific_test.py` - Run specific test file
-- `pytest -m "not integration"` - Run tests excluding integration tests that require external resources
+### Environment Setup
+```bash
+# Install dependencies
+poetry install
+poetry shell
 
-**Code Quality:**
-- `ruff check` - Run linting
-- `ruff format` - Format code
-- `mypy murmura/` - Run type checking
-- `pytest --cov=murmura tests/` - Run tests with coverage
+# Or with pip
+pip install murmura
+```
 
-**Setup:**
-- `poetry install` - Install dependencies
-- `poetry shell` - Activate virtual environment
+### Testing
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=murmura tests/
+
+# Run excluding integration tests (faster)
+pytest -m "not integration"
+
+# Run single test file
+pytest tests/path/to/test_file.py
+
+# Run single test
+pytest tests/path/to/test_file.py::test_function_name
+```
+
+### Code Quality
+```bash
+# Linting
+ruff check
+
+# Code formatting
+ruff format  
+
+# Type checking
+mypy murmura/
+```
 
 ## Architecture Overview
 
-Murmura is a decentralized federated learning framework built on Ray for distributed computing. The core architecture consists of several interconnected layers:
+Murmura is a Ray-based federated learning framework supporting both centralized and decentralized learning with differential privacy. The architecture follows a modular design:
 
 ### Core Components
 
-**Learning Processes** (`murmura/orchestration/learning_process/`):
-- `LearningProcess` (abstract base) - Defines common interface for federated/decentralized learning
-- `FederatedLearningProcess` - Centralized aggregation with star topology
-- `DecentralizedLearningProcess` - Peer-to-peer learning with various topologies
-- Handles actor creation, dataset distribution, model synchronization, and training coordination
+**Learning Processes** (`murmura/orchestration/learning_process/`)
+- `LearningProcess`: Abstract base class defining common interface
+- `FederatedLearningProcess`: Centralized federated learning with star topology
+- `DecentralizedLearningProcess`: Peer-to-peer learning with various topologies
+- Both processes use `OrchestrationConfig` for unified configuration
 
-**Cluster Management** (`murmura/orchestration/cluster_manager.py`):
-- `ClusterManager` - Orchestrates Ray actors across single/multi-node clusters
-- Manages actor lifecycle, dataset distribution strategies (eager/lazy loading)
-- Handles topology setup and network coordination
-- Provides resource monitoring and health checks
+**Cluster Management** (`murmura/orchestration/`)
+- `ClusterManager`: Ray-based distributed computing with multi-node support
+- `TopologyCoordinator`: Manages network topologies for decentralized learning
+- Supports placement groups, resource allocation, and actor lifecycle management
 
-**Network Topologies** (`murmura/network_management/`):
-- `TopologyManager` - Creates and manages network graphs (star, ring, complete, line, custom)
-- `TopologyCoordinator` - Handles communication patterns between nodes
-- `TopologyCompatibilityManager` - Validates topology-strategy compatibility
+**Aggregation Strategies** (`murmura/aggregation/`)
+- `FedAvg`: Standard federated averaging
+- `TrimmedMean`: Byzantine-robust aggregation
+- `GossipAvg`: Decentralized peer-to-peer averaging
+- All strategies support differential privacy variants
 
-**Aggregation Strategies** (`murmura/aggregation/`):
-- `AggregationStrategy` interface with coordination modes (centralized/decentralized)
-- Implementations: FedAvg, TrimmedMean, GossipAvg
-- `AggregationStrategyFactory` for strategy instantiation
-- Coordinate with topologies for distributed aggregation
+**Network Topologies** (`murmura/network_management/`)
+- Star (federated), Ring, Complete graph, Line, Custom adjacency matrices
+- `TopologyManager`: Handles neighbor relationships and communication patterns
+- Automatic compatibility validation between topology and aggregation strategy
 
-**Data Processing** (`murmura/data_processing/`):
-- `MDataset` - Unified interface for HuggingFace datasets, PyTorch datasets, and partitioned data
-- `Partitioner` - Handles IID/non-IID data distribution (Dirichlet, quantity-based)
-- `PartitionerFactory` - Creates appropriate partitioners based on configuration
+**Privacy Framework** (`murmura/privacy/`)
+- Comprehensive differential privacy with Opacus integration
+- `DPConfig`: Privacy configuration with automatic noise tuning
+- `PrivacyAccountant`: RDP-based privacy budget tracking
+- Support for client-level and central DP with subsampling amplification
 
-**Client Actors** (`murmura/node/client_actor.py`):
-- `VirtualClientActor` - Ray actor representing individual federated learning clients
-- Handles local training, model updates, and peer communication
-- Supports lazy/eager dataset loading for memory efficiency
+**Data Processing** (`murmura/data_processing/`)
+- `MDataset`: Unified interface for HuggingFace, PyTorch, and custom datasets
+- `Partitioner`: IID and non-IID (Dirichlet) data distribution
+- Lazy vs eager loading strategies for large datasets
 
-### Key Design Patterns
+### Configuration System
 
-**Configuration-Driven Architecture:**
-All components use Pydantic models for type-safe configuration (e.g., `OrchestrationConfig`, `AggregationConfig`, `TopologyConfig`).
+The framework uses Pydantic-based configuration with hierarchical structure:
 
-**Ray-Based Distribution:**
-Built on Ray for actor-based distributed computing with automatic failover and resource management across single/multi-node clusters.
+- `OrchestrationConfig`: Top-level configuration including training parameters
+- `TopologyConfig`: Network topology settings
+- `AggregationConfig`: Strategy-specific parameters
+- `DPConfig`: Differential privacy settings
+- `ResourceConfig`: Ray cluster and resource allocation
 
-**Strategy Pattern:**
-Aggregation strategies and partitioners use factory pattern for pluggable implementations.
+**Critical Configuration Requirements:**
+- `feature_columns` and `label_column` must be specified for each dataset
+- Multi-node clusters require proper `RayClusterConfig` setup
+- Privacy-enabled learning requires `DPConfig` with appropriate epsilon/delta values
 
-**Observer Pattern:**
-Training events are broadcast through `TrainingMonitor` to registered observers for visualization and metrics collection.
+### Dataset Integration
 
-## Working with Examples
+The framework requires explicit column specification for generic dataset handling:
 
-Examples in `murmura/examples/` demonstrate complete workflows:
-- `mnist_example.py` - Basic federated learning with MNIST
-- `decentralized_mnist_example.py` - Decentralized learning without central coordinator
-- `skin_lesion_example.py` - Medical imaging federated learning
+```python
+# For image datasets
+feature_columns=["image"]
+label_column="label"
 
-Examples use `OrchestrationConfig` to specify:
-- Number of clients, training rounds, topology type
-- Aggregation strategy, data partitioning method
-- Ray cluster configuration and resource allocation
+# For text datasets  
+feature_columns=["text"]
+label_column="sentiment"
 
-## Important Implementation Notes
+# For tabular datasets
+feature_columns=["feature1", "feature2", "feature3"]
+label_column="target"
+```
 
-**Dataset Distribution:**
-The framework automatically chooses between eager (load all data immediately) and lazy (load on-demand) strategies based on dataset size and cluster resources.
+### Privacy Implementation
 
-**Actor Validation:**
-After initialization, all actors are validated to ensure proper dataset and model distribution before training begins.
+Differential privacy is implemented at multiple levels:
+- **Client-level DP**: Noise added to model updates before aggregation
+- **Central DP**: Noise added during aggregation (optional)
+- **Subsampling amplification**: Privacy amplification through client/data sampling
+- **Automatic noise calibration**: Noise multiplier computed to achieve target epsilon
 
-**Multi-Node Support:**
-The cluster manager detects and adapts to single-node vs multi-node Ray clusters automatically.
+### Multi-Node Support
 
-**Differential Privacy** (`murmura/privacy/`):
-The framework includes comprehensive differential privacy support built on Opacus:
-- `DPConfig` - Configuration for privacy parameters with presets for MNIST and skin lesion datasets
-- `DPTorchModelWrapper` - DP-aware model wrapper that integrates Opacus for client-level privacy
-- `PrivacyAccountant` - Tracks privacy budget across clients and rounds using RDP accounting
-- `DPFedAvg`, `DPSecureAggregation`, `DPTrimmedMean` - DP-enabled aggregation strategies
-- Examples: `dp_mnist_example.py` and `dp_skin_lesion_example.py` demonstrate usage
+Ray-based distribution with:
+- Automatic cluster detection and resource management
+- Placement groups for actor distribution across nodes
+- Lazy vs eager dataset loading based on cluster size
+- Health monitoring and failure recovery
+
+## Examples Structure
+
+Located in `murmura/examples/`:
+- `mnist_example.py`: Basic federated learning
+- `dp_mnist_example.py`: DP-enabled federated learning
+- `decentralized_mnist_example.py`: Peer-to-peer learning
+- `skin_lesion_example.py`: Medical imaging use case
+
+Each example demonstrates full configuration including data partitioning, model setup, and visualization.
+
+## Testing Strategy
+
+Tests are organized by module with integration tests marked:
+- Unit tests for individual components
+- Integration tests requiring external resources (HuggingFace datasets)
+- Privacy tests validating epsilon/delta bounds
+- Multi-node cluster tests for distributed functionality
+
+Use `pytest -m "not integration"` for faster local development.
+
+## Common Patterns
+
+**Configuration Creation:**
+Always use the hierarchical config objects rather than plain dictionaries for new code.
+
+**Model Wrapping:**
+Use `TorchModelWrapper` for PyTorch models with automatic DP compatibility.
+
+**Dataset Loading:**
+Use `MDataset.load_dataset_with_multinode_support()` for consistent multi-node behavior.
+
+**Error Handling:**
+The framework includes comprehensive validation at initialization - configuration errors are caught early before training begins.
