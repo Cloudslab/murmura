@@ -43,11 +43,11 @@ class PaperExperimentRunner:
         # Setup logging
         self.setup_logging()
         
-        # Define compatibility matrix based on actual example script choices
+        # Define compatibility matrix based on actual framework constraints
         self.compatibility_matrix = {
-            # Centralized FL (FedAvg/TrimmedMean): star, ring, complete, line
+            # Centralized FL (FedAvg/TrimmedMean): ONLY star and complete (global parameter collection)
             "federated": {
-                "compatible_topologies": ["star", "ring", "complete", "line"],
+                "compatible_topologies": ["star", "complete"],
                 "strategies": ["fedavg", "trimmed_mean"]
             },
             # Decentralized FL (GossipAvg): ring, complete, line (NO star support)
@@ -170,7 +170,18 @@ class PaperExperimentRunner:
             )
             
             if result.returncode != 0:
-                error_msg = f"Training failed: {result.stderr[-500:]}"  # Last 500 chars
+                # Get more complete error information
+                stderr_output = result.stderr.strip() if result.stderr else "No stderr output"
+                stdout_output = result.stdout.strip() if result.stdout else "No stdout output"
+                
+                # Try to get the most relevant error info
+                if stderr_output:
+                    error_msg = f"Training failed (stderr): {stderr_output[-1000:]}"  # Last 1000 chars
+                elif "error" in stdout_output.lower() or "exception" in stdout_output.lower():
+                    error_msg = f"Training failed (stdout): {stdout_output[-1000:]}"
+                else:
+                    error_msg = f"Training failed with return code {result.returncode}. Stdout: {stdout_output[-500:]}"
+                
                 self.logger.error(f"   ❌ {error_msg}")
                 return self._create_failed_result(config, experiment_name, error_msg, start_time)
             
@@ -499,9 +510,8 @@ class PaperExperimentRunner:
                 # Log brief result summary
                 self._log_experiment_result_brief(result, i, total_experiments)
                 
-                # Save intermediate results
-                if i % 10 == 0:
-                    self.save_intermediate_results()
+                # Save intermediate results after each experiment
+                self.save_intermediate_results()
         else:
             # Parallel execution
             with ProcessPoolExecutor(max_workers=max_parallel) as executor:
@@ -521,9 +531,8 @@ class PaperExperimentRunner:
                         # Log brief result summary
                         self._log_experiment_result_brief(result, len(self.results), total_experiments)
                         
-                        # Save intermediate results
-                        if len(self.results) % 10 == 0:
-                            self.save_intermediate_results()
+                        # Save intermediate results after each experiment
+                        self.save_intermediate_results()
                             
                     except Exception as e:
                         self.logger.error(f"Experiment {i} failed with exception: {e}")
