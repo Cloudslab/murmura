@@ -573,56 +573,55 @@ class PaperExperimentRunner:
             self.logger.info(f"[{current_num}/{total_num}] ❌ {exp_desc} | {dp_desc} | {attack_desc} | "
                            f"EXPERIMENT FAILED | Error: {error_brief} | Runtime: {runtime:.1f}s")
     
+    def _convert_for_json(self, obj):
+        """Recursively convert objects to JSON-serializable types."""
+        if isinstance(obj, dict):
+            return {str(k): self._convert_for_json(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_for_json(item) for item in obj]
+        elif isinstance(obj, tuple):
+            return [self._convert_for_json(item) for item in obj]
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif hasattr(obj, 'item') and hasattr(obj, 'size'):
+            try:
+                if obj.size == 1:
+                    return obj.item()
+                else:
+                    return obj.tolist()
+            except (ValueError, AttributeError):
+                return str(obj)
+        elif hasattr(obj, 'tolist'):
+            try:
+                return obj.tolist()
+            except (ValueError, AttributeError):
+                return str(obj)
+        return obj
+
     def save_intermediate_results(self):
         """Save intermediate results."""
         results_file = self.base_output_dir / "results" / "intermediate_results.json"
         
-        def convert_types(obj):
-            try:
-                if hasattr(obj, 'item') and obj.size == 1:
-                    return obj.item()
-                elif hasattr(obj, 'tolist'):
-                    return obj.tolist()
-                elif isinstance(obj, np.integer):
-                    return int(obj)
-                elif isinstance(obj, np.floating):
-                    return float(obj)
-                elif isinstance(obj, np.ndarray):
-                    return obj.tolist()
-                elif hasattr(obj, '__array__'):
-                    return np.array(obj).tolist()
-                return str(obj)
-            except (ValueError, AttributeError):
-                return str(obj)
+        # Convert all results to JSON-serializable format
+        serializable_results = self._convert_for_json(self.results)
         
         with open(results_file, 'w') as f:
-            json.dump(self.results, f, indent=2, default=convert_types)
+            json.dump(serializable_results, f, indent=2)
     
     def save_final_results(self):
         """Save final comprehensive results."""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         results_file = self.base_output_dir / "results" / f"final_results_{timestamp}.json"
         
-        def convert_types(obj):
-            try:
-                if hasattr(obj, 'item') and obj.size == 1:
-                    return obj.item()
-                elif hasattr(obj, 'tolist'):
-                    return obj.tolist()
-                elif isinstance(obj, np.integer):
-                    return int(obj)
-                elif isinstance(obj, np.floating):
-                    return float(obj)
-                elif isinstance(obj, np.ndarray):
-                    return obj.tolist()
-                elif hasattr(obj, '__array__'):
-                    return np.array(obj).tolist()
-                return str(obj)
-            except (ValueError, AttributeError):
-                return str(obj)
+        # Convert all results to JSON-serializable format
+        serializable_results = self._convert_for_json(self.results)
         
         with open(results_file, 'w') as f:
-            json.dump(self.results, f, indent=2, default=convert_types)
+            json.dump(serializable_results, f, indent=2)
         
         self.logger.info(f"💾 Final results saved to: {results_file}")
     
