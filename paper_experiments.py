@@ -211,6 +211,7 @@ class PaperExperimentRunner:
             "--epochs", "1",
             "--vis_dir", str(self.base_output_dir / "visualizations"),
             "--create_summary",  # Enable visualization generation
+            "--experiment_name", experiment_name,  # Use custom experiment name
         ]
         
         # Add DP settings
