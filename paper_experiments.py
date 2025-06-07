@@ -210,6 +210,7 @@ class PaperExperimentRunner:
             "--rounds", "3",  # Keep training fast for large-scale experiments
             "--epochs", "1",
             "--vis_dir", str(self.base_output_dir / "visualizations"),
+            "--create_summary",  # Enable visualization generation
         ]
         
         # Add DP settings
