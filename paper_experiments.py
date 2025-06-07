@@ -169,18 +169,52 @@ class PaperExperimentRunner:
                 cwd="."
             )
             
-            if result.returncode != 0:
+            # Check for success/failure more intelligently
+            stdout_output = result.stdout.strip() if result.stdout else ""
+            stderr_output = result.stderr.strip() if result.stderr else ""
+            
+            # Look for specific success indicators in output
+            success_indicators = [
+                "All training data exported to",
+                "Summary plot saved to",
+                "Model saved to",
+                "Learning process shut down successfully"
+            ]
+            
+            # Look for actual error indicators
+            error_indicators = [
+                "Traceback (most recent call last):",
+                "ValueError:",
+                "RuntimeError:",
+                "Exception:",
+                "Error:",
+                "FAILED"
+            ]
+            
+            has_success = any(indicator in stdout_output for indicator in success_indicators)
+            has_error = any(indicator in stdout_output or indicator in stderr_output for indicator in error_indicators)
+            
+            if result.returncode != 0 or (has_error and not has_success):
                 # Get more complete error information
-                stderr_output = result.stderr.strip() if result.stderr else "No stderr output"
-                stdout_output = result.stdout.strip() if result.stdout else "No stdout output"
+                all_output = stdout_output + "\n" + stderr_output
                 
-                # Try to get the most relevant error info
-                if stderr_output:
-                    error_msg = f"Training failed (stderr): {stderr_output[-1000:]}"  # Last 1000 chars
-                elif "error" in stdout_output.lower() or "exception" in stdout_output.lower():
-                    error_msg = f"Training failed (stdout): {stdout_output[-1000:]}"
+                # Find the actual error in the output
+                if "Traceback" in all_output:
+                    # Extract traceback
+                    lines = all_output.split('\n')
+                    traceback_start = -1
+                    for i, line in enumerate(lines):
+                        if "Traceback (most recent call last):" in line:
+                            traceback_start = i
+                            break
+                    
+                    if traceback_start >= 0:
+                        traceback_lines = lines[traceback_start:traceback_start+20]  # Get traceback + context
+                        error_msg = f"Training failed with traceback: {' '.join(traceback_lines)}"
+                    else:
+                        error_msg = f"Training failed: {all_output[-1500:]}"
                 else:
-                    error_msg = f"Training failed with return code {result.returncode}. Stdout: {stdout_output[-500:]}"
+                    error_msg = f"Training failed (return code {result.returncode}): {all_output[-1500:]}"
                 
                 self.logger.error(f"   ❌ {error_msg}")
                 return self._create_failed_result(config, experiment_name, error_msg, start_time)
@@ -595,7 +629,7 @@ class PaperExperimentRunner:
                     return obj.tolist()
             except (ValueError, AttributeError):
                 return str(obj)
-        elif hasattr(obj, 'tolist'):
+        elif hasattr(obj, 'tolist') and callable(getattr(obj, 'tolist')):
             try:
                 return obj.tolist()
             except (ValueError, AttributeError):
