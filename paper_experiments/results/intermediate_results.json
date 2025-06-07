@@ -17,7 +17,7 @@
       "expected_runtime": 60
     },
     "status": "success",
-    "runtime_seconds": 29.00801944732666,
+    "runtime_seconds": 29.96419072151184,
     "attack_results": {
       "attack_results": [
         {
@@ -67,19 +67,19 @@
           },
           "temporal_patterns": {
             "1": {
-              "timestamp_std": 6.19277296970872e-05,
+              "timestamp_std": 5.771304497356061e-05,
               "comm_count": 2.0
             },
             "2": {
-              "timestamp_std": 6.19277296970872e-05,
+              "timestamp_std": 5.771304497356061e-05,
               "comm_count": 2.0
             },
             "3": {
-              "timestamp_std": 6.19277296970872e-05,
+              "timestamp_std": 5.771304497356061e-05,
               "comm_count": 2.0
             },
             "4": {
-              "timestamp_std": 6.19277296970872e-05,
+              "timestamp_std": 5.771304497356061e-05,
               "comm_count": 2.0
             }
           },
@@ -89,76 +89,76 @@
         {
           "node_magnitude_stats": {
             "0": {
-              "norm_mean": 3.240288416544596,
-              "norm_std": 0.01956154408881173,
-              "norm_trend": 0.9999978190750559,
-              "mean_of_means": -0.011144666311641535,
-              "mean_of_stds": 0.19060863057772318
+              "norm_mean": 3.4481709003448486,
+              "norm_std": 0.024147209233352267,
+              "norm_trend": 0.9937718215701519,
+              "mean_of_means": -0.009313604328781366,
+              "mean_of_stds": 0.20296108225981394
             },
             "1": {
-              "norm_mean": 3.2380669911702475,
-              "norm_std": 0.018676511443927835,
-              "norm_trend": 0.9999963658488867,
-              "mean_of_means": -0.010378511001666388,
-              "mean_of_stds": 0.19051998853683472
+              "norm_mean": 3.4414252440134683,
+              "norm_std": 0.024608274371209698,
+              "norm_trend": 0.9996516777318272,
+              "mean_of_means": -0.008282228838652372,
+              "mean_of_stds": 0.20260671277840933
             },
             "2": {
-              "norm_mean": 3.242896477381388,
-              "norm_std": 0.024047714603587615,
-              "norm_trend": 0.9234128324776729,
-              "mean_of_means": -0.01319411676377058,
-              "mean_of_stds": 0.19063329696655273
+              "norm_mean": 3.442120393117269,
+              "norm_std": 0.02494280272000147,
+              "norm_trend": 0.9810896093719543,
+              "mean_of_means": -0.010033399487535158,
+              "mean_of_stds": 0.20257977644602457
             },
             "3": {
-              "norm_mean": 3.2384796937306723,
-              "norm_std": 0.021923242830534394,
-              "norm_trend": 0.956826397404973,
-              "mean_of_means": -0.014118912940224012,
-              "mean_of_stds": 0.19030567010243735
+              "norm_mean": 3.43790332476298,
+              "norm_std": 0.021330831760053806,
+              "norm_trend": 0.9941367755453043,
+              "mean_of_means": -0.009702955217411121,
+              "mean_of_stds": 0.20234087109565735
             },
             "4": {
-              "norm_mean": 3.23386549949646,
-              "norm_std": 0.020091159340892707,
-              "norm_trend": 0.9924537582024783,
-              "mean_of_means": -0.01270686307301124,
-              "mean_of_stds": 0.19013272722562155
+              "norm_mean": 3.4385929902394614,
+              "norm_std": 0.02617805888450206,
+              "norm_trend": 0.960513680917211,
+              "mean_of_means": -0.010518574776748816,
+              "mean_of_stds": 0.20234556992848715
             }
           },
           "magnitude_clusters": {
             "0": 0,
             "1": 0,
             "2": 1,
-            "3": 1,
+            "3": 0,
             "4": 1
           },
           "temporal_magnitude": {
             "0": {
-              "convergence_rate": 0.9999978190750559,
-              "stability": 0.01956154408881173,
-              "final_norm": 3.2642173767089844
+              "convergence_rate": 0.9937718215701521,
+              "stability": 0.024147209233352628,
+              "final_norm": 3.475658178329468
             },
             "1": {
-              "convergence_rate": 0.9999963658488868,
-              "stability": 0.01867651144392765,
-              "final_norm": 3.260905265808105
+              "convergence_rate": 0.999651677731827,
+              "stability": 0.0246082743712097,
+              "final_norm": 3.4710943698883057
             },
             "2": {
-              "convergence_rate": 0.9234128324776729,
-              "stability": 0.024047714603587615,
-              "final_norm": 3.263566732406616
+              "convergence_rate": 0.9810896093719543,
+              "stability": 0.02494280272000147,
+              "final_norm": 3.468677520751953
             },
             "3": {
-              "convergence_rate": 0.956826397404973,
-              "stability": 0.021923242830534394,
-              "final_norm": 3.259665012359619
+              "convergence_rate": 0.994136775545305,
+              "stability": 0.021330831760053976,
+              "final_norm": 3.462244033813477
             },
             "4": {
-              "convergence_rate": 0.9924537582024783,
-              "stability": 0.020091159340892707,
-              "final_norm": 3.256544351577759
+              "convergence_rate": 0.9605136809172131,
+              "stability": 0.026178058884501997,
+              "final_norm": 3.464238166809082
             }
           },
-          "attack_success_metric": 0.0009154551975721031,
+          "attack_success_metric": 0.001057063902294831,
           "attack_name": "Parameter Magnitude Attack"
         },
         {
@@ -196,40 +196,40 @@
           },
           "node_characteristics": {
             "0": {
-              "avg_norm": 3.240288416544596,
-              "norm_variability": 0.01956154408881173,
-              "initial_norm": 3.216301679611206,
-              "final_norm": 3.2642173767089844
+              "avg_norm": 3.4481709003448486,
+              "norm_variability": 0.024147209233352628,
+              "initial_norm": 3.416878223419189,
+              "final_norm": 3.475658178329468
             },
             "1": {
-              "avg_norm": 3.2380669911702475,
-              "norm_variability": 0.01867651144392765,
-              "initial_norm": 3.2151575088500977,
-              "final_norm": 3.260905265808105
+              "avg_norm": 3.4414252440134683,
+              "norm_variability": 0.0246082743712097,
+              "initial_norm": 3.4108376502990723,
+              "final_norm": 3.4710943698883057
             },
             "2": {
-              "avg_norm": 3.242896477381388,
-              "norm_variability": 0.024047714603587615,
-              "initial_norm": 3.2091734409332275,
-              "final_norm": 3.263566732406616
+              "avg_norm": 3.442120393117269,
+              "norm_variability": 0.02494280272000147,
+              "initial_norm": 3.408735752105713,
+              "final_norm": 3.468677520751953
             },
             "3": {
-              "avg_norm": 3.2384796937306723,
-              "norm_variability": 0.021923242830534394,
-              "initial_norm": 3.208282709121704,
-              "final_norm": 3.259665012359619
+              "avg_norm": 3.43790332476298,
+              "norm_variability": 0.021330831760053976,
+              "initial_norm": 3.4103007316589355,
+              "final_norm": 3.462244033813477
             },
             "4": {
-              "avg_norm": 3.23386549949646,
-              "norm_variability": 0.020091159340892707,
-              "initial_norm": 3.20770263671875,
-              "final_norm": 3.256544351577759
+              "avg_norm": 3.4385929902394614,
+              "norm_variability": 0.026178058884501997,
+              "initial_norm": 3.4026472568511963,
+              "final_norm": 3.464238166809082
             }
           },
           "correlations": {
-            "position_vs_norm": -0.5930415285846989,
-            "degree_vs_norm": 0.26459569378608483,
-            "position_vs_variability": 0.31798685640437546
+            "position_vs_norm": -0.8815516284185682,
+            "degree_vs_norm": 0.897232685901135,
+            "position_vs_variability": 0.06916400635928077
           },
           "topology_predictions": {
             "0": "central_hub",
@@ -238,7 +238,7 @@
             "3": "odd_position",
             "4": "even_position"
           },
-          "attack_success_metric": 0.5930415285846989,
+          "attack_success_metric": 0.897232685901135,
           "attack_name": "Topology Structure Attack"
         }
       ],
@@ -253,23 +253,23 @@
           },
           {
             "attack_name": "Parameter Magnitude Attack",
-            "success_metric": 0.0009154551975721031,
+            "success_metric": 0.001057063902294831,
             "key_findings": [
               "Parameter magnitudes show systematic differences between nodes"
             ]
           },
           {
             "attack_name": "Topology Structure Attack",
-            "success_metric": 0.5930415285846989,
+            "success_metric": 0.897232685901135,
             "key_findings": [
-              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.5930415285846989)), ('position_vs_variability', np.float64(0.31798685640437546))]"
+              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.8815516284185682)), ('degree_vs_norm', np.float64(0.897232685901135))]"
             ]
           }
         ],
         "overall_success": true,
-        "best_attack": "Communication Pattern Attack",
+        "best_attack": "Topology Structure Attack",
         "attack_indicators": {
-          "max_signal": 0.8
+          "max_signal": 0.897232685901135
         }
       },
       "visualization_data_summary": {
@@ -281,17 +281,17 @@
     },
     "evaluation": {
       "attack_success": true,
-      "confidence_score": 0.8,
+      "confidence_score": 0.897232685901135,
       "attack_type_scores": {
         "Communication Pattern Attack": 0.8,
-        "Parameter Magnitude Attack": 0.0009154551975721031,
-        "Topology Structure Attack": 0.5930415285846989
+        "Parameter Magnitude Attack": 0.001057063902294831,
+        "Topology Structure Attack": 0.897232685901135
       },
-      "best_attack_type": "Communication Pattern Attack",
+      "best_attack_type": "Topology Structure Attack",
       "topology_specific_metrics": {
         "topology": "star",
         "node_count": 5,
-        "topology_vulnerability_score": 0.8,
+        "topology_vulnerability_score": 0.897232685901135,
         "communication_complexity": {
           "total_edges": 4,
           "max_degree": 4,
@@ -306,14 +306,14 @@
       "scalability_metrics": {
         "network_size": 5,
         "size_category": "small",
-        "attack_scalability_score": 0.8
+        "attack_scalability_score": 0.897232685901135
       },
       "strategy_specific_findings": [
         "Detected 2 distinct groups via communication patterns"
       ],
       "group_detection_success": true
     },
-    "timestamp": "2025-06-07T05:43:44.855303"
+    "timestamp": "2025-06-07T06:27:16.892918"
   },
   {
     "experiment_id": 2,
@@ -333,7 +333,7 @@
       "expected_runtime": 60
     },
     "status": "success",
-    "runtime_seconds": 29.66560435295105,
+    "runtime_seconds": 29.743316411972046,
     "attack_results": {
       "attack_results": [
         {
@@ -409,76 +409,76 @@
         {
           "node_magnitude_stats": {
             "0": {
-              "norm_mean": 3.4684441089630127,
-              "norm_std": 0.021722909465664287,
-              "norm_trend": 0.9934622012024685,
-              "mean_of_means": 0.0030856155790388584,
-              "mean_of_stds": 0.20435428619384766
+              "norm_mean": 3.2156031131744385,
+              "norm_std": 0.01335248204124813,
+              "norm_trend": 0.9994742244105737,
+              "mean_of_means": 0.011152282046775023,
+              "mean_of_stds": 0.18915075560410818
             },
             "1": {
-              "norm_mean": 3.470524231592814,
-              "norm_std": 0.021435603913634943,
-              "norm_trend": 0.9929556877910084,
-              "mean_of_means": 0.003341096375758449,
-              "mean_of_stds": 0.20446963608264923
+              "norm_mean": 3.217332442601522,
+              "norm_std": 0.014443569564777716,
+              "norm_trend": 0.9980062506338728,
+              "mean_of_means": 0.01090857076148192,
+              "mean_of_stds": 0.1892591118812561
             },
             "2": {
-              "norm_mean": 3.4701298077901206,
-              "norm_std": 0.022180553379786642,
-              "norm_trend": 0.996586418552067,
-              "mean_of_means": 0.00352214517382284,
-              "mean_of_stds": 0.2044434001048406
+              "norm_mean": 3.2160776456197104,
+              "norm_std": 0.01974689016870538,
+              "norm_trend": 0.9499961408129889,
+              "mean_of_means": 0.009188070893287659,
+              "mean_of_stds": 0.1892841657002767
             },
             "3": {
-              "norm_mean": 3.4658185640970864,
-              "norm_std": 0.025637827115135868,
-              "norm_trend": 0.9856242137002545,
-              "mean_of_means": 0.0029204777674749494,
-              "mean_of_stds": 0.20420295496781668
+              "norm_mean": 3.215012311935425,
+              "norm_std": 0.016806139719138163,
+              "norm_trend": 0.9494993603851181,
+              "mean_of_means": 0.00953366607427597,
+              "mean_of_stds": 0.18920595943927765
             },
             "4": {
-              "norm_mean": 3.463894844055176,
-              "norm_std": 0.024856282631638787,
-              "norm_trend": 0.9689468470481382,
-              "mean_of_means": 0.003804850702484449,
-              "mean_of_stds": 0.2040755401055018
+              "norm_mean": 3.216174761454264,
+              "norm_std": 0.018002380006865527,
+              "norm_trend": 0.9985686485221816,
+              "mean_of_means": 0.009534579701721668,
+              "mean_of_stds": 0.18927406768004099
             }
           },
           "magnitude_clusters": {
             "0": 0,
             "1": 0,
-            "2": 0,
+            "2": 1,
             "3": 1,
             "4": 1
           },
           "temporal_magnitude": {
             "0": {
-              "convergence_rate": 0.9934622012024681,
-              "stability": 0.021722909465664478,
-              "final_norm": 3.49312162399292
+              "convergence_rate": 0.9994742244105734,
+              "stability": 0.013352482041248316,
+              "final_norm": 3.23164176940918
             },
             "1": {
-              "convergence_rate": 0.9929556877910084,
-              "stability": 0.021435603913634943,
-              "final_norm": 3.4947965145111084
+              "convergence_rate": 0.9980062506338737,
+              "stability": 0.014443569564777704,
+              "final_norm": 3.235631465911865
             },
             "2": {
-              "convergence_rate": 0.9965864185520668,
-              "stability": 0.022180553379786833,
-              "final_norm": 3.495907783508301
+              "convergence_rate": 0.9499961408129864,
+              "stability": 0.01974689016870524,
+              "final_norm": 3.234693050384521
             },
             "3": {
-              "convergence_rate": 0.9856242137002545,
-              "stability": 0.025637827115135868,
-              "final_norm": 3.493704080581665
+              "convergence_rate": 0.9494993603851181,
+              "stability": 0.016806139719138163,
+              "final_norm": 3.2308273315429688
             },
             "4": {
-              "convergence_rate": 0.9689468470481402,
-              "stability": 0.024856282631638735,
-              "final_norm": 3.489046096801758
+              "convergence_rate": 0.9985686485221819,
+              "stability": 0.0180023800068657,
+              "final_norm": 3.237510681152344
             }
           },
-          "attack_success_metric": 0.0007344511277376354,
+          "attack_success_metric": 0.00023831172793372445,
           "attack_name": "Parameter Magnitude Attack"
         },
         {
@@ -516,40 +516,40 @@
           },
           "node_characteristics": {
             "0": {
-              "avg_norm": 3.4684441089630127,
-              "norm_variability": 0.021722909465664478,
-              "initial_norm": 3.440259456634521,
-              "final_norm": 3.49312162399292
+              "avg_norm": 3.2156031131744385,
+              "norm_variability": 0.013352482041248316,
+              "initial_norm": 3.1989521980285645,
+              "final_norm": 3.23164176940918
             },
             "1": {
-              "avg_norm": 3.470524231592814,
-              "norm_variability": 0.021435603913634943,
-              "initial_norm": 3.442660093307495,
-              "final_norm": 3.4947965145111084
+              "avg_norm": 3.217332442601522,
+              "norm_variability": 0.014443569564777704,
+              "initial_norm": 3.20032262802124,
+              "final_norm": 3.235631465911865
             },
             "2": {
-              "avg_norm": 3.4701298077901206,
-              "norm_variability": 0.022180553379786833,
-              "initial_norm": 3.441762208938598,
-              "final_norm": 3.495907783508301
+              "avg_norm": 3.2160776456197104,
+              "norm_variability": 0.01974689016870524,
+              "initial_norm": 3.18874192237854,
+              "final_norm": 3.234693050384521
             },
             "3": {
-              "avg_norm": 3.4658185640970864,
-              "norm_variability": 0.025637827115135868,
-              "initial_norm": 3.431807279586792,
-              "final_norm": 3.493704080581665
+              "avg_norm": 3.215012311935425,
+              "norm_variability": 0.016806139719138163,
+              "initial_norm": 3.191739797592163,
+              "final_norm": 3.2308273315429688
             },
             "4": {
-              "avg_norm": 3.463894844055176,
-              "norm_variability": 0.024856282631638735,
-              "initial_norm": 3.430051565170288,
-              "final_norm": 3.489046096801758
+              "avg_norm": 3.216174761454264,
+              "norm_variability": 0.0180023800068657,
+              "initial_norm": 3.193477153778076,
+              "final_norm": 3.237510681152344
             }
           },
           "correlations": {
-            "position_vs_norm": -0.7665031286388838,
+            "position_vs_norm": -0.21715177292605473,
             "degree_vs_norm": 0.0,
-            "position_vs_variability": 0.854364448013613
+            "position_vs_variability": 0.7094268638485889
           },
           "topology_predictions": {
             "0": "central_hub",
@@ -558,7 +558,7 @@
             "3": "central_hub",
             "4": "central_hub"
           },
-          "attack_success_metric": 0.854364448013613,
+          "attack_success_metric": 0.7094268638485889,
           "attack_name": "Topology Structure Attack"
         }
       ],
@@ -573,23 +573,23 @@
           },
           {
             "attack_name": "Parameter Magnitude Attack",
-            "success_metric": 0.0007344511277376354,
+            "success_metric": 0.00023831172793372445,
             "key_findings": [
               "Parameter magnitudes show systematic differences between nodes"
             ]
           },
           {
             "attack_name": "Topology Structure Attack",
-            "success_metric": 0.854364448013613,
+            "success_metric": 0.7094268638485889,
             "key_findings": [
-              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.7665031286388838)), ('position_vs_variability', np.float64(0.854364448013613))]"
+              "Strong topology correlations detected: [('position_vs_variability', np.float64(0.7094268638485889))]"
             ]
           }
         ],
         "overall_success": true,
-        "best_attack": "Topology Structure Attack",
+        "best_attack": "Communication Pattern Attack",
         "attack_indicators": {
-          "max_signal": 0.854364448013613
+          "max_signal": 0.8
         }
       },
       "visualization_data_summary": {
@@ -601,17 +601,17 @@
     },
     "evaluation": {
       "attack_success": true,
-      "confidence_score": 0.854364448013613,
+      "confidence_score": 0.8,
       "attack_type_scores": {
         "Communication Pattern Attack": 0.8,
-        "Parameter Magnitude Attack": 0.0007344511277376354,
-        "Topology Structure Attack": 0.854364448013613
+        "Parameter Magnitude Attack": 0.00023831172793372445,
+        "Topology Structure Attack": 0.7094268638485889
       },
-      "best_attack_type": "Topology Structure Attack",
+      "best_attack_type": "Communication Pattern Attack",
       "topology_specific_metrics": {
         "topology": "complete",
         "node_count": 5,
-        "topology_vulnerability_score": 0.854364448013613,
+        "topology_vulnerability_score": 0.8,
         "communication_complexity": {
           "total_edges": 10,
           "max_degree": 4,
@@ -626,14 +626,14 @@
       "scalability_metrics": {
         "network_size": 5,
         "size_category": "small",
-        "attack_scalability_score": 0.854364448013613
+        "attack_scalability_score": 0.8
       },
       "strategy_specific_findings": [
         "Detected 2 distinct groups via communication patterns"
       ],
       "group_detection_success": true
     },
-    "timestamp": "2025-06-07T05:44:14.521938"
+    "timestamp": "2025-06-07T06:27:46.637227"
   },
   {
     "experiment_id": 3,
@@ -653,7 +653,7 @@
       "expected_runtime": 90
     },
     "status": "success",
-    "runtime_seconds": 30.001858472824097,
+    "runtime_seconds": 30.473945379257202,
     "attack_results": {
       "attack_results": [
         {
@@ -703,23 +703,23 @@
           },
           "temporal_patterns": {
             "0": {
-              "timestamp_std": 9.148786514664725e-05,
+              "timestamp_std": 9.710318139666957e-05,
               "comm_count": 4.0
             },
             "1": {
-              "timestamp_std": 5.5161978734330726e-05,
+              "timestamp_std": 5.926357001291474e-05,
               "comm_count": 4.0
             },
             "2": {
-              "timestamp_std": 4.703355484966314e-05,
+              "timestamp_std": 4.922565153638649e-05,
               "comm_count": 4.0
             },
             "3": {
-              "timestamp_std": 3.87937164173948e-05,
+              "timestamp_std": 3.999188855259543e-05,
               "comm_count": 4.0
             },
             "4": {
-              "timestamp_std": 2.3884656948115157e-05,
+              "timestamp_std": 2.4305277742598836e-05,
               "comm_count": 4.0
             }
           },
@@ -729,39 +729,39 @@
         {
           "node_magnitude_stats": {
             "0": {
-              "norm_mean": 4.815308888753255,
-              "norm_std": 0.2513158761255505,
-              "norm_trend": 0.9968584984607516,
-              "mean_of_means": 0.012026462238281965,
-              "mean_of_stds": 0.28247713049252826
+              "norm_mean": 5.143500169118245,
+              "norm_std": 0.21517399814332536,
+              "norm_trend": 0.8805265903512799,
+              "mean_of_means": 0.014126939931884408,
+              "mean_of_stds": 0.302233229080836
             },
             "1": {
-              "norm_mean": 4.8490250905354815,
-              "norm_std": 0.37753927320725184,
-              "norm_trend": 0.9932694470416649,
-              "mean_of_means": 0.0011105819915731747,
-              "mean_of_stds": 0.2849254111448924
+              "norm_mean": 4.994476159413655,
+              "norm_std": 0.2972945161862694,
+              "norm_trend": 0.9908644156170743,
+              "mean_of_means": 0.015340631905322274,
+              "mean_of_stds": 0.2930384874343872
             },
             "2": {
-              "norm_mean": 4.771853605906169,
-              "norm_std": 0.26378528291310066,
-              "norm_trend": 0.9641745082901093,
-              "mean_of_means": -0.0005120608645180861,
-              "mean_of_stds": 0.2809812029202779
+              "norm_mean": 4.946924050649007,
+              "norm_std": 0.3309737442036438,
+              "norm_trend": 0.9927941611484663,
+              "mean_of_means": 0.03224441626419624,
+              "mean_of_stds": 0.288665235042572
             },
             "3": {
-              "norm_mean": 4.709853331247966,
-              "norm_std": 0.2892810678746328,
-              "norm_trend": 0.99998583417515,
-              "mean_of_means": -0.0014577016700059175,
-              "mean_of_stds": 0.27729569872220355
+              "norm_mean": 4.905613263448079,
+              "norm_std": 0.3786132394057595,
+              "norm_trend": 0.9998389876105822,
+              "mean_of_means": 0.02243328047916293,
+              "mean_of_stds": 0.28743494550387066
             },
             "4": {
-              "norm_mean": 4.640685558319092,
-              "norm_std": 0.2869318389045328,
-              "norm_trend": 0.9872369432341084,
-              "mean_of_means": 0.0025830386827389398,
-              "mean_of_stds": 0.2731420695781708
+              "norm_mean": 4.866718292236328,
+              "norm_std": 0.28892532006819066,
+              "norm_trend": 0.963604802800617,
+              "mean_of_means": 0.02670998840282361,
+              "mean_of_stds": 0.2851880391438802
             }
           },
           "magnitude_clusters": {
@@ -773,32 +773,32 @@
           },
           "temporal_magnitude": {
             "0": {
-              "convergence_rate": 0.9968584984607516,
-              "stability": 0.2513158761255505,
-              "final_norm": 5.136214733123779
+              "convergence_rate": 0.8805265903512799,
+              "stability": 0.21517399814332536,
+              "final_norm": 5.303429126739502
             },
             "1": {
-              "convergence_rate": 0.9932694470416649,
-              "stability": 0.37753927320725184,
-              "final_norm": 5.339223384857178
+              "convergence_rate": 0.9908644156170743,
+              "stability": 0.2972945161862694,
+              "final_norm": 5.383610248565674
             },
             "2": {
-              "convergence_rate": 0.9641745082901093,
-              "stability": 0.26378528291310066,
-              "final_norm": 5.132828235626221
+              "convergence_rate": 0.9927941611484663,
+              "stability": 0.3309737442036438,
+              "final_norm": 5.321316719055176
             },
             "3": {
-              "convergence_rate": 0.99998583417515,
-              "stability": 0.2892810678746328,
-              "final_norm": 5.063055038452148
+              "convergence_rate": 0.9998389876105822,
+              "stability": 0.3786132394057595,
+              "final_norm": 5.37404727935791
             },
             "4": {
-              "convergence_rate": 0.9872369432341084,
-              "stability": 0.2869318389045328,
-              "final_norm": 4.955306529998779
+              "convergence_rate": 0.963604802800617,
+              "stability": 0.28892532006819066,
+              "final_norm": 5.262315273284912
             }
           },
-          "attack_success_metric": 0.015685137556596014,
+          "attack_success_metric": 0.01930109463741998,
           "attack_name": "Parameter Magnitude Attack"
         },
         {
@@ -836,40 +836,40 @@
           },
           "node_characteristics": {
             "0": {
-              "avg_norm": 4.815308888753255,
-              "norm_variability": 0.2513158761255505,
-              "initial_norm": 4.522552967071533,
-              "final_norm": 5.136214733123779
+              "avg_norm": 5.143500169118245,
+              "norm_variability": 0.21517399814332536,
+              "initial_norm": 4.8393330574035645,
+              "final_norm": 5.303429126739502
             },
             "1": {
-              "avg_norm": 4.8490250905354815,
-              "norm_variability": 0.37753927320725184,
-              "initial_norm": 4.420669078826904,
-              "final_norm": 5.339223384857178
+              "avg_norm": 4.994476159413655,
+              "norm_variability": 0.2972945161862694,
+              "initial_norm": 4.66204309463501,
+              "final_norm": 5.383610248565674
             },
             "2": {
-              "avg_norm": 4.771853605906169,
-              "norm_variability": 0.26378528291310066,
-              "initial_norm": 4.5098371505737305,
-              "final_norm": 5.132828235626221
+              "avg_norm": 4.946924050649007,
+              "norm_variability": 0.3309737442036438,
+              "initial_norm": 4.516441822052002,
+              "final_norm": 5.321316719055176
             },
             "3": {
-              "avg_norm": 4.709853331247966,
-              "norm_variability": 0.2892810678746328,
-              "initial_norm": 4.354474067687988,
-              "final_norm": 5.063055038452148
+              "avg_norm": 4.905613263448079,
+              "norm_variability": 0.3786132394057595,
+              "initial_norm": 4.446787357330322,
+              "final_norm": 5.37404727935791
             },
             "4": {
-              "avg_norm": 4.640685558319092,
-              "norm_variability": 0.2869318389045328,
-              "initial_norm": 4.261440277099609,
-              "final_norm": 4.955306529998779
+              "avg_norm": 4.866718292236328,
+              "norm_variability": 0.28892532006819066,
+              "initial_norm": 4.580353260040283,
+              "final_norm": 5.262315273284912
             }
           },
           "correlations": {
-            "position_vs_norm": -0.9256653905357194,
+            "position_vs_norm": -0.9468340025301971,
             "degree_vs_norm": 0.0,
-            "position_vs_variability": -0.05442835300932916
+            "position_vs_variability": 0.6021465360479743
           },
           "topology_predictions": {
             "0": "even_position",
@@ -878,7 +878,7 @@
             "3": "odd_position",
             "4": "even_position"
           },
-          "attack_success_metric": 0.9256653905357194,
+          "attack_success_metric": 0.9468340025301971,
           "attack_name": "Topology Structure Attack"
         }
       ],
@@ -893,23 +893,23 @@
           },
           {
             "attack_name": "Parameter Magnitude Attack",
-            "success_metric": 0.015685137556596014,
+            "success_metric": 0.01930109463741998,
             "key_findings": [
               "Parameter magnitudes show systematic differences between nodes"
             ]
           },
           {
             "attack_name": "Topology Structure Attack",
-            "success_metric": 0.9256653905357194,
+            "success_metric": 0.9468340025301971,
             "key_findings": [
-              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.9256653905357194))]"
+              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.9468340025301971)), ('position_vs_variability', np.float64(0.6021465360479743))]"
             ]
           }
         ],
         "overall_success": true,
         "best_attack": "Topology Structure Attack",
         "attack_indicators": {
-          "max_signal": 0.9256653905357194
+          "max_signal": 0.9468340025301971
         }
       },
       "visualization_data_summary": {
@@ -921,17 +921,17 @@
     },
     "evaluation": {
       "attack_success": true,
-      "confidence_score": 0.9256653905357194,
+      "confidence_score": 0.9468340025301971,
       "attack_type_scores": {
         "Communication Pattern Attack": 0.6,
-        "Parameter Magnitude Attack": 0.015685137556596014,
-        "Topology Structure Attack": 0.9256653905357194
+        "Parameter Magnitude Attack": 0.01930109463741998,
+        "Topology Structure Attack": 0.9468340025301971
       },
       "best_attack_type": "Topology Structure Attack",
       "topology_specific_metrics": {
         "topology": "ring",
         "node_count": 5,
-        "topology_vulnerability_score": 0.9256653905357194,
+        "topology_vulnerability_score": 0.9468340025301971,
         "communication_complexity": {
           "total_edges": 5,
           "max_degree": 2,
@@ -946,14 +946,14 @@
       "scalability_metrics": {
         "network_size": 5,
         "size_category": "small",
-        "attack_scalability_score": 0.9256653905357194
+        "attack_scalability_score": 0.9468340025301971
       },
       "strategy_specific_findings": [
         "Detected 2 distinct groups via communication patterns"
       ],
       "group_detection_success": true
     },
-    "timestamp": "2025-06-07T05:44:44.525356"
+    "timestamp": "2025-06-07T06:28:17.112696"
   },
   {
     "experiment_id": 4,
@@ -973,7 +973,7 @@
       "expected_runtime": 90
     },
     "status": "success",
-    "runtime_seconds": 29.80942988395691,
+    "runtime_seconds": 31.601245403289795,
     "attack_results": {
       "attack_results": [
         {
@@ -1023,23 +1023,23 @@
           },
           "temporal_patterns": {
             "0": {
-              "timestamp_std": 0.00010750300353395011,
+              "timestamp_std": 0.00011316064913250963,
               "comm_count": 8.0
             },
             "1": {
-              "timestamp_std": 7.275958076338348e-05,
+              "timestamp_std": 7.997537985603426e-05,
               "comm_count": 8.0
             },
             "2": {
-              "timestamp_std": 5.417047165622487e-05,
+              "timestamp_std": 5.788991073070983e-05,
               "comm_count": 8.0
             },
             "3": {
-              "timestamp_std": 3.920868770042462e-05,
+              "timestamp_std": 4.411706306441787e-05,
               "comm_count": 8.0
             },
             "4": {
-              "timestamp_std": 2.4704324904447147e-05,
+              "timestamp_std": 2.6988534054889196e-05,
               "comm_count": 8.0
             }
           },
@@ -1049,76 +1049,76 @@
         {
           "node_magnitude_stats": {
             "0": {
-              "norm_mean": 4.874505201975505,
-              "norm_std": 0.23662192587836853,
-              "norm_trend": 0.9945195687016135,
-              "mean_of_means": 0.03010220266878605,
-              "mean_of_stds": 0.28507519761721295
+              "norm_mean": 5.037347952524821,
+              "norm_std": 0.26354615494129663,
+              "norm_trend": 0.984782342636038,
+              "mean_of_means": 0.017789877640704315,
+              "mean_of_stds": 0.2960907022158305
             },
             "1": {
-              "norm_mean": 4.942673206329346,
-              "norm_std": 0.27593505301658533,
-              "norm_trend": 0.9998340637599789,
-              "mean_of_means": 0.03501970134675503,
-              "mean_of_stds": 0.2889283796151479
+              "norm_mean": 5.167070547739665,
+              "norm_std": 0.3819320285985179,
+              "norm_trend": 0.9911432653427031,
+              "mean_of_means": 0.02445781114511192,
+              "mean_of_stds": 0.3019242187341054
             },
             "2": {
-              "norm_mean": 4.7272539138793945,
-              "norm_std": 0.23027936927668644,
-              "norm_trend": 0.9989541779082982,
-              "mean_of_means": 0.02179587601373593,
-              "mean_of_stds": 0.27746715148289997
+              "norm_mean": 5.019209702809651,
+              "norm_std": 0.26716054312724963,
+              "norm_trend": 0.9966241617173901,
+              "mean_of_means": 0.013409881561528891,
+              "mean_of_stds": 0.29475271701812744
             },
             "3": {
-              "norm_mean": 4.833252588907878,
-              "norm_std": 0.2775107100886306,
-              "norm_trend": 0.9991082208210245,
-              "mean_of_means": 0.019488867061833542,
-              "mean_of_stds": 0.28383539120356244
+              "norm_mean": 5.013198534647624,
+              "norm_std": 0.4243389878595454,
+              "norm_trend": 0.9999953458285664,
+              "mean_of_means": 0.0157743504193301,
+              "mean_of_stds": 0.2946684956550598
             },
             "4": {
-              "norm_mean": 4.7083330154418945,
-              "norm_std": 0.2896191459649202,
-              "norm_trend": 0.9940785185115483,
-              "mean_of_means": 0.01516941903779904,
-              "mean_of_stds": 0.2767684857050578
+              "norm_mean": 4.931817690531413,
+              "norm_std": 0.28013087469696085,
+              "norm_trend": 0.9970931968973675,
+              "mean_of_means": 0.021007619332522154,
+              "mean_of_stds": 0.2890665531158447
             }
           },
           "magnitude_clusters": {
-            "0": 0,
+            "0": 1,
             "1": 0,
             "2": 1,
-            "3": 0,
+            "3": 1,
             "4": 1
           },
           "temporal_magnitude": {
             "0": {
-              "convergence_rate": 0.9945195687016135,
-              "stability": 0.23662192587836853,
-              "final_norm": 5.180211544036865
+              "convergence_rate": 0.984782342636038,
+              "stability": 0.26354615494129663,
+              "final_norm": 5.387599945068359
             },
             "1": {
-              "convergence_rate": 0.9998340637599789,
-              "stability": 0.27593505301658533,
-              "final_norm": 5.277012825012207
+              "convergence_rate": 0.9911432653427031,
+              "stability": 0.3819320285985179,
+              "final_norm": 5.594832897186279
             },
             "2": {
-              "convergence_rate": 0.9989541779082982,
-              "stability": 0.23027936927668644,
-              "final_norm": 5.016437530517578
+              "convergence_rate": 0.9966241617173901,
+              "stability": 0.26716054312724963,
+              "final_norm": 5.329799175262451
             },
             "3": {
-              "convergence_rate": 0.9991082208210245,
-              "stability": 0.2775107100886306,
-              "final_norm": 5.181114673614502
+              "convergence_rate": 0.9999953458285664,
+              "stability": 0.4243389878595454,
+              "final_norm": 5.53198766708374
             },
             "4": {
-              "convergence_rate": 0.9940785185115483,
-              "stability": 0.2896191459649202,
-              "final_norm": 5.083195686340332
+              "convergence_rate": 0.9970931968973675,
+              "stability": 0.28013087469696085,
+              "final_norm": 5.28900146484375
             }
           },
-          "attack_success_metric": 0.01838716813119758,
+          "attack_success_metric": 0.015080180163059847,
           "attack_name": "Parameter Magnitude Attack"
         },
         {
@@ -1156,40 +1156,40 @@
           },
           "node_characteristics": {
             "0": {
-              "avg_norm": 4.874505201975505,
-              "norm_variability": 0.23662192587836853,
-              "initial_norm": 4.603785037994385,
-              "final_norm": 5.180211544036865
+              "avg_norm": 5.037347952524821,
+              "norm_variability": 0.26354615494129663,
+              "initial_norm": 4.751870155334473,
+              "final_norm": 5.387599945068359
             },
             "1": {
-              "avg_norm": 4.942673206329346,
-              "norm_variability": 0.27593505301658533,
-              "initial_norm": 4.601224899291992,
-              "final_norm": 5.277012825012207
+              "avg_norm": 5.167070547739665,
+              "norm_variability": 0.3819320285985179,
+              "initial_norm": 4.6675801277160645,
+              "final_norm": 5.594832897186279
             },
             "2": {
-              "avg_norm": 4.7272539138793945,
-              "norm_variability": 0.23027936927668644,
-              "initial_norm": 4.45296049118042,
-              "final_norm": 5.016437530517578
+              "avg_norm": 5.019209702809651,
+              "norm_variability": 0.26716054312724963,
+              "initial_norm": 4.677601337432861,
+              "final_norm": 5.329799175262451
             },
             "3": {
-              "avg_norm": 4.833252588907878,
-              "norm_variability": 0.2775107100886306,
-              "initial_norm": 4.5019612312316895,
-              "final_norm": 5.181114673614502
+              "avg_norm": 5.013198534647624,
+              "norm_variability": 0.4243389878595454,
+              "initial_norm": 4.492578506469727,
+              "final_norm": 5.53198766708374
             },
             "4": {
-              "avg_norm": 4.7083330154418945,
-              "norm_variability": 0.2896191459649202,
-              "initial_norm": 4.37797737121582,
-              "final_norm": 5.083195686340332
+              "avg_norm": 4.931817690531413,
+              "norm_variability": 0.28013087469696085,
+              "initial_norm": 4.604818344116211,
+              "final_norm": 5.28900146484375
             }
           },
           "correlations": {
-            "position_vs_norm": -0.705336640703501,
+            "position_vs_norm": -0.6798783836268205,
             "degree_vs_norm": 0.0,
-            "position_vs_variability": 0.6374329947670447
+            "position_vs_variability": 0.1602855854856879
           },
           "topology_predictions": {
             "0": "central_hub",
@@ -1198,7 +1198,7 @@
             "3": "central_hub",
             "4": "central_hub"
           },
-          "attack_success_metric": 0.705336640703501,
+          "attack_success_metric": 0.6798783836268205,
           "attack_name": "Topology Structure Attack"
         }
       ],
@@ -1213,16 +1213,16 @@
           },
           {
             "attack_name": "Parameter Magnitude Attack",
-            "success_metric": 0.01838716813119758,
+            "success_metric": 0.015080180163059847,
             "key_findings": [
               "Parameter magnitudes show systematic differences between nodes"
             ]
           },
           {
             "attack_name": "Topology Structure Attack",
-            "success_metric": 0.705336640703501,
+            "success_metric": 0.6798783836268205,
             "key_findings": [
-              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.705336640703501)), ('position_vs_variability', np.float64(0.6374329947670447))]"
+              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.6798783836268205))]"
             ]
           }
         ],
@@ -1244,8 +1244,8 @@
       "confidence_score": 0.8,
       "attack_type_scores": {
         "Communication Pattern Attack": 0.8,
-        "Parameter Magnitude Attack": 0.01838716813119758,
-        "Topology Structure Attack": 0.705336640703501
+        "Parameter Magnitude Attack": 0.015080180163059847,
+        "Topology Structure Attack": 0.6798783836268205
       },
       "best_attack_type": "Communication Pattern Attack",
       "topology_specific_metrics": {
@@ -1273,7 +1273,7 @@
       ],
       "group_detection_success": true
     },
-    "timestamp": "2025-06-07T05:45:14.336932"
+    "timestamp": "2025-06-07T06:28:48.716013"
   },
   {
     "experiment_id": 5,
@@ -1293,7 +1293,7 @@
       "expected_runtime": 90
     },
     "status": "success",
-    "runtime_seconds": 29.60440468788147,
+    "runtime_seconds": 31.0070743560791,
     "attack_results": {
       "attack_results": [
         {
@@ -1343,19 +1343,19 @@
           },
           "temporal_patterns": {
             "0": {
-              "timestamp_std": 9.696583763838368e-05,
+              "timestamp_std": 0.00010258541977656333,
               "comm_count": 2.0
             },
             "1": {
-              "timestamp_std": 5.022655689708146e-05,
+              "timestamp_std": 5.180675882915858e-05,
               "comm_count": 3.0
             },
             "2": {
-              "timestamp_std": 5.512803693581954e-05,
+              "timestamp_std": 5.9146060381252e-05,
               "comm_count": 2.0
             },
             "3": {
-              "timestamp_std": 4.9143201672371084e-05,
+              "timestamp_std": 5.178440141282966e-05,
               "comm_count": 2.0
             },
             "4": {
@@ -1369,76 +1369,76 @@
         {
           "node_magnitude_stats": {
             "0": {
-              "norm_mean": 5.0553609530131025,
-              "norm_std": 0.3159229670746541,
-              "norm_trend": 0.999660347007251,
-              "mean_of_means": -0.0035702859361966452,
-              "mean_of_stds": 0.29766016205151874
+              "norm_mean": 4.817462762196858,
+              "norm_std": 0.24112376795183646,
+              "norm_trend": 0.9993272487241192,
+              "mean_of_means": 0.008462671268110475,
+              "mean_of_stds": 0.2836735049883525
             },
             "1": {
-              "norm_mean": 5.148035367329915,
-              "norm_std": 0.32492191814608473,
-              "norm_trend": 0.9961881451274249,
-              "mean_of_means": 0.0057984998760124045,
-              "mean_of_stds": 0.30280888080596924
+              "norm_mean": 4.830118338267009,
+              "norm_std": 0.33807224819325776,
+              "norm_trend": 0.999193845360242,
+              "mean_of_means": 0.004481886998595049,
+              "mean_of_stds": 0.28422750035921734
             },
             "2": {
-              "norm_mean": 4.866843382517497,
-              "norm_std": 0.3889867798375602,
-              "norm_trend": 0.9951774062140825,
-              "mean_of_means": -0.0023500326400001845,
-              "mean_of_stds": 0.2864186962445577
+              "norm_mean": 4.678032239278157,
+              "norm_std": 0.2155087920822676,
+              "norm_trend": 0.947546228272934,
+              "mean_of_means": 0.0026510813428709903,
+              "mean_of_stds": 0.2755579153696696
             },
             "3": {
-              "norm_mean": 4.98544454574585,
-              "norm_std": 0.3852582021481546,
-              "norm_trend": 0.9985083711096348,
-              "mean_of_means": -0.013538433083643516,
-              "mean_of_stds": 0.2930806080500285
+              "norm_mean": 4.793242454528809,
+              "norm_std": 0.1786887289711937,
+              "norm_trend": 0.9788809753876752,
+              "mean_of_means": 0.0034019880501242974,
+              "mean_of_stds": 0.282256414492925
             },
             "4": {
-              "norm_mean": 4.86433474222819,
-              "norm_std": 0.3479748139703084,
-              "norm_trend": 0.9992134255143306,
-              "mean_of_means": -0.0012713894248008728,
-              "mean_of_stds": 0.2863399187723796
+              "norm_mean": 4.725069363911946,
+              "norm_std": 0.29381324111315543,
+              "norm_trend": 0.9999956214649929,
+              "mean_of_means": 0.00816465673657755,
+              "mean_of_stds": 0.27810028195381165
             }
           },
           "magnitude_clusters": {
-            "0": 1,
+            "0": 0,
             "1": 0,
             "2": 1,
             "3": 1,
-            "4": 1
+            "4": 0
           },
           "temporal_magnitude": {
             "0": {
-              "convergence_rate": 0.999660347007251,
-              "stability": 0.3159229670746541,
-              "final_norm": 5.436332702636719
+              "convergence_rate": 0.9993272487241193,
+              "stability": 0.2411237679518361,
+              "final_norm": 5.106326103210449
             },
             "1": {
-              "convergence_rate": 0.9961881451274249,
-              "stability": 0.32492191814608473,
-              "final_norm": 5.564506530761719
+              "convergence_rate": 0.999193845360242,
+              "stability": 0.33807224819325776,
+              "final_norm": 5.253433704376221
             },
             "2": {
-              "convergence_rate": 0.9951774062140825,
-              "stability": 0.3889867798375602,
-              "final_norm": 5.313974857330322
+              "convergence_rate": 0.947546228272934,
+              "stability": 0.2155087920822676,
+              "final_norm": 4.976836681365967
             },
             "3": {
-              "convergence_rate": 0.9985083711096348,
-              "stability": 0.3852582021481546,
-              "final_norm": 5.441709995269775
+              "convergence_rate": 0.9788809753876752,
+              "stability": 0.1786887289711937,
+              "final_norm": 5.033298969268799
             },
             "4": {
-              "convergence_rate": 0.9992134255143306,
-              "stability": 0.3479748139703084,
-              "final_norm": 5.2999372482299805
+              "convergence_rate": 0.9999956214649929,
+              "stability": 0.29381324111315543,
+              "final_norm": 5.08552885055542
             }
           },
-          "attack_success_metric": 0.021987921323167365,
+          "attack_success_metric": 0.012182869927093233,
           "attack_name": "Parameter Magnitude Attack"
         },
         {
@@ -1476,40 +1476,40 @@
           },
           "node_characteristics": {
             "0": {
-              "avg_norm": 5.0553609530131025,
-              "norm_variability": 0.3159229670746541,
-              "initial_norm": 4.662745475769043,
-              "final_norm": 5.436332702636719
+              "avg_norm": 4.817462762196859,
+              "norm_variability": 0.2411237679518361,
+              "initial_norm": 4.516093254089356,
+              "final_norm": 5.106326103210449
             },
             "1": {
-              "avg_norm": 5.148035367329915,
-              "norm_variability": 0.32492191814608473,
-              "initial_norm": 4.7716474533081055,
-              "final_norm": 5.564506530761719
+              "avg_norm": 4.830118338267009,
+              "norm_variability": 0.33807224819325776,
+              "initial_norm": 4.425996780395508,
+              "final_norm": 5.253433704376221
             },
             "2": {
-              "avg_norm": 4.866843382517497,
-              "norm_variability": 0.3889867798375602,
-              "initial_norm": 4.365750789642334,
-              "final_norm": 5.313974857330322
+              "avg_norm": 4.678032239278157,
+              "norm_variability": 0.2155087920822676,
+              "initial_norm": 4.476639747619629,
+              "final_norm": 4.976836681365967
             },
             "3": {
-              "avg_norm": 4.98544454574585,
-              "norm_variability": 0.3852582021481546,
-              "initial_norm": 4.499431610107422,
-              "final_norm": 5.441709995269775
+              "avg_norm": 4.793242454528809,
+              "norm_variability": 0.1786887289711937,
+              "initial_norm": 4.604846477508545,
+              "final_norm": 5.033298969268799
             },
             "4": {
-              "avg_norm": 4.86433474222819,
-              "norm_variability": 0.3479748139703084,
-              "initial_norm": 4.448246955871582,
-              "final_norm": 5.2999372482299805
+              "avg_norm": 4.725069363911946,
+              "norm_variability": 0.29381324111315543,
+              "initial_norm": 4.36583948135376,
+              "final_norm": 5.08552885055542
             }
           },
           "correlations": {
-            "position_vs_norm": -0.7028531232716535,
+            "position_vs_norm": -0.5395730192478395,
             "degree_vs_norm": 0.0,
-            "position_vs_variability": 0.5851075023925846
+            "position_vs_variability": -0.13513465247402714
           },
           "topology_predictions": {
             "0": "even_position",
@@ -1518,7 +1518,7 @@
             "3": "odd_position",
             "4": "even_position"
           },
-          "attack_success_metric": 0.7028531232716535,
+          "attack_success_metric": 0.5395730192478395,
           "attack_name": "Topology Structure Attack"
         }
       ],
@@ -1533,16 +1533,16 @@
           },
           {
             "attack_name": "Parameter Magnitude Attack",
-            "success_metric": 0.021987921323167365,
+            "success_metric": 0.012182869927093233,
             "key_findings": [
               "Parameter magnitudes show systematic differences between nodes"
             ]
           },
           {
             "attack_name": "Topology Structure Attack",
-            "success_metric": 0.7028531232716535,
+            "success_metric": 0.5395730192478395,
             "key_findings": [
-              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.7028531232716535)), ('position_vs_variability', np.float64(0.5851075023925846))]"
+              "Strong topology correlations detected: [('position_vs_norm', np.float64(-0.5395730192478395))]"
             ]
           }
         ],
@@ -1564,8 +1564,8 @@
       "confidence_score": 0.8,
       "attack_type_scores": {
         "Communication Pattern Attack": 0.8,
-        "Parameter Magnitude Attack": 0.021987921323167365,
-        "Topology Structure Attack": 0.7028531232716535
+        "Parameter Magnitude Attack": 0.012182869927093233,
+        "Topology Structure Attack": 0.5395730192478395
       },
       "best_attack_type": "Communication Pattern Attack",
       "topology_specific_metrics": {
@@ -1593,7 +1593,7 @@
       ],
       "group_detection_success": true
     },
-    "timestamp": "2025-06-07T05:45:43.943965"
+    "timestamp": "2025-06-07T06:29:19.725784"
   },
   {
     "experiment_id": 6,
@@ -1612,31 +1612,306 @@
       },
       "expected_runtime": 60
     },
-    "status": "failed",
-    "error": "Training failed (stderr): tor.client_4 - [Node:6490ecf6] - [Actor:client_4] - INFO - Successfully loaded all splits at once\u001b[32m [repeated 4x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=2975, ip=10.0.4.123)\u001b[0m 2025-06-07 05:46:04,156 - murmura.actor.client_4 - [Node:6490ecf6] - [Actor:client_4] - INFO - Dataset lazy loaded successfully!\u001b[32m [repeated 4x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=2975, ip=10.0.4.123)\u001b[0m 2025-06-07 05:46:04,156 - murmura.actor.client_4 - [Node:6490ecf6] - [Actor:client_4] - INFO - Feature columns: ['image']\u001b[32m [repeated 4x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=2975, ip=10.0.4.123)\u001b[0m 2025-06-07 05:46:04,156 - murmura.actor.client_4 - [Node:6490ecf6] - [Actor:client_4] - INFO - Label column: label\u001b[32m [repeated 4x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=2975, ip=10.0.4.123)\u001b[0m 2025-06-07 05:46:04,156 - murmura.actor.client_4 - [Node:6490ecf6] - [Actor:client_4] - INFO - Lazy loading completed successfully\u001b[32m [repeated 4x across cluster]\u001b[0m",
-    "runtime_seconds": 22.269002676010132,
-    "timestamp": "2025-06-07T05:46:06.216168"
-  },
-  {
-    "experiment_id": 7,
-    "experiment_name": "exp_0007_mnist_federated_complete_5n_weak_dp",
-    "config": {
-      "config_id": 7,
-      "dataset": "mnist",
-      "attack_strategy": "sensitive_groups",
-      "fl_type": "federated",
-      "topology": "complete",
-      "node_count": 5,
-      "dp_setting": {
-        "enabled": true,
-        "epsilon": 16.0,
-        "name": "weak_dp"
+    "status": "success",
+    "runtime_seconds": 41.83036136627197,
+    "attack_results": {
+      "attack_results": [
+        {
+          "communication_matrix": [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              6.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              6.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              6.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              6.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "node_clusters": {
+            "0": 1,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 0
+          },
+          "temporal_patterns": {
+            "1": {
+              "timestamp_std": 6.971086972080802e-05,
+              "comm_count": 2.0
+            },
+            "2": {
+              "timestamp_std": 6.971086972080802e-05,
+              "comm_count": 2.0
+            },
+            "3": {
+              "timestamp_std": 6.971086972080802e-05,
+              "comm_count": 2.0
+            },
+            "4": {
+              "timestamp_std": 6.971086972080802e-05,
+              "comm_count": 2.0
+            }
+          },
+          "attack_success_metric": 0.8,
+          "attack_name": "Communication Pattern Attack"
+        },
+        {
+          "node_magnitude_stats": {
+            "0": {
+              "norm_mean": 3.2902840773264566,
+              "norm_std": 0.0061394562319997395,
+              "norm_trend": -0.9113264770701855,
+              "mean_of_means": 0.005231532268226147,
+              "mean_of_stds": 0.19381004571914673
+            },
+            "1": {
+              "norm_mean": 3.28989044825236,
+              "norm_std": 0.001960629135092942,
+              "norm_trend": 0.06945231602021595,
+              "mean_of_means": 0.005437256613125403,
+              "mean_of_stds": 0.19378223518530527
+            },
+            "2": {
+              "norm_mean": 3.294184446334839,
+              "norm_std": 0.003375139238278092,
+              "norm_trend": 0.036192326576511946,
+              "mean_of_means": 0.00466700146595637,
+              "mean_of_stds": 0.1940553536017736
+            },
+            "3": {
+              "norm_mean": 3.28991969426473,
+              "norm_std": 0.002157431663926804,
+              "norm_trend": -0.8806578995335106,
+              "mean_of_means": 0.005233399104326963,
+              "mean_of_stds": 0.19378953178723654
+            },
+            "4": {
+              "norm_mean": 3.2939160664876304,
+              "norm_std": 0.0019912413168811237,
+              "norm_trend": 0.6659066191358627,
+              "mean_of_means": 0.005149961293985446,
+              "mean_of_stds": 0.1940272649129232
+            }
+          },
+          "magnitude_clusters": {
+            "0": 0,
+            "1": 0,
+            "2": 1,
+            "3": 0,
+            "4": 1
+          },
+          "temporal_magnitude": {
+            "0": {
+              "convergence_rate": -0.9113264770701855,
+              "stability": 0.0061394562319997395,
+              "final_norm": 3.281644344329834
+            },
+            "1": {
+              "convergence_rate": 0.06945231602021595,
+              "stability": 0.001960629135092942,
+              "final_norm": 3.29144024848938
+            },
+            "2": {
+              "convergence_rate": 0.03619232657656446,
+              "stability": 0.0033751392382782032,
+              "final_norm": 3.296719074249268
+            },
+            "3": {
+              "convergence_rate": -0.8806578995335106,
+              "stability": 0.002157431663926804,
+              "final_norm": 3.286870002746582
+            },
+            "4": {
+              "convergence_rate": 0.6659066191359149,
+              "stability": 0.0019912413168809676,
+              "final_norm": 3.294489622116089
+            }
+          },
+          "attack_success_metric": 0.000600166002108213,
+          "attack_name": "Parameter Magnitude Attack"
+        },
+        {
+          "topology_features": {
+            "0": {
+              "degree": 4,
+              "position": 0,
+              "is_central": 1,
+              "neighbor_sum": 10
+            },
+            "1": {
+              "degree": 1,
+              "position": 1,
+              "is_central": 0,
+              "neighbor_sum": 0
+            },
+            "2": {
+              "degree": 1,
+              "position": 2,
+              "is_central": 0,
+              "neighbor_sum": 0
+            },
+            "3": {
+              "degree": 1,
+              "position": 3,
+              "is_central": 0,
+              "neighbor_sum": 0
+            },
+            "4": {
+              "degree": 1,
+              "position": 4,
+              "is_central": 0,
+              "neighbor_sum": 0
+            }
+          },
+          "node_characteristics": {
+            "0": {
+              "avg_norm": 3.2902840773264566,
+              "norm_variability": 0.0061394562319997395,
+              "initial_norm": 3.295349359512329,
+              "final_norm": 3.281644344329834
+            },
+            "1": {
+              "avg_norm": 3.28989044825236,
+              "norm_variability": 0.001960629135092942,
+              "initial_norm": 3.291106700897217,
+              "final_norm": 3.29144024848938
+            },
+            "2": {
+              "avg_norm": 3.294184446334839,
+              "norm_variability": 0.0033751392382782032,
+              "initial_norm": 3.296419858932495,
+              "final_norm": 3.296719074249268
+            },
+            "3": {
+              "avg_norm": 3.28991969426473,
+              "norm_variability": 0.002157431663926804,
+              "initial_norm": 3.2915239334106445,
+              "final_norm": 3.286870002746582
+            },
+            "4": {
+              "avg_norm": 3.2939160664876304,
+              "norm_variability": 0.0019912413168809676,
+              "initial_norm": 3.2912416458129883,
+              "final_norm": 3.294489622116089
+            }
+          },
+          "correlations": {
+            "position_vs_norm": 0.5220967477106084,
+            "degree_vs_norm": -0.34291287727324243,
+            "position_vs_variability": -0.7179665130786915
+          },
+          "topology_predictions": {
+            "0": "central_hub",
+            "1": "odd_position",
+            "2": "even_position",
+            "3": "odd_position",
+            "4": "even_position"
+          },
+          "attack_success_metric": 0.7179665130786915,
+          "attack_name": "Topology Structure Attack"
+        }
+      ],
+      "evaluation": {
+        "attack_summaries": [
+          {
+            "attack_name": "Communication Pattern Attack",
+            "success_metric": 0.8,
+            "key_findings": [
+              "Detected 2 distinct communication patterns"
+            ]
+          },
+          {
+            "attack_name": "Parameter Magnitude Attack",
+            "success_metric": 0.000600166002108213,
+            "key_findings": [
+              "Parameter magnitudes show systematic differences between nodes"
+            ]
+          },
+          {
+            "attack_name": "Topology Structure Attack",
+            "success_metric": 0.7179665130786915,
+            "key_findings": [
+              "Strong topology correlations detected: [('position_vs_norm', np.float64(0.5220967477106084)), ('degree_vs_norm', np.float64(-0.34291287727324243)), ('position_vs_variability', np.float64(-0.7179665130786915))]"
+            ]
+          }
+        ],
+        "overall_success": true,
+        "best_attack": "Communication Pattern Attack",
+        "attack_indicators": {
+          "max_signal": 0.8
+        }
       },
-      "expected_runtime": 60
+      "visualization_data_summary": {
+        "communications": 24,
+        "parameter_updates": 15,
+        "topology": 5,
+        "metrics": 4
+      }
     },
-    "status": "failed",
-    "error": "Training failed (stderr): ientActor pid=7429)\u001b[0m 2025-06-07 05:46:25,892 - murmura.actor.client_0 - [Node:c3c164be] - [Actor:client_0] - INFO - Successfully loaded all splits at once\u001b[32m [repeated 3x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=7429)\u001b[0m 2025-06-07 05:46:25,892 - murmura.actor.client_0 - [Node:c3c164be] - [Actor:client_0] - INFO - Dataset lazy loaded successfully!\u001b[32m [repeated 3x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=7429)\u001b[0m 2025-06-07 05:46:25,892 - murmura.actor.client_0 - [Node:c3c164be] - [Actor:client_0] - INFO - Feature columns: ['image']\u001b[32m [repeated 3x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=7429)\u001b[0m 2025-06-07 05:46:25,892 - murmura.actor.client_0 - [Node:c3c164be] - [Actor:client_0] - INFO - Label column: label\u001b[32m [repeated 3x across cluster]\u001b[0m\n\u001b[36m(VirtualClientActor pid=7429)\u001b[0m 2025-06-07 05:46:25,892 - murmura.actor.client_0 - [Node:c3c164be] - [Actor:client_0] - INFO - Lazy loading completed successfully\u001b[32m [repeated 3x across cluster]\u001b[0m",
-    "runtime_seconds": 21.831275463104248,
-    "timestamp": "2025-06-07T05:46:28.050609"
+    "evaluation": {
+      "attack_success": true,
+      "confidence_score": 0.8,
+      "attack_type_scores": {
+        "Communication Pattern Attack": 0.8,
+        "Parameter Magnitude Attack": 0.000600166002108213,
+        "Topology Structure Attack": 0.7179665130786915
+      },
+      "best_attack_type": "Communication Pattern Attack",
+      "topology_specific_metrics": {
+        "topology": "star",
+        "node_count": 5,
+        "topology_vulnerability_score": 0.8,
+        "communication_complexity": {
+          "total_edges": 4,
+          "max_degree": 4,
+          "avg_degree": 2.0
+        }
+      },
+      "dp_effectiveness_metrics": {
+        "dp_enabled": true,
+        "epsilon": 16.0,
+        "privacy_level": "weak_dp",
+        "dp_protection_effective": false,
+        "signal_strength_with_dp": 0.8,
+        "privacy_budget_utilization": 0.8999999999999999
+      },
+      "scalability_metrics": {
+        "network_size": 5,
+        "size_category": "small",
+        "attack_scalability_score": 0.8
+      },
+      "strategy_specific_findings": [
+        "Detected 2 distinct groups via communication patterns"
+      ],
+      "group_detection_success": true
+    },
+    "timestamp": "2025-06-07T06:30:01.559473"
   }
 ]
