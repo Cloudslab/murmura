@@ -93,11 +93,11 @@ class TopologyCoordinator:
         parameters_list = []
         for i, actor in enumerate(self.actors):
             if i != hub_index:
-                params = ray.get(actor.get_model_parameters.remote())
+                params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 parameters_list.append(params)
 
         # Add hub's parameters
-        hub_params = ray.get(hub_actor.get_model_parameters.remote())
+        hub_params = ray.get(hub_actor.get_model_parameters.remote(), timeout=1800)
         parameters_list.append(hub_params)
 
         # Adjust weights if provided
@@ -148,7 +148,7 @@ class TopologyCoordinator:
             local_weights = []
 
             # Get self parameters
-            self_params = ray.get(node_actor.get_model_parameters.remote())
+            self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
             local_params_list.append(self_params)
 
             # Add self weight
@@ -160,7 +160,7 @@ class TopologyCoordinator:
             # Get neighbor parameters
             for neighbor_idx in neighbors:
                 neighbor_params = ray.get(
-                    self.actors[neighbor_idx].get_model_parameters.remote()
+                    self.actors[neighbor_idx].get_model_parameters.remote(), timeout=1800
                 )
                 local_params_list.append(neighbor_params)
 
@@ -199,7 +199,7 @@ class TopologyCoordinator:
             # since all nodes can communicate with each other
             all_params = []
             for actor in self.actors:
-                params = ray.get(actor.get_model_parameters.remote())
+                params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 all_params.append(params)
 
             # Perform centralized aggregation
@@ -218,7 +218,7 @@ class TopologyCoordinator:
                 local_weights = []
 
                 # Get self parameters
-                self_params = ray.get(node_actor.get_model_parameters.remote())
+                self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
                 local_params_list.append(self_params)
 
                 # Add self weight
@@ -283,7 +283,7 @@ class TopologyCoordinator:
             local_weights = []
 
             # Get self parameters
-            self_params = ray.get(node_actor.get_model_parameters.remote())
+            self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
             local_params_list.append(self_params)
 
             # Add self weight
@@ -295,7 +295,7 @@ class TopologyCoordinator:
             # Get neighbor parameters
             for neighbor_idx in neighbors:
                 neighbor_params = ray.get(
-                    self.actors[neighbor_idx].get_model_parameters.remote()
+                    self.actors[neighbor_idx].get_model_parameters.remote(), timeout=1800
                 )
                 local_params_list.append(neighbor_params)
 
@@ -342,7 +342,7 @@ class TopologyCoordinator:
                 # Perform centralized aggregation
                 all_params = []
                 for actor in self.actors:
-                    params = ray.get(actor.get_model_parameters.remote())
+                    params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                     all_params.append(params)
                 return self.strategy.aggregate(all_params, weights)
             else:
@@ -364,7 +364,7 @@ class TopologyCoordinator:
             local_weights = []
 
             # Get self parameters
-            self_params = ray.get(node_actor.get_model_parameters.remote())
+            self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
             local_params_list.append(self_params)
 
             # Add self weight
@@ -376,7 +376,7 @@ class TopologyCoordinator:
             # Get neighbor parameters
             for neighbor_idx in neighbors:
                 neighbor_params = ray.get(
-                    self.actors[neighbor_idx].get_model_parameters.remote()
+                    self.actors[neighbor_idx].get_model_parameters.remote(), timeout=1800
                 )
                 local_params_list.append(neighbor_params)
 

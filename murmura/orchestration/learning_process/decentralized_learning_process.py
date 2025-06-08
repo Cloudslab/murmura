@@ -214,7 +214,7 @@ class DecentralizedLearningProcess(LearningProcess):
             # Collect parameters for visualization
             node_params = {}
             for i, actor in enumerate(self.cluster_manager.actors):
-                params = ray.get(actor.get_model_parameters.remote())
+                params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 node_params[i] = params
 
             # Create parameter summaries for visualization

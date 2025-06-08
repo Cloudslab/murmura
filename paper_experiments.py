@@ -532,21 +532,49 @@ class PaperExperimentRunner:
     def run_comprehensive_experiments(self, 
                                     max_parallel: int = 2,
                                     sample_configs: Optional[int] = None,
-                                    dataset_filter: Optional[str] = None) -> None:
+                                    dataset_filter: Optional[str] = None,
+                                    resume_from: Optional[int] = None) -> None:
         """Run comprehensive experiments for the paper."""
         
         # Generate all configurations
         all_configs = self.get_valid_configurations(dataset_filter)
         
-        if sample_configs:
-            # For testing, sample a subset
+        # Handle resume functionality
+        if resume_from is not None:
+            if resume_from < 1 or resume_from > len(all_configs):
+                raise ValueError(f"Resume point {resume_from} is out of range (1-{len(all_configs)})")
+            
+            # Skip already completed experiments
+            all_configs = all_configs[resume_from - 1:]
+            self.experiment_id = resume_from - 1  # Set starting experiment ID
+            
+            self.logger.info(f"🔄 Resuming from experiment {resume_from}")
+            self.logger.info(f"   Skipping first {resume_from - 1} experiments")
+            
+            # Load previous results if they exist
+            try:
+                results_file = self.base_output_dir / "results" / "intermediate_results.json"
+                if results_file.exists():
+                    with open(results_file, 'r') as f:
+                        previous_results = json.load(f)
+                        self.results = previous_results
+                        self.logger.info(f"   Loaded {len(previous_results)} previous results")
+            except Exception as e:
+                self.logger.warning(f"Could not load previous results: {e}")
+        
+        if sample_configs and resume_from is None:
+            # For testing, sample a subset (only if not resuming)
             import random
             random.shuffle(all_configs)
             all_configs = all_configs[:sample_configs]
         
         total_experiments = len(all_configs)
+        original_total = len(self.get_valid_configurations(dataset_filter))
         
-        self.logger.info(f"🚀 Starting {total_experiments} comprehensive experiments")
+        if resume_from is not None:
+            self.logger.info(f"🚀 Resuming {total_experiments} remaining experiments (from {resume_from}/{original_total})")
+        else:
+            self.logger.info(f"🚀 Starting {total_experiments} comprehensive experiments")
         self.logger.info(f"   Max parallel: {max_parallel}")
         self.logger.info(f"   Output directory: {self.base_output_dir}")
         
@@ -562,12 +590,14 @@ class PaperExperimentRunner:
         if max_parallel == 1:
             # Sequential execution
             for i, config in enumerate(all_configs, 1):
-                self.logger.info(f"[{i}/{total_experiments}] Starting experiment...")
+                # Calculate actual experiment number (accounting for resume)
+                actual_experiment_num = (resume_from or 1) + i - 1
+                self.logger.info(f"[{actual_experiment_num}/{original_total}] Starting experiment...")
                 result = self.run_single_experiment(config)
                 self.results.append(result)
                 
                 # Log brief result summary
-                self._log_experiment_result_brief(result, i, total_experiments)
+                self._log_experiment_result_brief(result, actual_experiment_num, original_total)
                 
                 # Save intermediate results after each experiment
                 self.save_intermediate_results()
@@ -583,19 +613,21 @@ class PaperExperimentRunner:
                 # Collect results as they complete
                 for future in as_completed(future_to_config):
                     i, config = future_to_config[future]
+                    # Calculate actual experiment number (accounting for resume)
+                    actual_experiment_num = (resume_from or 1) + i - 1
                     try:
                         result = future.result()
                         self.results.append(result)
                         
                         # Log brief result summary
-                        self._log_experiment_result_brief(result, len(self.results), total_experiments)
+                        self._log_experiment_result_brief(result, actual_experiment_num, original_total)
                         
                         # Save intermediate results after each experiment
                         self.save_intermediate_results()
                             
                     except Exception as e:
-                        self.logger.error(f"Experiment {i} failed with exception: {e}")
-                        error_result = self._create_failed_result(config, f"exp_{i:04d}", str(e), time.time())
+                        self.logger.error(f"Experiment {actual_experiment_num} failed with exception: {e}")
+                        error_result = self._create_failed_result(config, f"exp_{actual_experiment_num:04d}", str(e), time.time())
                         self.results.append(error_result)
         
         total_time = time.time() - start_time
@@ -1022,6 +1054,13 @@ def main():
         help="Run experiments only for specified dataset (mnist or ham10000)"
     )
     
+    parser.add_argument(
+        "--resume_from",
+        type=int,
+        default=None,
+        help="Resume experiments from a specific experiment number (1-based)"
+    )
+    
     args = parser.parse_args()
     
     # Initialize experiment runner
@@ -1037,7 +1076,8 @@ def main():
     runner.run_comprehensive_experiments(
         max_parallel=args.max_parallel,
         sample_configs=sample_size,
-        dataset_filter=args.dataset
+        dataset_filter=args.dataset,
+        resume_from=args.resume_from
     )
     
     print(f"\n✅ Comprehensive paper experiments completed!")
