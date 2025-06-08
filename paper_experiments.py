@@ -75,7 +75,7 @@ class PaperExperimentRunner:
         """Generate all valid experimental configurations.
         
         Args:
-            dataset_filter: If specified, only generate configs for this dataset ('mnist' or 'skin_lesion')
+            dataset_filter: If specified, only generate configs for this dataset ('mnist' or 'ham10000')
         """
         
         configurations = []
@@ -83,13 +83,13 @@ class PaperExperimentRunner:
         # Experimental parameters with dataset-optimal node counts
         all_datasets_and_node_counts = [
             ("mnist", [5, 10, 15, 20, 25]),      # MNIST: 10 classes, optimal at 10 nodes
-            ("skin_lesion", [5, 7, 10, 15, 20])  # Skin lesion: 7 classes, optimal at 7 nodes
+            ("ham10000", [5, 7, 10, 14, 21])     # HAM10000: 7 classes, optimal at 7 nodes
         ]
         
         # Filter datasets if specified
         if dataset_filter:
-            if dataset_filter not in ["mnist", "skin_lesion"]:
-                raise ValueError(f"Invalid dataset filter: {dataset_filter}. Must be 'mnist' or 'skin_lesion'")
+            if dataset_filter not in ["mnist", "ham10000"]:
+                raise ValueError(f"Invalid dataset filter: {dataset_filter}. Must be 'mnist' or 'ham10000'")
             datasets_and_node_counts = [(d, n) for d, n in all_datasets_and_node_counts if d == dataset_filter]
             self.logger.info(f"Filtering experiments to dataset: {dataset_filter}")
         else:
@@ -109,7 +109,7 @@ class PaperExperimentRunner:
             for attack_strategy in attack_strategies:
                 # For topology_correlated, only use optimal node count
                 if attack_strategy == "topology_correlated":
-                    # Optimal: 10 nodes for MNIST (10 classes), 7 nodes for skin_lesion (7 classes)
+                    # Optimal: 10 nodes for MNIST (10 classes), 7 nodes for HAM10000 (7 classes)
                     optimal_nodes = 10 if dataset == "mnist" else 7
                     node_counts_to_use = [optimal_nodes]
                 else:
@@ -150,7 +150,7 @@ class PaperExperimentRunner:
         
         base_time = {
             "mnist": {"federated": 60, "decentralized": 90},  # Base time for 5 nodes
-            "skin_lesion": {"federated": 180, "decentralized": 240}  # Skin lesion takes longer
+            "ham10000": {"federated": 120, "decentralized": 180}  # HAM10000 is lightweight medical imaging dataset
         }
         
         # Scale with node count (roughly linear)
@@ -175,8 +175,8 @@ class PaperExperimentRunner:
             script_map = {
                 ("mnist", "federated"): "dp_mnist_example.py",
                 ("mnist", "decentralized"): "dp_decentralized_mnist_example.py", 
-                ("skin_lesion", "federated"): "dp_skin_lesion_example.py",
-                ("skin_lesion", "decentralized"): "dp_decentralized_skin_lesion_example.py"
+                ("ham10000", "federated"): "dp_ham10000_example.py",
+                ("ham10000", "decentralized"): "dp_decentralized_ham10000_example.py"
             }
             
             script = script_map[(config['dataset'], config['fl_type'])]
@@ -294,8 +294,8 @@ class PaperExperimentRunner:
             cmd.extend(["--aggregation_strategy", "gossip_avg"])
         
         # Dataset-specific adjustments
-        if config['dataset'] == "skin_lesion":
-            cmd.extend(["--image_size", "64"])  # Smaller images for faster training
+        if config['dataset'] == "ham10000":
+            cmd.extend(["--image_size", "128"])  # HAM10000 uses 128x128 images
         
         return cmd
     
@@ -953,8 +953,8 @@ Topology & FL Type & DP & Nodes & Success Rate & Avg Confidence \\\\
         setup_summary = {
             "experimental_design": {
                 "total_configurations": len(self.get_valid_configurations()),
-                "datasets": ["MNIST", "Skin Lesion"],
-                "node_counts": [5, 10, 15, 20, 25],
+                "datasets": ["MNIST", "HAM10000"],
+                "node_counts": {"MNIST": [5, 10, 15, 20, 25], "HAM10000": [5, 7, 10, 14, 21]},
                 "topologies": {
                     "federated": ["star", "complete"],
                     "decentralized": ["ring", "complete", "star", "line"]
@@ -1017,9 +1017,9 @@ def main():
     parser.add_argument(
         "--dataset",
         type=str,
-        choices=["mnist", "skin_lesion"],
+        choices=["mnist", "ham10000"],
         default=None,
-        help="Run experiments only for specified dataset (mnist or skin_lesion)"
+        help="Run experiments only for specified dataset (mnist or ham10000)"
     )
     
     args = parser.parse_args()

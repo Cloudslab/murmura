@@ -62,8 +62,9 @@ class PartitionerFactory:
                     "high_digits": list(range(config.num_actors // 2, config.num_actors))
                 }
             )
-        elif 'skin' in dataset_name or 'lesion' in dataset_name:
-            # Skin lesion: 7 classes (diagnostic categories)
+        elif 'skin' in dataset_name or 'lesion' in dataset_name or 'ham10000' in dataset_name:
+            # Skin lesion/HAM10000: 7 classes (diagnostic categories)
+            # HAM10000 classes: 0=akiec, 1=bcc, 2=bkl, 3=df, 4=mel, 5=nv, 6=vasc
             return SensitiveGroupPartitioner(
                 num_partitions=config.num_actors,
                 sensitive_groups={
@@ -123,8 +124,9 @@ class PartitionerFactory:
                 rare_classes=[0, 1],      # Digits 0 and 1 are rare
                 rarity_factor=0.1         # 10% go to other nodes, 90% stay at rare nodes
             )
-        elif 'skin' in dataset_name or 'lesion' in dataset_name:
-            # Skin lesion: Make DF and VASC rare (actually less common conditions)
+        elif 'skin' in dataset_name or 'lesion' in dataset_name or 'ham10000' in dataset_name:
+            # Skin lesion/HAM10000: Make DF and VASC rare (actually less common conditions)
+            # HAM10000 classes: 0=akiec, 1=bcc, 2=bkl, 3=df, 4=mel, 5=nv, 6=vasc
             return ImbalancedSensitivePartitioner(
                 num_partitions=config.num_actors,
                 rare_class_nodes=[0, 1],  # First two nodes get rare classes

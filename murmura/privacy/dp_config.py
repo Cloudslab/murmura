@@ -25,7 +25,7 @@ class DPConfig(BaseModel):
     Configuration for differential privacy settings.
 
     This configuration defines privacy parameters that work well with both
-    MNIST and skin lesion classification while maintaining reasonable utility.
+    MNIST and HAM10000 classification while maintaining reasonable utility.
     """
 
     # Core DP parameters
@@ -174,8 +174,8 @@ class DPConfig(BaseModel):
         )
 
     @classmethod
-    def create_for_skin_lesion(cls) -> "DPConfig":
-        """Create DP config optimized for skin lesion datasets (~10k samples)"""
+    def create_for_ham10000(cls) -> "DPConfig":
+        """Create DP config optimized for HAM10000 dataset (~10k samples)"""
         return cls(
             target_epsilon=10.0,  # Slightly higher for smaller dataset
             target_delta=1e-4,  # ~1/10000
