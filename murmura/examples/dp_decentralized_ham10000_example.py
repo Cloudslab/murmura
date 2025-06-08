@@ -355,18 +355,12 @@ def main() -> None:
             split=args.split,
         )
 
-        # For HAM10000, we might need to handle test split differently
-        # as it might not have a standard test split
-        try:
-            test_dataset = MDataset.load_dataset_with_multinode_support(
-                DatasetSource.HUGGING_FACE,
-                dataset_name="kuchikihater/HAM10000",
-                split=args.test_split,
-            )
-            # Merge test split into main dataset
-            train_dataset.merge_splits(test_dataset)
-        except Exception as e:
-            logger.warning(f"Could not load test split: {e}. Creating train/test split from train data.")
+        # For HAM10000, check if test split exists and create if not
+        # HAM10000 typically only has a train split, so we need to create train/test splits
+        logger.info(f"Initial dataset splits: {list(train_dataset._splits.keys())}")
+        
+        if args.test_split not in train_dataset._splits:
+            logger.warning(f"Test split '{args.test_split}' not found. Creating train/test split from train data.")
             # Create train/test split from the single train split
             train_dataset = train_dataset.train_test_split(
                 source_split=args.split,
@@ -374,6 +368,9 @@ def main() -> None:
                 seed=42,
                 new_split_names=("train", "test")
             )
+            logger.info(f"Created train/test split. Available splits: {list(train_dataset._splits.keys())}")
+        else:
+            logger.info(f"Test split '{args.test_split}' found. Using existing splits.")
 
         # Create configuration with gossip-specific settings
         config = OrchestrationConfig(
@@ -445,6 +442,7 @@ def main() -> None:
             )
 
         logger.info("=== Setting Up Decentralized Learning Process ===")
+        logger.info(f"Dataset splits before learning process: {list(train_dataset._splits.keys())}")
         learning_process = DecentralizedLearningProcess(
             config=config,
             dataset=train_dataset,
