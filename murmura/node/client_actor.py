@@ -112,7 +112,7 @@ class VirtualClientActor:
         return self.node_info
 
     def receive_data(
-        self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
+            self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """Receive a data partition and metadata dictionary."""
         self.data_partition = data_partition
@@ -123,10 +123,10 @@ class VirtualClientActor:
         return message
 
     def set_dataset(
-        self,
-        mdataset: MDataset,
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            mdataset: MDataset,
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """Set the dataset for the client actor."""
         self.mdataset = mdataset
@@ -140,10 +140,10 @@ class VirtualClientActor:
         )
 
     def set_dataset_metadata(
-        self,
-        dataset_metadata: Dict[str, Any],
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset_metadata: Dict[str, Any],
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Set dataset metadata for lazy loading with robust validation.
@@ -214,10 +214,10 @@ class VirtualClientActor:
         )
 
     def reconstruct_and_set_dataset(
-        self,
-        dataset_info: Dict[str, Any],
-        feature_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+            self,
+            dataset_info: Dict[str, Any],
+            feature_columns: Optional[List[str]] = None,
+            label_column: Optional[str] = None,
     ) -> None:
         """
         Reconstruct dataset from metadata on this node and set it.
@@ -449,12 +449,12 @@ class VirtualClientActor:
 
             # Restore partitions from metadata
             if (
-                partitions and self.mdataset is not None
+                    partitions and self.mdataset is not None
             ):  # FIXED: Check mdataset is not None
                 self.logger.debug("Restoring partitions from metadata...")
                 for split_name, split_partitions in partitions.items():
                     if (
-                        split_name in self.mdataset.available_splits
+                            split_name in self.mdataset.available_splits
                     ):  # Now safe to access
                         try:
                             self.mdataset.add_partitions(split_name, split_partitions)
@@ -487,9 +487,9 @@ class VirtualClientActor:
 
             # Validate that the required columns exist after preprocessing
             if (
-                self.data_partition is not None
-                and self.mdataset is not None
-                and self.split in self.mdataset.available_splits
+                    self.data_partition is not None
+                    and self.mdataset is not None
+                    and self.split in self.mdataset.available_splits
             ):  # FIXED: All None checks
                 split_dataset = self.mdataset.get_split(self.split)  # Now safe
                 dataset_columns = split_dataset.column_names
@@ -498,8 +498,8 @@ class VirtualClientActor:
 
                 # Check if label column exists
                 if (
-                    self.label_column is not None
-                    and self.label_column not in dataset_columns
+                        self.label_column is not None
+                        and self.label_column not in dataset_columns
                 ):  # FIXED: None check
                     self.logger.error(
                         f"Label column '{self.label_column}' not found in dataset columns: {dataset_columns}"
@@ -629,7 +629,7 @@ class VirtualClientActor:
             )
 
     def _get_partition_data(
-        self, data_sampling_rate: float = 1.0
+            self, data_sampling_rate: float = 1.0
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Extract features and labels from the client's dataset partition with comprehensive validation.
@@ -730,101 +730,45 @@ class VirtualClientActor:
                     f"(sampling rate: {data_sampling_rate:.2f})"
                 )
 
-            # Extract features with memory optimization
-            dataset_size = len(partition_dataset)
-            
+            # Extract features
             if len(self.feature_columns) == 1:
-                # Use chunked processing for large datasets to reduce memory usage
-                if dataset_size > 500:  # Threshold for chunked processing
-                    self.logger.info(f"Using chunked processing for {dataset_size} samples")
-                    
-                    import gc
-                    features_list = []
-                    chunk_size = min(128, max(32, dataset_size // 8))  # Adaptive chunk size
-                    
-                    for i in range(0, dataset_size, chunk_size):
-                        end_idx = min(i + chunk_size, dataset_size)
-                        chunk_indices = list(range(i, end_idx))
-                        chunk_dataset = partition_dataset.select(chunk_indices)
-                        chunk_feature_data = chunk_dataset[self.feature_columns[0]]
-                        
-                        # Use model's preprocessor if available
-                        if (
-                            self.model is not None
-                            and hasattr(self.model, "data_preprocessor")
-                            and self.model.data_preprocessor is not None
-                        ):
-                            try:
-                                chunk_list = (
-                                    list(chunk_feature_data)
-                                    if not isinstance(chunk_feature_data, list)
-                                    else chunk_feature_data
-                                )
-                                chunk_features = self.model.data_preprocessor.preprocess_features(
-                                    chunk_list
-                                )
-                                features_list.append(chunk_features)
-                            except Exception as e:
-                                self.logger.warning(
-                                    f"Model preprocessor failed for chunk {i//chunk_size}, using fallback: {e}"
-                                )
-                                chunk_features = np.array(chunk_feature_data, dtype=np.float32)
-                                features_list.append(chunk_features)
-                        else:
-                            chunk_features = np.array(chunk_feature_data, dtype=np.float32)
-                            features_list.append(chunk_features)
-                        
-                        # Clean up chunk data immediately
-                        del chunk_dataset, chunk_feature_data
-                        
-                        # Periodic garbage collection for memory management
-                        if i > 0 and i % (chunk_size * 4) == 0:
-                            gc.collect()
-                    
-                    # Combine all chunks efficiently
-                    features = np.concatenate(features_list, axis=0)
-                    del features_list
-                    gc.collect()  # Final cleanup
-                    
-                else:
-                    # Standard processing for smaller datasets
-                    feature_data = partition_dataset[self.feature_columns[0]]
-                    
-                    # Use model's preprocessor if available
-                    if (
+                feature_data = partition_dataset[self.feature_columns[0]]
+
+                # Use model's preprocessor if available
+                if (
                         self.model is not None  # FIXED: None check
                         and hasattr(self.model, "data_preprocessor")
-                    ):
-                        if self.model.data_preprocessor is not None:
-                            try:
-                                data_list = (
-                                    list(feature_data)
-                                    if not isinstance(feature_data, list)
-                                    else feature_data
-                                )
-                                features = self.model.data_preprocessor.preprocess_features(
-                                    data_list
-                                )
-                                self.logger.debug(
-                                    "Used model's preprocessor for feature extraction"
-                                )
-                            except Exception as e:
-                                self.logger.warning(
-                                    f"Model preprocessor failed, using fallback: {e}"
-                                )
-                                features = np.array(feature_data, dtype=np.float32)
-                        else:
+                ):
+                    if self.model.data_preprocessor is not None:
+                        try:
+                            data_list = (
+                                list(feature_data)
+                                if not isinstance(feature_data, list)
+                                else feature_data
+                            )
+                            features = self.model.data_preprocessor.preprocess_features(
+                                data_list
+                            )
+                            self.logger.debug(
+                                "Used model's preprocessor for feature extraction"
+                            )
+                        except Exception as e:
+                            self.logger.warning(
+                                f"Model preprocessor failed, using fallback: {e}"
+                            )
                             features = np.array(feature_data, dtype=np.float32)
                     else:
                         features = np.array(feature_data, dtype=np.float32)
+                else:
+                    features = np.array(feature_data, dtype=np.float32)
             else:
                 # Multiple feature columns
                 processed_columns = []
                 for col in self.feature_columns:
                     col_data = partition_dataset[col]
                     if (
-                        self.model is not None  # FIXED: None check
-                        and hasattr(self.model, "data_preprocessor")
+                            self.model is not None  # FIXED: None check
+                            and hasattr(self.model, "data_preprocessor")
                     ):
                         if self.model.data_preprocessor is not None:
                             try:
