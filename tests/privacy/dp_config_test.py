@@ -263,11 +263,11 @@ def test_class_method_factories():
     assert mnist_config.enable_client_dp is True
     assert mnist_config.enable_central_dp is False
     
-    # Test skin lesion factory
-    skin_config = DPConfig.create_for_skin_lesion()
-    assert skin_config.target_epsilon == 10.0
-    assert skin_config.target_delta == 1e-4
-    assert skin_config.max_grad_norm == 1.2
+    # Test HAM10000 factory
+    ham10000_config = DPConfig.create_for_ham10000()
+    assert ham10000_config.target_epsilon == 10.0
+    assert ham10000_config.target_delta == 1e-4
+    assert ham10000_config.max_grad_norm == 1.2
     
     # Test high privacy factory
     high_privacy_config = DPConfig.create_high_privacy()

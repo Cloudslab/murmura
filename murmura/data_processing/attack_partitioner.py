@@ -14,6 +14,7 @@ class SensitiveGroupPartitioner(Partitioner):
     Used to test if topology structure can reveal sensitive group membership.
     
     For MNIST: Groups certain digits (e.g., 0,1 vs 8,9) to specific topology positions
+    For HAM10000: Groups skin lesion types (e.g., benign vs malignant) to specific positions
     This tests if ring position correlates with data characteristics.
     """
     
@@ -85,6 +86,10 @@ class TopologyCorrelatedPartitioner(Partitioner):
     
     For ring topology: Sequential nodes get sequential classes (0→1→2→3→4)
     For star topology: Center gets mixed data, leaves get specialized classes
+    
+    Supports both MNIST (10 classes) and HAM10000 (7 classes):
+    - MNIST: digits 0-9 mapped to node positions
+    - HAM10000: skin lesion types mapped to positions (nv→mel→bkl→bcc→akiec→vasc→df)
     """
     
     def __init__(
