@@ -268,16 +268,24 @@ def main() -> None:
             device = args.device
         logger.info(f"Using {device.upper()} device for training")
 
-        # Check topology compatibility
-        compat_manager = TopologyCompatibilityManager()
-        topology = TopologyType(args.topology)
-        aggregation = AggregationStrategyType(args.aggregation_strategy)
+        # Check compatibility of topology and strategy before proceeding
+        topology_type = TopologyType(args.topology)
+        strategy_type = AggregationStrategyType(args.aggregation_strategy)
 
-        if not compat_manager.is_compatible(topology, aggregation):
-            raise ValueError(
-                f"Topology '{topology.value}' is not compatible with aggregation strategy '{aggregation.value}'. "
-                f"Supported topologies for {aggregation.value}: {compat_manager.get_supported_topologies(aggregation)}"
+        # Validate decentralized compatibility
+        from murmura.aggregation.strategies.gossip_avg import GossipAvg
+
+        if not TopologyCompatibilityManager.is_compatible(GossipAvg, topology_type):
+            compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(
+                GossipAvg
             )
+            logger.error(
+                f"Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}."
+            )
+            logger.error(
+                f"Compatible topologies: {[t.value for t in compatible_topologies]}"
+            )
+            return
 
         # Create DP configuration
         dp_config = None
