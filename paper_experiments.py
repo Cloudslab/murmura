@@ -71,16 +71,29 @@ class PaperExperimentRunner:
         )
         self.logger = logging.getLogger(__name__)
     
-    def get_valid_configurations(self) -> List[Dict[str, Any]]:
-        """Generate all valid experimental configurations."""
+    def get_valid_configurations(self, dataset_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Generate all valid experimental configurations.
+        
+        Args:
+            dataset_filter: If specified, only generate configs for this dataset ('mnist' or 'skin_lesion')
+        """
         
         configurations = []
         
         # Experimental parameters with dataset-optimal node counts
-        datasets_and_node_counts = [
+        all_datasets_and_node_counts = [
             ("mnist", [5, 10, 15, 20, 25]),      # MNIST: 10 classes, optimal at 10 nodes
             ("skin_lesion", [5, 7, 10, 15, 20])  # Skin lesion: 7 classes, optimal at 7 nodes
         ]
+        
+        # Filter datasets if specified
+        if dataset_filter:
+            if dataset_filter not in ["mnist", "skin_lesion"]:
+                raise ValueError(f"Invalid dataset filter: {dataset_filter}. Must be 'mnist' or 'skin_lesion'")
+            datasets_and_node_counts = [(d, n) for d, n in all_datasets_and_node_counts if d == dataset_filter]
+            self.logger.info(f"Filtering experiments to dataset: {dataset_filter}")
+        else:
+            datasets_and_node_counts = all_datasets_and_node_counts
         attack_strategies = ["sensitive_groups", "topology_correlated", "imbalanced_sensitive"]
         dp_settings = [
             {"enabled": False, "epsilon": None, "name": "no_dp"},
@@ -518,11 +531,12 @@ class PaperExperimentRunner:
     
     def run_comprehensive_experiments(self, 
                                     max_parallel: int = 2,
-                                    sample_configs: Optional[int] = None) -> None:
+                                    sample_configs: Optional[int] = None,
+                                    dataset_filter: Optional[str] = None) -> None:
         """Run comprehensive experiments for the paper."""
         
         # Generate all configurations
-        all_configs = self.get_valid_configurations()
+        all_configs = self.get_valid_configurations(dataset_filter)
         
         if sample_configs:
             # For testing, sample a subset
@@ -1000,6 +1014,14 @@ def main():
         help="Run a quick test with minimal configurations"
     )
     
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        choices=["mnist", "skin_lesion"],
+        default=None,
+        help="Run experiments only for specified dataset (mnist or skin_lesion)"
+    )
+    
     args = parser.parse_args()
     
     # Initialize experiment runner
@@ -1014,7 +1036,8 @@ def main():
     # Run comprehensive experiments
     runner.run_comprehensive_experiments(
         max_parallel=args.max_parallel,
-        sample_configs=sample_size
+        sample_configs=sample_size,
+        dataset_filter=args.dataset
     )
     
     print(f"\n✅ Comprehensive paper experiments completed!")
