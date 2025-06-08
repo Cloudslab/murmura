@@ -5,6 +5,11 @@ import logging
 import torch
 import torch.nn as nn
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
     AggregationStrategyType,
@@ -143,6 +148,26 @@ def main() -> None:
     """
     Skin Lesion Classification Federated Learning with Differential Privacy
     """
+    import gc
+    import psutil
+    import os
+    
+    def get_memory_usage():
+        """Get current memory usage in GB"""
+        if psutil is None:
+            return 0.0  # Fallback if psutil not available
+        try:
+            process = psutil.Process(os.getpid())
+            return process.memory_info().rss / 1024 / 1024 / 1024
+        except Exception:
+            return 0.0
+    
+    def log_memory(log, stage):
+        """Log memory usage at different stages"""
+        memory_gb = get_memory_usage()
+        if memory_gb > 0:
+            log.info(f"Memory usage at {stage}: {memory_gb:.2f} GB")
+        return memory_gb
     parser = argparse.ArgumentParser(
         description="Federated Learning for Skin Cancer Classification with DP"
     )
@@ -189,7 +214,7 @@ def main() -> None:
         "--epochs", type=int, default=1, help="Number of local epochs per round"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=16, help="Batch size for training"
+        "--batch_size", type=int, default=8, help="Batch size for training (reduced default for memory efficiency)"
     )
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay")
@@ -203,7 +228,7 @@ def main() -> None:
     )
     parser.add_argument("--depth", type=int, default=16, help="WideResNet depth")
     parser.add_argument("--dropout", type=float, default=0.3, help="Dropout rate")
-    parser.add_argument("--image_size", type=int, default=128, help="Image size")
+    parser.add_argument("--image_size", type=int, default=64, help="Image size (reduced default for memory efficiency)")
     parser.add_argument(
         "--dataset_name",
         type=str,
@@ -317,6 +342,12 @@ def main() -> None:
     # Set up logging
     setup_logging(args.log_level)
     logger = logging.getLogger("murmura.dp_skin_lesion_example")
+    
+    # Initial memory check
+    initial_memory = log_memory(logger, "startup")
+    
+    # Memory optimization: Force garbage collection at start
+    gc.collect()
 
     try:
         # Select device
@@ -401,28 +432,40 @@ def main() -> None:
         resource_config = ResourceConfig()
 
         logger.info("=== Loading Skin Lesion Dataset ===")
+        
+        # Memory optimization: Load and process datasets one at a time
+        log_memory(logger, "before dataset loading")
+        
         # Load skin lesion dataset
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
             split="train",
         )
+        log_memory(logger, "after train dataset")
 
         test_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
             split="test",
         )
+        log_memory(logger, "after test dataset")
 
         validation_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
             dataset_name=args.dataset_name,
             split="validation",
         )
+        log_memory(logger, "after validation dataset")
 
         # Merge datasets
         train_dataset.merge_splits(test_dataset)
         train_dataset.merge_splits(validation_dataset)
+        
+        # Clean up individual dataset references
+        del test_dataset, validation_dataset
+        gc.collect()
+        log_memory(logger, "after dataset merge and cleanup")
 
         # Process labels
         logger.info("=== Processing Labels ===")
@@ -477,6 +520,7 @@ def main() -> None:
         logger.info("=== Creating Image Preprocessor ===")
         skin_lesion_preprocessor = create_skin_lesion_preprocessor(args.image_size)
         logger.info(f"Configured image preprocessor for {args.image_size}x{args.image_size} images")
+        log_memory(logger, "after preprocessor creation")
 
         # Create model wrapper (DP or regular)
         input_shape = (3, args.image_size, args.image_size)
@@ -587,8 +631,12 @@ def main() -> None:
                 logger.info("Differential Privacy: DISABLED")
 
             logger.info("=== Starting Training ===")
+            log_memory(logger, "before training execution")
+            
             # Execute learning process
             results = learning_process.execute()
+            
+            log_memory(logger, "after training execution")
 
             # Display results
             logger.info("=== Training Results ===")
@@ -659,6 +707,10 @@ def main() -> None:
             )
             torch.save(checkpoint, save_path)
             logger.info(f"Model saved to '{save_path}'")
+            
+            # Final memory report
+            final_memory = log_memory(logger, "final")
+            logger.info(f"Peak memory usage: {final_memory:.2f} GB (increase: {final_memory - initial_memory:.2f} GB)")
 
         finally:
             logger.info("=== Shutting Down ===")

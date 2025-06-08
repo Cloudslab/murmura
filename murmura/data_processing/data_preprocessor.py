@@ -73,49 +73,72 @@ class ImageBytesPreprocessor(DataPreprocessor):
         return any(data.startswith(sig) for sig in image_signatures)
 
     def preprocess(self, data: List[Any]) -> np.ndarray:
-        """Preprocess image bytes data."""
+        """Preprocess image bytes data with memory-efficient chunked processing."""
+        import gc
+        
         processed = []
-        for item in data:
-            if isinstance(item, dict):
-                # Find the image bytes
-                image_bytes = None
-                for key in ["bytes", "image_bytes", "data", "content"]:
-                    if key in item and isinstance(item[key], bytes):
-                        image_bytes = item[key]
-                        break
+        
+        # Process images in smaller chunks to reduce memory usage
+        chunk_size = min(32, len(data))  # Process max 32 images at once
+        
+        for i in range(0, len(data), chunk_size):
+            chunk = data[i:i + chunk_size]
+            chunk_processed = []
+            
+            for item in chunk:
+                if isinstance(item, dict):
+                    # Find the image bytes
+                    image_bytes = None
+                    for key in ["bytes", "image_bytes", "data", "content"]:
+                        if key in item and isinstance(item[key], bytes):
+                            image_bytes = item[key]
+                            break
 
-                if image_bytes is None:
+                    if image_bytes is None:
+                        raise ValueError(
+                            f"No image bytes found in dictionary with keys: {list(item.keys())}"
+                        )
+
+                    # Convert bytes to PIL Image
+                    try:
+                        img: PILImage = Image.open(io.BytesIO(image_bytes))
+
+                        # Convert mode if specified
+                        if self.target_mode and hasattr(img, "convert"):
+                            img = img.convert(self.target_mode)
+
+                        # Resize if specified
+                        if self.target_size is not None and hasattr(img, "resize"):
+                            img = img.resize(self.target_size)
+
+                    except Exception as e:
+                        raise ValueError(f"Failed to decode image bytes: {e}")
+                else:
                     raise ValueError(
-                        f"No image bytes found in dictionary with keys: {list(item.keys())}"
+                        f"Expected dictionary with image bytes, got {type(item)}"
                     )
 
-                # Convert bytes to PIL Image
-                try:
-                    img: PILImage = Image.open(io.BytesIO(image_bytes))
+                # Convert to numpy with memory-efficient dtype
+                img_array = np.array(img, dtype=np.uint8 if not self.normalize else np.float32)
 
-                    # Convert mode if specified
-                    if self.target_mode and hasattr(img, "convert"):
-                        img = img.convert(self.target_mode)
+                # Normalize if specified
+                if self.normalize:
+                    if img_array.dtype == np.uint8:
+                        img_array = img_array.astype(np.float32) / self.normalization_factor
+                    else:
+                        img_array = img_array / self.normalization_factor
 
-                    # Resize if specified
-                    if self.target_size is not None and hasattr(img, "resize"):
-                        img = img.resize(self.target_size)
-
-                except Exception as e:
-                    raise ValueError(f"Failed to decode image bytes: {e}")
-            else:
-                raise ValueError(
-                    f"Expected dictionary with image bytes, got {type(item)}"
-                )
-
-            # Convert to numpy
-            img_array = np.array(img, dtype=np.float32)
-
-            # Normalize if specified
-            if self.normalize:
-                img_array = img_array / self.normalization_factor
-
-            processed.append(img_array)
+                chunk_processed.append(img_array)
+                
+                # Clean up PIL image to free memory
+                img.close()
+                del img
+            
+            processed.extend(chunk_processed)
+            
+            # Force garbage collection after each chunk
+            if i > 0:  # Skip GC on first chunk to avoid overhead
+                gc.collect()
 
         return np.array(processed)
 
@@ -149,27 +172,46 @@ class ImagePreprocessor(DataPreprocessor):
         return hasattr(data_sample, "convert") or isinstance(data_sample, Image.Image)
 
     def preprocess(self, data: List[Any]) -> np.ndarray:
-        """Preprocess PIL images."""
+        """Preprocess PIL images with memory-efficient chunked processing."""
+        import gc
+        
         processed = []
-        for item in data:
-            img: PILImage = item
+        
+        # Process images in smaller chunks to reduce memory usage
+        chunk_size = min(32, len(data))  # Process max 32 images at once
+        
+        for i in range(0, len(data), chunk_size):
+            chunk = data[i:i + chunk_size]
+            chunk_processed = []
+            
+            for item in chunk:
+                img: PILImage = item
 
-            # Convert mode if specified
-            if self.target_mode and hasattr(img, "convert"):
-                img = img.convert(self.target_mode)
+                # Convert mode if specified
+                if self.target_mode and hasattr(img, "convert"):
+                    img = img.convert(self.target_mode)
 
-            # Resize if specified
-            if self.target_size is not None and hasattr(img, "resize"):
-                img = img.resize(self.target_size)
+                # Resize if specified
+                if self.target_size is not None and hasattr(img, "resize"):
+                    img = img.resize(self.target_size)
 
-            # Convert to numpy
-            img_array = np.array(img, dtype=np.float32)
+                # Convert to numpy with memory-efficient dtype
+                img_array = np.array(img, dtype=np.uint8 if not self.normalize else np.float32)
 
-            # Normalize if specified
-            if self.normalize:
-                img_array = img_array / self.normalization_factor
+                # Normalize if specified
+                if self.normalize:
+                    if img_array.dtype == np.uint8:
+                        img_array = img_array.astype(np.float32) / self.normalization_factor
+                    else:
+                        img_array = img_array / self.normalization_factor
 
-            processed.append(img_array)
+                chunk_processed.append(img_array)
+            
+            processed.extend(chunk_processed)
+            
+            # Force garbage collection after each chunk
+            if i > 0:  # Skip GC on first chunk to avoid overhead
+                gc.collect()
 
         return np.array(processed)
 
