@@ -82,8 +82,8 @@ class PaperExperimentRunner:
         
         # Experimental parameters with dataset-optimal node counts
         all_datasets_and_node_counts = [
-            ("mnist", [5, 10, 15, 20, 30, 50]),      # MNIST: 10 classes, optimal at 10 nodes
-            ("ham10000", [5, 7, 10, 15, 20, 30, 50])          # HAM10000: 7 classes, optimal at 7 nodes; using multiples of 10 for cluster efficiency (except 7)
+            ("mnist", [5, 10, 15, 20, 30]),      # MNIST: 10 classes, optimal at 10 nodes
+            ("ham10000", [5, 7, 10, 15, 20, 30])          # HAM10000: 7 classes, optimal at 7 nodes; using multiples of 10 for cluster efficiency (except 7)
         ]
         
         # Filter datasets if specified
