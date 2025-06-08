@@ -347,7 +347,7 @@ def main() -> None:
             ray_cluster=ray_cluster_config,
             resources=resource_config,
             feature_columns=["image"],
-            label_column="dx",  # HAM10000 uses 'dx' as the label column
+            label_column="label",  # HAM10000 uses 'label' as the label column
             rounds=args.rounds,
             epochs=args.epochs,
             batch_size=args.batch_size,
