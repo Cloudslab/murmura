@@ -1,0 +1,11 @@
+node_id,node_identifier,bandwidth_mbps,compute_capability,cpu_cores,data_compliance,gpu_count,memory_gb,node_type,reliability_score,security_level,storage_gb
+0,hospital_000,10000,tier_1,128,HIPAA,16,512,tier1_hospital,0.972,high,50000
+1,clinic_001,2000,tier_2,32,HIPAA,4,128,tier2_hospital,0.939,critical,20000
+2,research_center_002,10000,tier_3,128,GDPR,8,1024,research_center,0.985,critical,20000
+3,mobile_unit_003,500,tier_1,8,PIPEDA,2,64,mobile_unit,0.832,critical,1000
+4,edge_device_004,500,tier_2,2,HIPAA,0,8,edge_device,0.807,high,2000
+5,hospital_005,5000,tier_1,128,PIPEDA,4,512,tier1_hospital,0.961,standard,50000
+6,clinic_006,5000,tier_2,16,local,8,128,tier2_hospital,0.904,critical,20000
+7,research_center_007,10000,tier_3,256,PIPEDA,8,512,research_center,0.993,critical,20000
+8,mobile_unit_008,500,tier_1,4,PIPEDA,1,64,mobile_unit,0.893,critical,5000
+9,edge_device_009,50,tier_2,4,HIPAA,0,8,edge_device,0.72,high,1000
