@@ -94,7 +94,16 @@ class PaperExperimentRunner:
         
         for dataset, node_counts in datasets_and_node_counts:
             for attack_strategy in attack_strategies:
-                for node_count in node_counts:
+                # For topology_correlated, only use optimal node count
+                if attack_strategy == "topology_correlated":
+                    # Optimal: 10 nodes for MNIST (10 classes), 7 nodes for skin_lesion (7 classes)
+                    optimal_nodes = 10 if dataset == "mnist" else 7
+                    node_counts_to_use = [optimal_nodes]
+                else:
+                    # For other strategies, use all varying node counts
+                    node_counts_to_use = node_counts
+                
+                for node_count in node_counts_to_use:
                     for dp_setting in dp_settings:
                         
                         # Test both federated and decentralized approaches
