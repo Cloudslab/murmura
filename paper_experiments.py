@@ -83,7 +83,7 @@ class PaperExperimentRunner:
         # Experimental parameters with dataset-optimal node counts
         all_datasets_and_node_counts = [
             ("mnist", [5, 10, 15, 20, 25]),      # MNIST: 10 classes, optimal at 10 nodes
-            ("ham10000", [5, 7, 10, 14, 21])     # HAM10000: 7 classes, optimal at 7 nodes
+            ("ham10000", [5, 7, 10, 20])          # HAM10000: 7 classes, optimal at 7 nodes; using multiples of 10 for cluster efficiency (except 7)
         ]
         
         # Filter datasets if specified
@@ -986,7 +986,7 @@ Topology & FL Type & DP & Nodes & Success Rate & Avg Confidence \\\\
             "experimental_design": {
                 "total_configurations": len(self.get_valid_configurations()),
                 "datasets": ["MNIST", "HAM10000"],
-                "node_counts": {"MNIST": [5, 10, 15, 20, 25], "HAM10000": [5, 7, 10, 14, 21]},
+                "node_counts": {"MNIST": [5, 10, 15, 20, 25], "HAM10000": [5, 7, 10, 20]},
                 "topologies": {
                     "federated": ["star", "complete"],
                     "decentralized": ["ring", "complete", "star", "line"]
