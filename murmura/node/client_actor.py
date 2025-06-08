@@ -730,37 +730,93 @@ class VirtualClientActor:
                     f"(sampling rate: {data_sampling_rate:.2f})"
                 )
 
-            # Extract features
+            # Extract features with memory optimization
+            dataset_size = len(partition_dataset)
+            
             if len(self.feature_columns) == 1:
-                feature_data = partition_dataset[self.feature_columns[0]]
-
-                # Use model's preprocessor if available
-                if (
-                    self.model is not None  # FIXED: None check
-                    and hasattr(self.model, "data_preprocessor")
-                ):
-                    if self.model.data_preprocessor is not None:
-                        try:
-                            data_list = (
-                                list(feature_data)
-                                if not isinstance(feature_data, list)
-                                else feature_data
-                            )
-                            features = self.model.data_preprocessor.preprocess_features(
-                                data_list
-                            )
-                            self.logger.debug(
-                                "Used model's preprocessor for feature extraction"
-                            )
-                        except Exception as e:
-                            self.logger.warning(
-                                f"Model preprocessor failed, using fallback: {e}"
-                            )
+                # Use chunked processing for large datasets to reduce memory usage
+                if dataset_size > 500:  # Threshold for chunked processing
+                    self.logger.info(f"Using chunked processing for {dataset_size} samples")
+                    
+                    import gc
+                    features_list = []
+                    chunk_size = min(128, max(32, dataset_size // 8))  # Adaptive chunk size
+                    
+                    for i in range(0, dataset_size, chunk_size):
+                        end_idx = min(i + chunk_size, dataset_size)
+                        chunk_indices = list(range(i, end_idx))
+                        chunk_dataset = partition_dataset.select(chunk_indices)
+                        chunk_feature_data = chunk_dataset[self.feature_columns[0]]
+                        
+                        # Use model's preprocessor if available
+                        if (
+                            self.model is not None
+                            and hasattr(self.model, "data_preprocessor")
+                            and self.model.data_preprocessor is not None
+                        ):
+                            try:
+                                chunk_list = (
+                                    list(chunk_feature_data)
+                                    if not isinstance(chunk_feature_data, list)
+                                    else chunk_feature_data
+                                )
+                                chunk_features = self.model.data_preprocessor.preprocess_features(
+                                    chunk_list
+                                )
+                                features_list.append(chunk_features)
+                            except Exception as e:
+                                self.logger.warning(
+                                    f"Model preprocessor failed for chunk {i//chunk_size}, using fallback: {e}"
+                                )
+                                chunk_features = np.array(chunk_feature_data, dtype=np.float32)
+                                features_list.append(chunk_features)
+                        else:
+                            chunk_features = np.array(chunk_feature_data, dtype=np.float32)
+                            features_list.append(chunk_features)
+                        
+                        # Clean up chunk data immediately
+                        del chunk_dataset, chunk_feature_data
+                        
+                        # Periodic garbage collection for memory management
+                        if i > 0 and i % (chunk_size * 4) == 0:
+                            gc.collect()
+                    
+                    # Combine all chunks efficiently
+                    features = np.concatenate(features_list, axis=0)
+                    del features_list
+                    gc.collect()  # Final cleanup
+                    
+                else:
+                    # Standard processing for smaller datasets
+                    feature_data = partition_dataset[self.feature_columns[0]]
+                    
+                    # Use model's preprocessor if available
+                    if (
+                        self.model is not None  # FIXED: None check
+                        and hasattr(self.model, "data_preprocessor")
+                    ):
+                        if self.model.data_preprocessor is not None:
+                            try:
+                                data_list = (
+                                    list(feature_data)
+                                    if not isinstance(feature_data, list)
+                                    else feature_data
+                                )
+                                features = self.model.data_preprocessor.preprocess_features(
+                                    data_list
+                                )
+                                self.logger.debug(
+                                    "Used model's preprocessor for feature extraction"
+                                )
+                            except Exception as e:
+                                self.logger.warning(
+                                    f"Model preprocessor failed, using fallback: {e}"
+                                )
+                                features = np.array(feature_data, dtype=np.float32)
+                        else:
                             features = np.array(feature_data, dtype=np.float32)
                     else:
                         features = np.array(feature_data, dtype=np.float32)
-                else:
-                    features = np.array(feature_data, dtype=np.float32)
             else:
                 # Multiple feature columns
                 processed_columns = []
