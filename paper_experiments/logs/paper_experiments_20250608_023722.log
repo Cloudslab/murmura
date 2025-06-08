@@ -1,0 +1,1433 @@
+2025-06-08 02:37:22,110 - INFO - Generated 490 valid experimental configurations
+2025-06-08 02:37:22,110 - INFO - 🚀 Starting 490 comprehensive experiments
+2025-06-08 02:37:22,110 - INFO -    Max parallel: 1
+2025-06-08 02:37:22,110 - INFO -    Output directory: paper_experiments
+2025-06-08 02:37:22,110 - INFO -    Estimated total time: 45.2 hours
+2025-06-08 02:37:22,110 - INFO - [1/490] Starting experiment...
+2025-06-08 02:37:22,110 - INFO - 🎯 Starting experiment 1: exp_0001_mnist_federated_star_5n_no_dp
+2025-06-08 02:37:22,111 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 02:38:05,156 - INFO -    ✅ Training completed in 43.0s
+2025-06-08 02:38:05,262 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:38:05,262 - INFO - [1/490] 🎯 mnist/federated/star/5n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 43.2s
+2025-06-08 02:38:05,263 - INFO - [2/490] Starting experiment...
+2025-06-08 02:38:05,263 - INFO - 🎯 Starting experiment 2: exp_0002_mnist_federated_complete_5n_no_dp
+2025-06-08 02:38:05,263 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 02:38:35,237 - INFO -    ✅ Training completed in 30.0s
+2025-06-08 02:38:35,258 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:38:35,258 - INFO - [2/490] 🎯 mnist/federated/complete/5n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 30.0s
+2025-06-08 02:38:35,259 - INFO - [3/490] Starting experiment...
+2025-06-08 02:38:35,259 - INFO - 🎯 Starting experiment 3: exp_0003_mnist_decentralized_ring_5n_no_dp
+2025-06-08 02:38:35,259 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 02:39:06,249 - INFO -    ✅ Training completed in 31.0s
+2025-06-08 02:39:06,269 - INFO -    📊 Attack success: ✅ (confidence: 0.929)
+2025-06-08 02:39:06,269 - INFO - [3/490] 🎯 mnist/decentralized/ring/5n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.929) | Runtime: 31.0s
+2025-06-08 02:39:06,271 - INFO - [4/490] Starting experiment...
+2025-06-08 02:39:06,271 - INFO - 🎯 Starting experiment 4: exp_0004_mnist_decentralized_complete_5n_no_dp
+2025-06-08 02:39:06,271 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 02:39:38,224 - INFO -    ✅ Training completed in 32.0s
+2025-06-08 02:39:38,247 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:39:38,247 - INFO - [4/490] 🎯 mnist/decentralized/complete/5n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 32.0s
+2025-06-08 02:39:38,250 - INFO - [5/490] Starting experiment...
+2025-06-08 02:39:38,250 - INFO - 🎯 Starting experiment 5: exp_0005_mnist_decentralized_line_5n_no_dp
+2025-06-08 02:39:38,250 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 02:40:07,772 - INFO -    ✅ Training completed in 29.5s
+2025-06-08 02:40:07,792 - INFO -    📊 Attack success: ✅ (confidence: 0.859)
+2025-06-08 02:40:07,792 - INFO - [5/490] 🎯 mnist/decentralized/line/5n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.859) | Runtime: 29.5s
+2025-06-08 02:40:07,795 - INFO - [6/490] Starting experiment...
+2025-06-08 02:40:07,795 - INFO - 🎯 Starting experiment 6: exp_0006_mnist_federated_star_5n_weak_dp
+2025-06-08 02:40:07,795 - INFO -    Config: sensitive_groups attack, 5 nodes, weak_dp
+2025-06-08 02:40:50,432 - INFO -    ✅ Training completed in 42.6s
+2025-06-08 02:40:50,451 - INFO -    📊 Attack success: ✅ (confidence: 0.928)
+2025-06-08 02:40:50,451 - INFO - [6/490] 🎯 mnist/federated/star/5n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.928) | Runtime: 42.7s
+2025-06-08 02:40:50,454 - INFO - [7/490] Starting experiment...
+2025-06-08 02:40:50,455 - INFO - 🎯 Starting experiment 7: exp_0007_mnist_federated_complete_5n_weak_dp
+2025-06-08 02:40:50,455 - INFO -    Config: sensitive_groups attack, 5 nodes, weak_dp
+2025-06-08 02:41:32,065 - INFO -    ✅ Training completed in 41.6s
+2025-06-08 02:41:32,084 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:41:32,084 - INFO - [7/490] 🎯 mnist/federated/complete/5n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 41.6s
+2025-06-08 02:41:32,088 - INFO - [8/490] Starting experiment...
+2025-06-08 02:41:32,088 - INFO - 🎯 Starting experiment 8: exp_0008_mnist_decentralized_ring_5n_weak_dp
+2025-06-08 02:41:32,088 - INFO -    Config: sensitive_groups attack, 5 nodes, weak_dp
+2025-06-08 02:42:14,513 - INFO -    ✅ Training completed in 42.4s
+2025-06-08 02:42:14,532 - INFO -    📊 Attack success: ✅ (confidence: 0.727)
+2025-06-08 02:42:14,532 - INFO - [8/490] 🎯 mnist/decentralized/ring/5n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.727) | Runtime: 42.4s
+2025-06-08 02:42:14,537 - INFO - [9/490] Starting experiment...
+2025-06-08 02:42:14,537 - INFO - 🎯 Starting experiment 9: exp_0009_mnist_decentralized_complete_5n_weak_dp
+2025-06-08 02:42:14,537 - INFO -    Config: sensitive_groups attack, 5 nodes, weak_dp
+2025-06-08 02:42:56,620 - INFO -    ✅ Training completed in 42.1s
+2025-06-08 02:42:56,647 - INFO -    📊 Attack success: ✅ (confidence: 0.932)
+2025-06-08 02:42:56,647 - INFO - [9/490] 🎯 mnist/decentralized/complete/5n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.932) | Runtime: 42.1s
+2025-06-08 02:42:56,653 - INFO - [10/490] Starting experiment...
+2025-06-08 02:42:56,653 - INFO - 🎯 Starting experiment 10: exp_0010_mnist_decentralized_line_5n_weak_dp
+2025-06-08 02:42:56,653 - INFO -    Config: sensitive_groups attack, 5 nodes, weak_dp
+2025-06-08 02:43:38,894 - INFO -    ✅ Training completed in 42.2s
+2025-06-08 02:43:38,913 - INFO -    📊 Attack success: ✅ (confidence: 0.847)
+2025-06-08 02:43:38,914 - INFO - [10/490] 🎯 mnist/decentralized/line/5n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.847) | Runtime: 42.3s
+2025-06-08 02:43:38,920 - INFO - [11/490] Starting experiment...
+2025-06-08 02:43:38,920 - INFO - 🎯 Starting experiment 11: exp_0011_mnist_federated_star_5n_medium_dp
+2025-06-08 02:43:38,920 - INFO -    Config: sensitive_groups attack, 5 nodes, medium_dp
+2025-06-08 02:44:18,745 - INFO -    ✅ Training completed in 39.8s
+2025-06-08 02:44:18,762 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:44:18,763 - INFO - [11/490] 🎯 mnist/federated/star/5n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 39.8s
+2025-06-08 02:44:18,769 - INFO - [12/490] Starting experiment...
+2025-06-08 02:44:18,769 - INFO - 🎯 Starting experiment 12: exp_0012_mnist_federated_complete_5n_medium_dp
+2025-06-08 02:44:18,769 - INFO -    Config: sensitive_groups attack, 5 nodes, medium_dp
+2025-06-08 02:44:58,201 - INFO -    ✅ Training completed in 39.4s
+2025-06-08 02:44:58,222 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:44:58,222 - INFO - [12/490] 🎯 mnist/federated/complete/5n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 39.5s
+2025-06-08 02:44:58,229 - INFO - [13/490] Starting experiment...
+2025-06-08 02:44:58,229 - INFO - 🎯 Starting experiment 13: exp_0013_mnist_decentralized_ring_5n_medium_dp
+2025-06-08 02:44:58,229 - INFO -    Config: sensitive_groups attack, 5 nodes, medium_dp
+2025-06-08 02:45:37,828 - INFO -    ✅ Training completed in 39.6s
+2025-06-08 02:45:37,848 - INFO -    📊 Attack success: ✅ (confidence: 0.837)
+2025-06-08 02:45:37,848 - INFO - [13/490] 🎯 mnist/decentralized/ring/5n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.837) | Runtime: 39.6s
+2025-06-08 02:45:37,855 - INFO - [14/490] Starting experiment...
+2025-06-08 02:45:37,856 - INFO - 🎯 Starting experiment 14: exp_0014_mnist_decentralized_complete_5n_medium_dp
+2025-06-08 02:45:37,856 - INFO -    Config: sensitive_groups attack, 5 nodes, medium_dp
+2025-06-08 02:46:18,565 - INFO -    ✅ Training completed in 40.7s
+2025-06-08 02:46:18,587 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:46:18,587 - INFO - [14/490] 🎯 mnist/decentralized/complete/5n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 40.7s
+2025-06-08 02:46:18,595 - INFO - [15/490] Starting experiment...
+2025-06-08 02:46:18,595 - INFO - 🎯 Starting experiment 15: exp_0015_mnist_decentralized_line_5n_medium_dp
+2025-06-08 02:46:18,595 - INFO -    Config: sensitive_groups attack, 5 nodes, medium_dp
+2025-06-08 02:46:58,269 - INFO -    ✅ Training completed in 39.7s
+2025-06-08 02:46:58,288 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:46:58,288 - INFO - [15/490] 🎯 mnist/decentralized/line/5n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 39.7s
+2025-06-08 02:46:58,297 - INFO - [16/490] Starting experiment...
+2025-06-08 02:46:58,297 - INFO - 🎯 Starting experiment 16: exp_0016_mnist_federated_star_5n_strong_dp
+2025-06-08 02:46:58,297 - INFO -    Config: sensitive_groups attack, 5 nodes, strong_dp
+2025-06-08 02:47:36,772 - INFO -    ✅ Training completed in 38.5s
+2025-06-08 02:47:36,790 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:47:36,790 - INFO - [16/490] 🎯 mnist/federated/star/5n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 38.5s
+2025-06-08 02:47:36,799 - INFO - [17/490] Starting experiment...
+2025-06-08 02:47:36,799 - INFO - 🎯 Starting experiment 17: exp_0017_mnist_federated_complete_5n_strong_dp
+2025-06-08 02:47:36,800 - INFO -    Config: sensitive_groups attack, 5 nodes, strong_dp
+2025-06-08 02:48:15,016 - INFO -    ✅ Training completed in 38.2s
+2025-06-08 02:48:15,037 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:48:15,037 - INFO - [17/490] 🎯 mnist/federated/complete/5n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 38.2s
+2025-06-08 02:48:15,046 - INFO - [18/490] Starting experiment...
+2025-06-08 02:48:15,046 - INFO - 🎯 Starting experiment 18: exp_0018_mnist_decentralized_ring_5n_strong_dp
+2025-06-08 02:48:15,046 - INFO -    Config: sensitive_groups attack, 5 nodes, strong_dp
+2025-06-08 02:48:52,877 - INFO -    ✅ Training completed in 37.8s
+2025-06-08 02:48:52,897 - INFO -    📊 Attack success: ✅ (confidence: 0.797)
+2025-06-08 02:48:52,897 - INFO - [18/490] 🎯 mnist/decentralized/ring/5n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.797) | Runtime: 37.9s
+2025-06-08 02:48:52,907 - INFO - [19/490] Starting experiment...
+2025-06-08 02:48:52,907 - INFO - 🎯 Starting experiment 19: exp_0019_mnist_decentralized_complete_5n_strong_dp
+2025-06-08 02:48:52,907 - INFO -    Config: sensitive_groups attack, 5 nodes, strong_dp
+2025-06-08 02:49:31,397 - INFO -    ✅ Training completed in 38.5s
+2025-06-08 02:49:31,419 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:49:31,419 - INFO - [19/490] 🎯 mnist/decentralized/complete/5n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 38.5s
+2025-06-08 02:49:31,430 - INFO - [20/490] Starting experiment...
+2025-06-08 02:49:31,430 - INFO - 🎯 Starting experiment 20: exp_0020_mnist_decentralized_line_5n_strong_dp
+2025-06-08 02:49:31,430 - INFO -    Config: sensitive_groups attack, 5 nodes, strong_dp
+2025-06-08 02:50:10,667 - INFO -    ✅ Training completed in 39.2s
+2025-06-08 02:50:10,685 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:50:10,685 - INFO - [20/490] 🎯 mnist/decentralized/line/5n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 39.3s
+2025-06-08 02:50:10,696 - INFO - [21/490] Starting experiment...
+2025-06-08 02:50:10,696 - INFO - 🎯 Starting experiment 21: exp_0021_mnist_federated_star_5n_very_strong_dp
+2025-06-08 02:50:10,696 - INFO -    Config: sensitive_groups attack, 5 nodes, very_strong_dp
+2025-06-08 02:50:46,918 - INFO -    ✅ Training completed in 36.2s
+2025-06-08 02:50:46,936 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:50:46,937 - INFO - [21/490] 🎯 mnist/federated/star/5n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 36.2s
+2025-06-08 02:50:46,948 - INFO - [22/490] Starting experiment...
+2025-06-08 02:50:46,948 - INFO - 🎯 Starting experiment 22: exp_0022_mnist_federated_complete_5n_very_strong_dp
+2025-06-08 02:50:46,948 - INFO -    Config: sensitive_groups attack, 5 nodes, very_strong_dp
+2025-06-08 02:51:24,114 - INFO -    ✅ Training completed in 37.2s
+2025-06-08 02:51:24,133 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:51:24,133 - INFO - [22/490] 🎯 mnist/federated/complete/5n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 37.2s
+2025-06-08 02:51:24,145 - INFO - [23/490] Starting experiment...
+2025-06-08 02:51:24,145 - INFO - 🎯 Starting experiment 23: exp_0023_mnist_decentralized_ring_5n_very_strong_dp
+2025-06-08 02:51:24,145 - INFO -    Config: sensitive_groups attack, 5 nodes, very_strong_dp
+2025-06-08 02:52:01,086 - INFO -    ✅ Training completed in 36.9s
+2025-06-08 02:52:01,107 - INFO -    📊 Attack success: ✅ (confidence: 0.600)
+2025-06-08 02:52:01,107 - INFO - [23/490] 🎯 mnist/decentralized/ring/5n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.600) | Runtime: 37.0s
+2025-06-08 02:52:01,120 - INFO - [24/490] Starting experiment...
+2025-06-08 02:52:01,120 - INFO - 🎯 Starting experiment 24: exp_0024_mnist_decentralized_complete_5n_very_strong_dp
+2025-06-08 02:52:01,120 - INFO -    Config: sensitive_groups attack, 5 nodes, very_strong_dp
+2025-06-08 02:52:38,029 - INFO -    ✅ Training completed in 36.9s
+2025-06-08 02:52:38,051 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:52:38,051 - INFO - [24/490] 🎯 mnist/decentralized/complete/5n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 36.9s
+2025-06-08 02:52:38,065 - INFO - [25/490] Starting experiment...
+2025-06-08 02:52:38,065 - INFO - 🎯 Starting experiment 25: exp_0025_mnist_decentralized_line_5n_very_strong_dp
+2025-06-08 02:52:38,065 - INFO -    Config: sensitive_groups attack, 5 nodes, very_strong_dp
+2025-06-08 02:53:14,321 - INFO -    ✅ Training completed in 36.3s
+2025-06-08 02:53:14,340 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 02:53:14,340 - INFO - [25/490] 🎯 mnist/decentralized/line/5n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 36.3s
+2025-06-08 02:53:14,354 - INFO - [26/490] Starting experiment...
+2025-06-08 02:53:14,354 - INFO - 🎯 Starting experiment 26: exp_0026_mnist_federated_star_10n_no_dp
+2025-06-08 02:53:14,354 - INFO -    Config: sensitive_groups attack, 10 nodes, no_dp
+2025-06-08 02:53:41,774 - INFO -    ✅ Training completed in 27.4s
+2025-06-08 02:53:41,801 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:53:41,801 - INFO - [26/490] 🎯 mnist/federated/star/10n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 27.4s
+2025-06-08 02:53:41,816 - INFO - [27/490] Starting experiment...
+2025-06-08 02:53:41,816 - INFO - 🎯 Starting experiment 27: exp_0027_mnist_federated_complete_10n_no_dp
+2025-06-08 02:53:41,816 - INFO -    Config: sensitive_groups attack, 10 nodes, no_dp
+2025-06-08 02:54:09,784 - INFO -    ✅ Training completed in 28.0s
+2025-06-08 02:54:09,818 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:54:09,818 - INFO - [27/490] 🎯 mnist/federated/complete/10n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 28.0s
+2025-06-08 02:54:09,834 - INFO - [28/490] Starting experiment...
+2025-06-08 02:54:09,834 - INFO - 🎯 Starting experiment 28: exp_0028_mnist_decentralized_ring_10n_no_dp
+2025-06-08 02:54:09,834 - INFO -    Config: sensitive_groups attack, 10 nodes, no_dp
+2025-06-08 02:54:37,778 - INFO -    ✅ Training completed in 27.9s
+2025-06-08 02:54:37,807 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 02:54:37,807 - INFO - [28/490] 🎯 mnist/decentralized/ring/10n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 28.0s
+2025-06-08 02:54:37,823 - INFO - [29/490] Starting experiment...
+2025-06-08 02:54:37,823 - INFO - 🎯 Starting experiment 29: exp_0029_mnist_decentralized_complete_10n_no_dp
+2025-06-08 02:54:37,823 - INFO -    Config: sensitive_groups attack, 10 nodes, no_dp
+2025-06-08 02:55:07,807 - INFO -    ✅ Training completed in 30.0s
+2025-06-08 02:55:07,851 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:55:07,851 - INFO - [29/490] 🎯 mnist/decentralized/complete/10n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 30.0s
+2025-06-08 02:55:07,869 - INFO - [30/490] Starting experiment...
+2025-06-08 02:55:07,869 - INFO - 🎯 Starting experiment 30: exp_0030_mnist_decentralized_line_10n_no_dp
+2025-06-08 02:55:07,869 - INFO -    Config: sensitive_groups attack, 10 nodes, no_dp
+2025-06-08 02:55:35,910 - INFO -    ✅ Training completed in 28.0s
+2025-06-08 02:55:35,936 - INFO -    📊 Attack success: ✅ (confidence: 0.814)
+2025-06-08 02:55:35,936 - INFO - [30/490] 🎯 mnist/decentralized/line/10n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.814) | Runtime: 28.1s
+2025-06-08 02:55:35,955 - INFO - [31/490] Starting experiment...
+2025-06-08 02:55:35,955 - INFO - 🎯 Starting experiment 31: exp_0031_mnist_federated_star_10n_weak_dp
+2025-06-08 02:55:35,955 - INFO -    Config: sensitive_groups attack, 10 nodes, weak_dp
+2025-06-08 02:56:14,072 - INFO -    ✅ Training completed in 38.1s
+2025-06-08 02:56:14,098 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:56:14,098 - INFO - [31/490] 🎯 mnist/federated/star/10n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 38.1s
+2025-06-08 02:56:14,118 - INFO - [32/490] Starting experiment...
+2025-06-08 02:56:14,118 - INFO - 🎯 Starting experiment 32: exp_0032_mnist_federated_complete_10n_weak_dp
+2025-06-08 02:56:14,118 - INFO -    Config: sensitive_groups attack, 10 nodes, weak_dp
+2025-06-08 02:56:51,335 - INFO -    ✅ Training completed in 37.2s
+2025-06-08 02:56:51,369 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:56:51,369 - INFO - [32/490] 🎯 mnist/federated/complete/10n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 37.3s
+2025-06-08 02:56:51,389 - INFO - [33/490] Starting experiment...
+2025-06-08 02:56:51,389 - INFO - 🎯 Starting experiment 33: exp_0033_mnist_decentralized_ring_10n_weak_dp
+2025-06-08 02:56:51,389 - INFO -    Config: sensitive_groups attack, 10 nodes, weak_dp
+2025-06-08 02:57:29,550 - INFO -    ✅ Training completed in 38.2s
+2025-06-08 02:57:29,580 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 02:57:29,580 - INFO - [33/490] 🎯 mnist/decentralized/ring/10n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 38.2s
+2025-06-08 02:57:29,601 - INFO - [34/490] Starting experiment...
+2025-06-08 02:57:29,601 - INFO - 🎯 Starting experiment 34: exp_0034_mnist_decentralized_complete_10n_weak_dp
+2025-06-08 02:57:29,601 - INFO -    Config: sensitive_groups attack, 10 nodes, weak_dp
+2025-06-08 02:58:09,362 - INFO -    ✅ Training completed in 39.8s
+2025-06-08 02:58:09,404 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:58:09,404 - INFO - [34/490] 🎯 mnist/decentralized/complete/10n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 39.8s
+2025-06-08 02:58:09,463 - INFO - [35/490] Starting experiment...
+2025-06-08 02:58:09,463 - INFO - 🎯 Starting experiment 35: exp_0035_mnist_decentralized_line_10n_weak_dp
+2025-06-08 02:58:09,463 - INFO -    Config: sensitive_groups attack, 10 nodes, weak_dp
+2025-06-08 02:58:47,550 - INFO -    ✅ Training completed in 38.1s
+2025-06-08 02:58:47,577 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 02:58:47,578 - INFO - [35/490] 🎯 mnist/decentralized/line/10n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 38.1s
+2025-06-08 02:58:47,600 - INFO - [36/490] Starting experiment...
+2025-06-08 02:58:47,600 - INFO - 🎯 Starting experiment 36: exp_0036_mnist_federated_star_10n_medium_dp
+2025-06-08 02:58:47,600 - INFO -    Config: sensitive_groups attack, 10 nodes, medium_dp
+2025-06-08 02:59:22,681 - INFO -    ✅ Training completed in 35.1s
+2025-06-08 02:59:22,707 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:59:22,707 - INFO - [36/490] 🎯 mnist/federated/star/10n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 35.1s
+2025-06-08 02:59:22,731 - INFO - [37/490] Starting experiment...
+2025-06-08 02:59:22,731 - INFO - 🎯 Starting experiment 37: exp_0037_mnist_federated_complete_10n_medium_dp
+2025-06-08 02:59:22,731 - INFO -    Config: sensitive_groups attack, 10 nodes, medium_dp
+2025-06-08 02:59:58,076 - INFO -    ✅ Training completed in 35.3s
+2025-06-08 02:59:58,109 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 02:59:58,109 - INFO - [37/490] 🎯 mnist/federated/complete/10n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 35.4s
+2025-06-08 02:59:58,134 - INFO - [38/490] Starting experiment...
+2025-06-08 02:59:58,134 - INFO - 🎯 Starting experiment 38: exp_0038_mnist_decentralized_ring_10n_medium_dp
+2025-06-08 02:59:58,134 - INFO -    Config: sensitive_groups attack, 10 nodes, medium_dp
+2025-06-08 03:00:35,474 - INFO -    ✅ Training completed in 37.3s
+2025-06-08 03:00:35,503 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:00:35,503 - INFO - [38/490] 🎯 mnist/decentralized/ring/10n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 37.4s
+2025-06-08 03:00:35,531 - INFO - [39/490] Starting experiment...
+2025-06-08 03:00:35,531 - INFO - 🎯 Starting experiment 39: exp_0039_mnist_decentralized_complete_10n_medium_dp
+2025-06-08 03:00:35,531 - INFO -    Config: sensitive_groups attack, 10 nodes, medium_dp
+2025-06-08 03:01:14,490 - INFO -    ✅ Training completed in 39.0s
+2025-06-08 03:01:14,534 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:01:14,534 - INFO - [39/490] 🎯 mnist/decentralized/complete/10n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 39.0s
+2025-06-08 03:01:14,560 - INFO - [40/490] Starting experiment...
+2025-06-08 03:01:14,560 - INFO - 🎯 Starting experiment 40: exp_0040_mnist_decentralized_line_10n_medium_dp
+2025-06-08 03:01:14,560 - INFO -    Config: sensitive_groups attack, 10 nodes, medium_dp
+2025-06-08 03:01:50,876 - INFO -    ✅ Training completed in 36.3s
+2025-06-08 03:01:50,902 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:01:50,902 - INFO - [40/490] 🎯 mnist/decentralized/line/10n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 36.3s
+2025-06-08 03:01:50,930 - INFO - [41/490] Starting experiment...
+2025-06-08 03:01:50,930 - INFO - 🎯 Starting experiment 41: exp_0041_mnist_federated_star_10n_strong_dp
+2025-06-08 03:01:50,930 - INFO -    Config: sensitive_groups attack, 10 nodes, strong_dp
+2025-06-08 03:02:27,362 - INFO -    ✅ Training completed in 36.4s
+2025-06-08 03:02:27,390 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:02:27,390 - INFO - [41/490] 🎯 mnist/federated/star/10n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 36.5s
+2025-06-08 03:02:27,418 - INFO - [42/490] Starting experiment...
+2025-06-08 03:02:27,418 - INFO - 🎯 Starting experiment 42: exp_0042_mnist_federated_complete_10n_strong_dp
+2025-06-08 03:02:27,418 - INFO -    Config: sensitive_groups attack, 10 nodes, strong_dp
+2025-06-08 03:03:01,642 - INFO -    ✅ Training completed in 34.2s
+2025-06-08 03:03:01,675 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:03:01,676 - INFO - [42/490] 🎯 mnist/federated/complete/10n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 34.3s
+2025-06-08 03:03:01,705 - INFO - [43/490] Starting experiment...
+2025-06-08 03:03:01,705 - INFO - 🎯 Starting experiment 43: exp_0043_mnist_decentralized_ring_10n_strong_dp
+2025-06-08 03:03:01,705 - INFO -    Config: sensitive_groups attack, 10 nodes, strong_dp
+2025-06-08 03:03:38,307 - INFO -    ✅ Training completed in 36.6s
+2025-06-08 03:03:38,336 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:03:38,336 - INFO - [43/490] 🎯 mnist/decentralized/ring/10n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 36.6s
+2025-06-08 03:03:38,366 - INFO - [44/490] Starting experiment...
+2025-06-08 03:03:38,366 - INFO - 🎯 Starting experiment 44: exp_0044_mnist_decentralized_complete_10n_strong_dp
+2025-06-08 03:03:38,366 - INFO -    Config: sensitive_groups attack, 10 nodes, strong_dp
+2025-06-08 03:04:15,154 - INFO -    ✅ Training completed in 36.8s
+2025-06-08 03:04:15,197 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:04:15,197 - INFO - [44/490] 🎯 mnist/decentralized/complete/10n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 36.8s
+2025-06-08 03:04:15,228 - INFO - [45/490] Starting experiment...
+2025-06-08 03:04:15,228 - INFO - 🎯 Starting experiment 45: exp_0045_mnist_decentralized_line_10n_strong_dp
+2025-06-08 03:04:15,228 - INFO -    Config: sensitive_groups attack, 10 nodes, strong_dp
+2025-06-08 03:04:49,920 - INFO -    ✅ Training completed in 34.7s
+2025-06-08 03:04:49,946 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:04:49,947 - INFO - [45/490] 🎯 mnist/decentralized/line/10n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 34.7s
+2025-06-08 03:04:49,978 - INFO - [46/490] Starting experiment...
+2025-06-08 03:04:49,979 - INFO - 🎯 Starting experiment 46: exp_0046_mnist_federated_star_10n_very_strong_dp
+2025-06-08 03:04:49,979 - INFO -    Config: sensitive_groups attack, 10 nodes, very_strong_dp
+2025-06-08 03:05:22,474 - INFO -    ✅ Training completed in 32.5s
+2025-06-08 03:05:22,500 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:05:22,500 - INFO - [46/490] 🎯 mnist/federated/star/10n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 32.5s
+2025-06-08 03:05:22,533 - INFO - [47/490] Starting experiment...
+2025-06-08 03:05:22,533 - INFO - 🎯 Starting experiment 47: exp_0047_mnist_federated_complete_10n_very_strong_dp
+2025-06-08 03:05:22,533 - INFO -    Config: sensitive_groups attack, 10 nodes, very_strong_dp
+2025-06-08 03:05:54,542 - INFO -    ✅ Training completed in 32.0s
+2025-06-08 03:05:54,576 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:05:54,577 - INFO - [47/490] 🎯 mnist/federated/complete/10n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 32.0s
+2025-06-08 03:05:54,610 - INFO - [48/490] Starting experiment...
+2025-06-08 03:05:54,610 - INFO - 🎯 Starting experiment 48: exp_0048_mnist_decentralized_ring_10n_very_strong_dp
+2025-06-08 03:05:54,610 - INFO -    Config: sensitive_groups attack, 10 nodes, very_strong_dp
+2025-06-08 03:06:28,587 - INFO -    ✅ Training completed in 34.0s
+2025-06-08 03:06:28,615 - INFO -    📊 Attack success: ✅ (confidence: 0.733)
+2025-06-08 03:06:28,615 - INFO - [48/490] 🎯 mnist/decentralized/ring/10n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.733) | Runtime: 34.0s
+2025-06-08 03:06:28,650 - INFO - [49/490] Starting experiment...
+2025-06-08 03:06:28,650 - INFO - 🎯 Starting experiment 49: exp_0049_mnist_decentralized_complete_10n_very_strong_dp
+2025-06-08 03:06:28,650 - INFO -    Config: sensitive_groups attack, 10 nodes, very_strong_dp
+2025-06-08 03:07:02,915 - INFO -    ✅ Training completed in 34.3s
+2025-06-08 03:07:02,957 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:07:02,957 - INFO - [49/490] 🎯 mnist/decentralized/complete/10n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 34.3s
+2025-06-08 03:07:02,993 - INFO - [50/490] Starting experiment...
+2025-06-08 03:07:02,993 - INFO - 🎯 Starting experiment 50: exp_0050_mnist_decentralized_line_10n_very_strong_dp
+2025-06-08 03:07:02,993 - INFO -    Config: sensitive_groups attack, 10 nodes, very_strong_dp
+2025-06-08 03:07:35,658 - INFO -    ✅ Training completed in 32.7s
+2025-06-08 03:07:35,686 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:07:35,686 - INFO - [50/490] 🎯 mnist/decentralized/line/10n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.700) | Runtime: 32.7s
+2025-06-08 03:07:35,722 - INFO - [51/490] Starting experiment...
+2025-06-08 03:07:35,722 - INFO - 🎯 Starting experiment 51: exp_0051_mnist_federated_star_15n_no_dp
+2025-06-08 03:07:35,722 - INFO -    Config: sensitive_groups attack, 15 nodes, no_dp
+2025-06-08 03:08:03,597 - INFO -    ✅ Training completed in 27.9s
+2025-06-08 03:08:03,631 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:08:03,631 - INFO - [51/490] 🎯 mnist/federated/star/15n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 27.9s
+2025-06-08 03:08:03,669 - INFO - [52/490] Starting experiment...
+2025-06-08 03:08:03,669 - INFO - 🎯 Starting experiment 52: exp_0052_mnist_federated_complete_15n_no_dp
+2025-06-08 03:08:03,670 - INFO -    Config: sensitive_groups attack, 15 nodes, no_dp
+2025-06-08 03:08:31,545 - INFO -    ✅ Training completed in 27.9s
+2025-06-08 03:08:31,598 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:08:31,598 - INFO - [52/490] 🎯 mnist/federated/complete/15n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 27.9s
+2025-06-08 03:08:31,636 - INFO - [53/490] Starting experiment...
+2025-06-08 03:08:31,636 - INFO - 🎯 Starting experiment 53: exp_0053_mnist_decentralized_ring_15n_no_dp
+2025-06-08 03:08:31,636 - INFO -    Config: sensitive_groups attack, 15 nodes, no_dp
+2025-06-08 03:09:01,133 - INFO -    ✅ Training completed in 29.5s
+2025-06-08 03:09:01,173 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:09:01,173 - INFO - [53/490] 🎯 mnist/decentralized/ring/15n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 29.5s
+2025-06-08 03:09:01,213 - INFO - [54/490] Starting experiment...
+2025-06-08 03:09:01,213 - INFO - 🎯 Starting experiment 54: exp_0054_mnist_decentralized_complete_15n_no_dp
+2025-06-08 03:09:01,213 - INFO -    Config: sensitive_groups attack, 15 nodes, no_dp
+2025-06-08 03:09:35,043 - INFO -    ✅ Training completed in 33.8s
+2025-06-08 03:09:35,118 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:09:35,118 - INFO - [54/490] 🎯 mnist/decentralized/complete/15n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 33.9s
+2025-06-08 03:09:35,161 - INFO - [55/490] Starting experiment...
+2025-06-08 03:09:35,161 - INFO - 🎯 Starting experiment 55: exp_0055_mnist_decentralized_line_15n_no_dp
+2025-06-08 03:09:35,161 - INFO -    Config: sensitive_groups attack, 15 nodes, no_dp
+2025-06-08 03:10:03,410 - INFO -    ✅ Training completed in 28.2s
+2025-06-08 03:10:03,446 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:10:03,446 - INFO - [55/490] 🎯 mnist/decentralized/line/15n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 28.3s
+2025-06-08 03:10:03,489 - INFO - [56/490] Starting experiment...
+2025-06-08 03:10:03,489 - INFO - 🎯 Starting experiment 56: exp_0056_mnist_federated_star_15n_weak_dp
+2025-06-08 03:10:03,489 - INFO -    Config: sensitive_groups attack, 15 nodes, weak_dp
+2025-06-08 03:10:40,934 - INFO -    ✅ Training completed in 37.4s
+2025-06-08 03:10:40,969 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:10:40,969 - INFO - [56/490] 🎯 mnist/federated/star/15n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 37.5s
+2025-06-08 03:10:41,012 - INFO - [57/490] Starting experiment...
+2025-06-08 03:10:41,012 - INFO - 🎯 Starting experiment 57: exp_0057_mnist_federated_complete_15n_weak_dp
+2025-06-08 03:10:41,012 - INFO -    Config: sensitive_groups attack, 15 nodes, weak_dp
+2025-06-08 03:11:19,998 - INFO -    ✅ Training completed in 39.0s
+2025-06-08 03:11:20,050 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:11:20,050 - INFO - [57/490] 🎯 mnist/federated/complete/15n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 39.0s
+2025-06-08 03:11:20,096 - INFO - [58/490] Starting experiment...
+2025-06-08 03:11:20,096 - INFO - 🎯 Starting experiment 58: exp_0058_mnist_decentralized_ring_15n_weak_dp
+2025-06-08 03:11:20,096 - INFO -    Config: sensitive_groups attack, 15 nodes, weak_dp
+2025-06-08 03:11:58,581 - INFO -    ✅ Training completed in 38.5s
+2025-06-08 03:11:58,620 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:11:58,620 - INFO - [58/490] 🎯 mnist/decentralized/ring/15n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 38.5s
+2025-06-08 03:11:58,666 - INFO - [59/490] Starting experiment...
+2025-06-08 03:11:58,666 - INFO - 🎯 Starting experiment 59: exp_0059_mnist_decentralized_complete_15n_weak_dp
+2025-06-08 03:11:58,666 - INFO -    Config: sensitive_groups attack, 15 nodes, weak_dp
+2025-06-08 03:12:42,042 - INFO -    ✅ Training completed in 43.4s
+2025-06-08 03:12:42,119 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:12:42,119 - INFO - [59/490] 🎯 mnist/decentralized/complete/15n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 43.5s
+2025-06-08 03:12:42,167 - INFO - [60/490] Starting experiment...
+2025-06-08 03:12:42,167 - INFO - 🎯 Starting experiment 60: exp_0060_mnist_decentralized_line_15n_weak_dp
+2025-06-08 03:12:42,167 - INFO -    Config: sensitive_groups attack, 15 nodes, weak_dp
+2025-06-08 03:13:20,661 - INFO -    ✅ Training completed in 38.5s
+2025-06-08 03:13:20,697 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:13:20,697 - INFO - [60/490] 🎯 mnist/decentralized/line/15n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 38.5s
+2025-06-08 03:13:20,746 - INFO - [61/490] Starting experiment...
+2025-06-08 03:13:20,746 - INFO - 🎯 Starting experiment 61: exp_0061_mnist_federated_star_15n_medium_dp
+2025-06-08 03:13:20,746 - INFO -    Config: sensitive_groups attack, 15 nodes, medium_dp
+2025-06-08 03:13:58,169 - INFO -    ✅ Training completed in 37.4s
+2025-06-08 03:13:58,205 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:13:58,205 - INFO - [61/490] 🎯 mnist/federated/star/15n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 37.5s
+2025-06-08 03:13:58,255 - INFO - [62/490] Starting experiment...
+2025-06-08 03:13:58,255 - INFO - 🎯 Starting experiment 62: exp_0062_mnist_federated_complete_15n_medium_dp
+2025-06-08 03:13:58,255 - INFO -    Config: sensitive_groups attack, 15 nodes, medium_dp
+2025-06-08 03:14:34,662 - INFO -    ✅ Training completed in 36.4s
+2025-06-08 03:14:34,715 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:14:34,715 - INFO - [62/490] 🎯 mnist/federated/complete/15n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 36.5s
+2025-06-08 03:14:34,766 - INFO - [63/490] Starting experiment...
+2025-06-08 03:14:34,766 - INFO - 🎯 Starting experiment 63: exp_0063_mnist_decentralized_ring_15n_medium_dp
+2025-06-08 03:14:34,766 - INFO -    Config: sensitive_groups attack, 15 nodes, medium_dp
+2025-06-08 03:15:13,476 - INFO -    ✅ Training completed in 38.7s
+2025-06-08 03:15:13,517 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:15:13,517 - INFO - [63/490] 🎯 mnist/decentralized/ring/15n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 38.8s
+2025-06-08 03:15:13,569 - INFO - [64/490] Starting experiment...
+2025-06-08 03:15:13,569 - INFO - 🎯 Starting experiment 64: exp_0064_mnist_decentralized_complete_15n_medium_dp
+2025-06-08 03:15:13,570 - INFO -    Config: sensitive_groups attack, 15 nodes, medium_dp
+2025-06-08 03:15:55,011 - INFO -    ✅ Training completed in 41.4s
+2025-06-08 03:15:55,088 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:15:55,088 - INFO - [64/490] 🎯 mnist/decentralized/complete/15n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 41.5s
+2025-06-08 03:15:55,143 - INFO - [65/490] Starting experiment...
+2025-06-08 03:15:55,143 - INFO - 🎯 Starting experiment 65: exp_0065_mnist_decentralized_line_15n_medium_dp
+2025-06-08 03:15:55,143 - INFO -    Config: sensitive_groups attack, 15 nodes, medium_dp
+2025-06-08 03:16:33,578 - INFO -    ✅ Training completed in 38.4s
+2025-06-08 03:16:33,614 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:16:33,614 - INFO - [65/490] 🎯 mnist/decentralized/line/15n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 38.5s
+2025-06-08 03:16:33,669 - INFO - [66/490] Starting experiment...
+2025-06-08 03:16:33,669 - INFO - 🎯 Starting experiment 66: exp_0066_mnist_federated_star_15n_strong_dp
+2025-06-08 03:16:33,669 - INFO -    Config: sensitive_groups attack, 15 nodes, strong_dp
+2025-06-08 03:17:08,919 - INFO -    ✅ Training completed in 35.2s
+2025-06-08 03:17:08,953 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:17:08,953 - INFO - [66/490] 🎯 mnist/federated/star/15n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 35.3s
+2025-06-08 03:17:09,010 - INFO - [67/490] Starting experiment...
+2025-06-08 03:17:09,010 - INFO - 🎯 Starting experiment 67: exp_0067_mnist_federated_complete_15n_strong_dp
+2025-06-08 03:17:09,010 - INFO -    Config: sensitive_groups attack, 15 nodes, strong_dp
+2025-06-08 03:17:45,948 - INFO -    ✅ Training completed in 36.9s
+2025-06-08 03:17:46,000 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:17:46,000 - INFO - [67/490] 🎯 mnist/federated/complete/15n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 37.0s
+2025-06-08 03:17:46,059 - INFO - [68/490] Starting experiment...
+2025-06-08 03:17:46,059 - INFO - 🎯 Starting experiment 68: exp_0068_mnist_decentralized_ring_15n_strong_dp
+2025-06-08 03:17:46,059 - INFO -    Config: sensitive_groups attack, 15 nodes, strong_dp
+2025-06-08 03:18:22,355 - INFO -    ✅ Training completed in 36.3s
+2025-06-08 03:18:22,394 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:18:22,394 - INFO - [68/490] 🎯 mnist/decentralized/ring/15n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 36.3s
+2025-06-08 03:18:22,454 - INFO - [69/490] Starting experiment...
+2025-06-08 03:18:22,454 - INFO - 🎯 Starting experiment 69: exp_0069_mnist_decentralized_complete_15n_strong_dp
+2025-06-08 03:18:22,454 - INFO -    Config: sensitive_groups attack, 15 nodes, strong_dp
+2025-06-08 03:19:02,205 - INFO -    ✅ Training completed in 39.8s
+2025-06-08 03:19:02,281 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:19:02,281 - INFO - [69/490] 🎯 mnist/decentralized/complete/15n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 39.8s
+2025-06-08 03:19:02,341 - INFO - [70/490] Starting experiment...
+2025-06-08 03:19:02,341 - INFO - 🎯 Starting experiment 70: exp_0070_mnist_decentralized_line_15n_strong_dp
+2025-06-08 03:19:02,341 - INFO -    Config: sensitive_groups attack, 15 nodes, strong_dp
+2025-06-08 03:19:39,429 - INFO -    ✅ Training completed in 37.1s
+2025-06-08 03:19:39,465 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:19:39,465 - INFO - [70/490] 🎯 mnist/decentralized/line/15n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 37.1s
+2025-06-08 03:19:39,528 - INFO - [71/490] Starting experiment...
+2025-06-08 03:19:39,528 - INFO - 🎯 Starting experiment 71: exp_0071_mnist_federated_star_15n_very_strong_dp
+2025-06-08 03:19:39,528 - INFO -    Config: sensitive_groups attack, 15 nodes, very_strong_dp
+2025-06-08 03:20:12,140 - INFO -    ✅ Training completed in 32.6s
+2025-06-08 03:20:12,176 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:20:12,176 - INFO - [71/490] 🎯 mnist/federated/star/15n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 32.6s
+2025-06-08 03:20:12,239 - INFO - [72/490] Starting experiment...
+2025-06-08 03:20:12,239 - INFO - 🎯 Starting experiment 72: exp_0072_mnist_federated_complete_15n_very_strong_dp
+2025-06-08 03:20:12,239 - INFO -    Config: sensitive_groups attack, 15 nodes, very_strong_dp
+2025-06-08 03:20:44,786 - INFO -    ✅ Training completed in 32.5s
+2025-06-08 03:20:44,839 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:20:44,839 - INFO - [72/490] 🎯 mnist/federated/complete/15n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 32.6s
+2025-06-08 03:20:44,903 - INFO - [73/490] Starting experiment...
+2025-06-08 03:20:44,903 - INFO - 🎯 Starting experiment 73: exp_0073_mnist_decentralized_ring_15n_very_strong_dp
+2025-06-08 03:20:44,903 - INFO -    Config: sensitive_groups attack, 15 nodes, very_strong_dp
+2025-06-08 03:21:18,329 - INFO -    ✅ Training completed in 33.4s
+2025-06-08 03:21:18,368 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:21:18,368 - INFO - [73/490] 🎯 mnist/decentralized/ring/15n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 33.5s
+2025-06-08 03:21:18,433 - INFO - [74/490] Starting experiment...
+2025-06-08 03:21:18,433 - INFO - 🎯 Starting experiment 74: exp_0074_mnist_decentralized_complete_15n_very_strong_dp
+2025-06-08 03:21:18,433 - INFO -    Config: sensitive_groups attack, 15 nodes, very_strong_dp
+2025-06-08 03:21:56,919 - INFO -    ✅ Training completed in 38.5s
+2025-06-08 03:21:56,993 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 03:21:56,994 - INFO - [74/490] 🎯 mnist/decentralized/complete/15n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.933) | Runtime: 38.6s
+2025-06-08 03:21:57,060 - INFO - [75/490] Starting experiment...
+2025-06-08 03:21:57,060 - INFO - 🎯 Starting experiment 75: exp_0075_mnist_decentralized_line_15n_very_strong_dp
+2025-06-08 03:21:57,060 - INFO -    Config: sensitive_groups attack, 15 nodes, very_strong_dp
+2025-06-08 03:22:30,420 - INFO -    ✅ Training completed in 33.4s
+2025-06-08 03:22:30,456 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:22:30,456 - INFO - [75/490] 🎯 mnist/decentralized/line/15n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.800) | Runtime: 33.4s
+2025-06-08 03:22:30,524 - INFO - [76/490] Starting experiment...
+2025-06-08 03:22:30,524 - INFO - 🎯 Starting experiment 76: exp_0076_mnist_federated_star_20n_no_dp
+2025-06-08 03:22:30,524 - INFO -    Config: sensitive_groups attack, 20 nodes, no_dp
+2025-06-08 03:22:58,666 - INFO -    ✅ Training completed in 28.1s
+2025-06-08 03:22:58,711 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 03:22:58,711 - INFO - [76/490] 🎯 mnist/federated/star/20n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.950) | Runtime: 28.2s
+2025-06-08 03:22:58,782 - INFO - [77/490] Starting experiment...
+2025-06-08 03:22:58,782 - INFO - 🎯 Starting experiment 77: exp_0077_mnist_decentralized_ring_20n_no_dp
+2025-06-08 03:22:58,782 - INFO -    Config: sensitive_groups attack, 20 nodes, no_dp
+2025-06-08 03:23:27,913 - INFO -    ✅ Training completed in 29.1s
+2025-06-08 03:23:27,961 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:23:27,961 - INFO - [77/490] 🎯 mnist/decentralized/ring/20n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 29.2s
+2025-06-08 03:23:28,034 - INFO - [78/490] Starting experiment...
+2025-06-08 03:23:28,034 - INFO - 🎯 Starting experiment 78: exp_0078_mnist_decentralized_line_20n_no_dp
+2025-06-08 03:23:28,035 - INFO -    Config: sensitive_groups attack, 20 nodes, no_dp
+2025-06-08 03:23:57,597 - INFO -    ✅ Training completed in 29.6s
+2025-06-08 03:23:57,641 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:23:57,641 - INFO - [78/490] 🎯 mnist/decentralized/line/20n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 29.6s
+2025-06-08 03:23:57,752 - INFO - [79/490] Starting experiment...
+2025-06-08 03:23:57,752 - INFO - 🎯 Starting experiment 79: exp_0079_mnist_federated_star_20n_weak_dp
+2025-06-08 03:23:57,752 - INFO -    Config: sensitive_groups attack, 20 nodes, weak_dp
+2025-06-08 03:24:36,561 - INFO -    ✅ Training completed in 38.8s
+2025-06-08 03:24:36,603 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 03:24:36,604 - INFO - [79/490] 🎯 mnist/federated/star/20n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.950) | Runtime: 38.9s
+2025-06-08 03:24:36,680 - INFO - [80/490] Starting experiment...
+2025-06-08 03:24:36,681 - INFO - 🎯 Starting experiment 80: exp_0080_mnist_decentralized_ring_20n_weak_dp
+2025-06-08 03:24:36,681 - INFO -    Config: sensitive_groups attack, 20 nodes, weak_dp
+2025-06-08 03:25:16,568 - INFO -    ✅ Training completed in 39.9s
+2025-06-08 03:25:16,617 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:25:16,617 - INFO - [80/490] 🎯 mnist/decentralized/ring/20n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 39.9s
+2025-06-08 03:25:16,694 - INFO - [81/490] Starting experiment...
+2025-06-08 03:25:16,694 - INFO - 🎯 Starting experiment 81: exp_0081_mnist_decentralized_line_20n_weak_dp
+2025-06-08 03:25:16,694 - INFO -    Config: sensitive_groups attack, 20 nodes, weak_dp
+2025-06-08 03:25:55,909 - INFO -    ✅ Training completed in 39.2s
+2025-06-08 03:25:55,952 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:25:55,952 - INFO - [81/490] 🎯 mnist/decentralized/line/20n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 39.3s
+2025-06-08 03:25:56,031 - INFO - [82/490] Starting experiment...
+2025-06-08 03:25:56,031 - INFO - 🎯 Starting experiment 82: exp_0082_mnist_federated_star_20n_medium_dp
+2025-06-08 03:25:56,031 - INFO -    Config: sensitive_groups attack, 20 nodes, medium_dp
+2025-06-08 03:26:32,938 - INFO -    ✅ Training completed in 36.9s
+2025-06-08 03:26:32,982 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 03:26:32,982 - INFO - [82/490] 🎯 mnist/federated/star/20n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.950) | Runtime: 37.0s
+2025-06-08 03:26:33,062 - INFO - [83/490] Starting experiment...
+2025-06-08 03:26:33,063 - INFO - 🎯 Starting experiment 83: exp_0083_mnist_decentralized_ring_20n_medium_dp
+2025-06-08 03:26:33,063 - INFO -    Config: sensitive_groups attack, 20 nodes, medium_dp
+2025-06-08 03:27:11,613 - INFO -    ✅ Training completed in 38.6s
+2025-06-08 03:27:11,660 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:27:11,660 - INFO - [83/490] 🎯 mnist/decentralized/ring/20n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 38.6s
+2025-06-08 03:27:11,742 - INFO - [84/490] Starting experiment...
+2025-06-08 03:27:11,742 - INFO - 🎯 Starting experiment 84: exp_0084_mnist_decentralized_line_20n_medium_dp
+2025-06-08 03:27:11,742 - INFO -    Config: sensitive_groups attack, 20 nodes, medium_dp
+2025-06-08 03:27:49,491 - INFO -    ✅ Training completed in 37.7s
+2025-06-08 03:27:49,535 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:27:49,535 - INFO - [84/490] 🎯 mnist/decentralized/line/20n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 37.8s
+2025-06-08 03:27:49,621 - INFO - [85/490] Starting experiment...
+2025-06-08 03:27:49,621 - INFO - 🎯 Starting experiment 85: exp_0085_mnist_federated_star_20n_strong_dp
+2025-06-08 03:27:49,621 - INFO -    Config: sensitive_groups attack, 20 nodes, strong_dp
+2025-06-08 03:28:24,943 - INFO -    ✅ Training completed in 35.3s
+2025-06-08 03:28:24,988 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 03:28:24,988 - INFO - [85/490] 🎯 mnist/federated/star/20n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.950) | Runtime: 35.4s
+2025-06-08 03:28:25,076 - INFO - [86/490] Starting experiment...
+2025-06-08 03:28:25,076 - INFO - 🎯 Starting experiment 86: exp_0086_mnist_decentralized_ring_20n_strong_dp
+2025-06-08 03:28:25,076 - INFO -    Config: sensitive_groups attack, 20 nodes, strong_dp
+2025-06-08 03:29:01,569 - INFO -    ✅ Training completed in 36.5s
+2025-06-08 03:29:01,617 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:29:01,617 - INFO - [86/490] 🎯 mnist/decentralized/ring/20n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 36.5s
+2025-06-08 03:29:01,704 - INFO - [87/490] Starting experiment...
+2025-06-08 03:29:01,704 - INFO - 🎯 Starting experiment 87: exp_0087_mnist_decentralized_line_20n_strong_dp
+2025-06-08 03:29:01,704 - INFO -    Config: sensitive_groups attack, 20 nodes, strong_dp
+2025-06-08 03:29:37,539 - INFO -    ✅ Training completed in 35.8s
+2025-06-08 03:29:37,583 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:29:37,583 - INFO - [87/490] 🎯 mnist/decentralized/line/20n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 35.9s
+2025-06-08 03:29:37,673 - INFO - [88/490] Starting experiment...
+2025-06-08 03:29:37,673 - INFO - 🎯 Starting experiment 88: exp_0088_mnist_federated_star_20n_very_strong_dp
+2025-06-08 03:29:37,673 - INFO -    Config: sensitive_groups attack, 20 nodes, very_strong_dp
+2025-06-08 03:30:11,126 - INFO -    ✅ Training completed in 33.5s
+2025-06-08 03:30:11,170 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 03:30:11,170 - INFO - [88/490] 🎯 mnist/federated/star/20n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.950) | Runtime: 33.5s
+2025-06-08 03:30:11,260 - INFO - [89/490] Starting experiment...
+2025-06-08 03:30:11,261 - INFO - 🎯 Starting experiment 89: exp_0089_mnist_decentralized_ring_20n_very_strong_dp
+2025-06-08 03:30:11,261 - INFO -    Config: sensitive_groups attack, 20 nodes, very_strong_dp
+2025-06-08 03:30:45,829 - INFO -    ✅ Training completed in 34.6s
+2025-06-08 03:30:45,878 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:30:45,879 - INFO - [89/490] 🎯 mnist/decentralized/ring/20n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 34.6s
+2025-06-08 03:30:45,971 - INFO - [90/490] Starting experiment...
+2025-06-08 03:30:45,971 - INFO - 🎯 Starting experiment 90: exp_0090_mnist_decentralized_line_20n_very_strong_dp
+2025-06-08 03:30:45,971 - INFO -    Config: sensitive_groups attack, 20 nodes, very_strong_dp
+2025-06-08 03:31:20,171 - INFO -    ✅ Training completed in 34.2s
+2025-06-08 03:31:20,213 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 03:31:20,213 - INFO - [90/490] 🎯 mnist/decentralized/line/20n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.850) | Runtime: 34.2s
+2025-06-08 03:31:20,308 - INFO - [91/490] Starting experiment...
+2025-06-08 03:31:20,308 - INFO - 🎯 Starting experiment 91: exp_0091_mnist_federated_star_25n_no_dp
+2025-06-08 03:31:20,308 - INFO -    Config: sensitive_groups attack, 25 nodes, no_dp
+2025-06-08 03:31:49,584 - INFO -    ✅ Training completed in 29.3s
+2025-06-08 03:31:49,636 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 03:31:49,636 - INFO - [91/490] 🎯 mnist/federated/star/25n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.960) | Runtime: 29.3s
+2025-06-08 03:31:49,732 - INFO - [92/490] Starting experiment...
+2025-06-08 03:31:49,732 - INFO - 🎯 Starting experiment 92: exp_0092_mnist_decentralized_ring_25n_no_dp
+2025-06-08 03:31:49,732 - INFO -    Config: sensitive_groups attack, 25 nodes, no_dp
+2025-06-08 03:32:21,047 - INFO -    ✅ Training completed in 31.3s
+2025-06-08 03:32:21,105 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 03:32:21,105 - INFO - [92/490] 🎯 mnist/decentralized/ring/25n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.880) | Runtime: 31.4s
+2025-06-08 03:32:21,204 - INFO - [93/490] Starting experiment...
+2025-06-08 03:32:21,204 - INFO - 🎯 Starting experiment 93: exp_0093_mnist_decentralized_line_25n_no_dp
+2025-06-08 03:32:21,204 - INFO -    Config: sensitive_groups attack, 25 nodes, no_dp
+2025-06-08 03:32:52,233 - INFO -    ✅ Training completed in 31.0s
+2025-06-08 03:32:52,285 - INFO -    📊 Attack success: ✅ (confidence: 0.754)
+2025-06-08 03:32:52,285 - INFO - [93/490] 🎯 mnist/decentralized/line/25n | no-DP | sensitive-groups | Attack: SUCCESS (conf:0.754) | Runtime: 31.1s
+2025-06-08 03:32:52,387 - INFO - [94/490] Starting experiment...
+2025-06-08 03:32:52,387 - INFO - 🎯 Starting experiment 94: exp_0094_mnist_federated_star_25n_weak_dp
+2025-06-08 03:32:52,387 - INFO -    Config: sensitive_groups attack, 25 nodes, weak_dp
+2025-06-08 03:33:37,043 - INFO -    ✅ Training completed in 44.7s
+2025-06-08 03:33:37,097 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 03:33:37,098 - INFO - [94/490] 🎯 mnist/federated/star/25n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.960) | Runtime: 44.7s
+2025-06-08 03:33:37,202 - INFO - [95/490] Starting experiment...
+2025-06-08 03:33:37,202 - INFO - 🎯 Starting experiment 95: exp_0095_mnist_decentralized_ring_25n_weak_dp
+2025-06-08 03:33:37,202 - INFO -    Config: sensitive_groups attack, 25 nodes, weak_dp
+2025-06-08 03:34:21,806 - INFO -    ✅ Training completed in 44.6s
+2025-06-08 03:34:21,865 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 03:34:21,865 - INFO - [95/490] 🎯 mnist/decentralized/ring/25n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.880) | Runtime: 44.7s
+2025-06-08 03:34:22,011 - INFO - [96/490] Starting experiment...
+2025-06-08 03:34:22,011 - INFO - 🎯 Starting experiment 96: exp_0096_mnist_decentralized_line_25n_weak_dp
+2025-06-08 03:34:22,011 - INFO -    Config: sensitive_groups attack, 25 nodes, weak_dp
+2025-06-08 03:35:05,446 - INFO -    ✅ Training completed in 43.4s
+2025-06-08 03:35:05,497 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 03:35:05,497 - INFO - [96/490] 🎯 mnist/decentralized/line/25n | DP(ε=16.0) | sensitive-groups | Attack: SUCCESS (conf:0.640) | Runtime: 43.5s
+2025-06-08 03:35:05,606 - INFO - [97/490] Starting experiment...
+2025-06-08 03:35:05,606 - INFO - 🎯 Starting experiment 97: exp_0097_mnist_federated_star_25n_medium_dp
+2025-06-08 03:35:05,606 - INFO -    Config: sensitive_groups attack, 25 nodes, medium_dp
+2025-06-08 03:35:47,387 - INFO -    ✅ Training completed in 41.8s
+2025-06-08 03:35:47,437 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 03:35:47,437 - INFO - [97/490] 🎯 mnist/federated/star/25n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.960) | Runtime: 41.8s
+2025-06-08 03:35:47,549 - INFO - [98/490] Starting experiment...
+2025-06-08 03:35:47,549 - INFO - 🎯 Starting experiment 98: exp_0098_mnist_decentralized_ring_25n_medium_dp
+2025-06-08 03:35:47,549 - INFO -    Config: sensitive_groups attack, 25 nodes, medium_dp
+2025-06-08 03:36:30,075 - INFO -    ✅ Training completed in 42.5s
+2025-06-08 03:36:30,133 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 03:36:30,134 - INFO - [98/490] 🎯 mnist/decentralized/ring/25n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.880) | Runtime: 42.6s
+2025-06-08 03:36:30,247 - INFO - [99/490] Starting experiment...
+2025-06-08 03:36:30,247 - INFO - 🎯 Starting experiment 99: exp_0099_mnist_decentralized_line_25n_medium_dp
+2025-06-08 03:36:30,247 - INFO -    Config: sensitive_groups attack, 25 nodes, medium_dp
+2025-06-08 03:37:12,541 - INFO -    ✅ Training completed in 42.3s
+2025-06-08 03:37:12,595 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 03:37:12,595 - INFO - [99/490] 🎯 mnist/decentralized/line/25n | DP(ε=8.0) | sensitive-groups | Attack: SUCCESS (conf:0.640) | Runtime: 42.3s
+2025-06-08 03:37:12,714 - INFO - [100/490] Starting experiment...
+2025-06-08 03:37:12,714 - INFO - 🎯 Starting experiment 100: exp_0100_mnist_federated_star_25n_strong_dp
+2025-06-08 03:37:12,714 - INFO -    Config: sensitive_groups attack, 25 nodes, strong_dp
+2025-06-08 03:37:51,669 - INFO -    ✅ Training completed in 39.0s
+2025-06-08 03:37:51,721 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 03:37:51,721 - INFO - [100/490] 🎯 mnist/federated/star/25n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.960) | Runtime: 39.0s
+2025-06-08 03:37:51,839 - INFO - [101/490] Starting experiment...
+2025-06-08 03:37:51,839 - INFO - 🎯 Starting experiment 101: exp_0101_mnist_decentralized_ring_25n_strong_dp
+2025-06-08 03:37:51,839 - INFO -    Config: sensitive_groups attack, 25 nodes, strong_dp
+2025-06-08 03:38:31,786 - INFO -    ✅ Training completed in 39.9s
+2025-06-08 03:38:31,844 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 03:38:31,844 - INFO - [101/490] 🎯 mnist/decentralized/ring/25n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.880) | Runtime: 40.0s
+2025-06-08 03:38:31,964 - INFO - [102/490] Starting experiment...
+2025-06-08 03:38:31,964 - INFO - 🎯 Starting experiment 102: exp_0102_mnist_decentralized_line_25n_strong_dp
+2025-06-08 03:38:31,964 - INFO -    Config: sensitive_groups attack, 25 nodes, strong_dp
+2025-06-08 03:39:11,519 - INFO -    ✅ Training completed in 39.6s
+2025-06-08 03:39:11,571 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 03:39:11,571 - INFO - [102/490] 🎯 mnist/decentralized/line/25n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.640) | Runtime: 39.6s
+2025-06-08 03:39:11,693 - INFO - [103/490] Starting experiment...
+2025-06-08 03:39:11,693 - INFO - 🎯 Starting experiment 103: exp_0103_mnist_federated_star_25n_very_strong_dp
+2025-06-08 03:39:11,693 - INFO -    Config: sensitive_groups attack, 25 nodes, very_strong_dp
+2025-06-08 03:39:47,542 - INFO -    ✅ Training completed in 35.8s
+2025-06-08 03:39:47,593 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 03:39:47,593 - INFO - [103/490] 🎯 mnist/federated/star/25n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.960) | Runtime: 35.9s
+2025-06-08 03:39:47,717 - INFO - [104/490] Starting experiment...
+2025-06-08 03:39:47,717 - INFO - 🎯 Starting experiment 104: exp_0104_mnist_decentralized_ring_25n_very_strong_dp
+2025-06-08 03:39:47,717 - INFO -    Config: sensitive_groups attack, 25 nodes, very_strong_dp
+2025-06-08 03:40:24,669 - INFO -    ✅ Training completed in 37.0s
+2025-06-08 03:40:24,727 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 03:40:24,727 - INFO - [104/490] 🎯 mnist/decentralized/ring/25n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.880) | Runtime: 37.0s
+2025-06-08 03:40:24,858 - INFO - [105/490] Starting experiment...
+2025-06-08 03:40:24,858 - INFO - 🎯 Starting experiment 105: exp_0105_mnist_decentralized_line_25n_very_strong_dp
+2025-06-08 03:40:24,858 - INFO -    Config: sensitive_groups attack, 25 nodes, very_strong_dp
+2025-06-08 03:41:00,392 - INFO -    ✅ Training completed in 35.5s
+2025-06-08 03:41:00,444 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 03:41:00,444 - INFO - [105/490] 🎯 mnist/decentralized/line/25n | DP(ε=1.0) | sensitive-groups | Attack: SUCCESS (conf:0.640) | Runtime: 35.6s
+2025-06-08 03:41:00,574 - INFO - [106/490] Starting experiment...
+2025-06-08 03:41:00,574 - INFO - 🎯 Starting experiment 106: exp_0106_mnist_federated_star_10n_no_dp
+2025-06-08 03:41:00,574 - INFO -    Config: topology_correlated attack, 10 nodes, no_dp
+2025-06-08 03:41:28,132 - INFO -    ✅ Training completed in 27.6s
+2025-06-08 03:41:28,158 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:41:28,158 - INFO - [106/490] 🎯 mnist/federated/star/10n | no-DP | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 27.6s
+2025-06-08 03:41:28,289 - INFO - [107/490] Starting experiment...
+2025-06-08 03:41:28,289 - INFO - 🎯 Starting experiment 107: exp_0107_mnist_federated_complete_10n_no_dp
+2025-06-08 03:41:28,289 - INFO -    Config: topology_correlated attack, 10 nodes, no_dp
+2025-06-08 03:41:55,693 - INFO -    ✅ Training completed in 27.4s
+2025-06-08 03:41:55,727 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:41:55,727 - INFO - [107/490] 🎯 mnist/federated/complete/10n | no-DP | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 27.4s
+2025-06-08 03:41:55,860 - INFO - [108/490] Starting experiment...
+2025-06-08 03:41:55,860 - INFO - 🎯 Starting experiment 108: exp_0108_mnist_decentralized_ring_10n_no_dp
+2025-06-08 03:41:55,861 - INFO -    Config: topology_correlated attack, 10 nodes, no_dp
+2025-06-08 03:42:24,713 - INFO -    ✅ Training completed in 28.9s
+2025-06-08 03:42:24,742 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:42:24,742 - INFO - [108/490] 🎯 mnist/decentralized/ring/10n | no-DP | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 28.9s
+2025-06-08 03:42:24,873 - INFO - [109/490] Starting experiment...
+2025-06-08 03:42:24,873 - INFO - 🎯 Starting experiment 109: exp_0109_mnist_decentralized_complete_10n_no_dp
+2025-06-08 03:42:24,873 - INFO -    Config: topology_correlated attack, 10 nodes, no_dp
+2025-06-08 03:42:55,012 - INFO -    ✅ Training completed in 30.1s
+2025-06-08 03:42:55,056 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:42:55,056 - INFO - [109/490] 🎯 mnist/decentralized/complete/10n | no-DP | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 30.2s
+2025-06-08 03:42:55,226 - INFO - [110/490] Starting experiment...
+2025-06-08 03:42:55,226 - INFO - 🎯 Starting experiment 110: exp_0110_mnist_decentralized_line_10n_no_dp
+2025-06-08 03:42:55,226 - INFO -    Config: topology_correlated attack, 10 nodes, no_dp
+2025-06-08 03:43:24,648 - INFO -    ✅ Training completed in 29.4s
+2025-06-08 03:43:24,675 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:43:24,675 - INFO - [110/490] 🎯 mnist/decentralized/line/10n | no-DP | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 29.4s
+2025-06-08 03:43:24,811 - INFO - [111/490] Starting experiment...
+2025-06-08 03:43:24,811 - INFO - 🎯 Starting experiment 111: exp_0111_mnist_federated_star_10n_weak_dp
+2025-06-08 03:43:24,812 - INFO -    Config: topology_correlated attack, 10 nodes, weak_dp
+2025-06-08 03:44:01,993 - INFO -    ✅ Training completed in 37.2s
+2025-06-08 03:44:02,022 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:44:02,022 - INFO - [111/490] 🎯 mnist/federated/star/10n | DP(ε=16.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 37.2s
+2025-06-08 03:44:02,159 - INFO - [112/490] Starting experiment...
+2025-06-08 03:44:02,159 - INFO - 🎯 Starting experiment 112: exp_0112_mnist_federated_complete_10n_weak_dp
+2025-06-08 03:44:02,159 - INFO -    Config: topology_correlated attack, 10 nodes, weak_dp
+2025-06-08 03:44:39,786 - INFO -    ✅ Training completed in 37.6s
+2025-06-08 03:44:39,821 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:44:39,821 - INFO - [112/490] 🎯 mnist/federated/complete/10n | DP(ε=16.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 37.7s
+2025-06-08 03:44:39,956 - INFO - [113/490] Starting experiment...
+2025-06-08 03:44:39,956 - INFO - 🎯 Starting experiment 113: exp_0113_mnist_decentralized_ring_10n_weak_dp
+2025-06-08 03:44:39,956 - INFO -    Config: topology_correlated attack, 10 nodes, weak_dp
+2025-06-08 03:45:18,454 - INFO -    ✅ Training completed in 38.5s
+2025-06-08 03:45:18,483 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:45:18,483 - INFO - [113/490] 🎯 mnist/decentralized/ring/10n | DP(ε=16.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 38.5s
+2025-06-08 03:45:18,617 - INFO - [114/490] Starting experiment...
+2025-06-08 03:45:18,617 - INFO - 🎯 Starting experiment 114: exp_0114_mnist_decentralized_complete_10n_weak_dp
+2025-06-08 03:45:18,617 - INFO -    Config: topology_correlated attack, 10 nodes, weak_dp
+2025-06-08 03:45:58,124 - INFO -    ✅ Training completed in 39.5s
+2025-06-08 03:45:58,167 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:45:58,167 - INFO - [114/490] 🎯 mnist/decentralized/complete/10n | DP(ε=16.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 39.6s
+2025-06-08 03:45:58,305 - INFO - [115/490] Starting experiment...
+2025-06-08 03:45:58,305 - INFO - 🎯 Starting experiment 115: exp_0115_mnist_decentralized_line_10n_weak_dp
+2025-06-08 03:45:58,306 - INFO -    Config: topology_correlated attack, 10 nodes, weak_dp
+2025-06-08 03:46:35,850 - INFO -    ✅ Training completed in 37.5s
+2025-06-08 03:46:35,878 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:46:35,878 - INFO - [115/490] 🎯 mnist/decentralized/line/10n | DP(ε=16.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 37.6s
+2025-06-08 03:46:36,016 - INFO - [116/490] Starting experiment...
+2025-06-08 03:46:36,016 - INFO - 🎯 Starting experiment 116: exp_0116_mnist_federated_star_10n_medium_dp
+2025-06-08 03:46:36,016 - INFO -    Config: topology_correlated attack, 10 nodes, medium_dp
+2025-06-08 03:47:12,572 - INFO -    ✅ Training completed in 36.6s
+2025-06-08 03:47:12,598 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:47:12,598 - INFO - [116/490] 🎯 mnist/federated/star/10n | DP(ε=8.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 36.6s
+2025-06-08 03:47:12,739 - INFO - [117/490] Starting experiment...
+2025-06-08 03:47:12,739 - INFO - 🎯 Starting experiment 117: exp_0117_mnist_federated_complete_10n_medium_dp
+2025-06-08 03:47:12,739 - INFO -    Config: topology_correlated attack, 10 nodes, medium_dp
+2025-06-08 03:47:48,942 - INFO -    ✅ Training completed in 36.2s
+2025-06-08 03:47:48,975 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:47:48,975 - INFO - [117/490] 🎯 mnist/federated/complete/10n | DP(ε=8.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 36.2s
+2025-06-08 03:47:49,112 - INFO - [118/490] Starting experiment...
+2025-06-08 03:47:49,112 - INFO - 🎯 Starting experiment 118: exp_0118_mnist_decentralized_ring_10n_medium_dp
+2025-06-08 03:47:49,112 - INFO -    Config: topology_correlated attack, 10 nodes, medium_dp
+2025-06-08 03:48:25,402 - INFO -    ✅ Training completed in 36.3s
+2025-06-08 03:48:25,432 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:48:25,432 - INFO - [118/490] 🎯 mnist/decentralized/ring/10n | DP(ε=8.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 36.3s
+2025-06-08 03:48:25,573 - INFO - [119/490] Starting experiment...
+2025-06-08 03:48:25,573 - INFO - 🎯 Starting experiment 119: exp_0119_mnist_decentralized_complete_10n_medium_dp
+2025-06-08 03:48:25,573 - INFO -    Config: topology_correlated attack, 10 nodes, medium_dp
+2025-06-08 03:49:04,038 - INFO -    ✅ Training completed in 38.5s
+2025-06-08 03:49:04,081 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:49:04,081 - INFO - [119/490] 🎯 mnist/decentralized/complete/10n | DP(ε=8.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 38.5s
+2025-06-08 03:49:04,225 - INFO - [120/490] Starting experiment...
+2025-06-08 03:49:04,225 - INFO - 🎯 Starting experiment 120: exp_0120_mnist_decentralized_line_10n_medium_dp
+2025-06-08 03:49:04,225 - INFO -    Config: topology_correlated attack, 10 nodes, medium_dp
+2025-06-08 03:49:42,004 - INFO -    ✅ Training completed in 37.8s
+2025-06-08 03:49:42,032 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:49:42,032 - INFO - [120/490] 🎯 mnist/decentralized/line/10n | DP(ε=8.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 37.8s
+2025-06-08 03:49:42,213 - INFO - [121/490] Starting experiment...
+2025-06-08 03:49:42,214 - INFO - 🎯 Starting experiment 121: exp_0121_mnist_federated_star_10n_strong_dp
+2025-06-08 03:49:42,214 - INFO -    Config: topology_correlated attack, 10 nodes, strong_dp
+2025-06-08 03:50:17,243 - INFO -    ✅ Training completed in 35.0s
+2025-06-08 03:50:17,271 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:50:17,271 - INFO - [121/490] 🎯 mnist/federated/star/10n | DP(ε=4.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 35.1s
+2025-06-08 03:50:17,415 - INFO - [122/490] Starting experiment...
+2025-06-08 03:50:17,415 - INFO - 🎯 Starting experiment 122: exp_0122_mnist_federated_complete_10n_strong_dp
+2025-06-08 03:50:17,415 - INFO -    Config: topology_correlated attack, 10 nodes, strong_dp
+2025-06-08 03:50:52,063 - INFO -    ✅ Training completed in 34.6s
+2025-06-08 03:50:52,096 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:50:52,096 - INFO - [122/490] 🎯 mnist/federated/complete/10n | DP(ε=4.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 34.7s
+2025-06-08 03:50:52,244 - INFO - [123/490] Starting experiment...
+2025-06-08 03:50:52,245 - INFO - 🎯 Starting experiment 123: exp_0123_mnist_decentralized_ring_10n_strong_dp
+2025-06-08 03:50:52,245 - INFO -    Config: topology_correlated attack, 10 nodes, strong_dp
+2025-06-08 03:51:26,953 - INFO -    ✅ Training completed in 34.7s
+2025-06-08 03:51:26,983 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:51:26,983 - INFO - [123/490] 🎯 mnist/decentralized/ring/10n | DP(ε=4.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 34.7s
+2025-06-08 03:51:27,130 - INFO - [124/490] Starting experiment...
+2025-06-08 03:51:27,130 - INFO - 🎯 Starting experiment 124: exp_0124_mnist_decentralized_complete_10n_strong_dp
+2025-06-08 03:51:27,130 - INFO -    Config: topology_correlated attack, 10 nodes, strong_dp
+2025-06-08 03:52:04,363 - INFO -    ✅ Training completed in 37.2s
+2025-06-08 03:52:04,406 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:52:04,406 - INFO - [124/490] 🎯 mnist/decentralized/complete/10n | DP(ε=4.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 37.3s
+2025-06-08 03:52:04,552 - INFO - [125/490] Starting experiment...
+2025-06-08 03:52:04,552 - INFO - 🎯 Starting experiment 125: exp_0125_mnist_decentralized_line_10n_strong_dp
+2025-06-08 03:52:04,552 - INFO -    Config: topology_correlated attack, 10 nodes, strong_dp
+2025-06-08 03:52:39,159 - INFO -    ✅ Training completed in 34.6s
+2025-06-08 03:52:39,187 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:52:39,187 - INFO - [125/490] 🎯 mnist/decentralized/line/10n | DP(ε=4.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 34.6s
+2025-06-08 03:52:39,337 - INFO - [126/490] Starting experiment...
+2025-06-08 03:52:39,337 - INFO - 🎯 Starting experiment 126: exp_0126_mnist_federated_star_10n_very_strong_dp
+2025-06-08 03:52:39,337 - INFO -    Config: topology_correlated attack, 10 nodes, very_strong_dp
+2025-06-08 03:53:10,982 - INFO -    ✅ Training completed in 31.6s
+2025-06-08 03:53:11,010 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:53:11,010 - INFO - [126/490] 🎯 mnist/federated/star/10n | DP(ε=1.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 31.7s
+2025-06-08 03:53:11,156 - INFO - [127/490] Starting experiment...
+2025-06-08 03:53:11,156 - INFO - 🎯 Starting experiment 127: exp_0127_mnist_federated_complete_10n_very_strong_dp
+2025-06-08 03:53:11,157 - INFO -    Config: topology_correlated attack, 10 nodes, very_strong_dp
+2025-06-08 03:53:43,164 - INFO -    ✅ Training completed in 32.0s
+2025-06-08 03:53:43,198 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:53:43,198 - INFO - [127/490] 🎯 mnist/federated/complete/10n | DP(ε=1.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 32.0s
+2025-06-08 03:53:43,351 - INFO - [128/490] Starting experiment...
+2025-06-08 03:53:43,352 - INFO - 🎯 Starting experiment 128: exp_0128_mnist_decentralized_ring_10n_very_strong_dp
+2025-06-08 03:53:43,352 - INFO -    Config: topology_correlated attack, 10 nodes, very_strong_dp
+2025-06-08 03:54:17,129 - INFO -    ✅ Training completed in 33.8s
+2025-06-08 03:54:17,157 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:54:17,157 - INFO - [128/490] 🎯 mnist/decentralized/ring/10n | DP(ε=1.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 33.8s
+2025-06-08 03:54:17,309 - INFO - [129/490] Starting experiment...
+2025-06-08 03:54:17,309 - INFO - 🎯 Starting experiment 129: exp_0129_mnist_decentralized_complete_10n_very_strong_dp
+2025-06-08 03:54:17,309 - INFO -    Config: topology_correlated attack, 10 nodes, very_strong_dp
+2025-06-08 03:54:51,264 - INFO -    ✅ Training completed in 34.0s
+2025-06-08 03:54:51,306 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 03:54:51,306 - INFO - [129/490] 🎯 mnist/decentralized/complete/10n | DP(ε=1.0) | topology-correlated | Attack: SUCCESS (conf:0.900) | Runtime: 34.0s
+2025-06-08 03:54:51,455 - INFO - [130/490] Starting experiment...
+2025-06-08 03:54:51,455 - INFO - 🎯 Starting experiment 130: exp_0130_mnist_decentralized_line_10n_very_strong_dp
+2025-06-08 03:54:51,455 - INFO -    Config: topology_correlated attack, 10 nodes, very_strong_dp
+2025-06-08 03:55:25,865 - INFO -    ✅ Training completed in 34.4s
+2025-06-08 03:55:25,891 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 03:55:25,891 - INFO - [130/490] 🎯 mnist/decentralized/line/10n | DP(ε=1.0) | topology-correlated | Attack: SUCCESS (conf:0.700) | Runtime: 34.4s
+2025-06-08 03:55:26,084 - INFO - [131/490] Starting experiment...
+2025-06-08 03:55:26,084 - INFO - 🎯 Starting experiment 131: exp_0131_mnist_federated_star_5n_no_dp
+2025-06-08 03:55:26,084 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, no_dp
+2025-06-08 03:55:55,495 - INFO -    ✅ Training completed in 29.4s
+2025-06-08 03:55:55,514 - INFO -    📊 Attack success: ✅ (confidence: 0.837)
+2025-06-08 03:55:55,514 - INFO - [131/490] 🎯 mnist/federated/star/5n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.837) | Runtime: 29.4s
+2025-06-08 03:55:55,672 - INFO - [132/490] Starting experiment...
+2025-06-08 03:55:55,672 - INFO - 🎯 Starting experiment 132: exp_0132_mnist_federated_complete_5n_no_dp
+2025-06-08 03:55:55,672 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, no_dp
+2025-06-08 03:56:25,622 - INFO -    ✅ Training completed in 29.9s
+2025-06-08 03:56:25,641 - INFO -    📊 Attack success: ✅ (confidence: 0.887)
+2025-06-08 03:56:25,641 - INFO - [132/490] 🎯 mnist/federated/complete/5n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.887) | Runtime: 30.0s
+2025-06-08 03:56:25,798 - INFO - [133/490] Starting experiment...
+2025-06-08 03:56:25,798 - INFO - 🎯 Starting experiment 133: exp_0133_mnist_decentralized_ring_5n_no_dp
+2025-06-08 03:56:25,798 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, no_dp
+2025-06-08 03:56:56,012 - INFO -    ✅ Training completed in 30.2s
+2025-06-08 03:56:56,032 - INFO -    📊 Attack success: ✅ (confidence: 0.604)
+2025-06-08 03:56:56,032 - INFO - [133/490] 🎯 mnist/decentralized/ring/5n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.604) | Runtime: 30.2s
+2025-06-08 03:56:56,185 - INFO - [134/490] Starting experiment...
+2025-06-08 03:56:56,185 - INFO - 🎯 Starting experiment 134: exp_0134_mnist_decentralized_complete_5n_no_dp
+2025-06-08 03:56:56,185 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, no_dp
+2025-06-08 03:57:27,083 - INFO -    ✅ Training completed in 30.9s
+2025-06-08 03:57:27,104 - INFO -    📊 Attack success: ✅ (confidence: 0.833)
+2025-06-08 03:57:27,104 - INFO - [134/490] 🎯 mnist/decentralized/complete/5n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.833) | Runtime: 30.9s
+2025-06-08 03:57:27,263 - INFO - [135/490] Starting experiment...
+2025-06-08 03:57:27,263 - INFO - 🎯 Starting experiment 135: exp_0135_mnist_decentralized_line_5n_no_dp
+2025-06-08 03:57:27,263 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, no_dp
+2025-06-08 03:57:57,386 - INFO -    ✅ Training completed in 30.1s
+2025-06-08 03:57:57,405 - INFO -    📊 Attack success: ✅ (confidence: 0.899)
+2025-06-08 03:57:57,405 - INFO - [135/490] 🎯 mnist/decentralized/line/5n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.899) | Runtime: 30.1s
+2025-06-08 03:57:57,560 - INFO - [136/490] Starting experiment...
+2025-06-08 03:57:57,560 - INFO - 🎯 Starting experiment 136: exp_0136_mnist_federated_star_5n_weak_dp
+2025-06-08 03:57:57,560 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, weak_dp
+2025-06-08 03:58:38,393 - INFO -    ✅ Training completed in 40.8s
+2025-06-08 03:58:38,411 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:58:38,411 - INFO - [136/490] 🎯 mnist/federated/star/5n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 40.9s
+2025-06-08 03:58:38,571 - INFO - [137/490] Starting experiment...
+2025-06-08 03:58:38,571 - INFO - 🎯 Starting experiment 137: exp_0137_mnist_federated_complete_5n_weak_dp
+2025-06-08 03:58:38,571 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, weak_dp
+2025-06-08 03:59:19,779 - INFO -    ✅ Training completed in 41.2s
+2025-06-08 03:59:19,798 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 03:59:19,798 - INFO - [137/490] 🎯 mnist/federated/complete/5n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 41.2s
+2025-06-08 03:59:19,954 - INFO - [138/490] Starting experiment...
+2025-06-08 03:59:19,954 - INFO - 🎯 Starting experiment 138: exp_0138_mnist_decentralized_ring_5n_weak_dp
+2025-06-08 03:59:19,954 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, weak_dp
+2025-06-08 04:00:01,112 - INFO -    ✅ Training completed in 41.2s
+2025-06-08 04:00:01,132 - INFO -    📊 Attack success: ✅ (confidence: 0.600)
+2025-06-08 04:00:01,133 - INFO - [138/490] 🎯 mnist/decentralized/ring/5n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.600) | Runtime: 41.2s
+2025-06-08 04:00:01,293 - INFO - [139/490] Starting experiment...
+2025-06-08 04:00:01,293 - INFO - 🎯 Starting experiment 139: exp_0139_mnist_decentralized_complete_5n_weak_dp
+2025-06-08 04:00:01,293 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, weak_dp
+2025-06-08 04:00:42,870 - INFO -    ✅ Training completed in 41.6s
+2025-06-08 04:00:42,891 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:00:42,891 - INFO - [139/490] 🎯 mnist/decentralized/complete/5n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 41.6s
+2025-06-08 04:00:43,049 - INFO - [140/490] Starting experiment...
+2025-06-08 04:00:43,049 - INFO - 🎯 Starting experiment 140: exp_0140_mnist_decentralized_line_5n_weak_dp
+2025-06-08 04:00:43,049 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, weak_dp
+2025-06-08 04:01:24,126 - INFO -    ✅ Training completed in 41.1s
+2025-06-08 04:01:24,145 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:01:24,145 - INFO - [140/490] 🎯 mnist/decentralized/line/5n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 41.1s
+2025-06-08 04:01:24,341 - INFO - [141/490] Starting experiment...
+2025-06-08 04:01:24,341 - INFO - 🎯 Starting experiment 141: exp_0141_mnist_federated_star_5n_medium_dp
+2025-06-08 04:01:24,341 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, medium_dp
+2025-06-08 04:02:03,953 - INFO -    ✅ Training completed in 39.6s
+2025-06-08 04:02:03,971 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:02:03,971 - INFO - [141/490] 🎯 mnist/federated/star/5n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 39.6s
+2025-06-08 04:02:04,133 - INFO - [142/490] Starting experiment...
+2025-06-08 04:02:04,133 - INFO - 🎯 Starting experiment 142: exp_0142_mnist_federated_complete_5n_medium_dp
+2025-06-08 04:02:04,133 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, medium_dp
+2025-06-08 04:02:44,611 - INFO -    ✅ Training completed in 40.5s
+2025-06-08 04:02:44,631 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:02:44,631 - INFO - [142/490] 🎯 mnist/federated/complete/5n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 40.5s
+2025-06-08 04:02:44,790 - INFO - [143/490] Starting experiment...
+2025-06-08 04:02:44,790 - INFO - 🎯 Starting experiment 143: exp_0143_mnist_decentralized_ring_5n_medium_dp
+2025-06-08 04:02:44,790 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, medium_dp
+2025-06-08 04:03:25,251 - INFO -    ✅ Training completed in 40.5s
+2025-06-08 04:03:25,272 - INFO -    📊 Attack success: ✅ (confidence: 0.600)
+2025-06-08 04:03:25,272 - INFO - [143/490] 🎯 mnist/decentralized/ring/5n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.600) | Runtime: 40.5s
+2025-06-08 04:03:25,430 - INFO - [144/490] Starting experiment...
+2025-06-08 04:03:25,430 - INFO - 🎯 Starting experiment 144: exp_0144_mnist_decentralized_complete_5n_medium_dp
+2025-06-08 04:03:25,430 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, medium_dp
+2025-06-08 04:04:05,178 - INFO -    ✅ Training completed in 39.7s
+2025-06-08 04:04:05,199 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:04:05,200 - INFO - [144/490] 🎯 mnist/decentralized/complete/5n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 39.8s
+2025-06-08 04:04:05,359 - INFO - [145/490] Starting experiment...
+2025-06-08 04:04:05,359 - INFO - 🎯 Starting experiment 145: exp_0145_mnist_decentralized_line_5n_medium_dp
+2025-06-08 04:04:05,359 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, medium_dp
+2025-06-08 04:04:47,057 - INFO -    ✅ Training completed in 41.7s
+2025-06-08 04:04:47,076 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:04:47,076 - INFO - [145/490] 🎯 mnist/decentralized/line/5n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 41.7s
+2025-06-08 04:04:47,236 - INFO - [146/490] Starting experiment...
+2025-06-08 04:04:47,237 - INFO - 🎯 Starting experiment 146: exp_0146_mnist_federated_star_5n_strong_dp
+2025-06-08 04:04:47,237 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, strong_dp
+2025-06-08 04:05:25,940 - INFO -    ✅ Training completed in 38.7s
+2025-06-08 04:05:25,960 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:05:25,960 - INFO - [146/490] 🎯 mnist/federated/star/5n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 38.7s
+2025-06-08 04:05:26,124 - INFO - [147/490] Starting experiment...
+2025-06-08 04:05:26,124 - INFO - 🎯 Starting experiment 147: exp_0147_mnist_federated_complete_5n_strong_dp
+2025-06-08 04:05:26,124 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, strong_dp
+2025-06-08 04:06:05,849 - INFO -    ✅ Training completed in 39.7s
+2025-06-08 04:06:05,868 - INFO -    📊 Attack success: ✅ (confidence: 0.907)
+2025-06-08 04:06:05,869 - INFO - [147/490] 🎯 mnist/federated/complete/5n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.907) | Runtime: 39.7s
+2025-06-08 04:06:06,030 - INFO - [148/490] Starting experiment...
+2025-06-08 04:06:06,030 - INFO - 🎯 Starting experiment 148: exp_0148_mnist_decentralized_ring_5n_strong_dp
+2025-06-08 04:06:06,030 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, strong_dp
+2025-06-08 04:06:45,912 - INFO -    ✅ Training completed in 39.9s
+2025-06-08 04:06:45,932 - INFO -    📊 Attack success: ✅ (confidence: 0.829)
+2025-06-08 04:06:45,932 - INFO - [148/490] 🎯 mnist/decentralized/ring/5n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.829) | Runtime: 39.9s
+2025-06-08 04:06:46,095 - INFO - [149/490] Starting experiment...
+2025-06-08 04:06:46,095 - INFO - 🎯 Starting experiment 149: exp_0149_mnist_decentralized_complete_5n_strong_dp
+2025-06-08 04:06:46,096 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, strong_dp
+2025-06-08 04:07:24,393 - INFO -    ✅ Training completed in 38.3s
+2025-06-08 04:07:24,415 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:07:24,415 - INFO - [149/490] 🎯 mnist/decentralized/complete/5n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 38.3s
+2025-06-08 04:07:24,618 - INFO - [150/490] Starting experiment...
+2025-06-08 04:07:24,618 - INFO - 🎯 Starting experiment 150: exp_0150_mnist_decentralized_line_5n_strong_dp
+2025-06-08 04:07:24,618 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, strong_dp
+2025-06-08 04:08:02,772 - INFO -    ✅ Training completed in 38.2s
+2025-06-08 04:08:02,790 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:08:02,790 - INFO - [150/490] 🎯 mnist/decentralized/line/5n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 38.2s
+2025-06-08 04:08:02,952 - INFO - [151/490] Starting experiment...
+2025-06-08 04:08:02,953 - INFO - 🎯 Starting experiment 151: exp_0151_mnist_federated_star_5n_very_strong_dp
+2025-06-08 04:08:02,953 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, very_strong_dp
+2025-06-08 04:08:38,486 - INFO -    ✅ Training completed in 35.5s
+2025-06-08 04:08:38,504 - INFO -    📊 Attack success: ✅ (confidence: 0.930)
+2025-06-08 04:08:38,504 - INFO - [151/490] 🎯 mnist/federated/star/5n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.930) | Runtime: 35.6s
+2025-06-08 04:08:38,668 - INFO - [152/490] Starting experiment...
+2025-06-08 04:08:38,668 - INFO - 🎯 Starting experiment 152: exp_0152_mnist_federated_complete_5n_very_strong_dp
+2025-06-08 04:08:38,668 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, very_strong_dp
+2025-06-08 04:09:14,752 - INFO -    ✅ Training completed in 36.1s
+2025-06-08 04:09:14,771 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:09:14,772 - INFO - [152/490] 🎯 mnist/federated/complete/5n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 36.1s
+2025-06-08 04:09:14,940 - INFO - [153/490] Starting experiment...
+2025-06-08 04:09:14,940 - INFO - 🎯 Starting experiment 153: exp_0153_mnist_decentralized_ring_5n_very_strong_dp
+2025-06-08 04:09:14,940 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, very_strong_dp
+2025-06-08 04:09:50,521 - INFO -    ✅ Training completed in 35.6s
+2025-06-08 04:09:50,541 - INFO -    📊 Attack success: ✅ (confidence: 0.731)
+2025-06-08 04:09:50,541 - INFO - [153/490] 🎯 mnist/decentralized/ring/5n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.731) | Runtime: 35.6s
+2025-06-08 04:09:50,705 - INFO - [154/490] Starting experiment...
+2025-06-08 04:09:50,705 - INFO - 🎯 Starting experiment 154: exp_0154_mnist_decentralized_complete_5n_very_strong_dp
+2025-06-08 04:09:50,705 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, very_strong_dp
+2025-06-08 04:10:27,260 - INFO -    ✅ Training completed in 36.6s
+2025-06-08 04:10:27,281 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:10:27,281 - INFO - [154/490] 🎯 mnist/decentralized/complete/5n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 36.6s
+2025-06-08 04:10:27,446 - INFO - [155/490] Starting experiment...
+2025-06-08 04:10:27,446 - INFO - 🎯 Starting experiment 155: exp_0155_mnist_decentralized_line_5n_very_strong_dp
+2025-06-08 04:10:27,446 - INFO -    Config: imbalanced_sensitive attack, 5 nodes, very_strong_dp
+2025-06-08 04:11:03,841 - INFO -    ✅ Training completed in 36.4s
+2025-06-08 04:11:03,859 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:11:03,859 - INFO - [155/490] 🎯 mnist/decentralized/line/5n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 36.4s
+2025-06-08 04:11:04,030 - INFO - [156/490] Starting experiment...
+2025-06-08 04:11:04,030 - INFO - 🎯 Starting experiment 156: exp_0156_mnist_federated_star_10n_no_dp
+2025-06-08 04:11:04,030 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, no_dp
+2025-06-08 04:11:32,331 - INFO -    ✅ Training completed in 28.3s
+2025-06-08 04:11:32,357 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:11:32,357 - INFO - [156/490] 🎯 mnist/federated/star/10n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 28.3s
+2025-06-08 04:11:32,524 - INFO - [157/490] Starting experiment...
+2025-06-08 04:11:32,524 - INFO - 🎯 Starting experiment 157: exp_0157_mnist_federated_complete_10n_no_dp
+2025-06-08 04:11:32,524 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, no_dp
+2025-06-08 04:12:01,208 - INFO -    ✅ Training completed in 28.7s
+2025-06-08 04:12:01,245 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:12:01,245 - INFO - [157/490] 🎯 mnist/federated/complete/10n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 28.7s
+2025-06-08 04:12:01,456 - INFO - [158/490] Starting experiment...
+2025-06-08 04:12:01,456 - INFO - 🎯 Starting experiment 158: exp_0158_mnist_decentralized_ring_10n_no_dp
+2025-06-08 04:12:01,456 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, no_dp
+2025-06-08 04:12:30,401 - INFO -    ✅ Training completed in 28.9s
+2025-06-08 04:12:30,431 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:12:30,431 - INFO - [158/490] 🎯 mnist/decentralized/ring/10n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 29.0s
+2025-06-08 04:12:30,598 - INFO - [159/490] Starting experiment...
+2025-06-08 04:12:30,598 - INFO - 🎯 Starting experiment 159: exp_0159_mnist_decentralized_complete_10n_no_dp
+2025-06-08 04:12:30,599 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, no_dp
+2025-06-08 04:13:00,887 - INFO -    ✅ Training completed in 30.3s
+2025-06-08 04:13:00,930 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:13:00,930 - INFO - [159/490] 🎯 mnist/decentralized/complete/10n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 30.3s
+2025-06-08 04:13:01,101 - INFO - [160/490] Starting experiment...
+2025-06-08 04:13:01,101 - INFO - 🎯 Starting experiment 160: exp_0160_mnist_decentralized_line_10n_no_dp
+2025-06-08 04:13:01,101 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, no_dp
+2025-06-08 04:13:30,275 - INFO -    ✅ Training completed in 29.2s
+2025-06-08 04:13:30,301 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:13:30,301 - INFO - [160/490] 🎯 mnist/decentralized/line/10n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 29.2s
+2025-06-08 04:13:30,471 - INFO - [161/490] Starting experiment...
+2025-06-08 04:13:30,471 - INFO - 🎯 Starting experiment 161: exp_0161_mnist_federated_star_10n_weak_dp
+2025-06-08 04:13:30,471 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, weak_dp
+2025-06-08 04:14:09,132 - INFO -    ✅ Training completed in 38.7s
+2025-06-08 04:14:09,159 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:14:09,159 - INFO - [161/490] 🎯 mnist/federated/star/10n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 38.7s
+2025-06-08 04:14:09,332 - INFO - [162/490] Starting experiment...
+2025-06-08 04:14:09,332 - INFO - 🎯 Starting experiment 162: exp_0162_mnist_federated_complete_10n_weak_dp
+2025-06-08 04:14:09,332 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, weak_dp
+2025-06-08 04:14:47,738 - INFO -    ✅ Training completed in 38.4s
+2025-06-08 04:14:47,771 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:14:47,772 - INFO - [162/490] 🎯 mnist/federated/complete/10n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 38.4s
+2025-06-08 04:14:47,944 - INFO - [163/490] Starting experiment...
+2025-06-08 04:14:47,945 - INFO - 🎯 Starting experiment 163: exp_0163_mnist_decentralized_ring_10n_weak_dp
+2025-06-08 04:14:47,945 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, weak_dp
+2025-06-08 04:15:28,014 - INFO -    ✅ Training completed in 40.1s
+2025-06-08 04:15:28,044 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:15:28,044 - INFO - [163/490] 🎯 mnist/decentralized/ring/10n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 40.1s
+2025-06-08 04:15:28,217 - INFO - [164/490] Starting experiment...
+2025-06-08 04:15:28,217 - INFO - 🎯 Starting experiment 164: exp_0164_mnist_decentralized_complete_10n_weak_dp
+2025-06-08 04:15:28,217 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, weak_dp
+2025-06-08 04:16:08,716 - INFO -    ✅ Training completed in 40.5s
+2025-06-08 04:16:08,759 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:16:08,759 - INFO - [164/490] 🎯 mnist/decentralized/complete/10n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 40.5s
+2025-06-08 04:16:08,934 - INFO - [165/490] Starting experiment...
+2025-06-08 04:16:08,934 - INFO - 🎯 Starting experiment 165: exp_0165_mnist_decentralized_line_10n_weak_dp
+2025-06-08 04:16:08,934 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, weak_dp
+2025-06-08 04:16:47,276 - INFO -    ✅ Training completed in 38.3s
+2025-06-08 04:16:47,304 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:16:47,304 - INFO - [165/490] 🎯 mnist/decentralized/line/10n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 38.4s
+2025-06-08 04:16:47,478 - INFO - [166/490] Starting experiment...
+2025-06-08 04:16:47,478 - INFO - 🎯 Starting experiment 166: exp_0166_mnist_federated_star_10n_medium_dp
+2025-06-08 04:16:47,478 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, medium_dp
+2025-06-08 04:17:26,398 - INFO -    ✅ Training completed in 38.9s
+2025-06-08 04:17:26,426 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:17:26,426 - INFO - [166/490] 🎯 mnist/federated/star/10n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 38.9s
+2025-06-08 04:17:26,650 - INFO - [167/490] Starting experiment...
+2025-06-08 04:17:26,650 - INFO - 🎯 Starting experiment 167: exp_0167_mnist_federated_complete_10n_medium_dp
+2025-06-08 04:17:26,650 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, medium_dp
+2025-06-08 04:18:04,514 - INFO -    ✅ Training completed in 37.9s
+2025-06-08 04:18:04,551 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:18:04,551 - INFO - [167/490] 🎯 mnist/federated/complete/10n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 37.9s
+2025-06-08 04:18:04,732 - INFO - [168/490] Starting experiment...
+2025-06-08 04:18:04,732 - INFO - 🎯 Starting experiment 168: exp_0168_mnist_decentralized_ring_10n_medium_dp
+2025-06-08 04:18:04,732 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, medium_dp
+2025-06-08 04:18:41,969 - INFO -    ✅ Training completed in 37.2s
+2025-06-08 04:18:41,999 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:18:41,999 - INFO - [168/490] 🎯 mnist/decentralized/ring/10n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 37.3s
+2025-06-08 04:18:42,177 - INFO - [169/490] Starting experiment...
+2025-06-08 04:18:42,177 - INFO - 🎯 Starting experiment 169: exp_0169_mnist_decentralized_complete_10n_medium_dp
+2025-06-08 04:18:42,177 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, medium_dp
+2025-06-08 04:19:22,353 - INFO -    ✅ Training completed in 40.2s
+2025-06-08 04:19:22,396 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:19:22,396 - INFO - [169/490] 🎯 mnist/decentralized/complete/10n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 40.2s
+2025-06-08 04:19:22,576 - INFO - [170/490] Starting experiment...
+2025-06-08 04:19:22,577 - INFO - 🎯 Starting experiment 170: exp_0170_mnist_decentralized_line_10n_medium_dp
+2025-06-08 04:19:22,577 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, medium_dp
+2025-06-08 04:20:00,205 - INFO -    ✅ Training completed in 37.6s
+2025-06-08 04:20:00,232 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:20:00,232 - INFO - [170/490] 🎯 mnist/decentralized/line/10n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 37.7s
+2025-06-08 04:20:00,412 - INFO - [171/490] Starting experiment...
+2025-06-08 04:20:00,412 - INFO - 🎯 Starting experiment 171: exp_0171_mnist_federated_star_10n_strong_dp
+2025-06-08 04:20:00,412 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, strong_dp
+2025-06-08 04:20:35,592 - INFO -    ✅ Training completed in 35.2s
+2025-06-08 04:20:35,618 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:20:35,618 - INFO - [171/490] 🎯 mnist/federated/star/10n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 35.2s
+2025-06-08 04:20:35,798 - INFO - [172/490] Starting experiment...
+2025-06-08 04:20:35,798 - INFO - 🎯 Starting experiment 172: exp_0172_mnist_federated_complete_10n_strong_dp
+2025-06-08 04:20:35,799 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, strong_dp
+2025-06-08 04:21:11,177 - INFO -    ✅ Training completed in 35.4s
+2025-06-08 04:21:11,211 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:21:11,211 - INFO - [172/490] 🎯 mnist/federated/complete/10n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 35.4s
+2025-06-08 04:21:11,393 - INFO - [173/490] Starting experiment...
+2025-06-08 04:21:11,393 - INFO - 🎯 Starting experiment 173: exp_0173_mnist_decentralized_ring_10n_strong_dp
+2025-06-08 04:21:11,393 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, strong_dp
+2025-06-08 04:21:47,553 - INFO -    ✅ Training completed in 36.2s
+2025-06-08 04:21:47,581 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:21:47,582 - INFO - [173/490] 🎯 mnist/decentralized/ring/10n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 36.2s
+2025-06-08 04:21:47,765 - INFO - [174/490] Starting experiment...
+2025-06-08 04:21:47,765 - INFO - 🎯 Starting experiment 174: exp_0174_mnist_decentralized_complete_10n_strong_dp
+2025-06-08 04:21:47,765 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, strong_dp
+2025-06-08 04:22:25,611 - INFO -    ✅ Training completed in 37.8s
+2025-06-08 04:22:25,655 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:22:25,655 - INFO - [174/490] 🎯 mnist/decentralized/complete/10n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 37.9s
+2025-06-08 04:22:25,887 - INFO - [175/490] Starting experiment...
+2025-06-08 04:22:25,887 - INFO - 🎯 Starting experiment 175: exp_0175_mnist_decentralized_line_10n_strong_dp
+2025-06-08 04:22:25,887 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, strong_dp
+2025-06-08 04:23:01,792 - INFO -    ✅ Training completed in 35.9s
+2025-06-08 04:23:01,818 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:23:01,818 - INFO - [175/490] 🎯 mnist/decentralized/line/10n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 35.9s
+2025-06-08 04:23:02,004 - INFO - [176/490] Starting experiment...
+2025-06-08 04:23:02,004 - INFO - 🎯 Starting experiment 176: exp_0176_mnist_federated_star_10n_very_strong_dp
+2025-06-08 04:23:02,004 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, very_strong_dp
+2025-06-08 04:23:34,554 - INFO -    ✅ Training completed in 32.5s
+2025-06-08 04:23:34,581 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:23:34,581 - INFO - [176/490] 🎯 mnist/federated/star/10n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 32.6s
+2025-06-08 04:23:34,766 - INFO - [177/490] Starting experiment...
+2025-06-08 04:23:34,766 - INFO - 🎯 Starting experiment 177: exp_0177_mnist_federated_complete_10n_very_strong_dp
+2025-06-08 04:23:34,766 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, very_strong_dp
+2025-06-08 04:24:07,976 - INFO -    ✅ Training completed in 33.2s
+2025-06-08 04:24:08,010 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:24:08,010 - INFO - [177/490] 🎯 mnist/federated/complete/10n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 33.2s
+2025-06-08 04:24:08,197 - INFO - [178/490] Starting experiment...
+2025-06-08 04:24:08,198 - INFO - 🎯 Starting experiment 178: exp_0178_mnist_decentralized_ring_10n_very_strong_dp
+2025-06-08 04:24:08,198 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, very_strong_dp
+2025-06-08 04:24:42,970 - INFO -    ✅ Training completed in 34.8s
+2025-06-08 04:24:43,000 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:24:43,000 - INFO - [178/490] 🎯 mnist/decentralized/ring/10n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 34.8s
+2025-06-08 04:24:43,189 - INFO - [179/490] Starting experiment...
+2025-06-08 04:24:43,190 - INFO - 🎯 Starting experiment 179: exp_0179_mnist_decentralized_complete_10n_very_strong_dp
+2025-06-08 04:24:43,190 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, very_strong_dp
+2025-06-08 04:25:18,757 - INFO -    ✅ Training completed in 35.6s
+2025-06-08 04:25:18,802 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-08 04:25:18,802 - INFO - [179/490] 🎯 mnist/decentralized/complete/10n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.900) | Runtime: 35.6s
+2025-06-08 04:25:18,994 - INFO - [180/490] Starting experiment...
+2025-06-08 04:25:18,994 - INFO - 🎯 Starting experiment 180: exp_0180_mnist_decentralized_line_10n_very_strong_dp
+2025-06-08 04:25:18,994 - INFO -    Config: imbalanced_sensitive attack, 10 nodes, very_strong_dp
+2025-06-08 04:25:52,903 - INFO -    ✅ Training completed in 33.9s
+2025-06-08 04:25:52,930 - INFO -    📊 Attack success: ✅ (confidence: 0.700)
+2025-06-08 04:25:52,930 - INFO - [180/490] 🎯 mnist/decentralized/line/10n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.700) | Runtime: 33.9s
+2025-06-08 04:25:53,119 - INFO - [181/490] Starting experiment...
+2025-06-08 04:25:53,120 - INFO - 🎯 Starting experiment 181: exp_0181_mnist_federated_star_15n_no_dp
+2025-06-08 04:25:53,120 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, no_dp
+2025-06-08 04:26:22,688 - INFO -    ✅ Training completed in 29.6s
+2025-06-08 04:26:22,724 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:26:22,724 - INFO - [181/490] 🎯 mnist/federated/star/15n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 29.6s
+2025-06-08 04:26:22,955 - INFO - [182/490] Starting experiment...
+2025-06-08 04:26:22,956 - INFO - 🎯 Starting experiment 182: exp_0182_mnist_federated_complete_15n_no_dp
+2025-06-08 04:26:22,956 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, no_dp
+2025-06-08 04:26:51,777 - INFO -    ✅ Training completed in 28.8s
+2025-06-08 04:26:51,831 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:26:51,831 - INFO - [182/490] 🎯 mnist/federated/complete/15n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 28.9s
+2025-06-08 04:26:52,025 - INFO - [183/490] Starting experiment...
+2025-06-08 04:26:52,025 - INFO - 🎯 Starting experiment 183: exp_0183_mnist_decentralized_ring_15n_no_dp
+2025-06-08 04:26:52,025 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, no_dp
+2025-06-08 04:27:22,542 - INFO -    ✅ Training completed in 30.5s
+2025-06-08 04:27:22,582 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:27:22,582 - INFO - [183/490] 🎯 mnist/decentralized/ring/15n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 30.6s
+2025-06-08 04:27:22,781 - INFO - [184/490] Starting experiment...
+2025-06-08 04:27:22,781 - INFO - 🎯 Starting experiment 184: exp_0184_mnist_decentralized_complete_15n_no_dp
+2025-06-08 04:27:22,781 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, no_dp
+2025-06-08 04:27:57,159 - INFO -    ✅ Training completed in 34.4s
+2025-06-08 04:27:57,236 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:27:57,236 - INFO - [184/490] 🎯 mnist/decentralized/complete/15n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 34.5s
+2025-06-08 04:27:57,431 - INFO - [185/490] Starting experiment...
+2025-06-08 04:27:57,432 - INFO - 🎯 Starting experiment 185: exp_0185_mnist_decentralized_line_15n_no_dp
+2025-06-08 04:27:57,432 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, no_dp
+2025-06-08 04:28:27,587 - INFO -    ✅ Training completed in 30.2s
+2025-06-08 04:28:27,622 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:28:27,622 - INFO - [185/490] 🎯 mnist/decentralized/line/15n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 30.2s
+2025-06-08 04:28:27,819 - INFO - [186/490] Starting experiment...
+2025-06-08 04:28:27,819 - INFO - 🎯 Starting experiment 186: exp_0186_mnist_federated_star_15n_weak_dp
+2025-06-08 04:28:27,819 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, weak_dp
+2025-06-08 04:29:08,074 - INFO -    ✅ Training completed in 40.3s
+2025-06-08 04:29:08,110 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:29:08,110 - INFO - [186/490] 🎯 mnist/federated/star/15n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 40.3s
+2025-06-08 04:29:08,308 - INFO - [187/490] Starting experiment...
+2025-06-08 04:29:08,308 - INFO - 🎯 Starting experiment 187: exp_0187_mnist_federated_complete_15n_weak_dp
+2025-06-08 04:29:08,308 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, weak_dp
+2025-06-08 04:29:48,275 - INFO -    ✅ Training completed in 40.0s
+2025-06-08 04:29:48,329 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:29:48,329 - INFO - [187/490] 🎯 mnist/federated/complete/15n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 40.0s
+2025-06-08 04:29:48,527 - INFO - [188/490] Starting experiment...
+2025-06-08 04:29:48,527 - INFO - 🎯 Starting experiment 188: exp_0188_mnist_decentralized_ring_15n_weak_dp
+2025-06-08 04:29:48,527 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, weak_dp
+2025-06-08 04:30:29,309 - INFO -    ✅ Training completed in 40.8s
+2025-06-08 04:30:29,348 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:30:29,348 - INFO - [188/490] 🎯 mnist/decentralized/ring/15n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 40.8s
+2025-06-08 04:30:29,549 - INFO - [189/490] Starting experiment...
+2025-06-08 04:30:29,549 - INFO - 🎯 Starting experiment 189: exp_0189_mnist_decentralized_complete_15n_weak_dp
+2025-06-08 04:30:29,549 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, weak_dp
+2025-06-08 04:31:14,149 - INFO -    ✅ Training completed in 44.6s
+2025-06-08 04:31:14,227 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:31:14,227 - INFO - [189/490] 🎯 mnist/decentralized/complete/15n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 44.7s
+2025-06-08 04:31:14,468 - INFO - [190/490] Starting experiment...
+2025-06-08 04:31:14,468 - INFO - 🎯 Starting experiment 190: exp_0190_mnist_decentralized_line_15n_weak_dp
+2025-06-08 04:31:14,468 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, weak_dp
+2025-06-08 04:31:55,116 - INFO -    ✅ Training completed in 40.6s
+2025-06-08 04:31:55,153 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:31:55,153 - INFO - [190/490] 🎯 mnist/decentralized/line/15n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 40.7s
+2025-06-08 04:31:55,357 - INFO - [191/490] Starting experiment...
+2025-06-08 04:31:55,357 - INFO - 🎯 Starting experiment 191: exp_0191_mnist_federated_star_15n_medium_dp
+2025-06-08 04:31:55,357 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, medium_dp
+2025-06-08 04:32:34,490 - INFO -    ✅ Training completed in 39.1s
+2025-06-08 04:32:34,526 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:32:34,526 - INFO - [191/490] 🎯 mnist/federated/star/15n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 39.2s
+2025-06-08 04:32:34,732 - INFO - [192/490] Starting experiment...
+2025-06-08 04:32:34,733 - INFO - 🎯 Starting experiment 192: exp_0192_mnist_federated_complete_15n_medium_dp
+2025-06-08 04:32:34,733 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, medium_dp
+2025-06-08 04:33:13,531 - INFO -    ✅ Training completed in 38.8s
+2025-06-08 04:33:13,586 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:33:13,586 - INFO - [192/490] 🎯 mnist/federated/complete/15n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 38.9s
+2025-06-08 04:33:13,793 - INFO - [193/490] Starting experiment...
+2025-06-08 04:33:13,793 - INFO - 🎯 Starting experiment 193: exp_0193_mnist_decentralized_ring_15n_medium_dp
+2025-06-08 04:33:13,793 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, medium_dp
+2025-06-08 04:33:53,140 - INFO -    ✅ Training completed in 39.3s
+2025-06-08 04:33:53,178 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:33:53,178 - INFO - [193/490] 🎯 mnist/decentralized/ring/15n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 39.4s
+2025-06-08 04:33:53,385 - INFO - [194/490] Starting experiment...
+2025-06-08 04:33:53,385 - INFO - 🎯 Starting experiment 194: exp_0194_mnist_decentralized_complete_15n_medium_dp
+2025-06-08 04:33:53,385 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, medium_dp
+2025-06-08 04:34:37,429 - INFO -    ✅ Training completed in 44.0s
+2025-06-08 04:34:37,505 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:34:37,506 - INFO - [194/490] 🎯 mnist/decentralized/complete/15n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 44.1s
+2025-06-08 04:34:37,757 - INFO - [195/490] Starting experiment...
+2025-06-08 04:34:37,757 - INFO - 🎯 Starting experiment 195: exp_0195_mnist_decentralized_line_15n_medium_dp
+2025-06-08 04:34:37,757 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, medium_dp
+2025-06-08 04:35:21,769 - INFO -    ✅ Training completed in 44.0s
+2025-06-08 04:35:21,806 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:35:21,806 - INFO - [195/490] 🎯 mnist/decentralized/line/15n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 44.0s
+2025-06-08 04:35:22,016 - INFO - [196/490] Starting experiment...
+2025-06-08 04:35:22,017 - INFO - 🎯 Starting experiment 196: exp_0196_mnist_federated_star_15n_strong_dp
+2025-06-08 04:35:22,017 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, strong_dp
+2025-06-08 04:35:59,378 - INFO -    ✅ Training completed in 37.4s
+2025-06-08 04:35:59,415 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:35:59,415 - INFO - [196/490] 🎯 mnist/federated/star/15n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 37.4s
+2025-06-08 04:35:59,625 - INFO - [197/490] Starting experiment...
+2025-06-08 04:35:59,626 - INFO - 🎯 Starting experiment 197: exp_0197_mnist_federated_complete_15n_strong_dp
+2025-06-08 04:35:59,626 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, strong_dp
+2025-06-08 04:36:36,849 - INFO -    ✅ Training completed in 37.2s
+2025-06-08 04:36:36,903 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:36:36,903 - INFO - [197/490] 🎯 mnist/federated/complete/15n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 37.3s
+2025-06-08 04:36:37,113 - INFO - [198/490] Starting experiment...
+2025-06-08 04:36:37,114 - INFO - 🎯 Starting experiment 198: exp_0198_mnist_decentralized_ring_15n_strong_dp
+2025-06-08 04:36:37,114 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, strong_dp
+2025-06-08 04:37:14,524 - INFO -    ✅ Training completed in 37.4s
+2025-06-08 04:37:14,563 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:37:14,563 - INFO - [198/490] 🎯 mnist/decentralized/ring/15n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 37.4s
+2025-06-08 04:37:14,776 - INFO - [199/490] Starting experiment...
+2025-06-08 04:37:14,776 - INFO - 🎯 Starting experiment 199: exp_0199_mnist_decentralized_complete_15n_strong_dp
+2025-06-08 04:37:14,776 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, strong_dp
+2025-06-08 04:37:57,523 - INFO -    ✅ Training completed in 42.7s
+2025-06-08 04:37:57,600 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:37:57,600 - INFO - [199/490] 🎯 mnist/decentralized/complete/15n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 42.8s
+2025-06-08 04:37:57,813 - INFO - [200/490] Starting experiment...
+2025-06-08 04:37:57,814 - INFO - 🎯 Starting experiment 200: exp_0200_mnist_decentralized_line_15n_strong_dp
+2025-06-08 04:37:57,814 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, strong_dp
+2025-06-08 04:38:35,756 - INFO -    ✅ Training completed in 37.9s
+2025-06-08 04:38:35,792 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:38:35,792 - INFO - [200/490] 🎯 mnist/decentralized/line/15n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 38.0s
+2025-06-08 04:38:36,009 - INFO - [201/490] Starting experiment...
+2025-06-08 04:38:36,009 - INFO - 🎯 Starting experiment 201: exp_0201_mnist_federated_star_15n_very_strong_dp
+2025-06-08 04:38:36,009 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, very_strong_dp
+2025-06-08 04:39:10,756 - INFO -    ✅ Training completed in 34.7s
+2025-06-08 04:39:10,793 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:39:10,794 - INFO - [201/490] 🎯 mnist/federated/star/15n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 34.8s
+2025-06-08 04:39:11,063 - INFO - [202/490] Starting experiment...
+2025-06-08 04:39:11,063 - INFO - 🎯 Starting experiment 202: exp_0202_mnist_federated_complete_15n_very_strong_dp
+2025-06-08 04:39:11,063 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, very_strong_dp
+2025-06-08 04:39:46,121 - INFO -    ✅ Training completed in 35.1s
+2025-06-08 04:39:46,176 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:39:46,176 - INFO - [202/490] 🎯 mnist/federated/complete/15n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 35.1s
+2025-06-08 04:39:46,395 - INFO - [203/490] Starting experiment...
+2025-06-08 04:39:46,395 - INFO - 🎯 Starting experiment 203: exp_0203_mnist_decentralized_ring_15n_very_strong_dp
+2025-06-08 04:39:46,395 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, very_strong_dp
+2025-06-08 04:40:21,305 - INFO -    ✅ Training completed in 34.9s
+2025-06-08 04:40:21,343 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:40:21,343 - INFO - [203/490] 🎯 mnist/decentralized/ring/15n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 34.9s
+2025-06-08 04:40:21,564 - INFO - [204/490] Starting experiment...
+2025-06-08 04:40:21,564 - INFO - 🎯 Starting experiment 204: exp_0204_mnist_decentralized_complete_15n_very_strong_dp
+2025-06-08 04:40:21,564 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, very_strong_dp
+2025-06-08 04:41:01,462 - INFO -    ✅ Training completed in 39.9s
+2025-06-08 04:41:01,537 - INFO -    📊 Attack success: ✅ (confidence: 0.933)
+2025-06-08 04:41:01,537 - INFO - [204/490] 🎯 mnist/decentralized/complete/15n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.933) | Runtime: 40.0s
+2025-06-08 04:41:01,758 - INFO - [205/490] Starting experiment...
+2025-06-08 04:41:01,758 - INFO - 🎯 Starting experiment 205: exp_0205_mnist_decentralized_line_15n_very_strong_dp
+2025-06-08 04:41:01,758 - INFO -    Config: imbalanced_sensitive attack, 15 nodes, very_strong_dp
+2025-06-08 04:41:36,865 - INFO -    ✅ Training completed in 35.1s
+2025-06-08 04:41:36,901 - INFO -    📊 Attack success: ✅ (confidence: 0.800)
+2025-06-08 04:41:36,901 - INFO - [205/490] 🎯 mnist/decentralized/line/15n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.800) | Runtime: 35.1s
+2025-06-08 04:41:37,126 - INFO - [206/490] Starting experiment...
+2025-06-08 04:41:37,126 - INFO - 🎯 Starting experiment 206: exp_0206_mnist_federated_star_20n_no_dp
+2025-06-08 04:41:37,126 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, no_dp
+2025-06-08 04:42:06,894 - INFO -    ✅ Training completed in 29.8s
+2025-06-08 04:42:06,938 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 04:42:06,938 - INFO - [206/490] 🎯 mnist/federated/star/20n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.950) | Runtime: 29.8s
+2025-06-08 04:42:07,163 - INFO - [207/490] Starting experiment...
+2025-06-08 04:42:07,163 - INFO - 🎯 Starting experiment 207: exp_0207_mnist_decentralized_ring_20n_no_dp
+2025-06-08 04:42:07,163 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, no_dp
+2025-06-08 04:42:38,287 - INFO -    ✅ Training completed in 31.1s
+2025-06-08 04:42:38,334 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:42:38,334 - INFO - [207/490] 🎯 mnist/decentralized/ring/20n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 31.2s
+2025-06-08 04:42:38,604 - INFO - [208/490] Starting experiment...
+2025-06-08 04:42:38,605 - INFO - 🎯 Starting experiment 208: exp_0208_mnist_decentralized_line_20n_no_dp
+2025-06-08 04:42:38,605 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, no_dp
+2025-06-08 04:43:09,587 - INFO -    ✅ Training completed in 31.0s
+2025-06-08 04:43:09,632 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:43:09,632 - INFO - [208/490] 🎯 mnist/decentralized/line/20n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 31.0s
+2025-06-08 04:43:09,860 - INFO - [209/490] Starting experiment...
+2025-06-08 04:43:09,860 - INFO - 🎯 Starting experiment 209: exp_0209_mnist_federated_star_20n_weak_dp
+2025-06-08 04:43:09,860 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, weak_dp
+2025-06-08 04:43:50,729 - INFO -    ✅ Training completed in 40.9s
+2025-06-08 04:43:50,772 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 04:43:50,772 - INFO - [209/490] 🎯 mnist/federated/star/20n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.950) | Runtime: 40.9s
+2025-06-08 04:43:51,003 - INFO - [210/490] Starting experiment...
+2025-06-08 04:43:51,003 - INFO - 🎯 Starting experiment 210: exp_0210_mnist_decentralized_ring_20n_weak_dp
+2025-06-08 04:43:51,004 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, weak_dp
+2025-06-08 04:44:32,376 - INFO -    ✅ Training completed in 41.4s
+2025-06-08 04:44:32,423 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:44:32,423 - INFO - [210/490] 🎯 mnist/decentralized/ring/20n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 41.4s
+2025-06-08 04:44:32,653 - INFO - [211/490] Starting experiment...
+2025-06-08 04:44:32,653 - INFO - 🎯 Starting experiment 211: exp_0211_mnist_decentralized_line_20n_weak_dp
+2025-06-08 04:44:32,653 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, weak_dp
+2025-06-08 04:45:13,725 - INFO -    ✅ Training completed in 41.1s
+2025-06-08 04:45:13,768 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:45:13,768 - INFO - [211/490] 🎯 mnist/decentralized/line/20n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 41.1s
+2025-06-08 04:45:14,005 - INFO - [212/490] Starting experiment...
+2025-06-08 04:45:14,005 - INFO - 🎯 Starting experiment 212: exp_0212_mnist_federated_star_20n_medium_dp
+2025-06-08 04:45:14,005 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, medium_dp
+2025-06-08 04:45:53,662 - INFO -    ✅ Training completed in 39.7s
+2025-06-08 04:45:53,706 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 04:45:53,706 - INFO - [212/490] 🎯 mnist/federated/star/20n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.950) | Runtime: 39.7s
+2025-06-08 04:45:53,943 - INFO - [213/490] Starting experiment...
+2025-06-08 04:45:53,943 - INFO - 🎯 Starting experiment 213: exp_0213_mnist_decentralized_ring_20n_medium_dp
+2025-06-08 04:45:53,943 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, medium_dp
+2025-06-08 04:46:34,282 - INFO -    ✅ Training completed in 40.3s
+2025-06-08 04:46:34,330 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:46:34,330 - INFO - [213/490] 🎯 mnist/decentralized/ring/20n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 40.4s
+2025-06-08 04:46:34,608 - INFO - [214/490] Starting experiment...
+2025-06-08 04:46:34,608 - INFO - 🎯 Starting experiment 214: exp_0214_mnist_decentralized_line_20n_medium_dp
+2025-06-08 04:46:34,608 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, medium_dp
+2025-06-08 04:47:13,939 - INFO -    ✅ Training completed in 39.3s
+2025-06-08 04:47:13,982 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:47:13,982 - INFO - [214/490] 🎯 mnist/decentralized/line/20n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 39.4s
+2025-06-08 04:47:14,222 - INFO - [215/490] Starting experiment...
+2025-06-08 04:47:14,222 - INFO - 🎯 Starting experiment 215: exp_0215_mnist_federated_star_20n_strong_dp
+2025-06-08 04:47:14,222 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, strong_dp
+2025-06-08 04:47:55,852 - INFO -    ✅ Training completed in 41.6s
+2025-06-08 04:47:55,895 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 04:47:55,895 - INFO - [215/490] 🎯 mnist/federated/star/20n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.950) | Runtime: 41.7s
+2025-06-08 04:47:56,137 - INFO - [216/490] Starting experiment...
+2025-06-08 04:47:56,137 - INFO - 🎯 Starting experiment 216: exp_0216_mnist_decentralized_ring_20n_strong_dp
+2025-06-08 04:47:56,137 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, strong_dp
+2025-06-08 04:48:34,791 - INFO -    ✅ Training completed in 38.7s
+2025-06-08 04:48:34,837 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:48:34,837 - INFO - [216/490] 🎯 mnist/decentralized/ring/20n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 38.7s
+2025-06-08 04:48:35,084 - INFO - [217/490] Starting experiment...
+2025-06-08 04:48:35,084 - INFO - 🎯 Starting experiment 217: exp_0217_mnist_decentralized_line_20n_strong_dp
+2025-06-08 04:48:35,084 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, strong_dp
+2025-06-08 04:49:12,698 - INFO -    ✅ Training completed in 37.6s
+2025-06-08 04:49:12,742 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:49:12,742 - INFO - [217/490] 🎯 mnist/decentralized/line/20n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 37.7s
+2025-06-08 04:49:12,984 - INFO - [218/490] Starting experiment...
+2025-06-08 04:49:12,984 - INFO - 🎯 Starting experiment 218: exp_0218_mnist_federated_star_20n_very_strong_dp
+2025-06-08 04:49:12,984 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, very_strong_dp
+2025-06-08 04:49:47,977 - INFO -    ✅ Training completed in 35.0s
+2025-06-08 04:49:48,021 - INFO -    📊 Attack success: ✅ (confidence: 0.950)
+2025-06-08 04:49:48,022 - INFO - [218/490] 🎯 mnist/federated/star/20n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.950) | Runtime: 35.0s
+2025-06-08 04:49:48,310 - INFO - [219/490] Starting experiment...
+2025-06-08 04:49:48,310 - INFO - 🎯 Starting experiment 219: exp_0219_mnist_decentralized_ring_20n_very_strong_dp
+2025-06-08 04:49:48,310 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, very_strong_dp
+2025-06-08 04:50:25,613 - INFO -    ✅ Training completed in 37.3s
+2025-06-08 04:50:25,661 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:50:25,661 - INFO - [219/490] 🎯 mnist/decentralized/ring/20n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 37.4s
+2025-06-08 04:50:25,911 - INFO - [220/490] Starting experiment...
+2025-06-08 04:50:25,911 - INFO - 🎯 Starting experiment 220: exp_0220_mnist_decentralized_line_20n_very_strong_dp
+2025-06-08 04:50:25,911 - INFO -    Config: imbalanced_sensitive attack, 20 nodes, very_strong_dp
+2025-06-08 04:51:02,253 - INFO -    ✅ Training completed in 36.3s
+2025-06-08 04:51:02,296 - INFO -    📊 Attack success: ✅ (confidence: 0.850)
+2025-06-08 04:51:02,296 - INFO - [220/490] 🎯 mnist/decentralized/line/20n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.850) | Runtime: 36.4s
+2025-06-08 04:51:02,546 - INFO - [221/490] Starting experiment...
+2025-06-08 04:51:02,546 - INFO - 🎯 Starting experiment 221: exp_0221_mnist_federated_star_25n_no_dp
+2025-06-08 04:51:02,546 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, no_dp
+2025-06-08 04:51:33,251 - INFO -    ✅ Training completed in 30.7s
+2025-06-08 04:51:33,302 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 04:51:33,303 - INFO - [221/490] 🎯 mnist/federated/star/25n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.960) | Runtime: 30.8s
+2025-06-08 04:51:33,555 - INFO - [222/490] Starting experiment...
+2025-06-08 04:51:33,555 - INFO - 🎯 Starting experiment 222: exp_0222_mnist_decentralized_ring_25n_no_dp
+2025-06-08 04:51:33,555 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, no_dp
+2025-06-08 04:52:05,888 - INFO -    ✅ Training completed in 32.3s
+2025-06-08 04:52:05,945 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 04:52:05,945 - INFO - [222/490] 🎯 mnist/decentralized/ring/25n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.880) | Runtime: 32.4s
+2025-06-08 04:52:06,200 - INFO - [223/490] Starting experiment...
+2025-06-08 04:52:06,200 - INFO - 🎯 Starting experiment 223: exp_0223_mnist_decentralized_line_25n_no_dp
+2025-06-08 04:52:06,200 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, no_dp
+2025-06-08 04:52:38,498 - INFO -    ✅ Training completed in 32.3s
+2025-06-08 04:52:38,549 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 04:52:38,549 - INFO - [223/490] 🎯 mnist/decentralized/line/25n | no-DP | imbalanced-sensitive | Attack: SUCCESS (conf:0.640) | Runtime: 32.3s
+2025-06-08 04:52:38,849 - INFO - [224/490] Starting experiment...
+2025-06-08 04:52:38,849 - INFO - 🎯 Starting experiment 224: exp_0224_mnist_federated_star_25n_weak_dp
+2025-06-08 04:52:38,849 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, weak_dp
+2025-06-08 04:53:23,741 - INFO -    ✅ Training completed in 44.9s
+2025-06-08 04:53:23,794 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 04:53:23,794 - INFO - [224/490] 🎯 mnist/federated/star/25n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.960) | Runtime: 44.9s
+2025-06-08 04:53:24,058 - INFO - [225/490] Starting experiment...
+2025-06-08 04:53:24,058 - INFO - 🎯 Starting experiment 225: exp_0225_mnist_decentralized_ring_25n_weak_dp
+2025-06-08 04:53:24,058 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, weak_dp
+2025-06-08 04:54:10,752 - INFO -    ✅ Training completed in 46.7s
+2025-06-08 04:54:10,813 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 04:54:10,813 - INFO - [225/490] 🎯 mnist/decentralized/ring/25n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.880) | Runtime: 46.8s
+2025-06-08 04:54:11,077 - INFO - [226/490] Starting experiment...
+2025-06-08 04:54:11,077 - INFO - 🎯 Starting experiment 226: exp_0226_mnist_decentralized_line_25n_weak_dp
+2025-06-08 04:54:11,077 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, weak_dp
+2025-06-08 04:54:57,124 - INFO -    ✅ Training completed in 46.0s
+2025-06-08 04:54:57,176 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 04:54:57,176 - INFO - [226/490] 🎯 mnist/decentralized/line/25n | DP(ε=16.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.640) | Runtime: 46.1s
+2025-06-08 04:54:57,439 - INFO - [227/490] Starting experiment...
+2025-06-08 04:54:57,440 - INFO - 🎯 Starting experiment 227: exp_0227_mnist_federated_star_25n_medium_dp
+2025-06-08 04:54:57,440 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, medium_dp
+2025-06-08 04:55:41,664 - INFO -    ✅ Training completed in 44.2s
+2025-06-08 04:55:41,716 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 04:55:41,716 - INFO - [227/490] 🎯 mnist/federated/star/25n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.960) | Runtime: 44.3s
+2025-06-08 04:55:41,980 - INFO - [228/490] Starting experiment...
+2025-06-08 04:55:41,980 - INFO - 🎯 Starting experiment 228: exp_0228_mnist_decentralized_ring_25n_medium_dp
+2025-06-08 04:55:41,980 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, medium_dp
+2025-06-08 04:56:26,697 - INFO -    ✅ Training completed in 44.7s
+2025-06-08 04:56:26,753 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 04:56:26,754 - INFO - [228/490] 🎯 mnist/decentralized/ring/25n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.880) | Runtime: 44.8s
+2025-06-08 04:56:27,065 - INFO - [229/490] Starting experiment...
+2025-06-08 04:56:27,065 - INFO - 🎯 Starting experiment 229: exp_0229_mnist_decentralized_line_25n_medium_dp
+2025-06-08 04:56:27,065 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, medium_dp
+2025-06-08 04:57:10,849 - INFO -    ✅ Training completed in 43.8s
+2025-06-08 04:57:10,900 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 04:57:10,900 - INFO - [229/490] 🎯 mnist/decentralized/line/25n | DP(ε=8.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.640) | Runtime: 43.8s
+2025-06-08 04:57:11,168 - INFO - [230/490] Starting experiment...
+2025-06-08 04:57:11,168 - INFO - 🎯 Starting experiment 230: exp_0230_mnist_federated_star_25n_strong_dp
+2025-06-08 04:57:11,168 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, strong_dp
+2025-06-08 04:57:52,818 - INFO -    ✅ Training completed in 41.6s
+2025-06-08 04:57:52,870 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 04:57:52,870 - INFO - [230/490] 🎯 mnist/federated/star/25n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.960) | Runtime: 41.7s
+2025-06-08 04:57:53,148 - INFO - [231/490] Starting experiment...
+2025-06-08 04:57:53,148 - INFO - 🎯 Starting experiment 231: exp_0231_mnist_decentralized_ring_25n_strong_dp
+2025-06-08 04:57:53,148 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, strong_dp
+2025-06-08 04:58:35,727 - INFO -    ✅ Training completed in 42.6s
+2025-06-08 04:58:35,783 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 04:58:35,783 - INFO - [231/490] 🎯 mnist/decentralized/ring/25n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.880) | Runtime: 42.6s
+2025-06-08 04:58:36,059 - INFO - [232/490] Starting experiment...
+2025-06-08 04:58:36,059 - INFO - 🎯 Starting experiment 232: exp_0232_mnist_decentralized_line_25n_strong_dp
+2025-06-08 04:58:36,059 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, strong_dp
+2025-06-08 04:59:17,973 - INFO -    ✅ Training completed in 41.9s
+2025-06-08 04:59:18,026 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 04:59:18,027 - INFO - [232/490] 🎯 mnist/decentralized/line/25n | DP(ε=4.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.640) | Runtime: 42.0s
+2025-06-08 04:59:18,305 - INFO - [233/490] Starting experiment...
+2025-06-08 04:59:18,305 - INFO - 🎯 Starting experiment 233: exp_0233_mnist_federated_star_25n_very_strong_dp
+2025-06-08 04:59:18,305 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, very_strong_dp
+2025-06-08 04:59:55,799 - INFO -    ✅ Training completed in 37.5s
+2025-06-08 04:59:55,851 - INFO -    📊 Attack success: ✅ (confidence: 0.960)
+2025-06-08 04:59:55,851 - INFO - [233/490] 🎯 mnist/federated/star/25n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.960) | Runtime: 37.5s
+2025-06-08 04:59:56,173 - INFO - [234/490] Starting experiment...
+2025-06-08 04:59:56,173 - INFO - 🎯 Starting experiment 234: exp_0234_mnist_decentralized_ring_25n_very_strong_dp
+2025-06-08 04:59:56,173 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, very_strong_dp
+2025-06-08 05:00:35,598 - INFO -    ✅ Training completed in 39.4s
+2025-06-08 05:00:35,655 - INFO -    📊 Attack success: ✅ (confidence: 0.880)
+2025-06-08 05:00:35,655 - INFO - [234/490] 🎯 mnist/decentralized/ring/25n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.880) | Runtime: 39.5s
+2025-06-08 05:00:35,937 - INFO - [235/490] Starting experiment...
+2025-06-08 05:00:35,938 - INFO - 🎯 Starting experiment 235: exp_0235_mnist_decentralized_line_25n_very_strong_dp
+2025-06-08 05:00:35,938 - INFO -    Config: imbalanced_sensitive attack, 25 nodes, very_strong_dp
+2025-06-08 05:01:14,564 - INFO -    ✅ Training completed in 38.6s
+2025-06-08 05:01:14,616 - INFO -    📊 Attack success: ✅ (confidence: 0.640)
+2025-06-08 05:01:14,616 - INFO - [235/490] 🎯 mnist/decentralized/line/25n | DP(ε=1.0) | imbalanced-sensitive | Attack: SUCCESS (conf:0.640) | Runtime: 38.7s
+2025-06-08 05:01:14,899 - INFO - [236/490] Starting experiment...
+2025-06-08 05:01:14,899 - INFO - 🎯 Starting experiment 236: exp_0236_skin_lesion_federated_star_5n_no_dp
+2025-06-08 05:01:14,899 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 05:02:39,665 - ERROR -    ❌ Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murmura/examples/dp_skin_lesion_example.py", line 566, in main     results = learning_process.execute()               ^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/orchestration/learning_process/federated_learning_process.py", line 150, in execute     initial_metrics = self.model.evaluate(test_features, test_labels)                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/model/pytorch_model.py", line 306, in evaluate     dataloader = self._prepare_data(data, labels, batch_size)                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/model/pytorch_model.py", line 144, in _prepare_data     tensor_data = tensor_data.reshape(-1, *self.input_shape)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ RuntimeError: shape '[-1, 3, 64, 64]' is invalid for input of size 1040850000 Traceback (most recent call last):   File "/home/ubuntu/murmura/murmura/examples/dp_skin_lesion_example.py", line 651, in <module>     main()   File "/home/ubuntu/murmura/murmura/examples/dp_skin_lesion_example.py", line 566, in main     results = learning_process.execute()               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-06-08 05:02:39,665 - INFO - [236/490] ❌ skin_lesion/federated/star/5n | no-DP | sensitive-groups | EXPERIMENT FAILED | Error: Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murm | Runtime: 84.8s
+2025-06-08 05:02:39,946 - INFO - [237/490] Starting experiment...
+2025-06-08 05:02:39,946 - INFO - 🎯 Starting experiment 237: exp_0237_skin_lesion_federated_complete_5n_no_dp
+2025-06-08 05:02:39,947 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 05:03:41,692 - ERROR -    ❌ Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murmura/examples/dp_skin_lesion_example.py", line 566, in main     results = learning_process.execute()               ^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/orchestration/learning_process/federated_learning_process.py", line 150, in execute     initial_metrics = self.model.evaluate(test_features, test_labels)                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/model/pytorch_model.py", line 306, in evaluate     dataloader = self._prepare_data(data, labels, batch_size)                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/model/pytorch_model.py", line 144, in _prepare_data     tensor_data = tensor_data.reshape(-1, *self.input_shape)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ RuntimeError: shape '[-1, 3, 64, 64]' is invalid for input of size 1040850000 Traceback (most recent call last):   File "/home/ubuntu/murmura/murmura/examples/dp_skin_lesion_example.py", line 651, in <module>     main()   File "/home/ubuntu/murmura/murmura/examples/dp_skin_lesion_example.py", line 566, in main     results = learning_process.execute()               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-06-08 05:03:41,692 - INFO - [237/490] ❌ skin_lesion/federated/complete/5n | no-DP | sensitive-groups | EXPERIMENT FAILED | Error: Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murm | Runtime: 61.7s
+2025-06-08 05:03:42,018 - INFO - [238/490] Starting experiment...
+2025-06-08 05:03:42,019 - INFO - 🎯 Starting experiment 238: exp_0238_skin_lesion_decentralized_ring_5n_no_dp
+2025-06-08 05:03:42,019 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
+2025-06-08 05:07:36,698 - ERROR -    ❌ Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murmura/examples/dp_decentralized_skin_lesion_example.py", line 942, in main     visualizer.render_summary_plot(   File "/home/ubuntu/murmura/murmura/visualization/network_visualizer.py", line 1078, in render_summary_plot     self.export_to_csv()   File "/home/ubuntu/murmura/murmura/visualization/network_visualizer.py", line 413, in export_to_csv     with open(event_csv_path, "w", newline="", encoding="utf-8") as f:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ FileNotFoundError: [Errno 2] No such file or directory: 'paper_experiments/visualizations/exp_0238_skin_lesion_decentralized_ring_5n_no_dp/training_data_events.csv' Traceback (most recent call last):   File "/home/ubuntu/murmura/murmura/examples/dp_decentralized_skin_lesion_example.py", line 1025, in <module>     main()   File "/home/ubuntu/murmura/murmura/examples/dp_decentralized_skin_lesion_example.py", line 942, in main     visualizer.render_summary_plot(   File "/home/ubuntu/murmura/murmura/visualization/network_visualizer.py", line 1078, in render_summary_plot     self.export_to_csv()   File "/home/ubuntu/murmura/murmura/visualization/network_visualizer.py", line 413, in export_to_csv     with open(event_csv_path, "w", newline="", encoding="utf-8") as f:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ FileNotFoundError: [Errno 2] No such file or directory: 'paper_experiments/visualizations/exp_0238_skin_lesion_decentralized_ring_5n_no_dp/training_data_events.csv'
+2025-06-08 05:07:36,698 - INFO - [238/490] ❌ skin_lesion/decentralized/ring/5n | no-DP | sensitive-groups | EXPERIMENT FAILED | Error: Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murm | Runtime: 234.7s
+2025-06-08 05:07:36,984 - INFO - [239/490] Starting experiment...
+2025-06-08 05:07:36,984 - INFO - 🎯 Starting experiment 239: exp_0239_skin_lesion_decentralized_complete_5n_no_dp
+2025-06-08 05:07:36,984 - INFO -    Config: sensitive_groups attack, 5 nodes, no_dp
