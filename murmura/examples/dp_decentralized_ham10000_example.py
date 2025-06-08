@@ -13,6 +13,7 @@ from murmura.models.ham10000_models import HAM10000Model, HAM10000ModelComplex
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
+from murmura.data_processing.data_preprocessor import create_image_preprocessor
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 from murmura.orchestration.learning_process.decentralized_learning_process import (
     DecentralizedLearningProcess,
@@ -416,6 +417,14 @@ def main() -> None:
                 use_dp_compatible_norm=args.enable_dp
             )
 
+        # Create image preprocessor for HAM10000 dataset
+        logger.info("Creating image preprocessor for HAM10000 dataset")
+        image_preprocessor = create_image_preprocessor(
+            grayscale=False,  # HAM10000 is RGB
+            normalize=True,   # Normalize pixel values to [0,1]
+            target_size=(args.image_size, args.image_size)  # Resize to model input size
+        )
+
         # Create model wrapper (DP or regular)
         if args.enable_dp and dp_config:
             logger.info("Creating DP-aware model wrapper")
@@ -427,6 +436,7 @@ def main() -> None:
                 optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
                 input_shape=(3, args.image_size, args.image_size),
                 device=device,
+                data_preprocessor=image_preprocessor,
             )
         else:
             logger.info("Creating regular model wrapper")
@@ -439,6 +449,7 @@ def main() -> None:
                 optimizer_kwargs={"lr": args.lr},
                 input_shape=(3, args.image_size, args.image_size),
                 device=device,
+                data_preprocessor=image_preprocessor,
             )
 
         logger.info("=== Setting Up Decentralized Learning Process ===")
