@@ -10,7 +10,24 @@ import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import pandas as pd
+import numpy as np
 from murmura.attacks.topology_attacks import run_topology_attacks
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle numpy types."""
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
+                            np.int16, np.int32, np.int64, np.uint8,
+                            np.uint16, np.uint32, np.uint64)):
+            return int(obj)
+        if isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+            return float(obj)
+        if isinstance(obj, (np.bool_,)):
+            return bool(obj)
+        return json.JSONEncoder.default(self, obj)
 
 
 def load_existing_results(results_file: str) -> List[Dict[str, Any]]:
@@ -205,15 +222,28 @@ def rerun_all_attacks(
         print(f"  Failed experiments: {failed_experiments[:5]}{'...' if len(failed_experiments) > 5 else ''}")
 
 
+def convert_keys_to_str(obj):
+    """Recursively convert dictionary keys to strings for JSON serialization."""
+    if isinstance(obj, dict):
+        return {str(k): convert_keys_to_str(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_keys_to_str(item) for item in obj]
+    else:
+        return obj
+
+
 def save_results(results: List[Dict[str, Any]], output_file: str) -> None:
     """Save results to JSON file."""
     # Create output directory if it doesn't exist
     output_path = Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
+    # Convert all keys to strings and handle numpy types
+    results_converted = convert_keys_to_str(results)
+    
     # Save results
     with open(output_file, 'w') as f:
-        json.dump(results, f, indent=2)
+        json.dump(results_converted, f, indent=2, cls=NumpyEncoder)
 
 
 def compare_old_vs_new_metrics(

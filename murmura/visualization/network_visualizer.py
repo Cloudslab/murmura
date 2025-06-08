@@ -407,6 +407,9 @@ class NetworkVisualizer(TrainingObserver):
         Args:
             prefix: Prefix for CSV filenames
         """
+        # Ensure output directory exists before writing files
+        os.makedirs(self.output_dir, exist_ok=True)
+        
         # 1. Export main event log
         if self.event_log:
             event_csv_path = os.path.join(self.output_dir, f"{prefix}_events.csv")
