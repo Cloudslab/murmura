@@ -403,13 +403,11 @@ def main() -> None:
         # Select model based on complexity
         if args.model_complexity == "complex":
             model = HAM10000ModelComplex(
-                num_classes=7,
                 input_size=args.image_size,
                 use_dp_compatible_norm=args.enable_dp
             )
         else:
             model = HAM10000Model(
-                num_classes=7,
                 input_size=args.image_size,
                 use_dp_compatible_norm=args.enable_dp
             )
