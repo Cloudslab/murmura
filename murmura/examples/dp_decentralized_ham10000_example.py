@@ -366,7 +366,14 @@ def main() -> None:
             # Merge test split into main dataset
             train_dataset.merge_splits(test_dataset)
         except Exception as e:
-            logger.warning(f"Could not load test split: {e}. Using train split only.")
+            logger.warning(f"Could not load test split: {e}. Creating train/test split from train data.")
+            # Create train/test split from the single train split
+            train_dataset = train_dataset.train_test_split(
+                source_split=args.split,
+                test_size=0.2,
+                seed=42,
+                new_split_names=("train", "test")
+            )
 
         # Create configuration with gossip-specific settings
         config = OrchestrationConfig(
