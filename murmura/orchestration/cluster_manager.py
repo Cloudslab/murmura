@@ -169,24 +169,39 @@ class ClusterManager:
         # Calculate resource allocation per actor
         resource_requirements = {}
 
-        # CPU allocation
+        # CPU allocation - IMPROVED LOGIC for better distribution
         if self.config.resources.cpus_per_actor is not None:
             resource_requirements["num_cpus"] = self.config.resources.cpus_per_actor
         else:
-            # Auto-calculate based on available resources
-            # Use a more conservative approach for multi-node
-            cpus_per_actor = max(
-                0.5, total_cpus / (self.config.num_actors * 1.2)
-            )  # Leave some headroom
-            resource_requirements["num_cpus"] = min(
-                cpus_per_actor, 2.0
-            )  # Cap at 2 CPUs per actor
+            # Auto-calculate based on actual distribution pattern across nodes
+            # Calculate actual distribution of actors across nodes
+            base_actors_per_node = self.config.num_actors // total_nodes
+            extra_actors = self.config.num_actors % total_nodes
+            
+            # Calculate maximum actors on any single node
+            max_actors_per_node = base_actors_per_node + (1 if extra_actors > 0 else 0)
+            
+            # Calculate CPUs per node (estimate based on total CPUs)
+            avg_cpus_per_node = total_cpus / total_nodes if total_nodes > 0 else total_cpus
+            
+            # Calculate CPU allocation based on the busiest nodes
+            # Leave some headroom (20%) for system processes
+            available_cpus_per_node = avg_cpus_per_node * 0.8
+            
+            if max_actors_per_node > 0:
+                cpus_per_actor = available_cpus_per_node / max_actors_per_node
+                # Ensure minimum allocation and cap at 4 CPUs per actor
+                cpus_per_actor = max(0.5, min(cpus_per_actor, 4.0))
+            else:
+                cpus_per_actor = 1.0
+            
+            resource_requirements["num_cpus"] = cpus_per_actor
 
-        # GPU allocation - FIXED LOGIC
+        # GPU allocation - IMPROVED LOGIC for better distribution
         if self.config.resources.gpus_per_actor is not None:
             resource_requirements["num_gpus"] = self.config.resources.gpus_per_actor
         elif total_gpus > 0:
-            # FIXED: Calculate based on GPUs available per node, not total cluster GPUs
+            # IMPROVED: Calculate based on actual distribution pattern across nodes
 
             # Get GPU information per node to make informed decisions
             nodes = self.cluster_info.get("nodes", [])
@@ -203,18 +218,25 @@ class ClusterManager:
                 median_gpus_per_node = sorted(gpus_per_node)[len(gpus_per_node) // 2]
                 max_gpus_per_node = max(gpus_per_node)
 
-                # Calculate how many actors we expect per node
-                expected_actors_per_node = max(1, self.config.num_actors // total_nodes)
-
-                # Allocate GPUs conservatively
-                if expected_actors_per_node <= median_gpus_per_node:
-                    # We can give each actor 1 GPU if we have enough
+                # Calculate actual distribution of actors across nodes
+                # For example: 15 actors across 10 nodes means 5 nodes get 2 actors, 5 nodes get 1 actor
+                base_actors_per_node = self.config.num_actors // total_nodes
+                extra_actors = self.config.num_actors % total_nodes
+                
+                # Calculate maximum actors on any single node
+                max_actors_per_node = base_actors_per_node + (1 if extra_actors > 0 else 0)
+                
+                # Calculate GPU requirements based on the busiest nodes
+                # This ensures even the busiest nodes have sufficient GPU allocation
+                if max_actors_per_node <= median_gpus_per_node:
+                    # We can give each actor close to 1 GPU on busiest nodes
                     gpus_per_actor = min(
-                        1.0, median_gpus_per_node / expected_actors_per_node
+                        1.0, median_gpus_per_node / max_actors_per_node
                     )
                 else:
                     # More actors than GPUs per node - share GPUs
-                    gpus_per_actor = median_gpus_per_node / expected_actors_per_node
+                    # Use median GPUs to ensure compatibility across all nodes
+                    gpus_per_actor = median_gpus_per_node / max_actors_per_node
 
                 # Ensure we don't exceed what any single node can provide
                 gpus_per_actor = min(gpus_per_actor, max_gpus_per_node)
@@ -226,7 +248,8 @@ class ClusterManager:
                 logging.getLogger("murmura").info(
                     f"GPU allocation: {gpus_per_actor:.2f} GPUs per actor "
                     f"(median {median_gpus_per_node} GPUs/node, "
-                    f"{expected_actors_per_node} actors/node expected)"
+                    f"max {max_actors_per_node} actors/node, "
+                    f"distribution: {base_actors_per_node}+{extra_actors} across {total_nodes} nodes)"
                 )
             else:
                 # Fallback: simple division but cap at 1.0 GPU per actor
@@ -240,10 +263,24 @@ class ClusterManager:
                 self.config.resources.memory_per_actor * 1024 * 1024
             )
 
-        logging.getLogger("murmura").info(
-            f"Resource allocation: {resource_requirements} per actor, "
-            f"{actors_per_node} actors per node"
-        )
+        # Log detailed resource allocation information
+        logger = logging.getLogger("murmura")
+        logger.info(f"Resource allocation per actor: {resource_requirements}")
+        logger.info(f"Actors per node: {actors_per_node}")
+        
+        # Log CPU allocation details if auto-calculated
+        if self.config.resources.cpus_per_actor is None:
+            base_actors_per_node = self.config.num_actors // total_nodes
+            extra_actors = self.config.num_actors % total_nodes
+            max_actors_per_node = base_actors_per_node + (1 if extra_actors > 0 else 0)
+            avg_cpus_per_node = total_cpus / total_nodes if total_nodes > 0 else total_cpus
+            
+            logger.info(
+                f"CPU allocation: {resource_requirements.get('num_cpus', 'N/A'):.2f} CPUs per actor "
+                f"(avg {avg_cpus_per_node:.1f} CPUs/node, "
+                f"max {max_actors_per_node} actors/node, "
+                f"distribution: {base_actors_per_node}+{extra_actors} across {total_nodes} nodes)"
+            )
 
         return resource_requirements, actors_per_node
 
