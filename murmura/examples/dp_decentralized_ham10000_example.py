@@ -414,15 +414,19 @@ def main() -> None:
 
         logger.info("=== Creating HAM10000 Model ===")
         # Select model based on complexity
+        # Always use GroupNorm for federated learning with many clients to avoid
+        # BatchNorm issues with small batches
+        use_groupnorm = args.enable_dp or args.num_actors > 10
+        
         if args.model_complexity == "complex":
             model = HAM10000ModelComplex(
                 input_size=args.image_size,
-                use_dp_compatible_norm=args.enable_dp
+                use_dp_compatible_norm=use_groupnorm
             )
         else:
             model = HAM10000Model(
                 input_size=args.image_size,
-                use_dp_compatible_norm=args.enable_dp
+                use_dp_compatible_norm=use_groupnorm
             )
 
         # Create image preprocessor for HAM10000 dataset
