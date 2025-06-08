@@ -358,7 +358,7 @@ class ClusterManager:
             # Wait for batch to complete
             try:
                 batch_completed = ray.get(
-                    batch_results, timeout=60
+                    batch_results, timeout=18000
                 )  # Increased timeout
                 results.extend(batch_completed)
 
@@ -519,7 +519,7 @@ class ClusterManager:
                 )
 
                 # Wait for each actor individually with reasonable timeout
-                ray.get(task, timeout=45)  # Increased timeout for network overhead
+                ray.get(task, timeout=18000)  # Increased timeout for network overhead
 
                 successful_actors += 1
 
@@ -696,7 +696,7 @@ class ClusterManager:
             # Wait for batch results
             try:
                 # Get all results for this batch
-                batch_results = ray.get([task for _, task in batch_tasks], timeout=30)
+                batch_results = ray.get([task for _, task in batch_tasks], timeout=18000)
 
                 # Process results
                 for (actual_idx, _), actor_info in zip(batch_tasks, batch_results):
@@ -902,7 +902,7 @@ class ClusterManager:
 
             try:
                 ray.get(
-                    batch_tasks, timeout=180
+                    batch_tasks, timeout=1800
                 )  # Increased timeout for reconstruction
                 logger.info(
                     f"Distributed dataset metadata to actors {i + 1}-{min(i + batch_size, len(self.actors))}"
@@ -955,7 +955,7 @@ class ClusterManager:
                 )
 
             try:
-                ray.get(batch_tasks, timeout=120)  # Increased timeout
+                ray.get(batch_tasks, timeout=1800)  # Increased timeout
                 logging.getLogger("murmura").info(
                     f"Distributed dataset to actors {i + 1}-{min(i + batch_size, len(self.actors))}"
                 )
@@ -993,7 +993,7 @@ class ClusterManager:
 
             try:
                 ray.get(
-                    batch_tasks, timeout=120
+                    batch_tasks, timeout=1800
                 )  # Longer timeout for model distribution
 
                 # Now set parameters
@@ -1001,7 +1001,7 @@ class ClusterManager:
                 for actor in batch_actors:
                     param_tasks.append(actor.set_model_parameters.remote(parameters))
 
-                ray.get(param_tasks, timeout=120)
+                ray.get(param_tasks, timeout=1800)
 
                 logging.getLogger("murmura").info(
                     f"Distributed model to actors {i + 1}-{min(i + batch_size, len(self.actors))}"
@@ -1069,7 +1069,7 @@ class ClusterManager:
 
             try:
                 batch_results = ray.get(
-                    batch_tasks, timeout=1800
+                    batch_tasks, timeout=18000
                 )  # 30 min timeout for training
                 all_results.extend(batch_results)
 
@@ -1099,7 +1099,7 @@ class ClusterManager:
 
             try:
                 batch_results = ray.get(
-                    batch_tasks, timeout=900
+                    batch_tasks, timeout=1800
                 )  # 15 min timeout for evaluation
                 all_results.extend(batch_results)
 
@@ -1163,7 +1163,7 @@ class ClusterManager:
                 batch_tasks.append(actor.set_model_parameters.remote(parameters))
 
             try:
-                ray.get(batch_tasks, timeout=120)
+                ray.get(batch_tasks, timeout=1800)
             except Exception as e:
                 logging.getLogger("murmura").error(
                     f"Model update failed for batch {i // batch_size}: {e}"
@@ -1183,7 +1183,10 @@ class ClusterManager:
             tasks.append(self.actors[node].set_neighbours.remote(neighbour_actors))
 
         try:
-            ray.get(tasks, timeout=60)
+            # Use very large timeout to prevent timeout issues with large configurations
+            timeout = 3600  # 1 hour timeout
+            logging.getLogger("murmura").info(f"Applying topology for {len(self.actors)} actors with {timeout}s timeout")
+            ray.get(tasks, timeout=timeout)
         except Exception as e:
             logging.getLogger("murmura").error(f"Failed to apply topology: {e}")
             raise
