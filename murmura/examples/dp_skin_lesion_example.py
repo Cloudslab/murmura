@@ -25,6 +25,7 @@ from murmura.privacy.dp_config import DPConfig
 from murmura.privacy.dp_model_wrapper import DPTorchModelWrapper
 from murmura.privacy.privacy_accountant import PrivacyAccountant
 from murmura.model.pytorch_model import TorchModelWrapper
+from murmura.data_processing.data_preprocessor import create_image_preprocessor
 from typing import Union
 
 
@@ -37,6 +38,23 @@ def setup_logging(log_level: str = "INFO") -> None:
             logging.StreamHandler(),
             logging.FileHandler("dp_skin_lesion_federated.log"),
         ],
+    )
+
+
+def create_skin_lesion_preprocessor(image_size: int = 128):
+    """
+    Create image preprocessor for skin lesion datasets.
+    
+    Args:
+        image_size: Target image size (will be resized to image_size x image_size)
+        
+    Returns:
+        GenericDataPreprocessor configured for skin lesion images
+    """
+    return create_image_preprocessor(
+        grayscale=False,  # Keep RGB for medical images
+        normalize=True,   # Normalize to [0,1]
+        target_size=(image_size, image_size)  # Resize to specified size
     )
 
 
@@ -455,6 +473,11 @@ def main() -> None:
             f"num_classes={num_classes}, dropout={args.dropout}"
         )
 
+        # Create skin lesion preprocessor
+        logger.info("=== Creating Image Preprocessor ===")
+        skin_lesion_preprocessor = create_skin_lesion_preprocessor(args.image_size)
+        logger.info(f"Configured image preprocessor for {args.image_size}x{args.image_size} images")
+
         # Create model wrapper (DP or regular)
         input_shape = (3, args.image_size, args.image_size)
         global_model: Union[DPTorchModelWrapper, TorchModelWrapper]
@@ -472,6 +495,7 @@ def main() -> None:
                 },
                 input_shape=input_shape,
                 device=device,
+                data_preprocessor=skin_lesion_preprocessor,
             )
         else:
             logger.info("Creating regular model wrapper")
@@ -486,6 +510,7 @@ def main() -> None:
                 },
                 input_shape=input_shape,
                 device=device,
+                data_preprocessor=skin_lesion_preprocessor,
             )
 
         logger.info("=== Setting Up Learning Process ===")
