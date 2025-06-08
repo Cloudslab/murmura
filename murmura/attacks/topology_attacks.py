@@ -256,21 +256,86 @@ class ParameterMagnitudeAttack(TopologyAttack):
         return evolution_stats
     
     def _calculate_magnitude_separability(self, node_stats: Dict[int, Dict[str, float]]) -> float:
-        """Calculate how well nodes can be separated based on magnitude features."""
+        """Calculate how well nodes can be separated based on magnitude features using multiple metrics."""
         if len(node_stats) < 2:
             return 0.0
         
-        # Extract norm_mean values
-        norms = [stats['norm_mean'] for stats in node_stats.values()]
+        # Create feature matrix with multiple dimensions
+        features = []
+        node_ids = []
         
-        # Calculate coefficient of variation
-        mean_norm = np.mean(norms)
-        std_norm = np.std(norms)
+        for node_id, stats in node_stats.items():
+            features.append([
+                stats['norm_mean'],
+                stats['norm_std'],
+                stats['norm_trend'],
+                stats['mean_of_means'],
+                stats['mean_of_stds']
+            ])
+            node_ids.append(node_id)
         
-        if mean_norm == 0:
+        features = np.array(features)
+        
+        # Handle edge cases
+        if len(features) < 2:
             return 0.0
         
-        return std_norm / mean_norm  # Higher values indicate better separability
+        # Normalize features to prevent scale bias
+        feature_stds = features.std(axis=0)
+        feature_means = features.mean(axis=0)
+        
+        # Avoid division by zero
+        feature_stds = np.where(feature_stds == 0, 1e-8, feature_stds)
+        normalized_features = (features - feature_means) / feature_stds
+        
+        # Method 1: Silhouette Score (if we have enough samples)
+        if len(features) >= 4:
+            try:
+                from sklearn.cluster import KMeans
+                from sklearn.metrics import silhouette_score
+                
+                n_clusters = min(len(features) // 2, 3, len(features) - 1)
+                if n_clusters >= 2:
+                    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+                    clusters = kmeans.fit_predict(normalized_features)
+                    
+                    # Only calculate if we have actual clusters
+                    if len(np.unique(clusters)) > 1:
+                        silhouette = silhouette_score(normalized_features, clusters)
+                        # Convert to 0-1 range (silhouette is -1 to 1)
+                        silhouette_metric = (silhouette + 1) / 2
+                    else:
+                        silhouette_metric = 0.0
+                else:
+                    silhouette_metric = 0.0
+            except Exception:
+                silhouette_metric = 0.0
+        else:
+            silhouette_metric = 0.0
+        
+        # Method 2: Normalized Range (robust for small samples)
+        norms = features[:, 0]  # norm_mean values
+        if len(norms) > 1 and np.std(norms) > 0:
+            normalized_range = (np.max(norms) - np.min(norms)) / (4 * np.std(norms))
+            # Cap at 1.0 for reasonable scale
+            normalized_range = min(normalized_range, 1.0)
+        else:
+            normalized_range = 0.0
+        
+        # Method 3: Feature variance score
+        total_variance = np.sum(feature_stds ** 2)
+        # Normalize by number of features and scale appropriately
+        variance_score = min(total_variance / len(feature_stds), 1.0)
+        
+        # Combine metrics with weights
+        if len(features) >= 4:
+            # Use silhouette as primary metric for larger samples
+            final_score = 0.6 * silhouette_metric + 0.3 * normalized_range + 0.1 * variance_score
+        else:
+            # Use range-based metrics for small samples
+            final_score = 0.7 * normalized_range + 0.3 * variance_score
+        
+        return min(final_score, 1.0)  # Cap at 1.0
 
 
 class TopologyStructureAttack(TopologyAttack):
