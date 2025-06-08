@@ -230,32 +230,57 @@ class ImbalancedSensitivePartitioner(Partitioner):
         
         # Distribute rare classes to create true imbalance
         for cls, indices in rare_indices.items():
-            n_rare = max(1, int(len(indices) * self.rarity_factor))
+            # Most samples go to rare nodes (1 - rarity_factor), few to others
+            n_for_rare_nodes = int(len(indices) * (1 - self.rarity_factor))
+            n_for_other_nodes = len(indices) - n_for_rare_nodes
+            
             self.rng.shuffle(indices)
             
-            # Rare samples go ONLY to designated rare_class_nodes
-            rare_chunks = np.array_split(indices[:n_rare], len(self.rare_class_nodes))
-            for node, chunk in zip(self.rare_class_nodes, rare_chunks):
-                self.partitions[node].extend(chunk.tolist())
+            # Most rare samples go to designated rare_class_nodes
+            if n_for_rare_nodes > 0:
+                rare_chunks = np.array_split(indices[:n_for_rare_nodes], len(self.rare_class_nodes))
+                for node, chunk in zip(self.rare_class_nodes, rare_chunks):
+                    self.partitions[node].extend(chunk.tolist())
             
-            # Remaining samples go ONLY to non-rare nodes (to maintain imbalance)
-            if len(indices) > n_rare:
+            # Few samples go to non-rare nodes (to create imbalance)
+            if n_for_other_nodes > 0:
                 non_rare_nodes = [i for i in range(self.num_partitions) if i not in self.rare_class_nodes]
                 if non_rare_nodes:  # Only distribute if there are non-rare nodes
-                    remaining_chunks = np.array_split(indices[n_rare:], len(non_rare_nodes))
+                    remaining_chunks = np.array_split(indices[n_for_rare_nodes:], len(non_rare_nodes))
                     for node, chunk in zip(non_rare_nodes, remaining_chunks):
                         self.partitions[node].extend(chunk.tolist())
                 else:
                     # If all nodes are rare nodes, distribute remainder among them too
-                    remaining_chunks = np.array_split(indices[n_rare:], len(self.rare_class_nodes))
+                    remaining_chunks = np.array_split(indices[n_for_rare_nodes:], len(self.rare_class_nodes))
                     for node, chunk in zip(self.rare_class_nodes, remaining_chunks):
                         self.partitions[node].extend(chunk.tolist())
         
-        # Distribute common classes normally
+        # Distribute common classes primarily to non-rare nodes
+        non_rare_nodes = [i for i in range(self.num_partitions) if i not in self.rare_class_nodes]
+        
         for cls, indices in common_indices.items():
             self.rng.shuffle(indices)
-            chunks = np.array_split(indices, self.num_partitions)
-            for node, chunk in enumerate(chunks):
-                self.partitions[node].extend(chunk.tolist())
+            
+            if non_rare_nodes:
+                # Most common class samples go to non-rare nodes
+                n_for_non_rare = int(len(indices) * 0.9)  # 90% to non-rare nodes
+                n_for_rare = len(indices) - n_for_non_rare
+                
+                # Distribute to non-rare nodes
+                if n_for_non_rare > 0:
+                    non_rare_chunks = np.array_split(indices[:n_for_non_rare], len(non_rare_nodes))
+                    for node, chunk in zip(non_rare_nodes, non_rare_chunks):
+                        self.partitions[node].extend(chunk.tolist())
+                
+                # Small amount to rare nodes (to maintain some diversity)
+                if n_for_rare > 0 and self.rare_class_nodes:
+                    rare_chunks = np.array_split(indices[n_for_non_rare:], len(self.rare_class_nodes))
+                    for node, chunk in zip(self.rare_class_nodes, rare_chunks):
+                        self.partitions[node].extend(chunk.tolist())
+            else:
+                # If no non-rare nodes, distribute evenly
+                chunks = np.array_split(indices, self.num_partitions)
+                for node, chunk in enumerate(chunks):
+                    self.partitions[node].extend(chunk.tolist())
         
         dataset.add_partitions(split_name, cast(Dict[int, List[int]], self.partitions))

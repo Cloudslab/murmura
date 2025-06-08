@@ -121,7 +121,7 @@ class PartitionerFactory:
                 num_partitions=config.num_actors,
                 rare_class_nodes=[0, 1],  # First two nodes get rare classes
                 rare_classes=[0, 1],      # Digits 0 and 1 are rare
-                rarity_factor=0.1
+                rarity_factor=0.1         # 10% go to other nodes, 90% stay at rare nodes
             )
         elif 'skin' in dataset_name or 'lesion' in dataset_name:
             # Skin lesion: Make DF and VASC rare (actually less common conditions)
