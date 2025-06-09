@@ -1,0 +1,16 @@
+activity_type,current_epoch,is_aggregator,metrics,param_convergence,round_num,strategy_name,timestamp,total_epochs
+local_training,,,{},,1,,1749457523.7198257,1
+aggregation,,False,,,1,GossipAvg,1749457539.8734653,
+aggregation,,True,,,1,GossipAvg,1749457539.873472,
+aggregation,,False,,,1,GossipAvg,1749457539.8734782,
+model_update,,,,0.4108010576490383,1,,1749457542.5255272,
+local_training,,,{},,2,,1749457543.0293384,1
+aggregation,,False,,,2,GossipAvg,1749457557.039097,
+aggregation,,True,,,2,GossipAvg,1749457557.0391035,
+aggregation,,False,,,2,GossipAvg,1749457557.0391111,
+model_update,,,,0.37493014659980306,2,,1749457559.591328,
+local_training,,,{},,3,,1749457560.0891757,1
+aggregation,,False,,,3,GossipAvg,1749457576.7460532,
+aggregation,,True,,,3,GossipAvg,1749457576.7460592,
+aggregation,,False,,,3,GossipAvg,1749457576.7460651,
+model_update,,,,0.39642618260458107,3,,1749457579.3845482,

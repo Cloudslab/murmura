@@ -1,0 +1,16 @@
+node_id,admin_level,certification,department,established_year,funding_source,institution_name,institution_type,staff_count
+0,international,HIPAA_compliant,radiology,2015,public,mayo_clinic,tier1_hospital,3310
+1,national,HIPAA_compliant,oncology,2006,research_grant,johns_hopkins,tier2_hospital,3320
+2,local,HIPAA_compliant,cardiology,1986,public,stanford_med,research_center,2655
+3,national,FedRAMP,neurology,1960,mixed,mass_general,mobile_unit,1508
+4,local,HIPAA_compliant,pathology,2008,mixed,ucla_health,edge_device,630
+5,national,ISO27001,radiology,1986,public,mayo_clinic,tier1_hospital,337
+6,national,ISO27001,oncology,1984,private,johns_hopkins,tier2_hospital,236
+7,local,FedRAMP,cardiology,1954,mixed,stanford_med,research_center,4146
+8,regional,ISO27001,neurology,1976,mixed,mass_general,mobile_unit,1783
+9,international,FedRAMP,pathology,1990,research_grant,ucla_health,edge_device,4539
+10,international,SOC2,radiology,1975,public,mayo_clinic,tier1_hospital,4575
+11,national,ISO27001,oncology,2000,mixed,johns_hopkins,tier2_hospital,4654
+12,regional,FedRAMP,cardiology,2007,public,stanford_med,research_center,510
+13,national,SOC2,neurology,1952,private,mass_general,mobile_unit,1131
+14,national,HIPAA_compliant,pathology,1990,private,ucla_health,edge_device,3077
