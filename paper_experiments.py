@@ -732,7 +732,11 @@ class PaperExperimentRunner:
             all_configs = all_configs[:sample_configs]
         
         total_experiments = len(all_configs)
-        original_total = len(self.get_valid_configurations(dataset_filter))
+        # Calculate original total based on phase
+        if phase == 2:
+            original_total = len(self.get_phase2_sampling_configurations(filters))
+        else:
+            original_total = len(self.get_valid_configurations(dataset_filter, filters))
         
         if resume_from is not None:
             self.logger.info(f"🚀 Resuming {total_experiments} remaining experiments (from {resume_from}/{original_total})")
