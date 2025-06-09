@@ -1,16 +1,16 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,43.996137,-92.5182,north_america,America/Chicago
-1,Baltimore,USA,39.285141,-76.63611,europe,America/New_York
-2,Palo Alto,USA,37.437215,-122.11154,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.38013,-71.056305,south_america,America/New_York
-4,Los Angeles,USA,34.092919,-118.218045,africa,America/Los_Angeles
-5,London,UK,51.54379,-0.16697,north_america,Europe/London
-6,Paris,France,48.863457,2.384156,europe,Europe/Paris
-7,Tokyo,Japan,35.700727,139.637718,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.352334,103.861134,south_america,Asia/Singapore
-9,Sydney,Australia,-33.842391,151.220751,africa,Australia/Sydney
-10,Rochester,USA,44.063673,-92.479371,north_america,America/Chicago
-11,Baltimore,USA,39.289107,-76.612771,europe,America/New_York
-12,Palo Alto,USA,37.47298,-122.179176,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.317646,-71.035561,south_america,America/New_York
-14,Los Angeles,USA,34.0845,-118.262481,africa,America/Los_Angeles
+0,Rochester,USA,44.001556,-92.486672,north_america,America/Chicago
+1,Baltimore,USA,39.253212,-76.61609,europe,America/New_York
+2,Palo Alto,USA,37.45297,-122.167338,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.405566,-71.010959,south_america,America/New_York
+4,Los Angeles,USA,34.087082,-118.194358,africa,America/Los_Angeles
+5,London,UK,51.470999,-0.143393,north_america,Europe/London
+6,Paris,France,48.857918,2.397011,europe,Europe/Paris
+7,Tokyo,Japan,35.703849,139.606674,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.368878,103.830113,south_america,Asia/Singapore
+9,Sydney,Australia,-33.857276,151.216031,africa,Australia/Sydney
+10,Rochester,USA,44.053439,-92.502136,north_america,America/Chicago
+11,Baltimore,USA,39.269026,-76.565766,europe,America/New_York
+12,Palo Alto,USA,37.426306,-122.127289,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.318249,-71.02008,south_america,America/New_York
+14,Los Angeles,USA,34.077646,-118.270414,africa,America/Los_Angeles

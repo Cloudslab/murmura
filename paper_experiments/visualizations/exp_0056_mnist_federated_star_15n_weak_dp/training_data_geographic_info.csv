@@ -1,16 +1,16 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,44.025668,-92.434115,north_america,America/Chicago
-1,Baltimore,USA,39.272175,-76.650648,europe,America/New_York
-2,Palo Alto,USA,37.488009,-122.114431,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.319682,-71.042061,south_america,America/New_York
-4,Los Angeles,USA,34.03327,-118.273338,africa,America/Los_Angeles
-5,London,UK,51.487716,-0.136661,north_america,Europe/London
-6,Paris,France,48.859285,2.385607,europe,Europe/Paris
-7,Tokyo,Japan,35.662475,139.603012,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.38646,103.825101,south_america,Asia/Singapore
-9,Sydney,Australia,-33.880246,151.173376,africa,Australia/Sydney
-10,Rochester,USA,44.042933,-92.430431,north_america,America/Chicago
-11,Baltimore,USA,39.263249,-76.601603,europe,America/New_York
-12,Palo Alto,USA,37.424185,-122.183453,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.363782,-71.052496,south_america,America/New_York
-14,Los Angeles,USA,34.095837,-118.246324,africa,America/Los_Angeles
+0,Rochester,USA,44.001448,-92.425245,north_america,America/Chicago
+1,Baltimore,USA,39.265366,-76.632835,europe,America/New_York
+2,Palo Alto,USA,37.423846,-122.163787,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.346835,-71.080109,south_america,America/New_York
+4,Los Angeles,USA,34.074917,-118.268654,africa,America/Los_Angeles
+5,London,UK,51.536842,-0.077977,north_america,Europe/London
+6,Paris,France,48.833738,2.333638,europe,Europe/Paris
+7,Tokyo,Japan,35.670244,139.676698,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.376619,103.816555,south_america,Asia/Singapore
+9,Sydney,Australia,-33.852865,151.254013,africa,Australia/Sydney
+10,Rochester,USA,44.031212,-92.473327,north_america,America/Chicago
+11,Baltimore,USA,39.284727,-76.586728,europe,America/New_York
+12,Palo Alto,USA,37.43634,-122.158123,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.398409,-71.040262,south_america,America/New_York
+14,Los Angeles,USA,34.054871,-118.265964,africa,America/Los_Angeles

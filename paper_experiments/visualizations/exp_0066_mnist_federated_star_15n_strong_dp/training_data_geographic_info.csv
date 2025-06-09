@@ -1,16 +1,16 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,43.977915,-92.471569,north_america,America/Chicago
-1,Baltimore,USA,39.290297,-76.564754,europe,America/New_York
-2,Palo Alto,USA,37.452533,-122.145288,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.335972,-71.09472,south_america,America/New_York
-4,Los Angeles,USA,34.07784,-118.212031,africa,America/Los_Angeles
-5,London,UK,51.467707,-0.170836,north_america,Europe/London
-6,Paris,France,48.886539,2.314067,europe,Europe/Paris
-7,Tokyo,Japan,35.670409,139.662294,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.369906,103.827428,south_america,Asia/Singapore
-9,Sydney,Australia,-33.902592,151.212634,africa,Australia/Sydney
-10,Rochester,USA,43.991929,-92.426807,north_america,America/Chicago
-11,Baltimore,USA,39.272543,-76.566878,europe,America/New_York
-12,Palo Alto,USA,37.477501,-122.115997,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.376686,-71.104295,south_america,America/New_York
-14,Los Angeles,USA,34.052168,-118.26694,africa,America/Los_Angeles
+0,Rochester,USA,44.054924,-92.46042,north_america,America/Chicago
+1,Baltimore,USA,39.339973,-76.61285,europe,America/New_York
+2,Palo Alto,USA,37.448162,-122.11651,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.369943,-71.030374,south_america,America/New_York
+4,Los Angeles,USA,34.040973,-118.220616,africa,America/Los_Angeles
+5,London,UK,51.463695,-0.109509,north_america,Europe/London
+6,Paris,France,48.877007,2.312576,europe,Europe/Paris
+7,Tokyo,Japan,35.71581,139.65014,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.341835,103.828854,south_america,Asia/Singapore
+9,Sydney,Australia,-33.880503,151.191051,africa,Australia/Sydney
+10,Rochester,USA,43.986636,-92.513681,north_america,America/Chicago
+11,Baltimore,USA,39.279076,-76.596472,europe,America/New_York
+12,Palo Alto,USA,37.42297,-122.177326,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.339441,-71.054684,south_america,America/New_York
+14,Los Angeles,USA,34.01995,-118.203789,africa,America/Los_Angeles

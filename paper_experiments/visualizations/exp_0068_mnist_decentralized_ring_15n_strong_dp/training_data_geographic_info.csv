@@ -1,16 +1,16 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,44.013663,-92.447442,north_america,America/Chicago
-1,Baltimore,USA,39.306359,-76.583244,europe,America/New_York
-2,Palo Alto,USA,37.427082,-122.154622,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.364927,-71.048218,south_america,America/New_York
-4,Los Angeles,USA,34.092122,-118.235662,africa,America/Los_Angeles
-5,London,UK,51.525219,-0.127838,north_america,Europe/London
-6,Paris,France,48.904387,2.350993,europe,Europe/Paris
-7,Tokyo,Japan,35.666097,139.632893,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.334669,103.86334,south_america,Asia/Singapore
-9,Sydney,Australia,-33.850144,151.164888,africa,Australia/Sydney
-10,Rochester,USA,44.01295,-92.444051,north_america,America/Chicago
-11,Baltimore,USA,39.263809,-76.589904,europe,America/New_York
-12,Palo Alto,USA,37.47446,-122.157507,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.31247,-71.075774,south_america,America/New_York
-14,Los Angeles,USA,34.079568,-118.205715,africa,America/Los_Angeles
+0,Rochester,USA,44.054994,-92.453893,north_america,America/Chicago
+1,Baltimore,USA,39.265839,-76.569678,europe,America/New_York
+2,Palo Alto,USA,37.401277,-122.17292,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.320236,-71.020077,south_america,America/New_York
+4,Los Angeles,USA,34.09456,-118.254436,africa,America/Los_Angeles
+5,London,UK,51.491498,-0.093033,north_america,Europe/London
+6,Paris,France,48.819534,2.357438,europe,Europe/Paris
+7,Tokyo,Japan,35.709115,139.684138,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.376864,103.782877,south_america,Asia/Singapore
+9,Sydney,Australia,-33.908366,151.213614,africa,Australia/Sydney
+10,Rochester,USA,44.045806,-92.441489,north_america,America/Chicago
+11,Baltimore,USA,39.244786,-76.650812,europe,America/New_York
+12,Palo Alto,USA,37.432557,-122.125362,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.360285,-71.026603,south_america,America/New_York
+14,Los Angeles,USA,34.027145,-118.287161,africa,America/Los_Angeles

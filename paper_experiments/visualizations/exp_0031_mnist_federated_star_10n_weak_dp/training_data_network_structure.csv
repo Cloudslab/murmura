@@ -1,2 +1,2 @@
 topology_type,num_nodes,total_edges,network_density,avg_degree,max_degree,min_degree,total_cpu_cores,total_memory_gb,total_gpus,avg_bandwidth_mbps,organizational_entities,geographic_coverage
-star,10,9,0.2,1.8,9,1,476,2392,67,3025.0,5,10
+star,10,9,0.2,1.8,9,1,588,2336,62,3470.0,5,10

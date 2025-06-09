@@ -1,2 +1,2 @@
 topology_type,num_nodes,total_edges,network_density,avg_degree,max_degree,min_degree,total_cpu_cores,total_memory_gb,total_gpus,avg_bandwidth_mbps,organizational_entities,geographic_coverage
-star,15,14,0.13333333333333333,1.8666666666666667,14,1,614,3040,86,4180.0,5,15
+star,15,14,0.13333333333333333,1.8666666666666667,14,1,1092,2984,116,5113.333333333333,5,15

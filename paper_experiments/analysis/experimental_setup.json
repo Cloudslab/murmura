@@ -1,17 +1,25 @@
 {
   "experimental_design": {
-    "total_configurations": 490,
+    "total_configurations": 520,
     "datasets": [
       "MNIST",
-      "Skin Lesion"
+      "HAM10000"
     ],
-    "node_counts": [
-      5,
-      10,
-      15,
-      20,
-      25
-    ],
+    "node_counts": {
+      "MNIST": [
+        5,
+        10,
+        15,
+        20,
+        25
+      ],
+      "HAM10000": [
+        5,
+        7,
+        10,
+        20
+      ]
+    },
     "topologies": {
       "federated": [
         "star",

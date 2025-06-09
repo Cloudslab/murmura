@@ -1,21 +1,21 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,43.988785,-92.430072,north_america,America/Chicago
-1,Baltimore,USA,39.32069,-76.655771,europe,America/New_York
-2,Palo Alto,USA,37.449222,-122.16086,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.354001,-71.049945,south_america,America/New_York
-4,Los Angeles,USA,34.02762,-118.26369,africa,America/Los_Angeles
-5,London,UK,51.520813,-0.12367,north_america,Europe/London
-6,Paris,France,48.878434,2.369085,europe,Europe/Paris
-7,Tokyo,Japan,35.680066,139.64832,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.303232,103.86787,south_america,Asia/Singapore
-9,Sydney,Australia,-33.827791,151.205428,africa,Australia/Sydney
-10,Rochester,USA,44.044623,-92.449209,north_america,America/Chicago
-11,Baltimore,USA,39.326979,-76.607101,europe,America/New_York
-12,Palo Alto,USA,37.421927,-122.143093,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.358741,-71.041921,south_america,America/New_York
-14,Los Angeles,USA,34.037581,-118.240645,africa,America/Los_Angeles
-15,London,UK,51.473007,-0.095275,north_america,Europe/London
-16,Paris,France,48.830004,2.363505,europe,Europe/Paris
-17,Tokyo,Japan,35.655325,139.670054,asia_pacific,Asia/Tokyo
-18,Singapore,Singapore,1.357874,103.856727,south_america,Asia/Singapore
-19,Sydney,Australia,-33.842498,151.17132,africa,Australia/Sydney
+0,Rochester,USA,43.976629,-92.477151,north_america,America/Chicago
+1,Baltimore,USA,39.311061,-76.581451,europe,America/New_York
+2,Palo Alto,USA,37.439027,-122.111838,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.406317,-71.020467,south_america,America/New_York
+4,Los Angeles,USA,34.074877,-118.270171,africa,America/Los_Angeles
+5,London,UK,51.463139,-0.168299,north_america,Europe/London
+6,Paris,France,48.853598,2.319583,europe,Europe/Paris
+7,Tokyo,Japan,35.664328,139.639368,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.393056,103.807522,south_america,Asia/Singapore
+9,Sydney,Australia,-33.914512,151.189975,africa,Australia/Sydney
+10,Rochester,USA,44.04244,-92.508475,north_america,America/Chicago
+11,Baltimore,USA,39.317076,-76.586189,europe,America/New_York
+12,Palo Alto,USA,37.456365,-122.158407,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.350875,-71.071409,south_america,America/New_York
+14,Los Angeles,USA,34.07197,-118.279444,africa,America/Los_Angeles
+15,London,UK,51.504375,-0.094537,north_america,Europe/London
+16,Paris,France,48.847225,2.308699,europe,Europe/Paris
+17,Tokyo,Japan,35.631938,139.659658,asia_pacific,Asia/Tokyo
+18,Singapore,Singapore,1.384822,103.859285,south_america,Asia/Singapore
+19,Sydney,Australia,-33.81992,151.239854,africa,Australia/Sydney

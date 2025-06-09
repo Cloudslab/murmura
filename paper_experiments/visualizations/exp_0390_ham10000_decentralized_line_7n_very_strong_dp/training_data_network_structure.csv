@@ -1,0 +1,2 @@
+topology_type,num_nodes,total_edges,network_density,avg_degree,max_degree,min_degree,total_cpu_cores,total_memory_gb,total_gpus,avg_bandwidth_mbps,organizational_entities,geographic_coverage
+line,7,3,0.14285714285714285,1.0,1,1,392,2256,41,3864.285714285714,5,7
