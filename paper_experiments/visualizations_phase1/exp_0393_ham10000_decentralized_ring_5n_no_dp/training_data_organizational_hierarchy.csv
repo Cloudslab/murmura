@@ -1,0 +1,6 @@
+node_id,admin_level,certification,department,established_year,funding_source,institution_name,institution_type,staff_count
+0,regional,SOC2,radiology,2004,public,mayo_clinic,tier1_hospital,687
+1,international,ISO27001,oncology,1984,research_grant,johns_hopkins,tier2_hospital,3581
+2,international,FedRAMP,cardiology,1966,public,stanford_med,research_center,126
+3,international,HIPAA_compliant,neurology,2009,public,mass_general,mobile_unit,3478
+4,national,SOC2,pathology,1988,research_grant,ucla_health,edge_device,2516
