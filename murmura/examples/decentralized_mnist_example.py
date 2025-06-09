@@ -233,8 +233,8 @@ def main() -> None:
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations",
-        help="Directory to save visualizations",
+        default="./visualizations_phase1",
+        help="Directory to save visualizations_phase1",
     )
     parser.add_argument(
         "--create_animation",
@@ -487,7 +487,7 @@ def main() -> None:
                 if health_status.get("error", 0) > 0:
                     logger.error(f"Error actors: {health_status['error']}")
 
-            # Generate visualizations if requested
+            # Generate visualizations_phase1 if requested
             if visualizer and (
                 args.create_animation or args.create_frames or args.create_summary
             ):
@@ -518,7 +518,7 @@ def main() -> None:
             global_model.save(save_path)
             logger.info(f"MNIST model saved to '{save_path}'")
 
-            # Print final results with enhanced cluster context
+            # Print final results_phase1 with enhanced cluster context
             logger.info("=== MNIST Decentralized Training Results ===")
             logger.info(
                 f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
@@ -539,7 +539,7 @@ def main() -> None:
                 f"Training completed with {config.rounds} rounds of {config.epochs} epochs each"
             )
 
-            # Log topology-specific results
+            # Log topology-specific results_phase1
             if "topology" in results:
                 topology_info = results["topology"]
                 logger.info(

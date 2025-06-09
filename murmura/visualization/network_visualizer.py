@@ -23,14 +23,14 @@ from murmura.visualization.training_observer import TrainingObserver
 
 class NetworkVisualizer(TrainingObserver):
     """
-    Creates visualizations of the training process based on events and stores data in CSV format.
+    Creates visualizations_phase1 of the training process based on events and stores data in CSV format.
 
     This visualizer creates both animations and frame sequences showing how
     model parameters flow through the network during training, and exports
     all collected data to CSV files for further analysis.
     """
 
-    def __init__(self, output_dir: str = "./visualizations"):
+    def __init__(self, output_dir: str = "./visualizations_phase1"):
         """
         Initialize the network visualizer.
 
