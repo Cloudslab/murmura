@@ -1,0 +1,28 @@
+2025-06-09 01:46:46,425 - INFO - Filtering experiments to datasets: ['ham10000']
+2025-06-09 01:46:46,426 - INFO - Filtering experiments to node counts: [30]
+2025-06-09 01:46:46,426 - INFO - Filtering experiments to attack strategies: ['sensitive_groups']
+2025-06-09 01:46:46,426 - INFO - Filtering experiments to DP settings: ['weak_dp']
+2025-06-09 01:46:46,426 - INFO - Generated 1 valid experimental configurations
+2025-06-09 01:46:46,426 - INFO - Generated 520 valid experimental configurations
+2025-06-09 01:46:46,426 - INFO - 🚀 Starting 1 comprehensive experiments
+2025-06-09 01:46:46,426 - INFO -    Max parallel: 1
+2025-06-09 01:46:46,426 - INFO -    Output directory: paper_experiments
+2025-06-09 01:46:46,426 - INFO -    Estimated total time: 0.2 hours
+2025-06-09 01:46:46,426 - INFO - [1/520] Starting experiment...
+2025-06-09 01:46:46,427 - INFO - 🎯 Starting experiment 1: exp_0001_ham10000_federated_star_30n_weak_dp
+2025-06-09 01:46:46,427 - INFO -    Config: sensitive_groups attack, 30 nodes, weak_dp
+2025-06-09 01:47:40,126 - ERROR -    ❌ Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murmura/examples/dp_ham10000_example.py", line 494, in main     results = learning_process.execute()               ^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/orchestration/learning_process/federated_learning_process.py", line 206, in execute     train_metrics = self.cluster_manager.train_models(                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/murmura/murmura/orchestration/cluster_manager.py", line 1108, in train_models     batch_results = ray.get(                     ^^^^^^^^   File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper     return fn(*args, **kwargs)            ^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper     return func(*args, **kwargs)            ^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py", line 2822, in get     values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py", line 930, in get_objects
+2025-06-09 01:47:40,126 - INFO - [1/520] ❌ ham10000/federated/star/30n | DP(ε=16.0) | sensitive-groups | EXPERIMENT FAILED | Error: Training failed with traceback: Traceback (most recent call last):   File "/home/ubuntu/murmura/murm | Runtime: 53.7s
+2025-06-09 01:47:40,126 - INFO - ✅ All experiments completed in 0.0 hours
+2025-06-09 01:47:40,126 - INFO - 💾 Final results saved to: paper_experiments/results/final_results_20250609_014740.json
+2025-06-09 01:47:40,126 - INFO - 
+====================================================================================================
+2025-06-09 01:47:40,126 - INFO - 📊 COMPREHENSIVE PAPER ANALYSIS
+2025-06-09 01:47:40,126 - INFO - ====================================================================================================
+2025-06-09 01:47:40,127 - INFO - Total experiments: 1
+2025-06-09 01:47:40,127 - INFO - Successful experiments: 0
+2025-06-09 01:47:40,127 - INFO - Success rate: 0.0%
+2025-06-09 01:47:40,127 - WARNING - No successful experiments to analyze
+2025-06-09 01:47:40,127 - INFO - 
+📄 Generating paper-ready outputs...
+2025-06-09 01:47:40,127 - WARNING - No successful results for paper outputs

@@ -1,7 +1,3 @@
 Category,Subcategory,Total Experiments,Successful Attacks,Success Rate,Avg Confidence
-Topology,Complete,160,160,100.0%,0.883
-Topology,Line,118,118,100.0%,0.800
-Topology,Ring,116,116,100.0%,0.775
-Topology,Star,115,115,100.0%,0.905
-Differential Privacy,No,104,104,100.0%,0.852
-Differential Privacy,Yes,405,405,100.0%,0.842
+Topology,Ring,1,1,100.0%,0.900
+Differential Privacy,Yes,1,1,100.0%,0.900
