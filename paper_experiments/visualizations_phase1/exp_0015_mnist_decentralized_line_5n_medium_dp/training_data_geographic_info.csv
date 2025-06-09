@@ -1,0 +1,6 @@
+node_id,city,country,latitude,longitude,region,timezone
+0,Rochester,USA,44.020823,-92.468954,north_america,America/Chicago
+1,Baltimore,USA,39.299026,-76.615967,europe,America/New_York
+2,Palo Alto,USA,37.453091,-122.098798,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.322618,-71.023685,south_america,America/New_York
+4,Los Angeles,USA,34.040304,-118.228826,africa,America/Los_Angeles

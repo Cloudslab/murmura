@@ -1,0 +1,31 @@
+node_id,city,country,latitude,longitude,region,timezone
+0,Rochester,USA,44.070806,-92.498502,north_america,America/Chicago
+1,Baltimore,USA,39.28879,-76.585008,europe,America/New_York
+2,Palo Alto,USA,37.394187,-122.142238,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.398703,-71.048883,south_america,America/New_York
+4,Los Angeles,USA,34.055309,-118.247053,africa,America/Los_Angeles
+5,London,UK,51.551899,-0.089591,north_america,Europe/London
+6,Paris,France,48.892779,2.310346,europe,Europe/Paris
+7,Tokyo,Japan,35.636202,139.693643,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.319849,103.801758,south_america,Asia/Singapore
+9,Sydney,Australia,-33.821503,151.240609,africa,Australia/Sydney
+10,Rochester,USA,44.030544,-92.470005,north_america,America/Chicago
+11,Baltimore,USA,39.30148,-76.598259,europe,America/New_York
+12,Palo Alto,USA,37.47549,-122.13756,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.39749,-71.04811,south_america,America/New_York
+14,Los Angeles,USA,34.085893,-118.256214,africa,America/Los_Angeles
+15,London,UK,51.542844,-0.153996,north_america,Europe/London
+16,Paris,France,48.811154,2.360705,europe,Europe/Paris
+17,Tokyo,Japan,35.68532,139.693905,asia_pacific,Asia/Tokyo
+18,Singapore,Singapore,1.361388,103.791202,south_america,Asia/Singapore
+19,Sydney,Australia,-33.890616,151.182888,africa,Australia/Sydney
+20,Rochester,USA,43.974105,-92.495053,north_america,America/Chicago
+21,Baltimore,USA,39.260946,-76.566106,europe,America/New_York
+22,Palo Alto,USA,37.417273,-122.104534,asia_pacific,America/Los_Angeles
+23,Boston,USA,42.396195,-71.020932,south_america,America/New_York
+24,Los Angeles,USA,34.031357,-118.272823,africa,America/Los_Angeles
+25,London,UK,51.525203,-0.09503,north_america,Europe/London
+26,Paris,France,48.819432,2.352886,europe,Europe/Paris
+27,Tokyo,Japan,35.702115,139.62934,asia_pacific,Asia/Tokyo
+28,Singapore,Singapore,1.319244,103.814511,south_america,Asia/Singapore
+29,Sydney,Australia,-33.889991,151.160516,africa,Australia/Sydney
