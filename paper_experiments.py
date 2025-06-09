@@ -176,6 +176,107 @@ class PaperExperimentRunner:
         self.logger.info(f"Generated {len(configurations)} valid experimental configurations")
         return configurations
     
+    def get_phase2_sampling_configurations(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """Generate phase 2 configurations focused on client and data sampling effects.
+        
+        This is a targeted set of experiments to address reviewer concerns about 
+        sampling effects in realistic federated learning deployments.
+        """
+        
+        configurations = []
+        
+        # Phase 2 Focus: Test sampling effects on most vulnerable configurations
+        # from phase 1 results to maximize insight per experiment
+        
+        # Sampling rates to test (realistic FL deployment scenarios)
+        sampling_scenarios = [
+            {"name": "moderate_sampling", "client_rate": 0.5, "data_rate": 0.8},
+            {"name": "strong_sampling", "client_rate": 0.3, "data_rate": 0.6},
+            {"name": "very_strong_sampling", "client_rate": 0.2, "data_rate": 0.5}
+        ]
+        
+        # Focus on key datasets (MNIST for baseline, HAM10000 for real-world validation)
+        focus_datasets = ["mnist", "ham10000"]
+        if filters and filters.get('datasets'):
+            focus_datasets = [d for d in focus_datasets if d in filters['datasets']]
+        
+        # Focus on most vulnerable attack strategies from phase 1
+        focus_attack_strategies = ["topology_correlated", "sensitive_groups"]
+        if filters and filters.get('attack_strategies'):
+            focus_attack_strategies = [a for a in focus_attack_strategies if a in filters['attack_strategies']]
+        
+        # Focus on optimal/representative node counts
+        focus_node_counts = {
+            "mnist": [10, 15],      # 10 = optimal (matches classes), 15 = larger scale
+            "ham10000": [7, 10]     # 7 = optimal (matches classes), 10 = common scale
+        }
+        if filters and filters.get('node_counts'):
+            for dataset in focus_node_counts:
+                focus_node_counts[dataset] = [n for n in focus_node_counts[dataset] if n in filters['node_counts']]
+        
+        # Focus on key topology/FL-type combinations that showed vulnerability
+        focus_combinations = [
+            ("federated", "star"),      # Classic FL - most vulnerable to centralized attacks
+            ("federated", "complete"),  # Fully connected FL
+            ("decentralized", "ring"),  # Structured decentralized - vulnerable to topology attacks
+            ("decentralized", "complete") # Fully connected decentralized
+        ]
+        if filters:
+            if filters.get('fl_types') or filters.get('topologies'):
+                focus_combinations = [
+                    (fl, topo) for fl, topo in focus_combinations
+                    if (not filters.get('fl_types') or fl in filters['fl_types']) and
+                       (not filters.get('topologies') or topo in filters['topologies'])
+                ]
+        
+        # Focus on key DP settings that matter for sampling analysis
+        focus_dp_settings = [
+            {"enabled": False, "epsilon": None, "name": "no_dp"},
+            {"enabled": True, "epsilon": 8.0, "name": "medium_dp"},  # Most representative DP setting
+            {"enabled": True, "epsilon": 4.0, "name": "strong_dp"}   # Strong DP to test amplification
+        ]
+        if filters and filters.get('dp_settings'):
+            focus_dp_settings = [dp for dp in focus_dp_settings if dp['name'] in filters['dp_settings']]
+        
+        config_id = 2001  # Start phase 2 IDs at 2001 to distinguish from phase 1
+        
+        self.logger.info("🎯 Generating Phase 2 (Sampling) configurations...")
+        self.logger.info(f"   Sampling scenarios: {[s['name'] for s in sampling_scenarios]}")
+        self.logger.info(f"   Focus datasets: {focus_datasets}")
+        self.logger.info(f"   Focus attack strategies: {focus_attack_strategies}")
+        self.logger.info(f"   Focus combinations: {focus_combinations}")
+        
+        for dataset in focus_datasets:
+            for attack_strategy in focus_attack_strategies:
+                for node_count in focus_node_counts[dataset]:
+                    for fl_type, topology in focus_combinations:
+                        # Check compatibility
+                        if topology not in self.compatibility_matrix[fl_type]["compatible_topologies"]:
+                            continue
+                        
+                        for dp_setting in focus_dp_settings:
+                            for sampling_scenario in sampling_scenarios:
+                                config = {
+                                    "config_id": config_id,
+                                    "phase": 2,  # Mark as phase 2
+                                    "sampling_scenario": sampling_scenario["name"],
+                                    "client_sampling_rate": sampling_scenario["client_rate"],
+                                    "data_sampling_rate": sampling_scenario["data_rate"],
+                                    "dataset": dataset,
+                                    "attack_strategy": attack_strategy,
+                                    "fl_type": fl_type,
+                                    "topology": topology,
+                                    "node_count": node_count,
+                                    "dp_setting": dp_setting,
+                                    "expected_runtime": self._estimate_runtime(dataset, node_count, fl_type)
+                                }
+                                
+                                configurations.append(config)
+                                config_id += 1
+        
+        self.logger.info(f"Generated {len(configurations)} Phase 2 sampling configurations")
+        return configurations
+    
     def _estimate_runtime(self, dataset: str, node_count: int, fl_type: str) -> int:
         """Estimate runtime in seconds for resource planning."""
         
@@ -194,10 +295,24 @@ class PaperExperimentRunner:
         """Run a single experiment configuration."""
         
         self.experiment_id += 1
-        experiment_name = f"exp_{self.experiment_id:04d}_{config['dataset']}_{config['fl_type']}_{config['topology']}_{config['node_count']}n_{config['dp_setting']['name']}"
+        
+        # Create experiment name with phase and sampling info
+        base_name = f"exp_{self.experiment_id:04d}_{config['dataset']}_{config['fl_type']}_{config['topology']}_{config['node_count']}n_{config['dp_setting']['name']}"
+        
+        if config.get('phase') == 2:
+            # Phase 2 experiments include sampling info in name
+            sampling_name = config.get('sampling_scenario', 'sampling')
+            experiment_name = f"{base_name}_{sampling_name}"
+        else:
+            experiment_name = base_name
         
         self.logger.info(f"🎯 Starting experiment {self.experiment_id}: {experiment_name}")
-        self.logger.info(f"   Config: {config['attack_strategy']} attack, {config['node_count']} nodes, {config['dp_setting']['name']}")
+        
+        # Log config details
+        config_details = f"   Config: {config['attack_strategy']} attack, {config['node_count']} nodes, {config['dp_setting']['name']}"
+        if config.get('phase') == 2:
+            config_details += f", sampling: C={config.get('client_sampling_rate', 1.0):.1f} D={config.get('data_sampling_rate', 1.0):.1f}"
+        self.logger.info(config_details)
         
         start_time = time.time()
         
@@ -314,9 +429,18 @@ class PaperExperimentRunner:
             "--experiment_name", experiment_name,  # Use custom experiment name
         ]
         
+        # Add sampling settings (phase 2 experiments)
+        if 'client_sampling_rate' in config:
+            cmd.extend(["--client_sampling_rate", str(config['client_sampling_rate'])])
+        if 'data_sampling_rate' in config:
+            cmd.extend(["--data_sampling_rate", str(config['data_sampling_rate'])])
+        
         # Add DP settings
         if config['dp_setting']['enabled']:
             cmd.extend(["--enable_dp", "--target_epsilon", str(config['dp_setting']['epsilon'])])
+            # Enable privacy amplification for sampling experiments
+            if 'client_sampling_rate' in config or 'data_sampling_rate' in config:
+                cmd.extend(["--enable_amplification"])
         
         # Add FL-type specific settings
         if config['fl_type'] == "federated":
@@ -565,11 +689,17 @@ class PaperExperimentRunner:
                                     sample_configs: Optional[int] = None,
                                     dataset_filter: Optional[str] = None,
                                     resume_from: Optional[int] = None,
-                                    filters: Optional[Dict[str, Any]] = None) -> None:
+                                    filters: Optional[Dict[str, Any]] = None,
+                                    phase: int = 1) -> None:
         """Run comprehensive experiments for the paper."""
         
-        # Generate all configurations
-        all_configs = self.get_valid_configurations(dataset_filter, filters)
+        # Generate configurations based on phase
+        if phase == 2:
+            self.logger.info("🔬 Running Phase 2: Sampling Effects Experiments")
+            all_configs = self.get_phase2_sampling_configurations(filters)
+        else:
+            self.logger.info("🔬 Running Phase 1: Comprehensive Baseline Experiments")
+            all_configs = self.get_valid_configurations(dataset_filter, filters)
         
         # Handle resume functionality
         if resume_from is not None:
@@ -1147,6 +1277,14 @@ def main():
         help="Run experiments only for specified attack strategies"
     )
     
+    parser.add_argument(
+        "--phase",
+        type=int,
+        choices=[1, 2],
+        default=1,
+        help="Experimental phase: 1=baseline comprehensive experiments, 2=sampling effects experiments"
+    )
+    
     args = parser.parse_args()
     
     # Initialize experiment runner
@@ -1179,10 +1317,12 @@ def main():
         sample_configs=sample_size,
         dataset_filter=args.dataset,
         resume_from=args.resume_from,
-        filters=filters if filters else None
+        filters=filters if filters else None,
+        phase=args.phase
     )
     
-    print(f"\n✅ Comprehensive paper experiments completed!")
+    phase_name = "Phase 1 (Baseline)" if args.phase == 1 else "Phase 2 (Sampling Effects)"
+    print(f"\n✅ {phase_name} paper experiments completed!")
     print(f"📁 All data available in: {args.output_dir}")
     print(f"📊 Analysis files in: {args.output_dir}/analysis")
     print(f"📈 Visualization data in: {args.output_dir}/visualizations")
