@@ -88,7 +88,7 @@ def run_failed_experiments(failed_experiments: List[Dict[str, Any]], dry_run: bo
             "--node-counts", str(exp['node_count']),
             "--dp-settings", exp['dp_setting'],
             "--attack-strategies", exp['attack_strategy'],
-            "--max-parallel", "1"  # Run one at a time to avoid resource issues
+            "--max_parallel", "1"  # Run one at a time to avoid resource issues
         ]
         
         print(f"Running: {' '.join(cmd)}")
