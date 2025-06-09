@@ -1,16 +1,16 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,44.066056,-92.503126,north_america,America/Chicago
-1,Baltimore,USA,39.327763,-76.61757,europe,America/New_York
-2,Palo Alto,USA,37.446161,-122.171079,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.339327,-71.037682,south_america,America/New_York
-4,Los Angeles,USA,34.0849,-118.221228,africa,America/Los_Angeles
-5,London,UK,51.532654,-0.116426,north_america,Europe/London
-6,Paris,France,48.838285,2.398231,europe,Europe/Paris
-7,Tokyo,Japan,35.677195,139.636982,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.370917,103.837109,south_america,Asia/Singapore
-9,Sydney,Australia,-33.913195,151.212475,africa,Australia/Sydney
-10,Rochester,USA,44.041473,-92.493327,north_america,America/Chicago
-11,Baltimore,USA,39.325545,-76.648382,europe,America/New_York
-12,Palo Alto,USA,37.462526,-122.127706,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.34134,-71.079227,south_america,America/New_York
-14,Los Angeles,USA,34.01073,-118.268303,africa,America/Los_Angeles
+0,Rochester,USA,43.982788,-92.464605,north_america,America/Chicago
+1,Baltimore,USA,39.309853,-76.631724,europe,America/New_York
+2,Palo Alto,USA,37.395919,-122.180225,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.379261,-71.107118,south_america,America/New_York
+4,Los Angeles,USA,34.013876,-118.203403,africa,America/Los_Angeles
+5,London,UK,51.508951,-0.100693,north_america,Europe/London
+6,Paris,France,48.857514,2.385204,europe,Europe/Paris
+7,Tokyo,Japan,35.673863,139.61572,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.359137,103.828572,south_america,Asia/Singapore
+9,Sydney,Australia,-33.858323,151.207152,africa,Australia/Sydney
+10,Rochester,USA,44.041571,-92.44783,north_america,America/Chicago
+11,Baltimore,USA,39.306274,-76.572512,europe,America/New_York
+12,Palo Alto,USA,37.435787,-122.178749,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.372515,-71.019106,south_america,America/New_York
+14,Los Angeles,USA,34.094877,-118.20005,africa,America/Los_Angeles

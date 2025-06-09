@@ -1,16 +1,16 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,44.040241,-92.484167,north_america,America/Chicago
-1,Baltimore,USA,39.2631,-76.656434,europe,America/New_York
-2,Palo Alto,USA,37.409979,-122.177366,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.318817,-71.090342,south_america,America/New_York
-4,Los Angeles,USA,34.090001,-118.205087,africa,America/Los_Angeles
-5,London,UK,51.461086,-0.121831,north_america,Europe/London
-6,Paris,France,48.844214,2.400851,europe,Europe/Paris
-7,Tokyo,Japan,35.725608,139.631086,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.336035,103.824525,south_america,Asia/Singapore
-9,Sydney,Australia,-33.877736,151.205346,africa,Australia/Sydney
-10,Rochester,USA,44.070876,-92.500902,north_america,America/Chicago
-11,Baltimore,USA,39.300501,-76.628826,europe,America/New_York
-12,Palo Alto,USA,37.488379,-122.106088,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.341027,-71.03443,south_america,America/New_York
-14,Los Angeles,USA,34.074272,-118.195236,africa,America/Los_Angeles
+0,Rochester,USA,44.047376,-92.517177,north_america,America/Chicago
+1,Baltimore,USA,39.280261,-76.651507,europe,America/New_York
+2,Palo Alto,USA,37.488314,-122.150309,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.402824,-71.010844,south_america,America/New_York
+4,Los Angeles,USA,34.049061,-118.218592,africa,America/Los_Angeles
+5,London,UK,51.555778,-0.083142,north_america,Europe/London
+6,Paris,France,48.825675,2.31186,europe,Europe/Paris
+7,Tokyo,Japan,35.70663,139.650043,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.32944,103.862764,south_america,Asia/Singapore
+9,Sydney,Australia,-33.900918,151.189732,africa,Australia/Sydney
+10,Rochester,USA,43.974184,-92.506522,north_america,America/Chicago
+11,Baltimore,USA,39.304195,-76.661874,europe,America/New_York
+12,Palo Alto,USA,37.449972,-122.110935,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.35673,-71.083177,south_america,America/New_York
+14,Los Angeles,USA,34.060845,-118.216418,africa,America/Los_Angeles

@@ -1,16 +1,16 @@
 node_id,city,country,latitude,longitude,region,timezone
-0,Rochester,USA,43.975868,-92.465486,north_america,America/Chicago
-1,Baltimore,USA,39.327464,-76.653591,europe,America/New_York
-2,Palo Alto,USA,37.464166,-122.102784,asia_pacific,America/Los_Angeles
-3,Boston,USA,42.337623,-71.064911,south_america,America/New_York
-4,Los Angeles,USA,34.049507,-118.216949,africa,America/Los_Angeles
-5,London,UK,51.512403,-0.163079,north_america,Europe/London
-6,Paris,France,48.853515,2.392719,europe,Europe/Paris
-7,Tokyo,Japan,35.646452,139.684653,asia_pacific,Asia/Tokyo
-8,Singapore,Singapore,1.401419,103.807803,south_america,Asia/Singapore
-9,Sydney,Australia,-33.848841,151.242997,africa,Australia/Sydney
-10,Rochester,USA,43.998599,-92.496697,north_america,America/Chicago
-11,Baltimore,USA,39.319785,-76.598817,europe,America/New_York
-12,Palo Alto,USA,37.400783,-122.115158,asia_pacific,America/Los_Angeles
-13,Boston,USA,42.347952,-71.099615,south_america,America/New_York
-14,Los Angeles,USA,34.099782,-118.244393,africa,America/Los_Angeles
+0,Rochester,USA,43.976368,-92.513696,north_america,America/Chicago
+1,Baltimore,USA,39.242252,-76.610465,europe,America/New_York
+2,Palo Alto,USA,37.46112,-122.12436,asia_pacific,America/Los_Angeles
+3,Boston,USA,42.31849,-71.051974,south_america,America/New_York
+4,Los Angeles,USA,34.064846,-118.203886,africa,America/Los_Angeles
+5,London,UK,51.534231,-0.141707,north_america,Europe/London
+6,Paris,France,48.889003,2.362355,europe,Europe/Paris
+7,Tokyo,Japan,35.637811,139.665213,asia_pacific,Asia/Tokyo
+8,Singapore,Singapore,1.365085,103.809261,south_america,Asia/Singapore
+9,Sydney,Australia,-33.907467,151.251455,africa,Australia/Sydney
+10,Rochester,USA,44.026702,-92.457023,north_america,America/Chicago
+11,Baltimore,USA,39.326694,-76.565069,europe,America/New_York
+12,Palo Alto,USA,37.404942,-122.095123,asia_pacific,America/Los_Angeles
+13,Boston,USA,42.395282,-71.074841,south_america,America/New_York
+14,Los Angeles,USA,34.07243,-118.255663,africa,America/Los_Angeles
