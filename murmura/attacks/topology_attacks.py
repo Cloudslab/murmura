@@ -428,6 +428,7 @@ class TopologyStructureAttack(TopologyAttack):
         # Extract arrays for correlation
         positions = [topology_features[node]['position'] for node in common_nodes]
         degrees = [topology_features[node]['degree'] for node in common_nodes]
+        centrality = [topology_features[node]['is_central'] for node in common_nodes]
         avg_norms = [node_characteristics[node]['avg_norm'] for node in common_nodes]
         norm_vars = [node_characteristics[node]['norm_variability'] for node in common_nodes]
         
@@ -438,9 +439,9 @@ class TopologyStructureAttack(TopologyAttack):
                 warnings.simplefilter("ignore")
                 correlations['position_vs_norm'] = pearsonr(positions, avg_norms)[0]
                 correlations['degree_vs_norm'] = pearsonr(degrees, avg_norms)[0]
-                correlations['position_vs_variability'] = pearsonr(positions, norm_vars)[0]
+                correlations['centrality_vs_variance'] = pearsonr(centrality, norm_vars)[0]
         except:
-            correlations = {'position_vs_norm': 0.0, 'degree_vs_norm': 0.0, 'position_vs_variability': 0.0}
+            correlations = {'position_vs_norm': 0.0, 'degree_vs_norm': 0.0, 'centrality_vs_variance': 0.0}
         
         # Replace NaN with 0
         for key, value in correlations.items():
