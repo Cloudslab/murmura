@@ -440,7 +440,7 @@ class PaperExperimentRunner:
             cmd.extend(["--enable_dp", "--target_epsilon", str(config['dp_setting']['epsilon'])])
             # Enable privacy amplification for sampling experiments
             if 'client_sampling_rate' in config or 'data_sampling_rate' in config:
-                cmd.extend(["--enable_amplification"])
+                cmd.extend(["--enable_subsampling_amplification"])
         
         # Add FL-type specific settings
         if config['fl_type'] == "federated":
