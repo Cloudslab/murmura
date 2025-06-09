@@ -27,13 +27,14 @@ from murmura.attacks.topology_attacks import run_topology_attacks
 class PaperExperimentRunner:
     """Comprehensive experiment runner for topology attack paper."""
     
-    def __init__(self, base_output_dir: str = "./paper_experiments"):
+    def __init__(self, base_output_dir: str = "./paper_experiments", phase: int = 1):
         self.base_output_dir = Path(base_output_dir)
         self.base_output_dir.mkdir(exist_ok=True)
+        self.phase = phase
         
-        # Create subdirectories
-        (self.base_output_dir / "visualizations_phase1").mkdir(exist_ok=True)
-        (self.base_output_dir / "results_phase1").mkdir(exist_ok=True)
+        # Create phase-specific subdirectories
+        (self.base_output_dir / f"visualizations_phase{phase}").mkdir(exist_ok=True)
+        (self.base_output_dir / f"results_phase{phase}").mkdir(exist_ok=True)
         (self.base_output_dir / "logs").mkdir(exist_ok=True)
         (self.base_output_dir / "analysis").mkdir(exist_ok=True)
         
@@ -392,7 +393,7 @@ class PaperExperimentRunner:
             self.logger.info(f"   ✅ Training completed in {time.time() - start_time:.1f}s")
             
             # Run attacks
-            viz_dir = self.base_output_dir / "visualizations_phase1" / experiment_name
+            viz_dir = self.base_output_dir / f"visualizations_phase{self.phase}" / experiment_name
             if viz_dir.exists():
                 attack_results = run_topology_attacks(str(viz_dir))
                 evaluation = self.evaluate_attack_comprehensive(attack_results, config)
@@ -424,7 +425,7 @@ class PaperExperimentRunner:
             "--num_actors", str(config['node_count']),
             "--rounds", "3",  # Keep training fast for large-scale experiments
             "--epochs", "1",
-            "--vis_dir", str(self.base_output_dir / "visualizations_phase1"),
+            "--vis_dir", str(self.base_output_dir / f"visualizations_phase{self.phase}"),
             "--create_summary",  # Enable visualization generation
             "--experiment_name", experiment_name,  # Use custom experiment name
         ]
@@ -715,7 +716,7 @@ class PaperExperimentRunner:
             
             # Load previous results_phase1 if they exist
             try:
-                results_file = self.base_output_dir / "results_phase1" / "intermediate_results.json"
+                results_file = self.base_output_dir / f"results_phase{self.phase}" / "intermediate_results.json"
                 if results_file.exists():
                     with open(results_file, 'r') as f:
                         previous_results = json.load(f)
@@ -857,7 +858,7 @@ class PaperExperimentRunner:
 
     def save_intermediate_results(self):
         """Save intermediate results_phase1."""
-        results_file = self.base_output_dir / "results_phase1" / "intermediate_results.json"
+        results_file = self.base_output_dir / f"results_phase{self.phase}" / "intermediate_results.json"
         
         # Convert all results_phase1 to JSON-serializable format
         serializable_results = self._convert_for_json(self.results)
@@ -868,7 +869,7 @@ class PaperExperimentRunner:
     def save_final_results(self):
         """Save final comprehensive results_phase1."""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        results_file = self.base_output_dir / "results_phase1" / f"final_results_{timestamp}.json"
+        results_file = self.base_output_dir / f"results_phase{self.phase}" / f"final_results_{timestamp}.json"
         
         # Convert all results_phase1 to JSON-serializable format
         serializable_results = self._convert_for_json(self.results)
@@ -1288,7 +1289,7 @@ def main():
     args = parser.parse_args()
     
     # Initialize experiment runner
-    runner = PaperExperimentRunner(args.output_dir)
+    runner = PaperExperimentRunner(args.output_dir, args.phase)
     
     if args.quick_test:
         print("🏃‍♂️ Running quick test with 10 sample configurations...")
@@ -1325,7 +1326,7 @@ def main():
     print(f"\n✅ {phase_name} paper experiments completed!")
     print(f"📁 All data available in: {args.output_dir}")
     print(f"📊 Analysis files in: {args.output_dir}/analysis")
-    print(f"📈 Visualization data in: {args.output_dir}/visualizations_phase1")
+    print(f"📈 Visualization data in: {args.output_dir}/visualizations_phase{args.phase}")
 
 
 if __name__ == "__main__":
