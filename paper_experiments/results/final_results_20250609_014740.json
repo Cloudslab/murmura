@@ -1,0 +1,24 @@
+[
+  {
+    "experiment_id": 1,
+    "experiment_name": "exp_0001_ham10000_federated_star_30n_weak_dp",
+    "config": {
+      "config_id": 1,
+      "dataset": "ham10000",
+      "attack_strategy": "sensitive_groups",
+      "fl_type": "federated",
+      "topology": "star",
+      "node_count": 30,
+      "dp_setting": {
+        "enabled": true,
+        "epsilon": 16.0,
+        "name": "weak_dp"
+      },
+      "expected_runtime": 720
+    },
+    "status": "failed",
+    "error": "Training failed with traceback: Traceback (most recent call last):   File \"/home/ubuntu/murmura/murmura/examples/dp_ham10000_example.py\", line 494, in main     results = learning_process.execute()               ^^^^^^^^^^^^^^^^^^^^^^^^^^   File \"/home/ubuntu/murmura/murmura/orchestration/learning_process/federated_learning_process.py\", line 206, in execute     train_metrics = self.cluster_manager.train_models(                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File \"/home/ubuntu/murmura/murmura/orchestration/cluster_manager.py\", line 1108, in train_models     batch_results = ray.get(                     ^^^^^^^^   File \"/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/auto_init_hook.py\", line 21, in auto_init_wrapper     return fn(*args, **kwargs)            ^^^^^^^^^^^^^^^^^^^   File \"/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/client_mode_hook.py\", line 103, in wrapper     return func(*args, **kwargs)            ^^^^^^^^^^^^^^^^^^^^^   File \"/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py\", line 2822, in get     values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^   File \"/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py\", line 930, in get_objects",
+    "runtime_seconds": 53.699204206466675,
+    "timestamp": "2025-06-09T01:47:40.126299"
+  }
+]

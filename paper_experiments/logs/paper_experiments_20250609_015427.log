@@ -1,0 +1,47 @@
+2025-06-09 01:54:27,019 - INFO - Filtering experiments to datasets: ['ham10000']
+2025-06-09 01:54:27,019 - INFO - Filtering experiments to node counts: [30]
+2025-06-09 01:54:27,019 - INFO - Filtering experiments to attack strategies: ['sensitive_groups']
+2025-06-09 01:54:27,019 - INFO - Filtering experiments to DP settings: ['strong_dp']
+2025-06-09 01:54:27,019 - INFO - Generated 1 valid experimental configurations
+2025-06-09 01:54:27,020 - INFO - Generated 520 valid experimental configurations
+2025-06-09 01:54:27,020 - INFO - 🚀 Starting 1 comprehensive experiments
+2025-06-09 01:54:27,020 - INFO -    Max parallel: 1
+2025-06-09 01:54:27,020 - INFO -    Output directory: paper_experiments
+2025-06-09 01:54:27,020 - INFO -    Estimated total time: 0.3 hours
+2025-06-09 01:54:27,020 - INFO - [1/520] Starting experiment...
+2025-06-09 01:54:27,020 - INFO - 🎯 Starting experiment 1: exp_0001_ham10000_decentralized_ring_30n_strong_dp
+2025-06-09 01:54:27,020 - INFO -    Config: sensitive_groups attack, 30 nodes, strong_dp
+2025-06-09 01:56:12,797 - INFO -    ✅ Training completed in 105.8s
+2025-06-09 01:56:12,909 - INFO -    📊 Attack success: ✅ (confidence: 0.900)
+2025-06-09 01:56:12,909 - INFO - [1/520] 🎯 ham10000/decentralized/ring/30n | DP(ε=4.0) | sensitive-groups | Attack: SUCCESS (conf:0.900) | Runtime: 105.9s
+2025-06-09 01:56:12,912 - INFO - ✅ All experiments completed in 0.0 hours
+2025-06-09 01:56:12,915 - INFO - 💾 Final results saved to: paper_experiments/results/final_results_20250609_015612.json
+2025-06-09 01:56:12,915 - INFO - 
+====================================================================================================
+2025-06-09 01:56:12,915 - INFO - 📊 COMPREHENSIVE PAPER ANALYSIS
+2025-06-09 01:56:12,915 - INFO - ====================================================================================================
+2025-06-09 01:56:12,915 - INFO - Total experiments: 1
+2025-06-09 01:56:12,915 - INFO - Successful experiments: 1
+2025-06-09 01:56:12,915 - INFO - Success rate: 100.0%
+2025-06-09 01:56:12,917 - INFO - 📊 Analysis data saved to: paper_experiments/analysis/comprehensive_analysis.csv
+2025-06-09 01:56:12,918 - INFO - 
+🔑 KEY INSIGHTS FOR PAPER:
+2025-06-09 01:56:12,918 - INFO - 1. Overall attack success rate: 100.0%
+2025-06-09 01:56:12,918 - INFO - 2. DP Effectiveness:
+2025-06-09 01:56:12,918 - INFO -    With DP: 100.0% success rate (1.0 experiments)
+2025-06-09 01:56:12,919 - INFO -    DP by epsilon value:
+2025-06-09 01:56:12,919 - INFO -      ε=4.0: 100.0% attack success
+2025-06-09 01:56:12,920 - INFO - 3. Topology vulnerability ranking:
+2025-06-09 01:56:12,920 - INFO -    ring: 100.0% success rate (1.0 experiments)
+2025-06-09 01:56:12,920 - INFO - 4. Scalability effects:
+2025-06-09 01:56:12,920 - INFO -    very_large networks: 100.0% attack success
+2025-06-09 01:56:12,921 - INFO - 5. Attack strategy effectiveness:
+2025-06-09 01:56:12,921 - INFO -    sensitive_groups: 100.0% success rate (1.0 experiments)
+2025-06-09 01:56:12,921 - INFO - 6. Dataset-specific findings:
+2025-06-09 01:56:12,922 - INFO -    ham10000: 100.0% success rate (1.0 experiments)
+2025-06-09 01:56:12,922 - INFO - 7. FL type comparison:
+2025-06-09 01:56:12,922 - INFO -    decentralized: 100.0% success rate (1.0 experiments)
+2025-06-09 01:56:12,922 - INFO - 
+📄 Generating paper-ready outputs...
+2025-06-09 01:56:12,929 - INFO - Generated 520 valid experimental configurations
+2025-06-09 01:56:12,929 - INFO - 📄 Paper-ready outputs saved in: paper_experiments/analysis

@@ -1,0 +1,2 @@
+topology_type,num_nodes,total_edges,network_density,avg_degree,max_degree,min_degree,total_cpu_cores,total_memory_gb,total_gpus,avg_bandwidth_mbps,organizational_entities,geographic_coverage
+ring,30,30,0.06896551724137931,2.0,2,2,1758,5488,205,3778.3333333333335,5,30
