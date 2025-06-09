@@ -32,8 +32,8 @@ class PaperExperimentRunner:
         self.base_output_dir.mkdir(exist_ok=True)
         
         # Create subdirectories
-        (self.base_output_dir / "visualizations").mkdir(exist_ok=True)
-        (self.base_output_dir / "results").mkdir(exist_ok=True)
+        (self.base_output_dir / "visualizations_phase1").mkdir(exist_ok=True)
+        (self.base_output_dir / "results_phase1").mkdir(exist_ok=True)
         (self.base_output_dir / "logs").mkdir(exist_ok=True)
         (self.base_output_dir / "analysis").mkdir(exist_ok=True)
         
@@ -186,7 +186,7 @@ class PaperExperimentRunner:
         configurations = []
         
         # Phase 2 Focus: Test sampling effects on most vulnerable configurations
-        # from phase 1 results to maximize insight per experiment
+        # from phase 1 results_phase1 to maximize insight per experiment
         
         # Sampling rates to test (realistic FL deployment scenarios)
         sampling_scenarios = [
@@ -392,7 +392,7 @@ class PaperExperimentRunner:
             self.logger.info(f"   ✅ Training completed in {time.time() - start_time:.1f}s")
             
             # Run attacks
-            viz_dir = self.base_output_dir / "visualizations" / experiment_name
+            viz_dir = self.base_output_dir / "visualizations_phase1" / experiment_name
             if viz_dir.exists():
                 attack_results = run_topology_attacks(str(viz_dir))
                 evaluation = self.evaluate_attack_comprehensive(attack_results, config)
@@ -424,7 +424,7 @@ class PaperExperimentRunner:
             "--num_actors", str(config['node_count']),
             "--rounds", "3",  # Keep training fast for large-scale experiments
             "--epochs", "1",
-            "--vis_dir", str(self.base_output_dir / "visualizations"),
+            "--vis_dir", str(self.base_output_dir / "visualizations_phase1"),
             "--create_summary",  # Enable visualization generation
             "--experiment_name", experiment_name,  # Use custom experiment name
         ]
@@ -713,16 +713,16 @@ class PaperExperimentRunner:
             self.logger.info(f"🔄 Resuming from experiment {resume_from}")
             self.logger.info(f"   Skipping first {resume_from - 1} experiments")
             
-            # Load previous results if they exist
+            # Load previous results_phase1 if they exist
             try:
-                results_file = self.base_output_dir / "results" / "intermediate_results.json"
+                results_file = self.base_output_dir / "results_phase1" / "intermediate_results.json"
                 if results_file.exists():
                     with open(results_file, 'r') as f:
                         previous_results = json.load(f)
                         self.results = previous_results
-                        self.logger.info(f"   Loaded {len(previous_results)} previous results")
+                        self.logger.info(f"   Loaded {len(previous_results)} previous results_phase1")
             except Exception as e:
-                self.logger.warning(f"Could not load previous results: {e}")
+                self.logger.warning(f"Could not load previous results_phase1: {e}")
         
         if sample_configs and resume_from is None:
             # For testing, sample a subset (only if not resuming)
@@ -761,7 +761,7 @@ class PaperExperimentRunner:
                 # Log brief result summary
                 self._log_experiment_result_brief(result, actual_experiment_num, original_total)
                 
-                # Save intermediate results after each experiment
+                # Save intermediate results_phase1 after each experiment
                 self.save_intermediate_results()
         else:
             # Parallel execution
@@ -772,7 +772,7 @@ class PaperExperimentRunner:
                     for i, config in enumerate(all_configs, 1)
                 }
                 
-                # Collect results as they complete
+                # Collect results_phase1 as they complete
                 for future in as_completed(future_to_config):
                     i, config = future_to_config[future]
                     # Calculate actual experiment number (accounting for resume)
@@ -784,7 +784,7 @@ class PaperExperimentRunner:
                         # Log brief result summary
                         self._log_experiment_result_brief(result, actual_experiment_num, original_total)
                         
-                        # Save intermediate results after each experiment
+                        # Save intermediate results_phase1 after each experiment
                         self.save_intermediate_results()
                             
                     except Exception as e:
@@ -856,27 +856,27 @@ class PaperExperimentRunner:
         return obj
 
     def save_intermediate_results(self):
-        """Save intermediate results."""
-        results_file = self.base_output_dir / "results" / "intermediate_results.json"
+        """Save intermediate results_phase1."""
+        results_file = self.base_output_dir / "results_phase1" / "intermediate_results.json"
         
-        # Convert all results to JSON-serializable format
+        # Convert all results_phase1 to JSON-serializable format
         serializable_results = self._convert_for_json(self.results)
         
         with open(results_file, 'w') as f:
             json.dump(serializable_results, f, indent=2)
     
     def save_final_results(self):
-        """Save final comprehensive results."""
+        """Save final comprehensive results_phase1."""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        results_file = self.base_output_dir / "results" / f"final_results_{timestamp}.json"
+        results_file = self.base_output_dir / "results_phase1" / f"final_results_{timestamp}.json"
         
-        # Convert all results to JSON-serializable format
+        # Convert all results_phase1 to JSON-serializable format
         serializable_results = self._convert_for_json(self.results)
         
         with open(results_file, 'w') as f:
             json.dump(serializable_results, f, indent=2)
         
-        self.logger.info(f"💾 Final results saved to: {results_file}")
+        self.logger.info(f"💾 Final results_phase1 saved to: {results_file}")
     
     def generate_comprehensive_analysis(self):
         """Generate comprehensive analysis for the paper."""
@@ -915,7 +915,7 @@ class PaperExperimentRunner:
                 'dp_epsilon': config['dp_setting'].get('epsilon'),
                 'dp_privacy_level': config['dp_setting']['name'],
                 
-                # Attack results
+                # Attack results_phase1
                 'attack_success': evaluation['attack_success'],
                 'confidence_score': evaluation['confidence_score'],
                 'best_attack_type': evaluation['best_attack_type'],
@@ -1015,7 +1015,7 @@ class PaperExperimentRunner:
         successful_results = [r for r in self.results if r['status'] == 'success']
         
         if not successful_results:
-            self.logger.warning("No successful results for paper outputs")
+            self.logger.warning("No successful results_phase1 for paper outputs")
             return
         
         # Create summary tables for paper
@@ -1122,7 +1122,7 @@ class PaperExperimentRunner:
         # This would generate LaTeX table code - simplified for now
         latex_content = """
 % LaTeX tables for topology attack paper
-% Generated automatically from experimental results
+% Generated automatically from experimental results_phase1
 
 \\begin{table}[h]
 \\centering
@@ -1132,7 +1132,7 @@ class PaperExperimentRunner:
 \\hline
 Topology & FL Type & DP & Nodes & Success Rate & Avg Confidence \\\\
 \\hline
-% Data would be inserted here from the experimental results
+% Data would be inserted here from the experimental results_phase1
 \\end{tabular}
 \\end{table}
 """
@@ -1325,7 +1325,7 @@ def main():
     print(f"\n✅ {phase_name} paper experiments completed!")
     print(f"📁 All data available in: {args.output_dir}")
     print(f"📊 Analysis files in: {args.output_dir}/analysis")
-    print(f"📈 Visualization data in: {args.output_dir}/visualizations")
+    print(f"📈 Visualization data in: {args.output_dir}/visualizations_phase1")
 
 
 if __name__ == "__main__":

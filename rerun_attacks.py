@@ -31,7 +31,7 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 def load_existing_results(results_file: str) -> List[Dict[str, Any]]:
-    """Load existing experiment results."""
+    """Load existing experiment results_phase1."""
     if os.path.exists(results_file):
         with open(results_file, 'r') as f:
             return json.load(f)
@@ -114,7 +114,7 @@ def run_attacks_on_visualization_data(viz_dir: str, exp_name: str) -> Dict[str, 
         # Run attacks using the existing function
         attack_results = run_topology_attacks(viz_dir)
         
-        # Extract just the attack results array
+        # Extract just the attack results_phase1 array
         if 'attack_results' in attack_results:
             return {
                 "attack_results": attack_results['attack_results'],
@@ -124,7 +124,7 @@ def run_attacks_on_visualization_data(viz_dir: str, exp_name: str) -> Dict[str, 
             return {
                 "attack_results": [],
                 "status": "failed",
-                "error": "No attack results returned"
+                "error": "No attack results_phase1 returned"
             }
     
     except Exception as e:
@@ -137,8 +137,8 @@ def run_attacks_on_visualization_data(viz_dir: str, exp_name: str) -> Dict[str, 
 
 
 def rerun_all_attacks(
-    visualization_base_dir: str = "paper_experiments/visualizations",
-    results_file: str = "paper_experiments/results/rerun_attack_results.json",
+    visualization_base_dir: str = "paper_experiments/visualizations_phase1",
+    results_file: str = "paper_experiments/results_phase1/rerun_attack_results.json",
     experiment_filter: Optional[List[str]] = None
 ) -> None:
     """
@@ -146,7 +146,7 @@ def rerun_all_attacks(
     
     Args:
         visualization_base_dir: Base directory containing experiment visualization folders
-        results_file: Output file for updated results
+        results_file: Output file for updated results_phase1
         experiment_filter: Optional list of experiment names to process (process all if None)
     """
     
@@ -202,13 +202,13 @@ def rerun_all_attacks(
         
         updated_results.append(result_entry)
         
-        # Save intermediate results every 10 experiments
+        # Save intermediate results_phase1 every 10 experiments
         if (i + 1) % 10 == 0:
-            print(f"Saving intermediate results after {i+1} experiments...")
+            print(f"Saving intermediate results_phase1 after {i+1} experiments...")
             save_results(updated_results, results_file)
     
-    # Save final results
-    print(f"\nSaving final results to {results_file}")
+    # Save final results_phase1
+    print(f"\nSaving final results_phase1 to {results_file}")
     save_results(updated_results, results_file)
     
     # Print summary
@@ -233,7 +233,7 @@ def convert_keys_to_str(obj):
 
 
 def save_results(results: List[Dict[str, Any]], output_file: str) -> None:
-    """Save results to JSON file."""
+    """Save results_phase1 to JSON file."""
     # Create output directory if it doesn't exist
     output_path = Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -241,14 +241,14 @@ def save_results(results: List[Dict[str, Any]], output_file: str) -> None:
     # Convert all keys to strings and handle numpy types
     results_converted = convert_keys_to_str(results)
     
-    # Save results
+    # Save results_phase1
     with open(output_file, 'w') as f:
         json.dump(results_converted, f, indent=2, cls=NumpyEncoder)
 
 
 def compare_old_vs_new_metrics(
-    old_results_file: str = "paper_experiments/results/intermediate_results.json",
-    new_results_file: str = "paper_experiments/results/rerun_attack_results.json"
+    old_results_file: str = "paper_experiments/results_phase1/intermediate_results.json",
+    new_results_file: str = "paper_experiments/results_phase1/rerun_attack_results.json"
 ) -> None:
     """Compare old vs new attack success metrics."""
     
@@ -332,7 +332,7 @@ if __name__ == "__main__":
         # Run all experiments
         rerun_all_attacks()
         
-        # Also run comparison if old results exist
-        old_results_file = "paper_experiments/results/intermediate_results.json"
+        # Also run comparison if old results_phase1 exist
+        old_results_file = "paper_experiments/results_phase1/intermediate_results.json"
         if os.path.exists(old_results_file):
             compare_old_vs_new_metrics()

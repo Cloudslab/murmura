@@ -472,7 +472,7 @@ class AttackEvaluator:
         self.ground_truth_partitions = ground_truth_partitions
     
     def evaluate_attacks(self, attack_results: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Evaluate all attack results."""
+        """Evaluate all attack results_phase1."""
         evaluation = {
             "attack_summaries": [],
             "overall_success": False,
@@ -505,7 +505,7 @@ class AttackEvaluator:
         return evaluation
     
     def _extract_key_findings(self, attack_result: Dict[str, Any]) -> List[str]:
-        """Extract human-readable key findings from attack results."""
+        """Extract human-readable key findings from attack results_phase1."""
         findings = []
         
         # Communication pattern findings
@@ -573,7 +573,7 @@ def run_topology_attacks(visualization_dir: str) -> Dict[str, Any]:
                 'attack_success_metric': 0.0
             })
     
-    # Evaluate results
+    # Evaluate results_phase1
     evaluator = AttackEvaluator()
     evaluation = evaluator.evaluate_attacks(attack_results)
     

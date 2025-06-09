@@ -110,7 +110,7 @@ def main():
         "--log-file",
         type=Path,
         default=Path("paper_experiments/logs/paper_experiments_20250608_142742.log"),
-        help="Path to the log file containing experiment results"
+        help="Path to the log file containing experiment results_phase1"
     )
     parser.add_argument(
         "--dry-run",

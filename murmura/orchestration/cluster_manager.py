@@ -578,7 +578,7 @@ class ClusterManager:
                 )
                 failed_actors.append((i, str(e)))
 
-        # Report results
+        # Report results_phase1
         if failed_actors:
             failure_details = [f"Actor {idx}: {error}" for idx, error in failed_actors]
             error_msg = (
@@ -730,12 +730,12 @@ class ClusterManager:
                 actual_idx = batch_start + i
                 batch_tasks.append((actual_idx, actor.get_data_info.remote()))
 
-            # Wait for batch results
+            # Wait for batch results_phase1
             try:
-                # Get all results for this batch
+                # Get all results_phase1 for this batch
                 batch_results = ray.get([task for _, task in batch_tasks], timeout=18000)
 
-                # Process results
+                # Process results_phase1
                 for (actual_idx, _), actor_info in zip(batch_tasks, batch_results):
                     try:
                         # Validate required fields with more specific checks
@@ -1075,7 +1075,7 @@ class ClusterManager:
             **kwargs: Additional training parameters
 
         Returns:
-            List of training results from sampled clients
+            List of training results_phase1 from sampled clients
         """
         # Sample clients if client_sampling_rate < 1.0
         if client_sampling_rate < 1.0:

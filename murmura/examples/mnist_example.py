@@ -230,8 +230,8 @@ def main() -> None:
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations",
-        help="Directory to save visualizations",
+        default="./visualizations_phase1",
+        help="Directory to save visualizations_phase1",
     )
     parser.add_argument(
         "--create_animation",
@@ -431,7 +431,7 @@ def main() -> None:
             # Execute the learning process (now uses config parameters internally)
             results = learning_process.execute()
 
-            # Generate visualizations if requested
+            # Generate visualizations_phase1 if requested
             if visualizer and (
                 args.create_animation or args.create_frames or args.create_summary
             ):
@@ -461,7 +461,7 @@ def main() -> None:
             global_model.save(args.save_path)
             logger.info(f"MNIST model saved to '{args.save_path}'")
 
-            # Print final results
+            # Print final results_phase1
             logger.info("=== MNIST Training Results ===")
             logger.info(
                 f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"

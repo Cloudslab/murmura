@@ -315,7 +315,7 @@ class DecentralizedLearningProcess(LearningProcess):
         self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
         self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")
 
-        # Return results
+        # Return results_phase1
         results = {
             "initial_metrics": initial_metrics,
             "final_metrics": final_metrics,

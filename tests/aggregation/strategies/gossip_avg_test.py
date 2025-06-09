@@ -42,7 +42,7 @@ def test_gossip_avg_aggregation_equal_weights():
     # Aggregate with equal weights (default)
     result = strategy.aggregate(params_list)
 
-    # Check results with equal weighting
+    # Check results_phase1 with equal weighting
     expected = 0.5 * params_self["layer1"] + 0.5 * params_neighbor["layer1"]
     np.testing.assert_array_almost_equal(result["layer1"], expected)
 

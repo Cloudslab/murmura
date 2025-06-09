@@ -59,7 +59,7 @@ def test_fed_avg_aggregation_custom_weights():
     # Aggregate with custom weights
     result = strategy.aggregate(params_list, weights)
 
-    # Check results with weighted average
+    # Check results_phase1 with weighted average
     expected_layer1 = 0.7 * params_a["layer1"] + 0.3 * params_b["layer1"]
     expected_layer2 = 0.7 * params_a["layer2"] + 0.3 * params_b["layer2"]
 
