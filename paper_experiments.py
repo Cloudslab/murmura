@@ -71,11 +71,12 @@ class PaperExperimentRunner:
         )
         self.logger = logging.getLogger(__name__)
     
-    def get_valid_configurations(self, dataset_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_valid_configurations(self, dataset_filter: Optional[str] = None, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Generate all valid experimental configurations.
         
         Args:
             dataset_filter: If specified, only generate configs for this dataset ('mnist' or 'ham10000')
+            filters: Dictionary of filters to apply (datasets, fl_types, topologies, node_counts, dp_settings, attack_strategies)
         """
         
         configurations = []
@@ -86,15 +87,34 @@ class PaperExperimentRunner:
             ("ham10000", [5, 7, 10, 15, 20, 30])          # HAM10000: 7 classes, optimal at 7 nodes; using multiples of 10 for cluster efficiency (except 7)
         ]
         
-        # Filter datasets if specified
-        if dataset_filter:
+        # Apply filters if provided
+        if filters:
+            # Dataset filtering
+            if filters.get('datasets'):
+                all_datasets_and_node_counts = [(d, n) for d, n in all_datasets_and_node_counts if d in filters['datasets']]
+                self.logger.info(f"Filtering experiments to datasets: {filters['datasets']}")
+            
+            # Node count filtering
+            if filters.get('node_counts'):
+                all_datasets_and_node_counts = [(d, [nc for nc in n if nc in filters['node_counts']]) 
+                                               for d, n in all_datasets_and_node_counts]
+                self.logger.info(f"Filtering experiments to node counts: {filters['node_counts']}")
+        elif dataset_filter:
+            # Legacy dataset_filter support
             if dataset_filter not in ["mnist", "ham10000"]:
                 raise ValueError(f"Invalid dataset filter: {dataset_filter}. Must be 'mnist' or 'ham10000'")
-            datasets_and_node_counts = [(d, n) for d, n in all_datasets_and_node_counts if d == dataset_filter]
+            all_datasets_and_node_counts = [(d, n) for d, n in all_datasets_and_node_counts if d == dataset_filter]
             self.logger.info(f"Filtering experiments to dataset: {dataset_filter}")
-        else:
-            datasets_and_node_counts = all_datasets_and_node_counts
+        
+        datasets_and_node_counts = all_datasets_and_node_counts
+        
+        # Attack strategies
         attack_strategies = ["sensitive_groups", "topology_correlated", "imbalanced_sensitive"]
+        if filters and filters.get('attack_strategies'):
+            attack_strategies = [a for a in attack_strategies if a in filters['attack_strategies']]
+            self.logger.info(f"Filtering experiments to attack strategies: {filters['attack_strategies']}")
+        
+        # DP settings
         dp_settings = [
             {"enabled": False, "epsilon": None, "name": "no_dp"},
             {"enabled": True, "epsilon": 16.0, "name": "weak_dp"},
@@ -102,6 +122,9 @@ class PaperExperimentRunner:
             {"enabled": True, "epsilon": 4.0, "name": "strong_dp"},
             {"enabled": True, "epsilon": 1.0, "name": "very_strong_dp"}
         ]
+        if filters and filters.get('dp_settings'):
+            dp_settings = [dp for dp in dp_settings if dp['name'] in filters['dp_settings']]
+            self.logger.info(f"Filtering experiments to DP settings: {filters['dp_settings']}")
         
         config_id = 1
         
@@ -120,8 +143,16 @@ class PaperExperimentRunner:
                     for dp_setting in dp_settings:
                         
                         # Test both federated and decentralized approaches
-                        for fl_type in ["federated", "decentralized"]:
+                        fl_types = ["federated", "decentralized"]
+                        if filters and filters.get('fl_types'):
+                            fl_types = [fl for fl in fl_types if fl in filters['fl_types']]
+                        
+                        for fl_type in fl_types:
                             valid_topologies = self.compatibility_matrix[fl_type]["compatible_topologies"]
+                            
+                            # Apply topology filter
+                            if filters and filters.get('topologies'):
+                                valid_topologies = [t for t in valid_topologies if t in filters['topologies']]
                             
                             for topology in valid_topologies:
                                 # Skip very large networks for some topologies to manage compute
@@ -533,11 +564,12 @@ class PaperExperimentRunner:
                                     max_parallel: int = 2,
                                     sample_configs: Optional[int] = None,
                                     dataset_filter: Optional[str] = None,
-                                    resume_from: Optional[int] = None) -> None:
+                                    resume_from: Optional[int] = None,
+                                    filters: Optional[Dict[str, Any]] = None) -> None:
         """Run comprehensive experiments for the paper."""
         
         # Generate all configurations
-        all_configs = self.get_valid_configurations(dataset_filter)
+        all_configs = self.get_valid_configurations(dataset_filter, filters)
         
         # Handle resume functionality
         if resume_from is not None:
@@ -1061,6 +1093,60 @@ def main():
         help="Resume experiments from a specific experiment number (1-based)"
     )
     
+    # New filtering arguments for rerunning specific experiments
+    parser.add_argument(
+        "--datasets",
+        type=str,
+        nargs="+",
+        choices=["mnist", "ham10000"],
+        default=None,
+        help="Run experiments only for specified datasets"
+    )
+    
+    parser.add_argument(
+        "--fl-types",
+        type=str,
+        nargs="+",
+        choices=["federated", "decentralized"],
+        default=None,
+        help="Run experiments only for specified FL types"
+    )
+    
+    parser.add_argument(
+        "--topologies",
+        type=str,
+        nargs="+",
+        choices=["star", "complete", "ring", "line"],
+        default=None,
+        help="Run experiments only for specified topologies"
+    )
+    
+    parser.add_argument(
+        "--node-counts",
+        type=int,
+        nargs="+",
+        default=None,
+        help="Run experiments only for specified node counts"
+    )
+    
+    parser.add_argument(
+        "--dp-settings",
+        type=str,
+        nargs="+",
+        choices=["no_dp", "weak_dp", "medium_dp", "strong_dp", "very_strong_dp"],
+        default=None,
+        help="Run experiments only for specified DP settings"
+    )
+    
+    parser.add_argument(
+        "--attack-strategies",
+        type=str,
+        nargs="+",
+        choices=["sensitive_groups", "imbalanced_sensitive", "topology_correlated"],
+        default=None,
+        help="Run experiments only for specified attack strategies"
+    )
+    
     args = parser.parse_args()
     
     # Initialize experiment runner
@@ -1072,12 +1158,28 @@ def main():
     else:
         sample_size = args.sample_size
     
+    # Build filters from command line arguments
+    filters = {}
+    if args.datasets:
+        filters['datasets'] = args.datasets
+    if args.fl_types:
+        filters['fl_types'] = [ft.replace('-', '_') for ft in args.fl_types]
+    if args.topologies:
+        filters['topologies'] = args.topologies
+    if args.node_counts:
+        filters['node_counts'] = args.node_counts
+    if args.dp_settings:
+        filters['dp_settings'] = [dp.replace('-', '_') for dp in args.dp_settings]
+    if args.attack_strategies:
+        filters['attack_strategies'] = [a.replace('-', '_') for a in args.attack_strategies]
+    
     # Run comprehensive experiments
     runner.run_comprehensive_experiments(
         max_parallel=args.max_parallel,
         sample_configs=sample_size,
         dataset_filter=args.dataset,
-        resume_from=args.resume_from
+        resume_from=args.resume_from,
+        filters=filters if filters else None
     )
     
     print(f"\n✅ Comprehensive paper experiments completed!")
