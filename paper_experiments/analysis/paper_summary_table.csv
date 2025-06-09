@@ -1,2 +1,0 @@
-Dataset,FL Type,Topology,Nodes,DP,Epsilon,Attack Strategy,Attack Success,Confidence,Best Attack Type
-HAM10000,Decentralized,Ring,30,Yes,1.0,Imbalanced Sensitive,Yes,0.900,Communication Pattern Attack

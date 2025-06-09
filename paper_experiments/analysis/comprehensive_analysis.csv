@@ -1,2 +1,0 @@
-experiment_id,dataset,attack_strategy,fl_type,topology,node_count,dp_enabled,dp_epsilon,dp_privacy_level,attack_success,confidence_score,best_attack_type,comm_pattern_score,param_magnitude_score,topology_structure_score,topology_vulnerability,communication_complexity,dp_protection_effective,signal_strength_with_dp,size_category,attack_scalability_score,runtime_seconds
-1,ham10000,imbalanced_sensitive,decentralized,ring,30,True,1.0,very_strong_dp,True,0.9,Communication Pattern Attack,0.9,0.6799587026369606,0.40106086943202646,0.9,30,False,0.9,very_large,1.35,93.70457482337952
