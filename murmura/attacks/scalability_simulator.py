@@ -812,8 +812,17 @@ def run_scalability_experiments(network_sizes: List[int],
                               topologies: List[str],
                               attack_strategies: List[str],
                               dp_settings: List[Dict[str, Any]],
-                              output_dir: str = "./scalability_results") -> Dict[str, Any]:
+                              output_dir: str = "./scalability_results",
+                              num_workers: int = 1) -> Dict[str, Any]:
     """Run comprehensive scalability experiments with incremental result saving."""
+    
+    # Use parallel version if num_workers > 1
+    if num_workers > 1:
+        from .scalability_simulator_parallel import run_scalability_experiments_parallel
+        return run_scalability_experiments_parallel(
+            network_sizes, topologies, attack_strategies, 
+            dp_settings, output_dir, num_workers
+        )
     
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)

@@ -157,7 +157,63 @@ class ParameterMagnitudeAttack(TopologyAttack):
         }
     
     def _extract_magnitude_statistics(self, param_updates_df: pd.DataFrame) -> Dict[int, Dict[str, float]]:
-        """Extract statistical features from parameter magnitudes."""
+        """Extract statistical features from parameter magnitudes using vectorized operations."""
+        # Vectorized approach for better performance
+        try:
+            # Try to parse parameter summaries if available
+            def parse_summary(summary_str):
+                try:
+                    summary = ast.literal_eval(summary_str)
+                    return summary['norm'], summary.get('mean', 0), summary.get('std', 0)
+                except:
+                    return None, None, None
+            
+            # Apply parsing vectorized
+            if 'parameter_summary' in param_updates_df.columns:
+                parsed = param_updates_df['parameter_summary'].apply(parse_summary)
+                param_updates_df['parsed_norm'] = [x[0] for x in parsed]
+                param_updates_df['parsed_mean'] = [x[1] for x in parsed]
+                param_updates_df['parsed_std'] = [x[2] for x in parsed]
+                
+                # Use parsed values or fallback to parameter_norm
+                param_updates_df['final_norm'] = param_updates_df['parsed_norm'].fillna(param_updates_df['parameter_norm'])
+            else:
+                param_updates_df['final_norm'] = param_updates_df['parameter_norm']
+                param_updates_df['parsed_mean'] = 0
+                param_updates_df['parsed_std'] = 0
+            
+            # Vectorized groupby operations
+            node_stats_df = param_updates_df.groupby('node_id').agg({
+                'final_norm': ['mean', 'std'],
+                'parsed_mean': 'mean',
+                'parsed_std': 'mean'
+            }).round(6)
+            
+            # Calculate trends vectorized
+            trends = {}
+            for node_id in param_updates_df['node_id'].unique():
+                node_norms = param_updates_df[param_updates_df['node_id'] == node_id]['final_norm'].values
+                trends[node_id] = self._calculate_trend(node_norms.tolist())
+            
+            # Build result dictionary
+            node_stats = {}
+            for node_id in node_stats_df.index:
+                node_stats[node_id] = {
+                    'norm_mean': float(node_stats_df.loc[node_id, ('final_norm', 'mean')]),
+                    'norm_std': float(node_stats_df.loc[node_id, ('final_norm', 'std')]),
+                    'norm_trend': trends[node_id],
+                    'mean_of_means': float(node_stats_df.loc[node_id, ('parsed_mean', 'mean')]),
+                    'mean_of_stds': float(node_stats_df.loc[node_id, ('parsed_std', 'mean')])
+                }
+            
+            return node_stats
+            
+        except Exception as e:
+            # Fallback to original implementation if vectorized version fails
+            return self._extract_magnitude_statistics_fallback(param_updates_df)
+    
+    def _extract_magnitude_statistics_fallback(self, param_updates_df: pd.DataFrame) -> Dict[int, Dict[str, float]]:
+        """Fallback implementation using original approach."""
         node_stats = {}
         
         for node_id in param_updates_df['node_id'].unique():
