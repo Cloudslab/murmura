@@ -91,7 +91,15 @@ def main():
         network_sizes = [50, 100, 200, 300]
         print("🏃‍♂️ Running quick scalability test...")
     else:
-        network_sizes = list(range(args.min_nodes, args.max_nodes + 1, args.step_size))
+        # Use step_size up to 100, then switch to 100-step increments
+        network_sizes = []
+        current = args.min_nodes
+        while current <= args.max_nodes:
+            network_sizes.append(current)
+            if current < 100:
+                current += args.step_size
+            else:
+                current += 100
         print(f"🚀 Running comprehensive scalability test: {args.min_nodes}-{args.max_nodes} nodes")
     
     print(f"   Network sizes: {network_sizes}")
