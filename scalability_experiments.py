@@ -132,9 +132,12 @@ def main():
         
         print(f"\n✅ Scalability experiments completed!")
         print(f"   Total time: {total_time/60:.1f} minutes")
-        print(f"   Total experiments: {results['total_experiments']}")
+        print(f"   Total experiments run: {results['total_experiments']}")
+        if 'skipped_experiments' in results:
+            print(f"   Skipped (already completed): {results['skipped_experiments']}")
         print(f"   Successful experiments: {results['successful_experiments']}")
-        print(f"   Success rate: {results['successful_experiments']/results['total_experiments']:.1%}")
+        if results['total_experiments'] > 0:
+            print(f"   Success rate: {results['successful_experiments']/results['total_experiments']:.1%}")
         print(f"   Results saved to: {results['results_file']}")
         print(f"   Analysis saved to: {results['analysis_file']}")
         
@@ -172,8 +175,13 @@ def generate_summary_report(results: Dict[str, Any], output_dir: str):
         # Overall summary
         f.write("OVERALL RESULTS:\n")
         f.write(f"Total experiments conducted: {results['total_experiments']}\n")
+        if 'skipped_experiments' in results:
+            f.write(f"Skipped (already completed): {results['skipped_experiments']}\n")
         f.write(f"Successful experiments: {results['successful_experiments']}\n")
-        f.write(f"Success rate: {results['successful_experiments']/results['total_experiments']:.1%}\n\n")
+        if results['total_experiments'] > 0:
+            f.write(f"Success rate: {results['successful_experiments']/results['total_experiments']:.1%}\n\n")
+        else:
+            f.write("Success rate: N/A (no experiments run)\n\n")
         
         # Scaling trends
         if 'scaling_trends' in analysis:
