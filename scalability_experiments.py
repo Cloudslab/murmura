@@ -84,6 +84,19 @@ def main():
         help="Include differential privacy experiments"
     )
     
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=4,
+        help="Number of parallel workers for faster execution (default: 4)"
+    )
+    
+    parser.add_argument(
+        "--no_parallel",
+        action="store_true", 
+        help="Disable parallel execution (for debugging)"
+    )
+    
     args = parser.parse_args()
     
     # Generate network sizes to test
@@ -134,7 +147,8 @@ def main():
             topologies=args.topologies,
             attack_strategies=args.attack_strategies,
             dp_settings=dp_settings,
-            output_dir=args.output_dir
+            output_dir=args.output_dir,
+            num_workers=args.num_workers if not args.no_parallel else 1
         )
         
         total_time = time.time() - start_time
