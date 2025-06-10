@@ -813,13 +813,40 @@ def run_scalability_experiments(network_sizes: List[int],
                               attack_strategies: List[str],
                               dp_settings: List[Dict[str, Any]],
                               output_dir: str = "./scalability_results") -> Dict[str, Any]:
-    """Run comprehensive scalability experiments."""
+    """Run comprehensive scalability experiments with incremental result saving."""
     
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
     
+    # Files for incremental saving
+    results_file = output_path / "scalability_results.json"
+    checkpoint_file = output_path / "experiment_checkpoint.json"
+    
+    # Load existing results and checkpoint if available
     all_results = []
+    completed_experiments = set()
     experiment_id = 0
+    
+    if results_file.exists():
+        print(f"📂 Loading existing results from {results_file}")
+        try:
+            with open(results_file, 'r') as f:
+                all_results = json.load(f)
+            print(f"   Loaded {len(all_results)} existing results")
+        except Exception as e:
+            print(f"   ⚠️  Error loading results: {e}, starting fresh")
+            all_results = []
+    
+    if checkpoint_file.exists():
+        print(f"📂 Loading checkpoint from {checkpoint_file}")
+        try:
+            with open(checkpoint_file, 'r') as f:
+                checkpoint = json.load(f)
+                completed_experiments = set(checkpoint.get('completed_experiments', []))
+                experiment_id = checkpoint.get('last_experiment_id', 0)
+            print(f"   Resuming from experiment {experiment_id}")
+        except Exception as e:
+            print(f"   ⚠️  Error loading checkpoint: {e}, starting fresh")
     
     print(f"🚀 Starting scalability experiments...")
     print(f"   Network sizes: {network_sizes}")
@@ -827,10 +854,22 @@ def run_scalability_experiments(network_sizes: List[int],
     print(f"   Attack strategies: {attack_strategies}")
     print(f"   DP settings: {len(dp_settings)}")
     
+    # Calculate total experiments for progress tracking
+    total_experiments = len(network_sizes) * len(topologies) * len(attack_strategies) * len(dp_settings)
+    skipped_count = 0
+    
     for size in network_sizes:
         for topology in topologies:
             for attack_strategy in attack_strategies:
                 for dp_setting in dp_settings:
+                    
+                    # Create experiment key for deduplication
+                    experiment_key = f"{size}_{topology}_{attack_strategy}_{dp_setting.get('name', 'no_dp')}"
+                    
+                    # Skip if already completed
+                    if experiment_key in completed_experiments:
+                        skipped_count += 1
+                        continue
                     
                     config = NetworkConfig(
                         num_nodes=size,
@@ -841,15 +880,19 @@ def run_scalability_experiments(network_sizes: List[int],
                         num_rounds=5  # Reduced for large-scale simulation
                     )
                     
-                    print(f"📊 Experiment {experiment_id + 1}: {size} nodes, {topology}, {attack_strategy}, DP={dp_setting.get('name', 'off')}")
+                    current_experiment_num = experiment_id + 1
+                    progress_pct = (len(completed_experiments) + skipped_count) / total_experiments * 100
+                    print(f"📊 Experiment {current_experiment_num} ({progress_pct:.1f}% complete): {size} nodes, {topology}, {attack_strategy}, DP={dp_setting.get('name', 'off')}")
                     
                     try:
                         simulator = LargeScaleAttackSimulator(config)
                         result = simulator.simulate_attack_execution()
                         result['experiment_id'] = experiment_id
+                        result['experiment_key'] = experiment_key
                         result['status'] = 'success'
                         
                         all_results.append(result)
+                        completed_experiments.add(experiment_key)
                         
                         # Log brief result
                         eval_result = result['evaluation']
@@ -861,36 +904,81 @@ def run_scalability_experiments(network_sizes: List[int],
                         print(f"   ❌ Experiment failed: {str(e)}")
                         all_results.append({
                             'experiment_id': experiment_id,
+                            'experiment_key': experiment_key,
                             'config': config.__dict__,
                             'status': 'failed',
                             'error': str(e)
                         })
+                        completed_experiments.add(experiment_key)
+                    
+                    # Incremental save after each experiment
+                    try:
+                        # Save results
+                        with open(results_file, 'w') as f:
+                            json_results = [_convert_for_json(r) for r in all_results]
+                            json.dump(json_results, f, indent=2)
+                        
+                        # Save checkpoint
+                        checkpoint_data = {
+                            'last_experiment_id': experiment_id,
+                            'completed_experiments': list(completed_experiments),
+                            'total_experiments': total_experiments,
+                            'timestamp': str(pd.Timestamp.now())
+                        }
+                        with open(checkpoint_file, 'w') as f:
+                            json.dump(checkpoint_data, f, indent=2)
+                        
+                    except Exception as e:
+                        print(f"   ⚠️  Warning: Failed to save incremental results: {e}")
                     
                     experiment_id += 1
     
-    # Save results
-    results_file = output_path / "scalability_results.json"
-    with open(results_file, 'w') as f:
-        # Convert numpy types for JSON serialization
-        json_results = []
-        for result in all_results:
-            json_result = _convert_for_json(result)
-            json_results.append(json_result)
-        json.dump(json_results, f, indent=2)
+    # Final save to ensure everything is persisted
+    print(f"\n💾 Finalizing results...")
     
-    print(f"💾 Results saved to: {results_file}")
+    # Save final results one more time to ensure completeness
+    try:
+        with open(results_file, 'w') as f:
+            json_results = [_convert_for_json(r) for r in all_results]
+            json.dump(json_results, f, indent=2)
+        print(f"   Results saved to: {results_file}")
+    except Exception as e:
+        print(f"   ⚠️  Error saving final results: {e}")
     
     # Generate analysis
+    print(f"📊 Generating analysis...")
     analysis = analyze_scalability_results(all_results)
     analysis_file = output_path / "scalability_analysis.json"
-    with open(analysis_file, 'w') as f:
-        json.dump(_convert_for_json(analysis), f, indent=2)
     
-    print(f"📊 Analysis saved to: {analysis_file}")
+    try:
+        with open(analysis_file, 'w') as f:
+            json.dump(_convert_for_json(analysis), f, indent=2)
+        print(f"   Analysis saved to: {analysis_file}")
+    except Exception as e:
+        print(f"   ⚠️  Error saving analysis: {e}")
+    
+    # Clean up checkpoint file since we're done
+    try:
+        if checkpoint_file.exists():
+            checkpoint_file.unlink()
+            print(f"   Removed checkpoint file")
+    except Exception as e:
+        print(f"   ⚠️  Could not remove checkpoint: {e}")
+    
+    # Calculate final statistics
+    successful_experiments = len([r for r in all_results if r.get('status') == 'success'])
+    actual_total = len(all_results)
+    
+    print(f"\n✅ Experiments completed!")
+    print(f"   Total experiments run: {actual_total}")
+    print(f"   Skipped (already completed): {skipped_count}")
+    print(f"   Successful: {successful_experiments}")
+    print(f"   Failed: {actual_total - successful_experiments}")
     
     return {
-        'total_experiments': len(all_results),
-        'successful_experiments': len([r for r in all_results if r.get('status') == 'success']),
+        'total_experiments': actual_total,
+        'successful_experiments': successful_experiments,
+        'skipped_experiments': skipped_count,
         'results_file': str(results_file),
         'analysis_file': str(analysis_file),
         'results': all_results
