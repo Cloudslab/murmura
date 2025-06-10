@@ -111,6 +111,7 @@ def main():
     
     if args.include_dp:
         dp_settings.extend([
+            {"enabled": True, "epsilon": 16.0, "name": "weak_dp"},
             {"enabled": True, "epsilon": 8.0, "name": "medium_dp"},
             {"enabled": True, "epsilon": 4.0, "name": "strong_dp"}
         ])
