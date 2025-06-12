@@ -1,7 +1,7 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 
 import numpy as np
 import ray
@@ -235,7 +235,9 @@ class LearningProcess(ABC):
         
         # Generate adjacency matrix from topology manager
         adjacency_matrix = [[0 for _ in range(num_actors)] for _ in range(num_actors)]
-        if hasattr(self.cluster_manager, 'topology_manager') and self.cluster_manager.topology_manager:
+        if (self.cluster_manager is not None and 
+            hasattr(self.cluster_manager, 'topology_manager') and 
+            self.cluster_manager.topology_manager):
             adjacency_list = self.cluster_manager.topology_manager.adjacency_list
             for node, neighbors in adjacency_list.items():
                 for neighbor in neighbors:
@@ -315,10 +317,12 @@ class LearningProcess(ABC):
                 "data_compliance": random.choice(["HIPAA", "GDPR", "PIPEDA", "local"]),
             }
         
-        # Generate geographic information
-        geographic_info = {}
+        # Generate geographic information (floats only)
+        geographic_info: Dict[int, Dict[str, float]] = {}
+        # Generate organizational hierarchy (strings only)  
+        organizational_hierarchy: Dict[int, Dict[str, str]] = {}
         # Predefined realistic locations for medical institutions
-        locations = [
+        locations: List[Dict[str, Any]] = [
             {"latitude": 44.0225, "longitude": -92.4699, "city": "Rochester", "country": "USA", "timezone": "America/Chicago"},
             {"latitude": 39.2904, "longitude": -76.6122, "city": "Baltimore", "country": "USA", "timezone": "America/New_York"},
             {"latitude": 37.4419, "longitude": -122.1430, "city": "Palo Alto", "country": "USA", "timezone": "America/Los_Angeles"},
@@ -337,27 +341,28 @@ class LearningProcess(ABC):
             lat_variation = (random.random() - 0.5) * 0.1  # ±0.05 degrees
             lon_variation = (random.random() - 0.5) * 0.1
             
+            # Extract and convert location data safely
+            lat = location.get("latitude", 0.0)
+            lon = location.get("longitude", 0.0)
+            
             geographic_info[i] = {
-                "latitude": round(location["latitude"] + lat_variation, 6),
-                "longitude": round(location["longitude"] + lon_variation, 6),
-                "city": location["city"],
-                "country": location["country"],
-                "timezone": location["timezone"],
-                "region": regions[i % len(regions)],
+                "latitude": round(float(lat) + lat_variation, 6),
+                "longitude": round(float(lon) + lon_variation, 6),
             }
-        
-        # Generate organizational hierarchy
-        organizational_hierarchy = {}
-        for i in range(num_actors):
+            
             organizational_hierarchy[i] = {
+                "city": str(location.get("city", "Unknown")),
+                "country": str(location.get("country", "Unknown")),
+                "timezone": str(location.get("timezone", "Unknown")),
+                "region": regions[i % len(regions)],
                 "institution_name": f"{institutions[i % len(institutions)]}",
-                "institution_type": node_attributes[i]["node_type"],
+                "institution_type": str(node_attributes[i]["node_type"]),
                 "department": departments[i % len(departments)],
                 "admin_level": random.choice(["local", "regional", "national", "international"]),
                 "funding_source": random.choice(["public", "private", "mixed", "research_grant"]),
                 "certification": random.choice(["ISO27001", "HIPAA_compliant", "SOC2", "FedRAMP"]),
-                "established_year": random.randint(1950, 2020),
-                "staff_count": random.randint(50, 5000),
+                "established_year": str(random.randint(1950, 2020)),
+                "staff_count": str(random.randint(50, 5000)),
             }
         
         return NetworkStructureEvent(

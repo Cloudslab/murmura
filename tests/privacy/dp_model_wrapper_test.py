@@ -230,7 +230,7 @@ class TestDPTorchModelWrapper:
             )
             wrapper.privacy_engine = mock_pe
             
-            wrapper._make_private(dataloader, epochs=5, dataset_size=100)
+            result = wrapper._make_private(dataloader, epochs=5, dataset_size=100)
             
             assert wrapper.is_dp_enabled is True
             assert result is mock_private_dataloader
@@ -539,7 +539,7 @@ class TestDPTorchModelWrapper:
         
         with patch.object(wrapper, '_make_private') as mock_make_private, \
              patch.object(wrapper, '_train_epoch') as mock_train_epoch, \
-             patch.object(wrapper, '_update_privacy_spent'):
+             patch.object(wrapper, '_update_privacy_spent') as mock_update:
             
             mock_make_private.return_value = Mock()
             mock_train_epoch.return_value = (10.0, 80, 100)

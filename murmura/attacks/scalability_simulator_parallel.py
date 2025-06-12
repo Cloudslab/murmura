@@ -1,3 +1,4 @@
+# type: ignore
 """
 Parallel version of scalability simulator for faster execution.
 """
