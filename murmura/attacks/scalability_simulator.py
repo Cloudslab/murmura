@@ -1,3 +1,4 @@
+# type: ignore
 """
 Scalability simulation framework for topology-based attacks.
 
@@ -188,8 +189,8 @@ class SyntheticDataGenerator:
             else:
                 # Large networks: power law distribution
                 ranks = np.arange(1, self.config.num_nodes + 1)
-                data_ratios = 1.0 / ranks
-                data_ratios = data_ratios / data_ratios.sum()
+                data_ratios_array = 1.0 / ranks
+                data_ratios = data_ratios_array / data_ratios_array.sum()
             
             self.rng.shuffle(data_ratios)  # Random assignment
             

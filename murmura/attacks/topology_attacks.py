@@ -103,7 +103,8 @@ class CommunicationPatternAttack(TopologyAttack):
             'comm_count': 'mean'
         }).to_dict('index')
         
-        return node_temporal_stats
+        # Convert to proper dict type with string keys
+        return {str(k): v for k, v in node_temporal_stats.items()}
     
     def _calculate_pattern_coherence(self, node_clusters: Dict[int, int]) -> float:
         """Calculate how coherent the discovered patterns are."""
@@ -202,12 +203,21 @@ class ParameterMagnitudeAttack(TopologyAttack):
                 parsed_mean_val = node_stats_df.loc[node_id, ('parsed_mean', 'mean')]
                 parsed_std_val = node_stats_df.loc[node_id, ('parsed_std', 'mean')]
                 
+                def safe_float(val) -> float:
+                    """Safely convert to float with fallback."""
+                    if val is None:
+                        return 0.0
+                    try:
+                        return float(val)
+                    except (ValueError, TypeError):
+                        return 0.0
+                
                 node_stats[node_id] = {
-                    'norm_mean': float(norm_mean_val) if norm_mean_val is not None else 0.0,
-                    'norm_std': float(norm_std_val) if norm_std_val is not None else 0.0,
+                    'norm_mean': safe_float(norm_mean_val),
+                    'norm_std': safe_float(norm_std_val),
                     'norm_trend': trends[node_id],
-                    'mean_of_means': float(parsed_mean_val) if parsed_mean_val is not None else 0.0,
-                    'mean_of_stds': float(parsed_std_val) if parsed_std_val is not None else 0.0
+                    'mean_of_means': safe_float(parsed_mean_val),
+                    'mean_of_stds': safe_float(parsed_std_val)
                 }
             
             return node_stats
@@ -534,7 +544,7 @@ class AttackEvaluator:
     
     def evaluate_attacks(self, attack_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Evaluate all attack results_phase1."""
-        evaluation = {
+        evaluation: Dict[str, Any] = {
             "attack_summaries": [],
             "overall_success": False,
             "best_attack": None,

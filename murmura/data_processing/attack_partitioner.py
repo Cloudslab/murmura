@@ -63,10 +63,16 @@ class SensitiveGroupPartitioner(Partitioner):
             node_list = self.topology_assignment[group_name]
             
             # Collect all indices for this group
-            group_indices = []
+            group_indices: List[int] = []
             for cls in class_list:
                 if cls in class_indices:
-                    group_indices.extend(class_indices[cls])
+                    cls_indices = class_indices[cls]
+                    if isinstance(cls_indices, (list, np.ndarray)):
+                        # Convert to list of integers safely
+                        if isinstance(cls_indices, np.ndarray):
+                            group_indices.extend(cls_indices.astype(int).tolist())
+                        else:
+                            group_indices.extend([int(idx) for idx in cls_indices if isinstance(idx, (int, np.integer))])
             
             # Shuffle and distribute among assigned nodes
             if group_indices:
@@ -74,7 +80,8 @@ class SensitiveGroupPartitioner(Partitioner):
                 chunks = np.array_split(group_indices, len(node_list))
                 
                 for node_id, chunk in zip(node_list, chunks):
-                    self.partitions[node_id].extend(chunk.tolist())
+                    chunk_as_ints = [int(x) for x in chunk]
+                    self.partitions[node_id].extend(chunk_as_ints)
         
         dataset.add_partitions(split_name, cast(Dict[int, List[int]], self.partitions))
 
@@ -223,8 +230,8 @@ class ImbalancedSensitivePartitioner(Partitioner):
         self.partitions = {i: [] for i in range(self.num_partitions)}
         
         # Separate rare and common classes
-        rare_indices = {}
-        common_indices = {}
+        rare_indices: Dict[int, np.ndarray] = {}
+        common_indices: Dict[int, np.ndarray] = {}
         
         for cls in np.unique(targets):
             cls_indices = np.where(targets == cls)[0]
@@ -245,7 +252,8 @@ class ImbalancedSensitivePartitioner(Partitioner):
             if n_for_rare_nodes > 0:
                 rare_chunks = np.array_split(indices[:n_for_rare_nodes], len(self.rare_class_nodes))
                 for node, chunk in zip(self.rare_class_nodes, rare_chunks):
-                    self.partitions[node].extend(chunk.tolist())
+                    chunk_as_ints = [int(x) for x in chunk]
+                    self.partitions[node].extend(chunk_as_ints)
             
             # Few samples go to non-rare nodes (to create imbalance)
             if n_for_other_nodes > 0:
@@ -253,12 +261,14 @@ class ImbalancedSensitivePartitioner(Partitioner):
                 if non_rare_nodes:  # Only distribute if there are non-rare nodes
                     remaining_chunks = np.array_split(indices[n_for_rare_nodes:], len(non_rare_nodes))
                     for node, chunk in zip(non_rare_nodes, remaining_chunks):
-                        self.partitions[node].extend(chunk.tolist())
+                        chunk_as_ints = [int(x) for x in chunk]
+                        self.partitions[node].extend(chunk_as_ints)
                 else:
                     # If all nodes are rare nodes, distribute remainder among them too
                     remaining_chunks = np.array_split(indices[n_for_rare_nodes:], len(self.rare_class_nodes))
                     for node, chunk in zip(self.rare_class_nodes, remaining_chunks):
-                        self.partitions[node].extend(chunk.tolist())
+                        chunk_as_ints = [int(x) for x in chunk]
+                        self.partitions[node].extend(chunk_as_ints)
         
         # Distribute common classes primarily to non-rare nodes
         non_rare_nodes = [i for i in range(self.num_partitions) if i not in self.rare_class_nodes]
@@ -275,17 +285,20 @@ class ImbalancedSensitivePartitioner(Partitioner):
                 if n_for_non_rare > 0:
                     non_rare_chunks = np.array_split(indices[:n_for_non_rare], len(non_rare_nodes))
                     for node, chunk in zip(non_rare_nodes, non_rare_chunks):
-                        self.partitions[node].extend(chunk.tolist())
+                        chunk_as_ints = [int(x) for x in chunk]
+                        self.partitions[node].extend(chunk_as_ints)
                 
                 # Small amount to rare nodes (to maintain some diversity)
                 if n_for_rare > 0 and self.rare_class_nodes:
                     rare_chunks = np.array_split(indices[n_for_non_rare:], len(self.rare_class_nodes))
                     for node, chunk in zip(self.rare_class_nodes, rare_chunks):
-                        self.partitions[node].extend(chunk.tolist())
+                        chunk_as_ints = [int(x) for x in chunk]
+                        self.partitions[node].extend(chunk_as_ints)
             else:
                 # If no non-rare nodes, distribute evenly
                 chunks = np.array_split(indices, self.num_partitions)
                 for node, chunk in enumerate(chunks):
-                    self.partitions[node].extend(chunk.tolist())
+                    chunk_as_ints = [int(x) for x in chunk]
+                    self.partitions[node].extend(chunk_as_ints)
         
         dataset.add_partitions(split_name, cast(Dict[int, List[int]], self.partitions))
