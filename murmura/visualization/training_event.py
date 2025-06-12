@@ -146,17 +146,23 @@ class NetworkStructureEvent(TrainingEvent):
         super().__init__(round_num=0, step_name="network_structure")
         self.topology_type = topology_type
         self.num_nodes = num_nodes
-        self.adjacency_matrix = adjacency_matrix or self._create_default_adjacency_matrix(num_nodes)
-        self.node_identifiers = node_identifiers or [f"node_{i}" for i in range(num_nodes)]
+        self.adjacency_matrix = (
+            adjacency_matrix or self._create_default_adjacency_matrix(num_nodes)
+        )
+        self.node_identifiers = node_identifiers or [
+            f"node_{i}" for i in range(num_nodes)
+        ]
         self.edge_weights = edge_weights or {}
-        self.node_attributes = node_attributes or self._create_default_node_attributes(num_nodes)
+        self.node_attributes = node_attributes or self._create_default_node_attributes(
+            num_nodes
+        )
         self.geographic_info = geographic_info or {}
         self.organizational_hierarchy = organizational_hierarchy or {}
 
     def _create_default_adjacency_matrix(self, num_nodes: int) -> List[List[int]]:
         """Create a default adjacency matrix based on topology type"""
         matrix = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
-        
+
         if self.topology_type == "complete":
             for i in range(num_nodes):
                 for j in range(num_nodes):
@@ -171,19 +177,21 @@ class NetworkStructureEvent(TrainingEvent):
                 matrix[i][i + 1] = 1
                 matrix[i + 1][i] = 1
         # For star and custom, matrix remains mostly zeros (handled elsewhere)
-        
+
         return matrix
 
-    def _create_default_node_attributes(self, num_nodes: int) -> Dict[int, Dict[str, Any]]:
+    def _create_default_node_attributes(
+        self, num_nodes: int
+    ) -> Dict[int, Dict[str, Any]]:
         """Create default node attributes with realistic hardware specifications"""
         attributes = {}
-        
+
         # Generate diverse but realistic hardware configurations
         cpu_options = [4, 8, 16, 32, 64]  # CPU cores
         memory_options = [8, 16, 32, 64, 128]  # GB RAM
         gpu_options = [0, 1, 2, 4, 8]  # Number of GPUs
         bandwidth_options = [100, 500, 1000, 2000, 5000]  # Mbps
-        
+
         for i in range(num_nodes):
             # Use modulo to create consistent but diverse configurations
             attributes[i] = {
@@ -192,11 +200,13 @@ class NetworkStructureEvent(TrainingEvent):
                 "gpu_count": gpu_options[i % len(gpu_options)],
                 "bandwidth_mbps": bandwidth_options[i % len(bandwidth_options)],
                 "storage_gb": 1000 * (1 + i % 5),  # 1TB to 5TB
-                "node_type": "edge" if i % 3 == 0 else ("cloud" if i % 3 == 1 else "mobile"),
+                "node_type": "edge"
+                if i % 3 == 0
+                else ("cloud" if i % 3 == 1 else "mobile"),
                 "reliability_score": 0.7 + (i % 4) * 0.075,  # 0.7 to 0.925
                 "compute_capability": f"tier_{1 + i % 3}",  # tier_1, tier_2, tier_3
             }
-        
+
         return attributes
 
     def get_network_summary(self) -> Dict[str, Any]:
@@ -207,22 +217,34 @@ class NetworkStructureEvent(TrainingEvent):
         avg_degree = np.mean(node_degrees) if node_degrees else 0
         max_degree = max(node_degrees) if node_degrees else 0
         min_degree = min(node_degrees) if node_degrees else 0
-        
+
         # Calculate connectivity metrics
-        density = total_edges / (self.num_nodes * (self.num_nodes - 1) / 2) if self.num_nodes > 1 else 0
-        
+        density = (
+            total_edges / (self.num_nodes * (self.num_nodes - 1) / 2)
+            if self.num_nodes > 1
+            else 0
+        )
+
         # Aggregate node capabilities
-        total_cpu_cores = sum(attr.get("cpu_cores", 0) for attr in self.node_attributes.values())
-        total_memory = sum(attr.get("memory_gb", 0) for attr in self.node_attributes.values())
-        total_gpus = sum(attr.get("gpu_count", 0) for attr in self.node_attributes.values())
-        avg_bandwidth = np.mean([attr.get("bandwidth_mbps", 0) for attr in self.node_attributes.values()])
-        
+        total_cpu_cores = sum(
+            attr.get("cpu_cores", 0) for attr in self.node_attributes.values()
+        )
+        total_memory = sum(
+            attr.get("memory_gb", 0) for attr in self.node_attributes.values()
+        )
+        total_gpus = sum(
+            attr.get("gpu_count", 0) for attr in self.node_attributes.values()
+        )
+        avg_bandwidth = np.mean(
+            [attr.get("bandwidth_mbps", 0) for attr in self.node_attributes.values()]
+        )
+
         # Node type distribution
         node_types: Dict[str, int] = {}
         for attr in self.node_attributes.values():
             node_type = attr.get("node_type", "unknown")
             node_types[node_type] = node_types.get(node_type, 0) + 1
-        
+
         return {
             "topology_type": self.topology_type,
             "num_nodes": self.num_nodes,
@@ -242,10 +264,14 @@ class NetworkStructureEvent(TrainingEvent):
             },
             "node_type_distribution": node_types,
             "geographic_coverage": len(self.geographic_info),
-            "organizational_entities": len(set(
-                attr.get("institution_type", "") 
-                for attr in self.organizational_hierarchy.values()
-            )) if self.organizational_hierarchy else 0,
+            "organizational_entities": len(
+                set(
+                    attr.get("institution_type", "")
+                    for attr in self.organizational_hierarchy.values()
+                )
+            )
+            if self.organizational_hierarchy
+            else 0,
         }
 
 

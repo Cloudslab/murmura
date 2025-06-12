@@ -148,7 +148,9 @@ class TopologyCoordinator:
             local_weights = []
 
             # Get self parameters
-            self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
+            self_params = ray.get(
+                node_actor.get_model_parameters.remote(), timeout=1800
+            )
             local_params_list.append(self_params)
 
             # Add self weight
@@ -160,7 +162,8 @@ class TopologyCoordinator:
             # Get neighbor parameters
             for neighbor_idx in neighbors:
                 neighbor_params = ray.get(
-                    self.actors[neighbor_idx].get_model_parameters.remote(), timeout=1800
+                    self.actors[neighbor_idx].get_model_parameters.remote(),
+                    timeout=1800,
                 )
                 local_params_list.append(neighbor_params)
 
@@ -218,7 +221,9 @@ class TopologyCoordinator:
                 local_weights = []
 
                 # Get self parameters
-                self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
+                self_params = ray.get(
+                    node_actor.get_model_parameters.remote(), timeout=1800
+                )
                 local_params_list.append(self_params)
 
                 # Add self weight
@@ -283,7 +288,9 @@ class TopologyCoordinator:
             local_weights = []
 
             # Get self parameters
-            self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
+            self_params = ray.get(
+                node_actor.get_model_parameters.remote(), timeout=1800
+            )
             local_params_list.append(self_params)
 
             # Add self weight
@@ -295,7 +302,8 @@ class TopologyCoordinator:
             # Get neighbor parameters
             for neighbor_idx in neighbors:
                 neighbor_params = ray.get(
-                    self.actors[neighbor_idx].get_model_parameters.remote(), timeout=1800
+                    self.actors[neighbor_idx].get_model_parameters.remote(),
+                    timeout=1800,
                 )
                 local_params_list.append(neighbor_params)
 
@@ -364,7 +372,9 @@ class TopologyCoordinator:
             local_weights = []
 
             # Get self parameters
-            self_params = ray.get(node_actor.get_model_parameters.remote(), timeout=1800)
+            self_params = ray.get(
+                node_actor.get_model_parameters.remote(), timeout=1800
+            )
             local_params_list.append(self_params)
 
             # Add self weight
@@ -376,7 +386,8 @@ class TopologyCoordinator:
             # Get neighbor parameters
             for neighbor_idx in neighbors:
                 neighbor_params = ray.get(
-                    self.actors[neighbor_idx].get_model_parameters.remote(), timeout=1800
+                    self.actors[neighbor_idx].get_model_parameters.remote(),
+                    timeout=1800,
                 )
                 local_params_list.append(neighbor_params)
 

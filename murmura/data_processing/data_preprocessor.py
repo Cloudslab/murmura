@@ -26,11 +26,11 @@ class ImageBytesPreprocessor(DataPreprocessor):
     """Preprocessor for image data stored as bytes (common in HuggingFace datasets)."""
 
     def __init__(
-            self,
-            target_mode: Optional[str] = None,
-            normalize: bool = True,
-            normalization_factor: float = 255.0,
-            target_size: Optional[tuple] = None,
+        self,
+        target_mode: Optional[str] = None,
+        normalize: bool = True,
+        normalization_factor: float = 255.0,
+        target_size: Optional[tuple] = None,
     ):
         """
         Initialize image bytes preprocessor.
@@ -124,11 +124,11 @@ class ImagePreprocessor(DataPreprocessor):
     """Preprocessor for PIL Image data with configurable parameters."""
 
     def __init__(
-            self,
-            target_mode: Optional[str] = None,
-            normalize: bool = True,
-            normalization_factor: float = 255.0,
-            target_size: Optional[tuple] = None,
+        self,
+        target_mode: Optional[str] = None,
+        normalize: bool = True,
+        normalization_factor: float = 255.0,
+        target_size: Optional[tuple] = None,
     ):
         """
         Initialize image preprocessor.
@@ -178,9 +178,9 @@ class DictPreprocessor(DataPreprocessor):
     """Preprocessor for dictionary data with configurable key extraction."""
 
     def __init__(
-            self,
-            key_extractors: Dict[str, Callable[[Any], np.ndarray]],
-            primary_key: Optional[str] = None,
+        self,
+        key_extractors: Dict[str, Callable[[Any], np.ndarray]],
+        primary_key: Optional[str] = None,
     ):
         """
         Initialize dictionary preprocessor.
@@ -367,7 +367,7 @@ class GenericDataPreprocessor:
         )
 
     def add_preprocessor(
-            self, preprocessor: DataPreprocessor, priority: int = -1
+        self, preprocessor: DataPreprocessor, priority: int = -1
     ) -> None:
         """
         Add a custom preprocessor.
@@ -384,7 +384,7 @@ class GenericDataPreprocessor:
 
 # Dataset-specific factory functions for common use cases
 def create_image_preprocessor(
-        grayscale: bool = False, normalize: bool = True, target_size: Optional[tuple] = None
+    grayscale: bool = False, normalize: bool = True, target_size: Optional[tuple] = None
 ) -> GenericDataPreprocessor:
     """Create preprocessor optimized for image datasets."""
     target_mode = "L" if grayscale else None
@@ -450,7 +450,7 @@ def create_tabular_preprocessor() -> GenericDataPreprocessor:
 
 # Helper functions
 def _process_dict_image(
-        img_data: Any, target_mode: Optional[str], normalize: bool
+    img_data: Any, target_mode: Optional[str], normalize: bool
 ) -> np.ndarray:
     """Process image data extracted from dictionary."""
     if hasattr(img_data, "convert") or isinstance(img_data, Image.Image):
@@ -468,10 +468,10 @@ def _process_dict_image(
 
 
 def _process_image_bytes(
-        img_bytes: bytes,
-        target_mode: Optional[str],
-        normalize: bool,
-        target_size: Optional[tuple],
+    img_bytes: bytes,
+    target_mode: Optional[str],
+    normalize: bool,
+    target_size: Optional[tuple],
 ) -> np.ndarray:
     """Process image bytes into numpy array."""
     try:
