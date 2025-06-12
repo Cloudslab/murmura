@@ -7,8 +7,8 @@ authors:
     email: "murtazahatimr@icloud.com"
     affiliation: "University of Melbourne"
 title: "Murmura: A Ray-based Framework for Federated and Decentralized Machine Learning"
-version: v1.0.0-alpha
-doi: 10.5281/zenodo.15622124
+version: v1.0.1-alpha
+doi: 10.5281/zenodo.15647115
 date-released: 2025-06-09
 url: "https://github.com/murtazahr/murmura"
 repository-code: "https://github.com/murtazahr/murmura"
