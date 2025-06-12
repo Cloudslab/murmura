@@ -4,7 +4,6 @@ Validation script for the updated figures to ensure accuracy and completeness.
 """
 
 import json
-import pandas as pd
 import numpy as np
 from pathlib import Path
 
@@ -147,13 +146,13 @@ def analyze_attack_effectiveness():
     p1_metrics = get_metrics(phase1_data)
     p2_metrics = get_metrics(phase2_data)
     
-    print(f"Phase 1 (Baseline):")
+    print("Phase 1 (Baseline):")
     print(f"  Mean: {np.mean(p1_metrics):.3f}")
     print(f"  Std:  {np.std(p1_metrics):.3f}")
     print(f"  Min:  {np.min(p1_metrics):.3f}")
     print(f"  Max:  {np.max(p1_metrics):.3f}")
     
-    print(f"Phase 2 (Subsampling):")
+    print("Phase 2 (Subsampling):")
     print(f"  Mean: {np.mean(p2_metrics):.3f}")
     print(f"  Std:  {np.std(p2_metrics):.3f}")
     print(f"  Min:  {np.min(p2_metrics):.3f}")

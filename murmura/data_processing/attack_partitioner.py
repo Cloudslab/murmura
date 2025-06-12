@@ -179,7 +179,7 @@ class TopologyCorrelatedPartitioner(Partitioner):
                 # Assign primarily to corresponding leaf
                 leaf_node = leaf_nodes[cls_idx]
                 n_leaf = int(len(cls_indices) * self.correlation_strength)
-                n_center = len(cls_indices) - n_leaf
+                # n_center = len(cls_indices) - n_leaf  # Currently unused
                 
                 self.rng.shuffle(cls_indices)
                 self.partitions[leaf_node].extend(cls_indices[:n_leaf].tolist())

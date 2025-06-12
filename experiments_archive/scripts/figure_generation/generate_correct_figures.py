@@ -6,10 +6,8 @@ Generate correct figures for the topology privacy leakage paper:
 """
 
 import json
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 
 # Set up matplotlib for high-quality figures
@@ -274,7 +272,7 @@ def generate_subsampling_flow_chart(phase1_data, phase2_data, output_dir):
     stats_df = pd.DataFrame(stats).sort_values('order')
     
     # Print detailed analysis
-    print(f"\nSubsampling Results Analysis:")
+    print("\nSubsampling Results Analysis:")
     for _, row in stats_df.iterrows():
         print(f"{row['label']}: {row['mean']:.3f} ± {row['std']:.3f} ({row['count']} experiments)")
         if row['level'] != 'baseline':

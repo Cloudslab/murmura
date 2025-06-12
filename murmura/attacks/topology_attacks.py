@@ -2,14 +2,12 @@
 Topology-based attacks that exploit communication patterns and parameter flows
 to infer information about data distributions even with differential privacy.
 """
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Optional, Any
 import numpy as np
 import pandas as pd
 from abc import ABC, abstractmethod
 from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, mutual_info_score
-from scipy.stats import entropy, pearsonr
+from scipy.stats import pearsonr
 import ast
 
 
@@ -97,7 +95,7 @@ class CommunicationPatternAttack(TopologyAttack):
         }).reset_index()
         
         # Flatten column names
-        round_stats.columns = ['round_num', 'source_node', 'timestamp_min', 'timestamp_max', 'timestamp_std', 'comm_count']
+        round_stats.columns = pd.Index(['round_num', 'source_node', 'timestamp_min', 'timestamp_max', 'timestamp_std', 'comm_count'])
         
         # Calculate per-node temporal statistics
         node_temporal_stats = round_stats.groupby('source_node').agg({
@@ -113,7 +111,7 @@ class CommunicationPatternAttack(TopologyAttack):
             return 0.0
         
         # Simple metric: ratio of nodes in majority cluster
-        cluster_counts = {}
+        cluster_counts: Dict[int, int] = {}
         for cluster in node_clusters.values():
             cluster_counts[cluster] = cluster_counts.get(cluster, 0) + 1
         
@@ -165,7 +163,7 @@ class ParameterMagnitudeAttack(TopologyAttack):
                 try:
                     summary = ast.literal_eval(summary_str)
                     return summary['norm'], summary.get('mean', 0), summary.get('std', 0)
-                except:
+                except Exception:
                     return None, None, None
             
             # Apply parsing vectorized
@@ -198,17 +196,23 @@ class ParameterMagnitudeAttack(TopologyAttack):
             # Build result dictionary
             node_stats = {}
             for node_id in node_stats_df.index:
+                # Extract values and convert to float, handling potential type issues
+                norm_mean_val = node_stats_df.loc[node_id, ('final_norm', 'mean')]
+                norm_std_val = node_stats_df.loc[node_id, ('final_norm', 'std')]
+                parsed_mean_val = node_stats_df.loc[node_id, ('parsed_mean', 'mean')]
+                parsed_std_val = node_stats_df.loc[node_id, ('parsed_std', 'mean')]
+                
                 node_stats[node_id] = {
-                    'norm_mean': float(node_stats_df.loc[node_id, ('final_norm', 'mean')]),
-                    'norm_std': float(node_stats_df.loc[node_id, ('final_norm', 'std')]),
+                    'norm_mean': float(norm_mean_val) if norm_mean_val is not None else 0.0,
+                    'norm_std': float(norm_std_val) if norm_std_val is not None else 0.0,
                     'norm_trend': trends[node_id],
-                    'mean_of_means': float(node_stats_df.loc[node_id, ('parsed_mean', 'mean')]),
-                    'mean_of_stds': float(node_stats_df.loc[node_id, ('parsed_std', 'mean')])
+                    'mean_of_means': float(parsed_mean_val) if parsed_mean_val is not None else 0.0,
+                    'mean_of_stds': float(parsed_std_val) if parsed_std_val is not None else 0.0
                 }
             
             return node_stats
             
-        except Exception as e:
+        except Exception:
             # Fallback to original implementation if vectorized version fails
             return self._extract_magnitude_statistics_fallback(param_updates_df)
     
@@ -230,7 +234,7 @@ class ParameterMagnitudeAttack(TopologyAttack):
                     norms.append(summary['norm'])
                     means.append(summary['mean'])
                     stds.append(summary['std'])
-                except:
+                except Exception:
                     # Fallback to parameter_norm column
                     norms.append(row['parameter_norm'])
             
@@ -259,11 +263,11 @@ class ParameterMagnitudeAttack(TopologyAttack):
             return {list(node_stats.keys())[0]: 0} if node_stats else {}
         
         # Create feature matrix
-        features = []
+        features_list: List[List[float]] = []
         node_ids = []
         
         for node_id, stats in node_stats.items():
-            features.append([
+            features_list.append([
                 stats['norm_mean'],
                 stats['norm_std'],
                 stats['norm_trend'],
@@ -272,7 +276,7 @@ class ParameterMagnitudeAttack(TopologyAttack):
             ])
             node_ids.append(node_id)
         
-        features = np.array(features)
+        features = np.array(features_list)
         
         # Normalize features
         features = (features - features.mean(axis=0)) / (features.std(axis=0) + 1e-8)
@@ -291,7 +295,7 @@ class ParameterMagnitudeAttack(TopologyAttack):
             node_data = param_updates_df[param_updates_df['node_id'] == node_id].sort_values('round_num')
             
             norms = node_data['parameter_norm'].values
-            rounds = node_data['round_num'].values
+            # rounds = node_data['round_num'].values  # Currently unused
             
             if len(norms) > 1:
                 # Calculate convergence rate (how quickly norms decrease)
@@ -317,11 +321,11 @@ class ParameterMagnitudeAttack(TopologyAttack):
             return 0.0
         
         # Create feature matrix with multiple dimensions
-        features = []
+        features_list: List[List[float]] = []
         node_ids = []
         
         for node_id, stats in node_stats.items():
-            features.append([
+            features_list.append([
                 stats['norm_mean'],
                 stats['norm_std'],
                 stats['norm_trend'],
@@ -330,7 +334,7 @@ class ParameterMagnitudeAttack(TopologyAttack):
             ])
             node_ids.append(node_id)
         
-        features = np.array(features)
+        features = np.array(features_list)
         
         # Handle edge cases
         if len(features) < 2:
@@ -473,7 +477,7 @@ class TopologyStructureAttack(TopologyAttack):
                                    topology_features: Dict[int, Dict[str, float]],
                                    node_characteristics: Dict[int, Dict[str, float]]) -> Dict[str, float]:
         """Test correlations between topology position and node characteristics."""
-        correlations = {}
+        correlations: Dict[str, float] = {}
         
         # Get common nodes
         common_nodes = set(topology_features.keys()) & set(node_characteristics.keys())
@@ -496,7 +500,7 @@ class TopologyStructureAttack(TopologyAttack):
                 correlations['position_vs_norm'] = pearsonr(positions, avg_norms)[0]
                 correlations['degree_vs_norm'] = pearsonr(degrees, avg_norms)[0]
                 correlations['centrality_vs_variance'] = pearsonr(centrality, norm_vars)[0]
-        except:
+        except Exception:
             correlations = {'position_vs_norm': 0.0, 'degree_vs_norm': 0.0, 'centrality_vs_variance': 0.0}
         
         # Replace NaN with 0

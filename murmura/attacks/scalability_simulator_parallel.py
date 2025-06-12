@@ -2,14 +2,12 @@
 Parallel version of scalability simulator for faster execution.
 """
 
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Any
 import json
 import time
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from multiprocessing import Manager
 import pandas as pd
-import numpy as np
 
 from .scalability_simulator import (
     NetworkConfig, LargeScaleAttackSimulator, 
@@ -229,7 +227,7 @@ def run_scalability_experiments_parallel(network_sizes: List[int],
                             results_file, checkpoint_file)
     
     # Generate analysis
-    print(f"📊 Generating analysis...")
+    print("📊 Generating analysis...")
     analysis = analyze_scalability_results(all_results)
     analysis_file = output_path / "scalability_analysis.json"
     

@@ -13,8 +13,8 @@ from murmura.privacy.dp_config import DPConfig
 try:
     from opacus import PrivacyEngine  # type: ignore[import-untyped]
     from opacus.utils.batch_memory_manager import BatchMemoryManager  # type: ignore[import-untyped]
-    from opacus.validators import ModuleValidator  # type: ignore[import-untyped]
     from opacus.accountants.utils import get_noise_multiplier  # type: ignore[import-untyped]
+    # ModuleValidator imported locally where needed to ensure Ray worker compatibility
 
     OPACUS_AVAILABLE = True
 except ImportError:

@@ -4,15 +4,13 @@ Comprehensive Paper Experiments - Large-scale systematic evaluation of topology-
 for federated learning paper with up to 25 nodes across MNIST and skin lesion datasets.
 """
 
-import os
 import sys
 import json
 import subprocess
 import argparse
 import time
-import shutil
 from pathlib import Path
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, List, Any, Optional
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -889,7 +887,7 @@ class PaperExperimentRunner:
         successful_results = [r for r in self.results if r['status'] == 'success']
         total_experiments = len(self.results)
         
-        self.logger.info(f"\n" + "=" * 100)
+        self.logger.info("\n" + "=" * 100)
         self.logger.info("📊 COMPREHENSIVE PAPER ANALYSIS")
         self.logger.info("=" * 100)
         
@@ -961,7 +959,7 @@ class PaperExperimentRunner:
     def _generate_key_insights(self, df: pd.DataFrame):
         """Generate key insights for the paper."""
         
-        self.logger.info(f"\n🔑 KEY INSIGHTS FOR PAPER:")
+        self.logger.info("\n🔑 KEY INSIGHTS FOR PAPER:")
         
         # 1. Overall attack success rates
         overall_success_rate = df['attack_success'].mean()
@@ -970,7 +968,7 @@ class PaperExperimentRunner:
         # 2. DP effectiveness analysis
         if 'dp_enabled' in df.columns:
             dp_comparison = df.groupby('dp_enabled')['attack_success'].agg(['mean', 'count'])
-            self.logger.info(f"2. DP Effectiveness:")
+            self.logger.info("2. DP Effectiveness:")
             for dp_enabled, stats in dp_comparison.iterrows():
                 dp_str = "With DP" if dp_enabled else "Without DP"
                 self.logger.info(f"   {dp_str}: {stats['mean']:.1%} success rate ({stats['count']} experiments)")
@@ -978,44 +976,44 @@ class PaperExperimentRunner:
             # DP strength analysis
             if 'dp_epsilon' in df.columns:
                 dp_strength = df[df['dp_enabled']].groupby('dp_epsilon')['attack_success'].mean().sort_index(ascending=False)
-                self.logger.info(f"   DP by epsilon value:")
+                self.logger.info("   DP by epsilon value:")
                 for epsilon, success_rate in dp_strength.items():
                     self.logger.info(f"     ε={epsilon}: {success_rate:.1%} attack success")
         
         # 3. Topology vulnerability ranking
         topo_vuln = df.groupby('topology')['attack_success'].agg(['mean', 'count']).sort_values('mean', ascending=False)
-        self.logger.info(f"3. Topology vulnerability ranking:")
+        self.logger.info("3. Topology vulnerability ranking:")
         for topology, stats in topo_vuln.iterrows():
             self.logger.info(f"   {topology}: {stats['mean']:.1%} success rate ({stats['count']} experiments)")
         
         # 4. Scalability effects
         scale_effects = df.groupby('size_category')['attack_success'].mean()
-        self.logger.info(f"4. Scalability effects:")
+        self.logger.info("4. Scalability effects:")
         for size_cat, success_rate in scale_effects.items():
             self.logger.info(f"   {size_cat} networks: {success_rate:.1%} attack success")
         
         # 5. Attack strategy effectiveness
         strategy_effectiveness = df.groupby('attack_strategy')['attack_success'].agg(['mean', 'count'])
-        self.logger.info(f"5. Attack strategy effectiveness:")
+        self.logger.info("5. Attack strategy effectiveness:")
         for strategy, stats in strategy_effectiveness.iterrows():
             self.logger.info(f"   {strategy}: {stats['mean']:.1%} success rate ({stats['count']} experiments)")
         
         # 6. Dataset-specific findings
         dataset_findings = df.groupby('dataset')['attack_success'].agg(['mean', 'count'])
-        self.logger.info(f"6. Dataset-specific findings:")
+        self.logger.info("6. Dataset-specific findings:")
         for dataset, stats in dataset_findings.iterrows():
             self.logger.info(f"   {dataset}: {stats['mean']:.1%} success rate ({stats['count']} experiments)")
         
         # 7. FL type comparison
         fl_type_comparison = df.groupby('fl_type')['attack_success'].agg(['mean', 'count'])
-        self.logger.info(f"7. FL type comparison:")
+        self.logger.info("7. FL type comparison:")
         for fl_type, stats in fl_type_comparison.iterrows():
             self.logger.info(f"   {fl_type}: {stats['mean']:.1%} success rate ({stats['count']} experiments)")
     
     def generate_paper_ready_outputs(self):
         """Generate publication-ready outputs."""
         
-        self.logger.info(f"\n📄 Generating paper-ready outputs...")
+        self.logger.info("\n📄 Generating paper-ready outputs...")
         
         successful_results = [r for r in self.results if r['status'] == 'success']
         

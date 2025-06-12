@@ -225,7 +225,7 @@ def rerun_all_attacks(
     
     # Print summary
     successful = len([r for r in updated_results if r["status"] == "success"])
-    print(f"\nSummary:")
+    print("\nSummary:")
     print(f"  Total experiments: {len(updated_results)}")
     print(f"  Successful: {successful}")
     print(f"  Failed: {len(failed_experiments)}")
@@ -311,14 +311,14 @@ def compare_old_vs_new_metrics(
         improvements = [c["improvement"] for c in comparisons]
         ratios = [c["improvement_ratio"] for c in comparisons if c["improvement_ratio"] != float('inf')]
         
-        print(f"\nMetric Comparison Summary:")
+        print("\nMetric Comparison Summary:")
         print(f"  Experiments compared: {len(comparisons)}")
         print(f"  Average improvement: {sum(improvements)/len(improvements):.6f}")
         print(f"  Average improvement ratio: {sum(ratios)/len(ratios):.2f}x" if ratios else "N/A")
         
         # Show top improvements
         top_improvements = sorted(comparisons, key=lambda x: x["improvement"], reverse=True)[:5]
-        print(f"\nTop 5 improvements:")
+        print("\nTop 5 improvements:")
         for comp in top_improvements:
             print(f"    {comp['experiment']}: {comp['old_metric']:.6f} → {comp['new_metric']:.6f} ({comp['improvement']:.6f})")
 
@@ -414,7 +414,7 @@ def compare_phase1_vs_phase2(
     
     # Analyze results
     if comparisons:
-        print(f"\nPhase 1 vs Phase 2 Comparison Summary:")
+        print("\nPhase 1 vs Phase 2 Comparison Summary:")
         print(f"  Configurations compared: {len(comparisons)}")
         
         # Group by sampling scenario
