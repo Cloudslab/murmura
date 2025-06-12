@@ -6,13 +6,10 @@ Generate updated figures for the topology privacy leakage paper:
 """
 
 import json
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
-import re
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple
 
 # Set up matplotlib for high-quality figures
 plt.rcParams.update({

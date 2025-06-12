@@ -6,14 +6,10 @@ to test topology attacks on networks with 500+ nodes without the computational
 overhead of actual federated learning training.
 """
 
-from typing import Dict, List, Tuple, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 import numpy as np
 import pandas as pd
-from abc import ABC, abstractmethod
 import math
-from scipy.stats import norm, chi2
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
 import networkx as nx
 from dataclasses import dataclass
 import json
@@ -467,8 +463,7 @@ class LargeScaleAttackSimulator:
         from .topology_attacks import (
             CommunicationPatternAttack, 
             ParameterMagnitudeAttack, 
-            TopologyStructureAttack,
-            AttackEvaluator
+            TopologyStructureAttack
         )
         
         # Execute attacks
@@ -752,7 +747,7 @@ class LargeScaleAttackSimulator:
         # Clustering coefficient (how clustered the network is)
         try:
             clustering = nx.average_clustering(G)
-        except:
+        except Exception:
             clustering = 0.0
         
         # Path length (how far apart nodes are on average)
@@ -761,7 +756,7 @@ class LargeScaleAttackSimulator:
                 avg_path_length = nx.average_shortest_path_length(G)
             else:
                 avg_path_length = float('inf')
-        except:
+        except Exception:
             avg_path_length = float('inf')
         
         return {
@@ -857,7 +852,7 @@ def run_scalability_experiments(network_sizes: List[int],
         except Exception as e:
             print(f"   ⚠️  Error loading checkpoint: {e}, starting fresh")
     
-    print(f"🚀 Starting scalability experiments...")
+    print("🚀 Starting scalability experiments...")
     print(f"   Network sizes: {network_sizes}")
     print(f"   Topologies: {topologies}")
     print(f"   Attack strategies: {attack_strategies}")
@@ -943,7 +938,7 @@ def run_scalability_experiments(network_sizes: List[int],
                     experiment_id += 1
     
     # Final save to ensure everything is persisted
-    print(f"\n💾 Finalizing results...")
+    print("\n💾 Finalizing results...")
     
     # Save final results one more time to ensure completeness
     try:
@@ -955,7 +950,7 @@ def run_scalability_experiments(network_sizes: List[int],
         print(f"   ⚠️  Error saving final results: {e}")
     
     # Generate analysis
-    print(f"📊 Generating analysis...")
+    print("📊 Generating analysis...")
     analysis = analyze_scalability_results(all_results)
     analysis_file = output_path / "scalability_analysis.json"
     
@@ -970,7 +965,7 @@ def run_scalability_experiments(network_sizes: List[int],
     try:
         if checkpoint_file.exists():
             checkpoint_file.unlink()
-            print(f"   Removed checkpoint file")
+            print("   Removed checkpoint file")
     except Exception as e:
         print(f"   ⚠️  Could not remove checkpoint: {e}")
     
@@ -978,7 +973,7 @@ def run_scalability_experiments(network_sizes: List[int],
     successful_experiments = len([r for r in all_results if r.get('status') == 'success'])
     actual_total = len(all_results)
     
-    print(f"\n✅ Experiments completed!")
+    print("\n✅ Experiments completed!")
     print(f"   Total experiments run: {actual_total}")
     print(f"   Skipped (already completed): {skipped_count}")
     print(f"   Successful: {successful_experiments}")

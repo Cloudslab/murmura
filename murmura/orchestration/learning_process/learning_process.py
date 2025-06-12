@@ -225,7 +225,6 @@ class LearningProcess(ABC):
         :return: NetworkStructureEvent with comprehensive network structure data
         """
         import random
-        from typing import Dict, List, Any
         
         # Generate node identifiers
         node_identifiers = []

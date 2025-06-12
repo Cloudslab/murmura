@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from murmura.privacy.dp_aggregation import DPFedAvg, DPSecureAggregation, DPTrimmedMean
 from murmura.privacy.dp_config import DPConfig, DPMechanism
@@ -32,7 +32,7 @@ class TestDPFedAvg:
             delta=1e-5,
             max_grad_norm=1.0
         )
-        strategy = DPFedAvg(dp_config)
+        DPFedAvg(dp_config)
         
         assert "Central DP is disabled" in caplog.text
         assert "will perform regular FedAvg" in caplog.text

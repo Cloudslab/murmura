@@ -109,7 +109,7 @@ class HAM10000ModelComplex(PyTorchModel):
         
         # Calculate feature map size after pooling layers
         # With 4 MaxPool2d layers with stride 2: input_size -> input_size/16
-        feature_map_size = input_size // 16
+        # Note: feature_map_size calculated but not used as we use adaptive pooling
         
         # Initial convolution
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)

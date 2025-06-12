@@ -3,7 +3,6 @@ import os
 import logging
 import torch
 import torch.nn as nn
-from torchvision import transforms
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,

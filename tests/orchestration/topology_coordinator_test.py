@@ -79,7 +79,7 @@ def test_determination_of_coordination_mode():
 def test_coordinate_dispatch_to_correct_topology_method(mock_ray_get, mock_actors):
     """Test that coordinate_aggregation dispatches to the correct topology method"""
     # Setup mock ray.get
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+    mock_ray_get.side_effect = lambda x, **kwargs: {"layer": np.array([1.0, 2.0])}
 
     # Test for each topology type with compatible strategies
     topology_configs = [
@@ -126,7 +126,7 @@ def test_centralized_and_decentralized_with_complete_topology(
 ):
     """Test both centralized and decentralized modes with complete topology"""
     # Setup mock ray.get
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+    mock_ray_get.side_effect = lambda x, **kwargs: {"layer": np.array([1.0, 2.0])}
 
     # Create complete topology
     config = TopologyConfig(topology_type=TopologyType.COMPLETE)
@@ -176,7 +176,7 @@ def test_line_topology_parameter_collection(
 ):
     """Test parameter collection in line topology"""
     # Setup mock ray.get
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+    mock_ray_get.side_effect = lambda x, **kwargs: {"layer": np.array([1.0, 2.0])}
 
     # Create a coordinator with line topology
     strategy = MagicMock()
@@ -213,7 +213,7 @@ def test_custom_topology_parameter_collection(
 ):
     """Test parameter collection in custom topology"""
     # Setup mock ray.get
-    mock_ray_get.side_effect = lambda x: {"layer": np.array([1.0, 2.0])}
+    mock_ray_get.side_effect = lambda x, **kwargs: {"layer": np.array([1.0, 2.0])}
 
     # Create a coordinator with custom topology
     strategy = MagicMock()
