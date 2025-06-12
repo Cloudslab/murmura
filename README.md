@@ -14,51 +14,52 @@
 | murmura/aggregation/strategies/trimmed\_mean.py                             |       47 |        7 |     85% |54, 77, 96-97, 118, 132-133 |
 | murmura/aggregation/strategy\_factory.py                                    |       27 |        0 |    100% |           |
 | murmura/aggregation/strategy\_interface.py                                  |        8 |        1 |     88% |        34 |
+| murmura/attacks/\_\_init\_\_.py                                             |        0 |        0 |    100% |           |
+| murmura/attacks/scalability\_simulator.py                                   |      533 |      533 |      0% |   10-1274 |
+| murmura/attacks/scalability\_simulator\_parallel.py                         |      134 |      134 |      0% |     6-313 |
+| murmura/attacks/topology\_attacks.py                                        |      312 |      312 |      0% |     6-748 |
 | murmura/data\_processing/\_\_init\_\_.py                                    |        0 |        0 |    100% |           |
+| murmura/data\_processing/attack\_partitioner.py                             |      159 |      142 |     11% |29-32, 36-45, 51-93, 116-118, 124-140, 149-184, 188-205, 209, 226-229, 235-329 |
 | murmura/data\_processing/data\_preprocessor.py                              |      196 |       12 |     94% |17, 22, 163, 278, 326-327, 355-357, 464-467, 481 |
 | murmura/data\_processing/dataset.py                                         |      238 |       80 |     66% |52, 59, 66-68, 75-109, 116-123, 143-159, 266, 280, 344-349, 360-368, 375-389, 409, 433-435, 445-448, 468-495, 499-500, 508 |
 | murmura/data\_processing/partitioner.py                                     |       84 |        7 |     92% |32, 80, 123-124, 133-134, 150 |
-| murmura/data\_processing/partitioner\_factory.py                            |       10 |        1 |     90% |        32 |
+| murmura/data\_processing/partitioner\_factory.py                            |       44 |       28 |     36% |36-43, 52-93, 111-120, 131-156 |
 | murmura/examples/\_\_init\_\_.py                                            |        0 |        0 |    100% |           |
-| murmura/examples/decentralized\_mnist\_example.py                           |      187 |      187 |      0% |     1-562 |
-| murmura/examples/decentralized\_skin\_lesion\_example.py                    |      288 |      288 |      0% |    10-853 |
-| murmura/examples/dp\_decentralized\_mnist\_example.py                       |      271 |      271 |      0% |     1-787 |
-| murmura/examples/dp\_decentralized\_skin\_lesion\_example.py                |      347 |      347 |      0% |   11-1016 |
-| murmura/examples/dp\_mnist\_example.py                                      |      181 |      181 |      0% |     1-517 |
-| murmura/examples/dp\_skin\_lesion\_example.py                               |      235 |      235 |      0% |     1-642 |
-| murmura/examples/mnist\_example.py                                          |      155 |      155 |      0% |     1-488 |
-| murmura/examples/skin\_lesion\_example.py                                   |      267 |      267 |      0% |     1-786 |
+| murmura/examples/dp\_decentralized\_ham10000\_example.py                    |      215 |      215 |      0% |     2-650 |
+| murmura/examples/dp\_decentralized\_mnist\_example.py                       |      274 |      274 |      0% |     1-802 |
+| murmura/examples/dp\_ham10000\_example.py                                   |      200 |      200 |      0% |     2-602 |
+| murmura/examples/dp\_mnist\_example.py                                      |      184 |      184 |      0% |     1-532 |
 | murmura/model/\_\_init\_\_.py                                               |        0 |        0 |    100% |           |
 | murmura/model/model\_interface.py                                           |       25 |        7 |     72% |24, 39, 51, 60, 69, 78, 87 |
 | murmura/model/pytorch\_model.py                                             |      182 |       42 |     77% |69-73, 102-107, 111, 115, 123-131, 135, 137, 149-152, 170-201, 279, 378, 389, 412 |
-| murmura/models/\_\_init\_\_.py                                              |        0 |        0 |    100% |           |
+| murmura/models/\_\_init\_\_.py                                              |        3 |        0 |    100% |           |
+| murmura/models/ham10000\_models.py                                          |      101 |        0 |    100% |           |
 | murmura/models/mnist\_models.py                                             |       30 |        0 |    100% |           |
-| murmura/models/skin\_lesion\_models.py                                      |       98 |       98 |      0% |     1-237 |
 | murmura/network\_management/\_\_init\_\_.py                                 |        0 |        0 |    100% |           |
 | murmura/network\_management/topology.py                                     |       24 |        0 |    100% |           |
 | murmura/network\_management/topology\_compatibility.py                      |       20 |        0 |    100% |           |
 | murmura/network\_management/topology\_manager.py                            |       23 |        0 |    100% |           |
 | murmura/node/\_\_init\_\_.py                                                |        0 |        0 |    100% |           |
-| murmura/node/client\_actor.py                                               |      506 |      413 |     18% |17-18, 32-33, 41-42, 112, 152-212, 232-295, 304, 327-328, 336-549, 558-627, 641-838, 849-905, 914-939, 952-978, 986-995, 1003-1011, 1031-1033, 1049-1075, 1083-1127 |
+| murmura/node/client\_actor.py                                               |      506 |      413 |     18% |17-18, 32-33, 41-42, 112, 152-212, 232-295, 304, 327-328, 336-549, 558-627, 641-838, 849-905, 914-939, 952-978, 986-995, 1003-1011, 1033-1035, 1051-1077, 1085-1129 |
 | murmura/node/resource\_config.py                                            |       16 |        0 |    100% |           |
 | murmura/orchestration/\_\_init\_\_.py                                       |        0 |        0 |    100% |           |
-| murmura/orchestration/cluster\_manager.py                                   |      550 |      392 |     29% |87, 91, 100-101, 109-111, 138-140, 157-161, 178-181, 187, 192-235, 239, 271, 282-284, 289, 305-306, 313-316, 369-373, 384-416, 427-555, 565-664, 670-805, 817-852, 867-919, 932-966, 970-1024, 1044-1086, 1090-1112, 1126, 1132-1152, 1156-1171, 1176, 1187-1189, 1201, 1216-1232, 1236-1239, 1245, 1255-1274, 1283-1284 |
+| murmura/orchestration/cluster\_manager.py                                   |      570 |      407 |     29% |87, 91, 100-101, 109-111, 138-140, 157-161, 178-200, 204, 209-262, 266, 277-284, 314, 325-327, 332, 348-349, 356-359, 412-416, 427-459, 470-598, 608-707, 713-850, 862-897, 912-964, 977-1011, 1015-1069, 1089-1131, 1135-1157, 1171, 1177-1197, 1201-1216, 1221, 1237-1239, 1251, 1266-1282, 1286-1289, 1295, 1305-1324, 1333-1334 |
 | murmura/orchestration/learning\_process/\_\_init\_\_.py                     |        0 |        0 |    100% |           |
 | murmura/orchestration/learning\_process/decentralized\_learning\_process.py |      120 |       28 |     77% |30, 47-75, 115, 153-154, 160-170 |
 | murmura/orchestration/learning\_process/federated\_learning\_process.py     |      123 |       32 |     74% |39, 52, 59-91, 134, 173-174, 180-190, 257-262 |
-| murmura/orchestration/learning\_process/learning\_process.py                |      251 |      120 |     52% |41-42, 111-112, 140, 145, 169-183, 189-209, 220, 241-242, 263-265, 275-285, 307, 315, 322, 355-405, 411-466, 475, 487-488, 498-538, 629-662 |
+| murmura/orchestration/learning\_process/learning\_process.py                |      328 |      139 |     58% |44-45, 120-121, 149, 154, 178-192, 198-218, 258-260, 268-271, 319-332, 477, 498-499, 520-522, 532-542, 564, 572, 579, 612-662, 668-723, 732, 744-745, 755-795, 886-919 |
 | murmura/orchestration/orchestration\_config.py                              |       62 |        0 |    100% |           |
-| murmura/orchestration/topology\_coordinator.py                              |      175 |       61 |     65% |42, 61, 89-115, 131-181, 226, 238, 269, 291, 303, 332-349, 372, 384, 410, 450 |
+| murmura/orchestration/topology\_coordinator.py                              |      175 |       61 |     65% |42, 61, 89-115, 131-184, 231, 243, 274, 298, 311, 340-357, 382, 395, 421, 461 |
 | murmura/privacy/\_\_init\_\_.py                                             |        0 |        0 |    100% |           |
-| murmura/privacy/dp\_aggregation.py                                          |      151 |      151 |      0% |     1-418 |
+| murmura/privacy/dp\_aggregation.py                                          |      151 |       10 |     93% |136-137, 194, 262-263, 329, 393-394, 415-416 |
 | murmura/privacy/dp\_config.py                                               |       72 |        8 |     89% |137, 140, 145, 258-263 |
-| murmura/privacy/dp\_model\_wrapper.py                                       |      227 |       52 |     77% |20-22, 100, 107-109, 130-136, 140-141, 196-201, 204, 228, 238-241, 260, 285, 310-317, 330-338, 426-428, 463-467, 486-487, 492, 506-513, 542, 555, 568 |
+| murmura/privacy/dp\_model\_wrapper.py                                       |      233 |       55 |     76% |20-22, 90, 107, 114-116, 121-122, 144-150, 154-155, 210-215, 218, 242, 252-255, 274, 299, 324-331, 344-352, 440-442, 477-481, 500-501, 506, 520-527, 556, 569, 582 |
 | murmura/privacy/privacy\_accountant.py                                      |      148 |       21 |     86% |15-17, 102, 109-111, 163-166, 174-184, 452-467 |
 | murmura/visualization/\_\_init\_\_.py                                       |        0 |        0 |    100% |           |
-| murmura/visualization/network\_visualizer.py                                |      474 |       86 |     82% |81, 194-210, 255, 423, 508-509, 536-538, 584-585, 600-601, 617, 635, 639-643, 650, 654, 669-679, 687-692, 696-701, 707, 711, 772-774, 818, 832-871, 874-875, 908-909, 986-987, 1017-1018 |
-| murmura/visualization/training\_event.py                                    |       40 |        0 |    100% |           |
+| murmura/visualization/network\_visualizer.py                                |      577 |      170 |     71% |93, 117-141, 258-274, 319, 490, 570-621, 625-640, 644-666, 670-681, 685-702, 706-723, 741-742, 769-771, 817-818, 833-834, 850, 868, 872-876, 883, 887, 902-912, 920-925, 929-934, 940, 944, 1005-1007, 1051, 1065-1104, 1107-1108, 1141-1142, 1219-1220, 1250-1251 |
+| murmura/visualization/training\_event.py                                    |       93 |       38 |     59% |164-181, 187-210, 215-248 |
 | murmura/visualization/training\_observer.py                                 |       18 |        1 |     94% |        17 |
-|                                                                   **TOTAL** | **5967** | **3555** | **40%** |           |
+|                                                                   **TOTAL** | **6346** | **3565** | **44%** |           |
 
 
 ## Setup coverage badge

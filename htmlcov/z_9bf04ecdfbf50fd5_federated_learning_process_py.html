@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_9bf04ecdfbf50fd5_learning_process_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.8.2">coverage.py v7.8.2</a>,
-            created at 2025-06-12 04:01 +0000
+            created at 2025-06-12 09:06 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -313,7 +313,7 @@
     <p class="pln"><span class="n"><a id="t231" href="#t231">231</a></span><span class="t">            <span class="com"># Collect parameters for visualization</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t232" href="#t232">232</a></span><span class="t">            <span class="nam">node_params</span> <span class="op">=</span> <span class="op">{</span><span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t233" href="#t233">233</a></span><span class="t">            <span class="key">for</span> <span class="nam">i</span><span class="op">,</span> <span class="nam">actor</span> <span class="key">in</span> <span class="nam">enumerate</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">cluster_manager</span><span class="op">.</span><span class="nam">actors</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t234" href="#t234">234</a></span><span class="t">                <span class="nam">params</span> <span class="op">=</span> <span class="nam">ray</span><span class="op">.</span><span class="nam">get</span><span class="op">(</span><span class="nam">actor</span><span class="op">.</span><span class="nam">get_model_parameters</span><span class="op">.</span><span class="nam">remote</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t234" href="#t234">234</a></span><span class="t">                <span class="nam">params</span> <span class="op">=</span> <span class="nam">ray</span><span class="op">.</span><span class="nam">get</span><span class="op">(</span><span class="nam">actor</span><span class="op">.</span><span class="nam">get_model_parameters</span><span class="op">.</span><span class="nam">remote</span><span class="op">(</span><span class="op">)</span><span class="op">,</span> <span class="nam">timeout</span><span class="op">=</span><span class="num">1800</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t235" href="#t235">235</a></span><span class="t">                <span class="nam">node_params</span><span class="op">[</span><span class="nam">i</span><span class="op">]</span> <span class="op">=</span> <span class="nam">params</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t236" href="#t236">236</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t237" href="#t237">237</a></span><span class="t">            <span class="com"># Create parameter summaries for visualization</span>&nbsp;</span><span class="r"></span></p>
@@ -433,7 +433,7 @@
     <p class="run"><span class="n"><a id="t351" href="#t351">351</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">logger</span><span class="op">.</span><span class="nam">info</span><span class="op">(</span><span class="fst">f"</span><span class="fst">Final Test Accuracy: </span><span class="op">{</span><span class="nam">final_metrics</span><span class="op">[</span><span class="str">'accuracy'</span><span class="op">]</span> <span class="op">*</span> <span class="num">100</span><span class="op">:</span><span class="fst">.2f</span><span class="op">}</span><span class="fst">%</span><span class="fst">"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t352" href="#t352">352</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">logger</span><span class="op">.</span><span class="nam">info</span><span class="op">(</span><span class="fst">f"</span><span class="fst">Accuracy Improvement: </span><span class="op">{</span><span class="nam">improvement</span> <span class="op">*</span> <span class="num">100</span><span class="op">:</span><span class="fst">.2f</span><span class="op">}</span><span class="fst">%</span><span class="fst">"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t353" href="#t353">353</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t354" href="#t354">354</a></span><span class="t">        <span class="com"># Return results</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t354" href="#t354">354</a></span><span class="t">        <span class="com"># Return results_phase1</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t355" href="#t355">355</a></span><span class="t">        <span class="nam">results</span> <span class="op">=</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t356" href="#t356">356</a></span><span class="t">            <span class="str">"initial_metrics"</span><span class="op">:</span> <span class="nam">initial_metrics</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t357" href="#t357">357</a></span><span class="t">            <span class="str">"final_metrics"</span><span class="op">:</span> <span class="nam">final_metrics</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -454,7 +454,7 @@
             <a class="nav" href="z_9bf04ecdfbf50fd5_learning_process_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.8.2">coverage.py v7.8.2</a>,
-            created at 2025-06-12 04:01 +0000
+            created at 2025-06-12 09:06 +0000
         </p>
     </div>
 </footer>
