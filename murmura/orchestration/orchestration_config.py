@@ -20,9 +20,13 @@ class OrchestrationConfig(BaseModel):
 
     # Dataset configuration
     dataset_name: str = Field(default="unknown", description="Dataset name")
-    partition_strategy: Literal["dirichlet", "iid", "sensitive_groups", "topology_correlated", "imbalanced_sensitive"] = Field(
-        default="dirichlet", description="Data Partitioning strategy"
-    )
+    partition_strategy: Literal[
+        "dirichlet",
+        "iid",
+        "sensitive_groups",
+        "topology_correlated",
+        "imbalanced_sensitive",
+    ] = Field(default="dirichlet", description="Data Partitioning strategy")
     alpha: float = Field(
         default=0.5,
         gt=0,

@@ -75,11 +75,20 @@ def main() -> None:
 
     # Core learning arguments
     parser.add_argument(
-        "--num_actors", type=int, default=7, help="Total number of virtual clients (7 matches HAM10000 classes)"
+        "--num_actors",
+        type=int,
+        default=7,
+        help="Total number of virtual clients (7 matches HAM10000 classes)",
     )
     parser.add_argument(
         "--partition_strategy",
-        choices=["dirichlet", "iid", "sensitive_groups", "topology_correlated", "imbalanced_sensitive"],
+        choices=[
+            "dirichlet",
+            "iid",
+            "sensitive_groups",
+            "topology_correlated",
+            "imbalanced_sensitive",
+        ],
         default="dirichlet",
         help="Data partitioning strategy",
     )
@@ -133,7 +142,7 @@ def main() -> None:
         choices=["auto", "cuda", "mps", "cpu"],
         help="Device to use for training",
     )
-    
+
     # HAM10000 specific arguments
     parser.add_argument(
         "--image_size", type=int, default=128, help="Size to resize images to"
@@ -276,8 +285,8 @@ def main() -> None:
         from murmura.aggregation.strategies.gossip_avg import GossipAvg
 
         if not TopologyCompatibilityManager.is_compatible(GossipAvg, topology_type):
-            compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(
-                GossipAvg
+            compatible_topologies = (
+                TopologyCompatibilityManager.get_compatible_topologies(GossipAvg)
             )
             logger.error(
                 f"Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}."
@@ -367,17 +376,21 @@ def main() -> None:
         # For HAM10000, check if test split exists and create if not
         # HAM10000 typically only has a train split, so we need to create train/test splits
         logger.info(f"Initial dataset splits: {list(train_dataset._splits.keys())}")
-        
+
         if args.test_split not in train_dataset._splits:
-            logger.warning(f"Test split '{args.test_split}' not found. Creating train/test split from train data.")
+            logger.warning(
+                f"Test split '{args.test_split}' not found. Creating train/test split from train data."
+            )
             # Create train/test split from the single train split
             train_dataset = train_dataset.train_test_split(
                 source_split=args.split,
                 test_size=0.2,
                 seed=42,
-                new_split_names=("train", "test")
+                new_split_names=("train", "test"),
             )
-            logger.info(f"Created train/test split. Available splits: {list(train_dataset._splits.keys())}")
+            logger.info(
+                f"Created train/test split. Available splits: {list(train_dataset._splits.keys())}"
+            )
         else:
             logger.info(f"Test split '{args.test_split}' found. Using existing splits.")
 
@@ -417,24 +430,25 @@ def main() -> None:
         # Always use GroupNorm for federated learning with many clients to avoid
         # BatchNorm issues with small batches
         use_groupnorm = args.enable_dp or args.num_actors > 10
-        
+
         if args.model_complexity == "complex":
             model = HAM10000ModelComplex(
-                input_size=args.image_size,
-                use_dp_compatible_norm=use_groupnorm
+                input_size=args.image_size, use_dp_compatible_norm=use_groupnorm
             )
         else:
             model = HAM10000Model(
-                input_size=args.image_size,
-                use_dp_compatible_norm=use_groupnorm
+                input_size=args.image_size, use_dp_compatible_norm=use_groupnorm
             )
 
         # Create image preprocessor for HAM10000 dataset
         logger.info("Creating image preprocessor for HAM10000 dataset")
         image_preprocessor = create_image_preprocessor(
             grayscale=False,  # HAM10000 is RGB
-            normalize=True,   # Normalize pixel values to [0,1]
-            target_size=(args.image_size, args.image_size)  # Resize to model input size
+            normalize=True,  # Normalize pixel values to [0,1]
+            target_size=(
+                args.image_size,
+                args.image_size,
+            ),  # Resize to model input size
         )
 
         # Create model wrapper (DP or regular)
@@ -465,7 +479,9 @@ def main() -> None:
             )
 
         logger.info("=== Setting Up Decentralized Learning Process ===")
-        logger.info(f"Dataset splits before learning process: {list(train_dataset._splits.keys())}")
+        logger.info(
+            f"Dataset splits before learning process: {list(train_dataset._splits.keys())}"
+        )
         learning_process = DecentralizedLearningProcess(
             config=config,
             dataset=train_dataset,
@@ -527,9 +543,7 @@ def main() -> None:
 
                 # Suggest optimal noise if auto-tuning
                 if dp_config.auto_tune_noise and dp_config.noise_multiplier is None:
-                    sample_rate = (
-                        args.batch_size / 10015
-                    )  # HAM10000 has ~10015 images
+                    sample_rate = args.batch_size / 10015  # HAM10000 has ~10015 images
                     suggested_noise = privacy_accountant.suggest_optimal_noise(
                         sample_rate=sample_rate,
                         epochs=args.epochs

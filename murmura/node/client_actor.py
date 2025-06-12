@@ -112,7 +112,7 @@ class VirtualClientActor:
         return self.node_info
 
     def receive_data(
-            self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
+        self, data_partition: List[int], metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """Receive a data partition and metadata dictionary."""
         self.data_partition = data_partition
@@ -123,10 +123,10 @@ class VirtualClientActor:
         return message
 
     def set_dataset(
-            self,
-            mdataset: MDataset,
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        mdataset: MDataset,
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """Set the dataset for the client actor."""
         self.mdataset = mdataset
@@ -140,10 +140,10 @@ class VirtualClientActor:
         )
 
     def set_dataset_metadata(
-            self,
-            dataset_metadata: Dict[str, Any],
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset_metadata: Dict[str, Any],
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Set dataset metadata for lazy loading with robust validation.
@@ -214,10 +214,10 @@ class VirtualClientActor:
         )
 
     def reconstruct_and_set_dataset(
-            self,
-            dataset_info: Dict[str, Any],
-            feature_columns: Optional[List[str]] = None,
-            label_column: Optional[str] = None,
+        self,
+        dataset_info: Dict[str, Any],
+        feature_columns: Optional[List[str]] = None,
+        label_column: Optional[str] = None,
     ) -> None:
         """
         Reconstruct dataset from metadata on this node and set it.
@@ -449,12 +449,12 @@ class VirtualClientActor:
 
             # Restore partitions from metadata
             if (
-                    partitions and self.mdataset is not None
+                partitions and self.mdataset is not None
             ):  # FIXED: Check mdataset is not None
                 self.logger.debug("Restoring partitions from metadata...")
                 for split_name, split_partitions in partitions.items():
                     if (
-                            split_name in self.mdataset.available_splits
+                        split_name in self.mdataset.available_splits
                     ):  # Now safe to access
                         try:
                             self.mdataset.add_partitions(split_name, split_partitions)
@@ -487,9 +487,9 @@ class VirtualClientActor:
 
             # Validate that the required columns exist after preprocessing
             if (
-                    self.data_partition is not None
-                    and self.mdataset is not None
-                    and self.split in self.mdataset.available_splits
+                self.data_partition is not None
+                and self.mdataset is not None
+                and self.split in self.mdataset.available_splits
             ):  # FIXED: All None checks
                 split_dataset = self.mdataset.get_split(self.split)  # Now safe
                 dataset_columns = split_dataset.column_names
@@ -498,8 +498,8 @@ class VirtualClientActor:
 
                 # Check if label column exists
                 if (
-                        self.label_column is not None
-                        and self.label_column not in dataset_columns
+                    self.label_column is not None
+                    and self.label_column not in dataset_columns
                 ):  # FIXED: None check
                     self.logger.error(
                         f"Label column '{self.label_column}' not found in dataset columns: {dataset_columns}"
@@ -629,7 +629,7 @@ class VirtualClientActor:
             )
 
     def _get_partition_data(
-            self, data_sampling_rate: float = 1.0
+        self, data_sampling_rate: float = 1.0
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Extract features and labels from the client's dataset partition with comprehensive validation.
@@ -736,8 +736,8 @@ class VirtualClientActor:
 
                 # Use model's preprocessor if available
                 if (
-                        self.model is not None  # FIXED: None check
-                        and hasattr(self.model, "data_preprocessor")
+                    self.model is not None  # FIXED: None check
+                    and hasattr(self.model, "data_preprocessor")
                 ):
                     if self.model.data_preprocessor is not None:
                         try:
@@ -767,8 +767,8 @@ class VirtualClientActor:
                 for col in self.feature_columns:
                     col_data = partition_dataset[col]
                     if (
-                            self.model is not None  # FIXED: None check
-                            and hasattr(self.model, "data_preprocessor")
+                        self.model is not None  # FIXED: None check
+                        and hasattr(self.model, "data_preprocessor")
                     ):
                         if self.model.data_preprocessor is not None:
                             try:
@@ -1026,7 +1026,9 @@ class VirtualClientActor:
         :return: IDs of neighbouring clients
         """
         try:
-            neighbour_ids = [ray.get(n.get_id.remote(), timeout=300) for n in self.neighbours]
+            neighbour_ids = [
+                ray.get(n.get_id.remote(), timeout=300) for n in self.neighbours
+            ]
             return neighbour_ids
         except Exception as e:
             self.logger.error(f"Failed to get neighbour IDs: {e}")

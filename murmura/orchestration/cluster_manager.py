@@ -177,24 +177,26 @@ class ClusterManager:
             # Calculate actual distribution of actors across nodes
             base_actors_per_node = self.config.num_actors // total_nodes
             extra_actors = self.config.num_actors % total_nodes
-            
+
             # Calculate maximum actors on any single node
             max_actors_per_node = base_actors_per_node + (1 if extra_actors > 0 else 0)
-            
+
             # Calculate CPUs per node (estimate based on total CPUs)
-            avg_cpus_per_node = total_cpus / total_nodes if total_nodes > 0 else total_cpus
-            
+            avg_cpus_per_node = (
+                total_cpus / total_nodes if total_nodes > 0 else total_cpus
+            )
+
             # Calculate CPU allocation based on the busiest nodes
             # Leave some headroom (20%) for system processes
             available_cpus_per_node = avg_cpus_per_node * 0.8
-            
+
             if max_actors_per_node > 0:
                 cpus_per_actor = available_cpus_per_node / max_actors_per_node
                 # Ensure minimum allocation and cap at 4 CPUs per actor
                 cpus_per_actor = max(0.5, min(cpus_per_actor, 4.0))
             else:
                 cpus_per_actor = 1.0
-            
+
             resource_requirements["num_cpus"] = cpus_per_actor
 
         # GPU allocation - IMPROVED LOGIC for better distribution
@@ -222,10 +224,12 @@ class ClusterManager:
                 # For example: 15 actors across 10 nodes means 5 nodes get 2 actors, 5 nodes get 1 actor
                 base_actors_per_node = self.config.num_actors // total_nodes
                 extra_actors = self.config.num_actors % total_nodes
-                
+
                 # Calculate maximum actors on any single node
-                max_actors_per_node = base_actors_per_node + (1 if extra_actors > 0 else 0)
-                
+                max_actors_per_node = base_actors_per_node + (
+                    1 if extra_actors > 0 else 0
+                )
+
                 # Calculate GPU requirements based on the busiest nodes
                 # This ensures even the busiest nodes have sufficient GPU allocation
                 if max_actors_per_node <= median_gpus_per_node:
@@ -267,14 +271,16 @@ class ClusterManager:
         logger = logging.getLogger("murmura")
         logger.info(f"Resource allocation per actor: {resource_requirements}")
         logger.info(f"Actors per node: {actors_per_node}")
-        
+
         # Log CPU allocation details if auto-calculated
         if self.config.resources.cpus_per_actor is None:
             base_actors_per_node = self.config.num_actors // total_nodes
             extra_actors = self.config.num_actors % total_nodes
             max_actors_per_node = base_actors_per_node + (1 if extra_actors > 0 else 0)
-            avg_cpus_per_node = total_cpus / total_nodes if total_nodes > 0 else total_cpus
-            
+            avg_cpus_per_node = (
+                total_cpus / total_nodes if total_nodes > 0 else total_cpus
+            )
+
             logger.info(
                 f"CPU allocation: {resource_requirements.get('num_cpus', 'N/A'):.2f} CPUs per actor "
                 f"(avg {avg_cpus_per_node:.1f} CPUs/node, "
@@ -733,7 +739,9 @@ class ClusterManager:
             # Wait for batch results_phase1
             try:
                 # Get all results_phase1 for this batch
-                batch_results = ray.get([task for _, task in batch_tasks], timeout=18000)
+                batch_results = ray.get(
+                    [task for _, task in batch_tasks], timeout=18000
+                )
 
                 # Process results_phase1
                 for (actual_idx, _), actor_info in zip(batch_tasks, batch_results):
@@ -1222,7 +1230,9 @@ class ClusterManager:
         try:
             # Use very large timeout to prevent timeout issues with large configurations
             timeout = 3600  # 1 hour timeout
-            logging.getLogger("murmura").info(f"Applying topology for {len(self.actors)} actors with {timeout}s timeout")
+            logging.getLogger("murmura").info(
+                f"Applying topology for {len(self.actors)} actors with {timeout}s timeout"
+            )
             ray.get(tasks, timeout=timeout)
         except Exception as e:
             logging.getLogger("murmura").error(f"Failed to apply topology: {e}")
