@@ -13,8 +13,8 @@ from murmura.privacy.dp_config import DPConfig
 try:
     from opacus import PrivacyEngine  # type: ignore[import-untyped]
     from opacus.utils.batch_memory_manager import BatchMemoryManager  # type: ignore[import-untyped]
-    from opacus.validators import ModuleValidator  # type: ignore[import-untyped]
     from opacus.accountants.utils import get_noise_multiplier  # type: ignore[import-untyped]
+    # ModuleValidator imported locally where needed to ensure Ray worker compatibility
 
     OPACUS_AVAILABLE = True
 except ImportError:
@@ -86,11 +86,18 @@ class DPTorchModelWrapper(TorchModelWrapper):
 
     def _setup_differential_privacy(self) -> None:
         """Setup differential privacy components"""
+        if not OPACUS_AVAILABLE:
+            raise RuntimeError(
+                "Opacus is not available - cannot enable differential privacy"
+            )
+
         try:
             # Validate model compatibility with Opacus
             self._validate_model_for_dp()
 
-            # Create privacy engine
+            # Create privacy engine (import here for Ray worker compatibility)
+            from opacus import PrivacyEngine
+
             self.privacy_engine = PrivacyEngine(secure_mode=self.dp_config.secure_mode)
 
             # Set up accounting method
@@ -110,7 +117,14 @@ class DPTorchModelWrapper(TorchModelWrapper):
 
     def _validate_model_for_dp(self) -> None:
         """Validate that the model is compatible with differential privacy"""
+        if not OPACUS_AVAILABLE:
+            self.logger.warning("Opacus not available, skipping model validation")
+            return
+
         try:
+            # Import ModuleValidator here to ensure it's available in Ray workers
+            from opacus.validators import ModuleValidator  # type: ignore[import-untyped]
+
             # Check if model needs fixing for DP
             errors = ModuleValidator.validate(self.model, strict=False)
 

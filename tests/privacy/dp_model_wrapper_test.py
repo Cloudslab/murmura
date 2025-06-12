@@ -5,7 +5,7 @@ import pytest
 import torch
 import torch.nn as nn
 import numpy as np
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from torch.utils.data import DataLoader, TensorDataset
 
 from murmura.privacy.dp_model_wrapper import DPTorchModelWrapper, OPACUS_AVAILABLE
@@ -84,7 +84,7 @@ class TestDPTorchModelWrapper:
             optimizer_kwargs={"lr": 0.01}
         )
         
-        with patch('murmura.privacy.dp_model_wrapper.PrivacyEngine') as mock_pe, \
+        with patch('opacus.PrivacyEngine') as mock_pe, \
              patch.object(wrapper, '_validate_model_for_dp') as mock_validate:
             
             wrapper._setup_differential_privacy()
@@ -102,7 +102,7 @@ class TestDPTorchModelWrapper:
             optimizer_kwargs={"lr": 0.01}
         )
         
-        with patch('murmura.privacy.dp_model_wrapper.ModuleValidator') as mock_validator:
+        with patch('opacus.validators.ModuleValidator') as mock_validator:
             mock_validator.validate.return_value = []  # No errors
             
             wrapper._validate_model_for_dp()
@@ -121,7 +121,7 @@ class TestDPTorchModelWrapper:
         
         fixed_model = SimpleModel()
         
-        with patch('murmura.privacy.dp_model_wrapper.ModuleValidator') as mock_validator:
+        with patch('opacus.validators.ModuleValidator') as mock_validator:
             mock_validator.validate.side_effect = [
                 ["error1", "error2"],  # Initial validation
                 []  # After fixing
@@ -170,7 +170,7 @@ class TestDPTorchModelWrapper:
             dataset_size=1000, batch_size=32, epochs=10
         )
         
-        expected_base_rate = 32 / 1000
+        # expected_base_rate = 32 / 1000  # Currently unused
         # The amplified rate should be calculated through get_amplified_sample_rate()
         expected_amplified_rate = dp_config.get_amplified_sample_rate()
         
@@ -220,7 +220,7 @@ class TestDPTorchModelWrapper:
         
         mock_private_dataloader = Mock()
         
-        with patch.object(wrapper, '_setup_differential_privacy') as mock_setup, \
+        with patch.object(wrapper, '_setup_differential_privacy'), \
              patch('murmura.privacy.dp_model_wrapper.PrivacyEngine') as mock_pe_class:
             
             mock_pe = Mock()
@@ -251,7 +251,7 @@ class TestDPTorchModelWrapper:
         
         mock_private_dataloader = Mock()
         
-        with patch.object(wrapper, '_setup_differential_privacy') as mock_setup, \
+        with patch.object(wrapper, '_setup_differential_privacy'), \
              patch('murmura.privacy.dp_model_wrapper.PrivacyEngine') as mock_pe_class:
             
             mock_pe = Mock()
@@ -264,7 +264,7 @@ class TestDPTorchModelWrapper:
             )
             wrapper.privacy_engine = mock_pe
             
-            result = wrapper._make_private(dataloader, epochs=5, dataset_size=100)
+            wrapper._make_private(dataloader, epochs=5, dataset_size=100)
             
             assert wrapper.is_dp_enabled is True
             mock_pe.make_private.assert_called_once()
@@ -302,7 +302,7 @@ class TestDPTorchModelWrapper:
         
         with patch.object(wrapper, '_make_private') as mock_make_private, \
              patch.object(wrapper, '_train_epoch') as mock_train_epoch, \
-             patch.object(wrapper, '_update_privacy_spent') as mock_update:
+             patch.object(wrapper, '_update_privacy_spent'):
             
             mock_make_private.return_value = Mock()
             mock_train_epoch.return_value = (10.0, 80, 100)  # loss, correct, total
@@ -554,7 +554,7 @@ class TestDPTorchModelWrapper:
             
             mock_update.side_effect = update_privacy_side_effect
             
-            result = wrapper.train(data, labels, batch_size=32, epochs=5)
+            wrapper.train(data, labels, batch_size=32, epochs=5)
             
             # Should stop early due to privacy budget exhaustion
             assert mock_train_epoch.call_count < 5

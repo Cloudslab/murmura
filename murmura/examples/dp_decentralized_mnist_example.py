@@ -77,7 +77,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--partition_strategy",
-        choices=["dirichlet", "iid"],
+        choices=[
+            "dirichlet",
+            "iid",
+            "sensitive_groups",
+            "topology_correlated",
+            "imbalanced_sensitive",
+        ],
         default="dirichlet",
         help="Data partitioning strategy",
     )
@@ -285,8 +291,8 @@ def main() -> None:
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations",
-        help="Directory to save visualizations",
+        default="./visualizations_phase1",
+        help="Directory to save visualizations_phase1",
     )
     parser.add_argument(
         "--create_animation",
@@ -305,6 +311,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--fps", type=int, default=2, help="Frames per second for animation"
+    )
+    parser.add_argument(
+        "--experiment_name",
+        type=str,
+        default=None,
+        help="Custom experiment name for visualization directory (overrides default naming)",
     )
 
     args = parser.parse_args()
@@ -542,11 +554,14 @@ def main() -> None:
         if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
             # Create visualization directory
-            vis_dir = os.path.join(
-                args.vis_dir,
-                f"dp_decentralized_mnist_{args.topology}_{args.aggregation_strategy}"
-                + ("_dp" if args.enable_dp else "_no_dp"),
-            )
+            if args.experiment_name:
+                vis_dir = os.path.join(args.vis_dir, args.experiment_name)
+            else:
+                vis_dir = os.path.join(
+                    args.vis_dir,
+                    f"dp_decentralized_mnist_{args.topology}_{args.aggregation_strategy}"
+                    + ("_dp" if args.enable_dp else "_no_dp"),
+                )
             os.makedirs(vis_dir, exist_ok=True)
 
             # Create visualizer
@@ -655,7 +670,7 @@ def main() -> None:
                 if health_status.get("error", 0) > 0:
                     logger.error(f"Error actors: {health_status['error']}")
 
-            # Display results
+            # Display results_phase1
             logger.info("=== Training Results ===")
             logger.info(
                 f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
@@ -663,7 +678,7 @@ def main() -> None:
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
-            # Display privacy results if DP was enabled
+            # Display privacy results_phase1 if DP was enabled
             privacy_spent = None
             if (
                 args.enable_dp
@@ -694,7 +709,7 @@ def main() -> None:
                         f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
                     )
 
-            # Generate visualizations if requested
+            # Generate visualizations_phase1 if requested
             if visualizer and (
                 args.create_animation or args.create_frames or args.create_summary
             ):
@@ -734,7 +749,7 @@ def main() -> None:
                 "config": {
                     k: v for k, v in vars(args).items() if not k.startswith("_")
                 },
-                "results": results,
+                "results_phase1": results,
                 "differential_privacy": {
                     "enabled": args.enable_dp,
                     "config": dp_config.model_dump() if dp_config is not None else None,
@@ -748,7 +763,7 @@ def main() -> None:
             torch.save(checkpoint, save_path)
             logger.info(f"Model saved to '{save_path}'")
 
-            # Print final results with enhanced cluster context
+            # Print final results_phase1 with enhanced cluster context
             logger.info("=== MNIST DP Decentralized Training Results ===")
             logger.info(
                 f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
@@ -764,7 +779,7 @@ def main() -> None:
                 f"Training completed with {config.rounds} rounds of {config.epochs} epochs each"
             )
 
-            # Log topology-specific results
+            # Log topology-specific results_phase1
             if "topology" in results:
                 topology_info = results["topology"]
                 logger.info(

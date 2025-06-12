@@ -1,10 +1,8 @@
 """
 Tests for MNIST model implementations.
 """
-import pytest
 import torch
 import torch.nn as nn
-import numpy as np
 
 from murmura.models.mnist_models import MNISTModel, SimpleMNISTModel
 from murmura.model.pytorch_model import PyTorchModel

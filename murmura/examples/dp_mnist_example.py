@@ -53,7 +53,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--partition_strategy",
-        choices=["dirichlet", "iid"],
+        choices=[
+            "dirichlet",
+            "iid",
+            "sensitive_groups",
+            "topology_correlated",
+            "imbalanced_sensitive",
+        ],
         default="dirichlet",
         help="Data partitioning strategy",
     )
@@ -187,13 +193,19 @@ def main() -> None:
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations",
-        help="Directory to save visualizations",
+        default="./visualizations_phase1",
+        help="Directory to save visualizations_phase1",
     )
     parser.add_argument(
         "--create_summary",
         action="store_true",
         help="Create summary plot of the training process",
+    )
+    parser.add_argument(
+        "--experiment_name",
+        type=str,
+        default=None,
+        help="Custom experiment name for visualization directory (overrides default naming)",
     )
 
     args = parser.parse_args()
@@ -363,11 +375,14 @@ def main() -> None:
         visualizer = None
         if args.create_summary:
             logger.info("=== Setting Up Visualization ===")
-            vis_dir = os.path.join(
-                args.vis_dir,
-                f"dp_mnist_{args.topology}_{args.aggregation_strategy}"
-                + ("_dp" if args.enable_dp else "_no_dp"),
-            )
+            if args.experiment_name:
+                vis_dir = os.path.join(args.vis_dir, args.experiment_name)
+            else:
+                vis_dir = os.path.join(
+                    args.vis_dir,
+                    f"dp_mnist_{args.topology}_{args.aggregation_strategy}"
+                    + ("_dp" if args.enable_dp else "_no_dp"),
+                )
             os.makedirs(vis_dir, exist_ok=True)
             visualizer = NetworkVisualizer(output_dir=vis_dir)
             learning_process.register_observer(visualizer)
@@ -425,7 +440,7 @@ def main() -> None:
             # Execute learning process
             results = learning_process.execute()
 
-            # Display results
+            # Display results_phase1
             logger.info("=== Training Results ===")
             logger.info(
                 f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
@@ -433,7 +448,7 @@ def main() -> None:
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
-            # Display privacy results if DP was enabled
+            # Display privacy results_phase1 if DP was enabled
             privacy_spent = None
             if args.enable_dp and hasattr(global_model, "get_privacy_spent"):
                 logger.info("=== Privacy Results ===")
@@ -485,7 +500,7 @@ def main() -> None:
                 "config": {
                     k: v for k, v in vars(args).items() if not k.startswith("_")
                 },
-                "results": results,
+                "results_phase1": results,
                 "differential_privacy": {
                     "enabled": args.enable_dp,
                     "config": dp_config.model_dump() if dp_config else None,

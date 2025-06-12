@@ -74,7 +74,7 @@ class TestDirichletPartitioner:
         validate_partitions(partitions, split_size, 5)
 
     def test_reproducibility(self):
-        """Test if results are reproducible with same seed."""
+        """Test if results_phase1 are reproducible with same seed."""
         # Create independent datasets
         data = {"text": ["text"] * 100, "label": [i % 5 for i in range(100)]}
         ds1 = MDataset(DatasetDict({"train": Dataset.from_dict(data)}))

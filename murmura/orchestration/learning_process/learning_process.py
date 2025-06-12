@@ -1,7 +1,7 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 
 import numpy as np
 import ray
@@ -13,7 +13,10 @@ from murmura.model.model_interface import ModelInterface
 from murmura.network_management.topology import TopologyConfig
 from murmura.orchestration.cluster_manager import ClusterManager
 from murmura.orchestration.orchestration_config import OrchestrationConfig
-from murmura.visualization.training_event import InitialStateEvent
+from murmura.visualization.training_event import (
+    InitialStateEvent,
+    NetworkStructureEvent,
+)
 from murmura.visualization.training_observer import TrainingMonitor
 
 
@@ -99,7 +102,13 @@ class LearningProcess(ABC):
 
         self.cluster_manager.create_actors(num_actors, topology_config)
 
-        # Emit initial state event
+        # Emit enhanced network structure event
+        network_structure_event = self._create_network_structure_event(
+            num_actors, topology_config
+        )
+        self.training_monitor.emit_event(network_structure_event)
+
+        # Emit initial state event for backward compatibility
         self.training_monitor.emit_event(
             InitialStateEvent(
                 topology_type=topology_config.topology_type.value, num_nodes=num_actors
@@ -197,7 +206,7 @@ class LearningProcess(ABC):
                     self.cluster_manager.actors[:3]
                 ):  # Sample first 3 actors
                     try:
-                        debug_info = ray.get(actor.get_data_info.remote(), timeout=5)
+                        debug_info = ray.get(actor.get_data_info.remote(), timeout=300)
                         self.logger.error(f"Actor {i} debug info: {debug_info}")
                     except Exception as debug_e:
                         self.logger.error(
@@ -211,6 +220,254 @@ class LearningProcess(ABC):
             )
 
         self.logger.info("Learning process initialized successfully.")
+
+    def _create_network_structure_event(
+        self, num_actors: int, topology_config: TopologyConfig
+    ) -> NetworkStructureEvent:
+        """
+        Create a comprehensive NetworkStructureEvent with realistic network data.
+
+        :param num_actors: Number of actors/nodes in the network
+        :param topology_config: Topology configuration
+        :return: NetworkStructureEvent with comprehensive network structure data
+        """
+        import random
+
+        # Generate node identifiers
+        node_identifiers = []
+        for i in range(num_actors):
+            # Create realistic node identifiers based on types
+            node_type = [
+                "hospital",
+                "clinic",
+                "research_center",
+                "mobile_unit",
+                "edge_device",
+            ][i % 5]
+            node_identifiers.append(f"{node_type}_{i:03d}")
+
+        # Generate adjacency matrix from topology manager
+        adjacency_matrix = [[0 for _ in range(num_actors)] for _ in range(num_actors)]
+        if (
+            self.cluster_manager is not None
+            and hasattr(self.cluster_manager, "topology_manager")
+            and self.cluster_manager.topology_manager
+        ):
+            adjacency_list = self.cluster_manager.topology_manager.adjacency_list
+            for node, neighbors in adjacency_list.items():
+                for neighbor in neighbors:
+                    if 0 <= node < num_actors and 0 <= neighbor < num_actors:
+                        adjacency_matrix[node][neighbor] = 1
+
+        # Generate edge weights based on connection types and distance
+        edge_weights = {}
+        for i in range(num_actors):
+            for j in range(i + 1, num_actors):
+                if adjacency_matrix[i][j] == 1:
+                    # Simulate realistic bandwidth based on connection type
+                    base_bandwidth = random.choice([100, 500, 1000, 2000, 5000])  # Mbps
+                    # Add some variation
+                    bandwidth = base_bandwidth * (0.8 + random.random() * 0.4)
+                    edge_weights[f"{i}-{j}"] = round(bandwidth, 2)
+
+        # Generate node attributes with realistic hardware specifications
+        node_attributes = {}
+        institutions = [
+            "mayo_clinic",
+            "johns_hopkins",
+            "stanford_med",
+            "mass_general",
+            "ucla_health",
+        ]
+        departments = ["radiology", "oncology", "cardiology", "neurology", "pathology"]
+        regions = ["north_america", "europe", "asia_pacific", "south_america", "africa"]
+
+        for i in range(num_actors):
+            # Determine node type and capabilities
+            node_type_idx = i % 5
+            node_types = [
+                "tier1_hospital",
+                "tier2_hospital",
+                "research_center",
+                "mobile_unit",
+                "edge_device",
+            ]
+            node_type = node_types[node_type_idx]
+
+            # Hardware specs based on node type
+            if node_type == "tier1_hospital":
+                cpu_cores = random.choice([32, 64, 128])
+                memory_gb = random.choice([128, 256, 512])
+                gpu_count = random.choice([4, 8, 16])
+                storage_gb = random.choice([10000, 20000, 50000])
+                bandwidth_mbps = random.choice([2000, 5000, 10000])
+                reliability = 0.95 + random.random() * 0.05
+            elif node_type == "tier2_hospital":
+                cpu_cores = random.choice([16, 32, 64])
+                memory_gb = random.choice([64, 128, 256])
+                gpu_count = random.choice([2, 4, 8])
+                storage_gb = random.choice([5000, 10000, 20000])
+                bandwidth_mbps = random.choice([1000, 2000, 5000])
+                reliability = 0.90 + random.random() * 0.08
+            elif node_type == "research_center":
+                cpu_cores = random.choice([64, 128, 256])
+                memory_gb = random.choice([256, 512, 1024])
+                gpu_count = random.choice([8, 16, 32])
+                storage_gb = random.choice([20000, 50000, 100000])
+                bandwidth_mbps = random.choice([5000, 10000, 20000])
+                reliability = 0.98 + random.random() * 0.02
+            elif node_type == "mobile_unit":
+                cpu_cores = random.choice([4, 8, 16])
+                memory_gb = random.choice([16, 32, 64])
+                gpu_count = random.choice([1, 2])
+                storage_gb = random.choice([1000, 2000, 5000])
+                bandwidth_mbps = random.choice([100, 500, 1000])
+                reliability = 0.75 + random.random() * 0.15
+            else:  # edge_device
+                cpu_cores = random.choice([2, 4, 8])
+                memory_gb = random.choice([8, 16, 32])
+                gpu_count = random.choice([0, 1])
+                storage_gb = random.choice([500, 1000, 2000])
+                bandwidth_mbps = random.choice([50, 100, 500])
+                reliability = 0.70 + random.random() * 0.20
+
+            node_attributes[i] = {
+                "cpu_cores": cpu_cores,
+                "memory_gb": memory_gb,
+                "gpu_count": gpu_count,
+                "storage_gb": storage_gb,
+                "bandwidth_mbps": bandwidth_mbps,
+                "node_type": node_type,
+                "reliability_score": round(reliability, 3),
+                "compute_capability": f"tier_{1 + (node_type_idx % 3)}",
+                "security_level": random.choice(["standard", "high", "critical"]),
+                "data_compliance": random.choice(["HIPAA", "GDPR", "PIPEDA", "local"]),
+            }
+
+        # Generate geographic information (floats only)
+        geographic_info: Dict[int, Dict[str, float]] = {}
+        # Generate organizational hierarchy (strings only)
+        organizational_hierarchy: Dict[int, Dict[str, str]] = {}
+        # Predefined realistic locations for medical institutions
+        locations: List[Dict[str, Any]] = [
+            {
+                "latitude": 44.0225,
+                "longitude": -92.4699,
+                "city": "Rochester",
+                "country": "USA",
+                "timezone": "America/Chicago",
+            },
+            {
+                "latitude": 39.2904,
+                "longitude": -76.6122,
+                "city": "Baltimore",
+                "country": "USA",
+                "timezone": "America/New_York",
+            },
+            {
+                "latitude": 37.4419,
+                "longitude": -122.1430,
+                "city": "Palo Alto",
+                "country": "USA",
+                "timezone": "America/Los_Angeles",
+            },
+            {
+                "latitude": 42.3601,
+                "longitude": -71.0589,
+                "city": "Boston",
+                "country": "USA",
+                "timezone": "America/New_York",
+            },
+            {
+                "latitude": 34.0522,
+                "longitude": -118.2437,
+                "city": "Los Angeles",
+                "country": "USA",
+                "timezone": "America/Los_Angeles",
+            },
+            {
+                "latitude": 51.5074,
+                "longitude": -0.1278,
+                "city": "London",
+                "country": "UK",
+                "timezone": "Europe/London",
+            },
+            {
+                "latitude": 48.8566,
+                "longitude": 2.3522,
+                "city": "Paris",
+                "country": "France",
+                "timezone": "Europe/Paris",
+            },
+            {
+                "latitude": 35.6762,
+                "longitude": 139.6503,
+                "city": "Tokyo",
+                "country": "Japan",
+                "timezone": "Asia/Tokyo",
+            },
+            {
+                "latitude": 1.3521,
+                "longitude": 103.8198,
+                "city": "Singapore",
+                "country": "Singapore",
+                "timezone": "Asia/Singapore",
+            },
+            {
+                "latitude": -33.8688,
+                "longitude": 151.2093,
+                "city": "Sydney",
+                "country": "Australia",
+                "timezone": "Australia/Sydney",
+            },
+        ]
+
+        for i in range(num_actors):
+            location = locations[i % len(locations)]
+            # Add some random variation to avoid exact duplicates
+            lat_variation = (random.random() - 0.5) * 0.1  # ±0.05 degrees
+            lon_variation = (random.random() - 0.5) * 0.1
+
+            # Extract and convert location data safely
+            lat = location.get("latitude", 0.0)
+            lon = location.get("longitude", 0.0)
+
+            geographic_info[i] = {
+                "latitude": round(float(lat) + lat_variation, 6),
+                "longitude": round(float(lon) + lon_variation, 6),
+            }
+
+            organizational_hierarchy[i] = {
+                "city": str(location.get("city", "Unknown")),
+                "country": str(location.get("country", "Unknown")),
+                "timezone": str(location.get("timezone", "Unknown")),
+                "region": regions[i % len(regions)],
+                "institution_name": f"{institutions[i % len(institutions)]}",
+                "institution_type": str(node_attributes[i]["node_type"]),
+                "department": departments[i % len(departments)],
+                "admin_level": random.choice(
+                    ["local", "regional", "national", "international"]
+                ),
+                "funding_source": random.choice(
+                    ["public", "private", "mixed", "research_grant"]
+                ),
+                "certification": random.choice(
+                    ["ISO27001", "HIPAA_compliant", "SOC2", "FedRAMP"]
+                ),
+                "established_year": str(random.randint(1950, 2020)),
+                "staff_count": str(random.randint(50, 5000)),
+            }
+
+        return NetworkStructureEvent(
+            topology_type=topology_config.topology_type.value,
+            num_nodes=num_actors,
+            adjacency_matrix=adjacency_matrix,
+            node_identifiers=node_identifiers,
+            edge_weights=edge_weights,
+            node_attributes=node_attributes,
+            geographic_info=geographic_info,
+            organizational_hierarchy=organizational_hierarchy,
+        )
 
     def get_cluster_summary(self) -> Dict[str, Any]:
         """
@@ -361,7 +618,7 @@ class LearningProcess(ABC):
             # Check each actor's dataset status
             for i, actor in enumerate(self.cluster_manager.actors):
                 try:
-                    info = ray.get(actor.get_data_info.remote(), timeout=10)
+                    info = ray.get(actor.get_data_info.remote(), timeout=300)
                     actor_statuses.append(
                         {
                             "actor_id": i,
@@ -508,7 +765,7 @@ class LearningProcess(ABC):
             health_checks = []
             for actor in sample_actors:
                 try:
-                    health = ray.get(actor.health_check.remote(), timeout=10)
+                    health = ray.get(actor.health_check.remote(), timeout=300)
                     health_checks.append(health)
                 except Exception as e:
                     health_checks.append(

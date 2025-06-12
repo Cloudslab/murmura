@@ -1026,7 +1026,9 @@ class VirtualClientActor:
         :return: IDs of neighbouring clients
         """
         try:
-            neighbour_ids = [ray.get(n.get_id.remote()) for n in self.neighbours]
+            neighbour_ids = [
+                ray.get(n.get_id.remote(), timeout=300) for n in self.neighbours
+            ]
             return neighbour_ids
         except Exception as e:
             self.logger.error(f"Failed to get neighbour IDs: {e}")

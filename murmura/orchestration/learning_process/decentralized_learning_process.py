@@ -214,7 +214,7 @@ class DecentralizedLearningProcess(LearningProcess):
             # Collect parameters for visualization
             node_params = {}
             for i, actor in enumerate(self.cluster_manager.actors):
-                params = ray.get(actor.get_model_parameters.remote())
+                params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 node_params[i] = params
 
             # Create parameter summaries for visualization
@@ -315,7 +315,7 @@ class DecentralizedLearningProcess(LearningProcess):
         self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
         self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")
 
-        # Return results
+        # Return results_phase1
         results = {
             "initial_metrics": initial_metrics,
             "final_metrics": final_metrics,

@@ -5,10 +5,9 @@ import io
 import pytest
 import numpy as np
 from PIL import Image
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
 
 from murmura.data_processing.data_preprocessor import (
-    DataPreprocessor,
     ImageBytesPreprocessor,
     ImagePreprocessor,
     DictPreprocessor,
