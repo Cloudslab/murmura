@@ -1,0 +1,75 @@
+Network Size Scaling Analysis Summary
+==================================================
+
+Data Sources:
+- Phase 1 experiments (5-30 nodes): 520 experiments
+- Phase 2 experiments (7-15 nodes): 288 experiments
+- Scalability experiments (50-500 nodes): 288 experiments
+- Total experiments analyzed: 1136
+
+- Unique node counts tested: [np.int64(5), np.int64(7), np.int64(10), np.int64(15), np.int64(20), np.int64(30), np.int64(50), np.int64(100), np.int64(200), np.int64(300), np.int64(400), np.int64(500)]
+
+Summary Statistics by Configuration:
+                                            attack_success  ...      
+                                                      mean  ... count
+num_nodes topology fl_type       dp_enabled                 ...      
+5         complete decentralized False              0.7015  ...     4
+                                 True               0.6722  ...    16
+                   federated     False              0.7176  ...     4
+                                 True               0.6918  ...    16
+          line     decentralized False              0.7376  ...     4
+...                                                    ...  ...   ...
+500       line     decentralized True               0.6738  ...     9
+          ring     decentralized False              0.6921  ...     3
+                                 True               0.6738  ...     9
+          star     federated     False              0.6162  ...     3
+                                 True               0.5309  ...     9
+
+[116 rows x 5 columns]
+
+Key Findings:
+
+star: 5→7 nodes: -8.9% change in attack success
+star: 7→10 nodes: +0.6% change in attack success
+star: 10→15 nodes: +7.2% change in attack success
+star: 15→20 nodes: +7.0% change in attack success
+star: 20→30 nodes: -1.1% change in attack success
+star: 30→50 nodes: -14.1% change in attack success
+star: 50→100 nodes: -0.1% change in attack success
+star: 100→200 nodes: -0.5% change in attack success
+star: 200→300 nodes: -2.0% change in attack success
+star: 300→400 nodes: -6.8% change in attack success
+star: 400→500 nodes: +6.3% change in attack success
+complete: 5→7 nodes: -7.7% change in attack success
+complete: 7→10 nodes: -2.4% change in attack success
+complete: 10→15 nodes: +8.7% change in attack success
+complete: 15→20 nodes: -5.0% change in attack success
+complete: 20→30 nodes: -9.1% change in attack success
+complete: 30→50 nodes: -9.6% change in attack success
+complete: 50→100 nodes: -1.8% change in attack success
+complete: 100→200 nodes: +0.0% change in attack success
+complete: 200→300 nodes: -1.9% change in attack success
+complete: 300→400 nodes: +2.1% change in attack success
+complete: 400→500 nodes: +0.7% change in attack success
+ring: 5→7 nodes: -8.5% change in attack success
+ring: 7→10 nodes: -2.4% change in attack success
+ring: 10→15 nodes: +6.2% change in attack success
+ring: 15→20 nodes: +5.6% change in attack success
+ring: 20→30 nodes: +2.2% change in attack success
+ring: 30→50 nodes: +0.1% change in attack success
+ring: 50→100 nodes: +1.3% change in attack success
+ring: 100→200 nodes: -0.3% change in attack success
+ring: 200→300 nodes: -0.5% change in attack success
+ring: 300→400 nodes: +1.1% change in attack success
+ring: 400→500 nodes: +0.4% change in attack success
+line: 5→7 nodes: -17.7% change in attack success
+line: 7→10 nodes: +0.8% change in attack success
+line: 10→15 nodes: +3.8% change in attack success
+line: 15→20 nodes: +4.2% change in attack success
+line: 20→30 nodes: +1.0% change in attack success
+line: 30→50 nodes: +1.7% change in attack success
+line: 50→100 nodes: +1.0% change in attack success
+line: 100→200 nodes: -0.3% change in attack success
+line: 200→300 nodes: -0.3% change in attack success
+line: 300→400 nodes: +0.9% change in attack success
+line: 400→500 nodes: +0.4% change in attack success
