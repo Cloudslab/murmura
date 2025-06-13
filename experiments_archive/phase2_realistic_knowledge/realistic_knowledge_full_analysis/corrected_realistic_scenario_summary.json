@@ -1,0 +1,154 @@
+{
+  "baseline_correction": {
+    "note": "This file contains corrected Phase 2 analysis using actual Phase 1 baselines",
+    "correct_phase1_baselines": {
+      "Communication Pattern Attack": 0.8410,
+      "Parameter Magnitude Attack": 0.6495,
+      "Topology Structure Attack": 0.4716
+    },
+    "incorrect_phase2_baselines_used": {
+      "Communication Pattern Attack": 0.8603174603174603,
+      "Parameter Magnitude Attack": 0.6591481012362673,
+      "Topology Structure Attack": 0.32688411902031284
+    }
+  },
+  "scenario_effectiveness_corrected": {
+    "Complete Knowledge (Baseline)": {
+      "Communication Pattern Attack": {
+        "average_success": 0.8410,
+        "n_experiments": 520,
+        "reduction_from_baseline": 0.0,
+        "source": "Phase 1 actual baseline"
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.6495,
+        "n_experiments": 520,
+        "reduction_from_baseline": 0.0,
+        "source": "Phase 1 actual baseline"
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.4716,
+        "n_experiments": 520,
+        "reduction_from_baseline": 0.0,
+        "source": "Phase 1 actual baseline"
+      }
+    },
+    "Neighborhood 1-hop": {
+      "Communication Pattern Attack": {
+        "average_success": 0.68781179138322,
+        "n_experiments": 420,
+        "reduction_from_baseline": 18.20,
+        "corrected_calculation": "(0.8410 - 0.6878) / 0.8410 * 100 = 18.20%"
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.4716040805721654,
+        "n_experiments": 420,
+        "reduction_from_baseline": 27.39,
+        "corrected_calculation": "(0.6495 - 0.4716) / 0.6495 * 100 = 27.39%"
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.477759068183671,
+        "n_experiments": 420,
+        "reduction_from_baseline": -1.28,
+        "corrected_calculation": "(0.4716 - 0.4778) / 0.4716 * 100 = -1.28% (slight improvement)"
+      }
+    },
+    "Neighborhood 2-hop": {
+      "Communication Pattern Attack": {
+        "average_success": 0.7652494331065759,
+        "n_experiments": 420,
+        "reduction_from_baseline": 9.01,
+        "corrected_calculation": "(0.8410 - 0.7652) / 0.8410 * 100 = 9.01%"
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.623288836878401,
+        "n_experiments": 420,
+        "reduction_from_baseline": 4.04,
+        "corrected_calculation": "(0.6495 - 0.6233) / 0.6495 * 100 = 4.04%"
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.479161973222019,
+        "n_experiments": 420,
+        "reduction_from_baseline": -1.58,
+        "corrected_calculation": "(0.4716 - 0.4792) / 0.4716 * 100 = -1.58% (slight improvement)"
+      }
+    },
+    "Statistical Knowledge": {
+      "Communication Pattern Attack": {
+        "average_success": 0.8603174603174603,
+        "n_experiments": 420,
+        "reduction_from_baseline": -2.30,
+        "corrected_calculation": "(0.8410 - 0.8603) / 0.8410 * 100 = -2.30% (improvement)"
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.6543700505928345,
+        "n_experiments": 420,
+        "reduction_from_baseline": -0.75,
+        "corrected_calculation": "(0.6495 - 0.6544) / 0.6495 * 100 = -0.75% (improvement)"
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.27595404576644916,
+        "n_experiments": 420,
+        "reduction_from_baseline": 41.48,
+        "corrected_calculation": "(0.4716 - 0.2760) / 0.4716 * 100 = 41.48%"
+      }
+    },
+    "Organizational 3-groups": {
+      "Communication Pattern Attack": {
+        "average_success": 0.31746031746031744,
+        "n_experiments": 420,
+        "reduction_from_baseline": 62.26,
+        "corrected_calculation": "(0.8410 - 0.3175) / 0.8410 * 100 = 62.26%"
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.42516720117510653,
+        "n_experiments": 420,
+        "reduction_from_baseline": 34.55,
+        "corrected_calculation": "(0.6495 - 0.4252) / 0.6495 * 100 = 34.55%"
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.7406838280315088,
+        "n_experiments": 420,
+        "reduction_from_baseline": -57.01,
+        "corrected_calculation": "(0.4716 - 0.7407) / 0.4716 * 100 = -57.01% (major improvement)"
+      }
+    },
+    "Organizational 5-groups": {
+      "Communication Pattern Attack": {
+        "average_success": 0.5333333333333332,
+        "n_experiments": 420,
+        "reduction_from_baseline": 36.59,
+        "corrected_calculation": "(0.8410 - 0.5333) / 0.8410 * 100 = 36.59%"
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.6144781960236871,
+        "n_experiments": 420,
+        "reduction_from_baseline": 5.39,
+        "corrected_calculation": "(0.6495 - 0.6145) / 0.6495 * 100 = 5.39%"
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.5363370141408618,
+        "n_experiments": 420,
+        "reduction_from_baseline": -13.73,
+        "corrected_calculation": "(0.4716 - 0.5363) / 0.4716 * 100 = -13.73% (improvement)"
+      }
+    }
+  },
+  "corrected_performance_changes": {
+    "scenarios": [
+      "Neighborhood 1-hop",
+      "Neighborhood 2-hop", 
+      "Statistical Knowledge",
+      "Organizational 3-groups",
+      "Organizational 5-groups"
+    ],
+    "communication_pattern_changes": [18.20, 9.01, -2.30, 62.26, 36.59],
+    "parameter_magnitude_changes": [27.39, 4.04, -0.75, 34.55, 5.39],
+    "topology_structure_changes": [-1.28, -1.58, 41.48, -57.01, -13.73]
+  },
+  "key_corrections": {
+    "topology_structure_massive_correction": "Previous analysis showed topology attacks having large negative reductions (improvements) because wrong baseline was used (32.69% instead of 47.16%). Corrected analysis shows more realistic patterns.",
+    "statistical_knowledge_now_shows_improvements": "Communication and Parameter attacks now show slight improvements instead of degradations",
+    "organizational_scenarios_still_show_topology_improvements": "But much more realistic improvements (-57% and -14%) instead of the extreme values from wrong baselines"
+  }
+}

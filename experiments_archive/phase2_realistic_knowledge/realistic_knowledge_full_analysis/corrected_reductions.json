@@ -1,0 +1,102 @@
+{
+  "Neighborhood 1-hop": {
+    "Communication Pattern Attack": {
+      "success_rate": 0.68781179138322,
+      "baseline": 0.841,
+      "reduction_percent": 18.215006969890602,
+      "effective": true
+    },
+    "Parameter Magnitude Attack": {
+      "success_rate": 0.4716040805721654,
+      "baseline": 0.65,
+      "reduction_percent": 27.445526065820708,
+      "effective": true
+    },
+    "Topology Structure Attack": {
+      "success_rate": 0.477759068183671,
+      "baseline": 0.472,
+      "reduction_percent": -1.2201415643370765,
+      "effective": true
+    }
+  },
+  "Neighborhood 2-hop": {
+    "Communication Pattern Attack": {
+      "success_rate": 0.7652494331065759,
+      "baseline": 0.841,
+      "reduction_percent": 9.00720177091844,
+      "effective": true
+    },
+    "Parameter Magnitude Attack": {
+      "success_rate": 0.623288836878401,
+      "baseline": 0.65,
+      "reduction_percent": 4.109409711015237,
+      "effective": true
+    },
+    "Topology Structure Attack": {
+      "success_rate": 0.479161973222019,
+      "baseline": 0.472,
+      "reduction_percent": -1.5173672080548735,
+      "effective": true
+    }
+  },
+  "Statistical Knowledge": {
+    "Communication Pattern Attack": {
+      "success_rate": 0.8603174603174603,
+      "baseline": 0.841,
+      "reduction_percent": -2.296963176868049,
+      "effective": true
+    },
+    "Parameter Magnitude Attack": {
+      "success_rate": 0.6543700505928345,
+      "baseline": 0.65,
+      "reduction_percent": -0.6723154758206865,
+      "effective": true
+    },
+    "Topology Structure Attack": {
+      "success_rate": 0.27595404576644916,
+      "baseline": 0.472,
+      "reduction_percent": 41.53515979524382,
+      "effective": false
+    }
+  },
+  "Organizational 3-groups": {
+    "Communication Pattern Attack": {
+      "success_rate": 0.31746031746031744,
+      "baseline": 0.841,
+      "reduction_percent": 62.25204310816677,
+      "effective": true
+    },
+    "Parameter Magnitude Attack": {
+      "success_rate": 0.42516720117510653,
+      "baseline": 0.65,
+      "reduction_percent": 34.58966135767592,
+      "effective": true
+    },
+    "Topology Structure Attack": {
+      "success_rate": 0.7406838280315088,
+      "baseline": 0.472,
+      "reduction_percent": -56.92453983718407,
+      "effective": true
+    }
+  },
+  "Organizational 5-groups": {
+    "Communication Pattern Attack": {
+      "success_rate": 0.5333333333333332,
+      "baseline": 0.841,
+      "reduction_percent": 36.58343242172018,
+      "effective": true
+    },
+    "Parameter Magnitude Attack": {
+      "success_rate": 0.6144781960236871,
+      "baseline": 0.65,
+      "reduction_percent": 5.464892919432751,
+      "effective": true
+    },
+    "Topology Structure Attack": {
+      "success_rate": 0.5363370141408618,
+      "baseline": 0.472,
+      "reduction_percent": -13.630723334928346,
+      "effective": true
+    }
+  }
+}

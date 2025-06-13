@@ -1,0 +1,113 @@
+{
+  "scenario_effectiveness": {
+    "Complete Knowledge (Baseline)": {
+      "Communication Pattern Attack": {
+        "average_success": 0.8603174603174603,
+        "n_experiments": 420,
+        "reduction_from_baseline": 0.0
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.6591481012362673,
+        "n_experiments": 420,
+        "reduction_from_baseline": 0.0
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.32688411902031284,
+        "n_experiments": 420,
+        "reduction_from_baseline": 0.0
+      }
+    },
+    "Neighborhood 1-hop": {
+      "Communication Pattern Attack": {
+        "average_success": 0.68781179138322,
+        "n_experiments": 420,
+        "reduction_from_baseline": 20.05139694254084
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.4716040805721654,
+        "n_experiments": 420,
+        "reduction_from_baseline": 28.452485915130932
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.477759068183671,
+        "n_experiments": 420,
+        "reduction_from_baseline": -46.155484584426276
+      }
+    },
+    "Neighborhood 2-hop": {
+      "Communication Pattern Attack": {
+        "average_success": 0.7652494331065759,
+        "n_experiments": 420,
+        "reduction_from_baseline": 11.050342646283609
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.623288836878401,
+        "n_experiments": 420,
+        "reduction_from_baseline": 5.440243898239317
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.479161973222019,
+        "n_experiments": 420,
+        "reduction_from_baseline": -46.58465962130252
+      }
+    },
+    "Statistical Knowledge": {
+      "Communication Pattern Attack": {
+        "average_success": 0.8603174603174603,
+        "n_experiments": 420,
+        "reduction_from_baseline": 0.0
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.6543700505928345,
+        "n_experiments": 420,
+        "reduction_from_baseline": 0.7248827136832152
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.27595404576644916,
+        "n_experiments": 420,
+        "reduction_from_baseline": 15.58046729419083
+      }
+    },
+    "Organizational 3-groups": {
+      "Communication Pattern Attack": {
+        "average_success": 0.31746031746031744,
+        "n_experiments": 420,
+        "reduction_from_baseline": 63.09963099630996
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.42516720117510653,
+        "n_experiments": 420,
+        "reduction_from_baseline": 35.49747008636104
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.7406838280315088,
+        "n_experiments": 420,
+        "reduction_from_baseline": -126.58911367470932
+      }
+    },
+    "Organizational 5-groups": {
+      "Communication Pattern Attack": {
+        "average_success": 0.5333333333333332,
+        "n_experiments": 420,
+        "reduction_from_baseline": 38.007380073800746
+      },
+      "Parameter Magnitude Attack": {
+        "average_success": 0.6144781960236871,
+        "n_experiments": 420,
+        "reduction_from_baseline": 6.776914797873103
+      },
+      "Topology Structure Attack": {
+        "average_success": 0.5363370141408618,
+        "n_experiments": 420,
+        "reduction_from_baseline": -64.07557997870596
+      }
+    }
+  },
+  "attack_robustness": {},
+  "recommendations": [
+    "Neighborhood 1-hop: Communication Pattern remain effective (>50% success)",
+    "Neighborhood 2-hop: Communication Pattern, Parameter Magnitude remain effective (>50% success)",
+    "Statistical Knowledge: Communication Pattern, Parameter Magnitude remain effective (>50% success)",
+    "Organizational 3-groups: Topology Structure remain effective (>50% success)"
+  ]
+}
