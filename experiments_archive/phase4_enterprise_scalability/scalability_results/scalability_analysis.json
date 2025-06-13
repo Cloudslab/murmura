@@ -1,0 +1,161 @@
+{
+  "summary": {
+    "total_experiments": 288,
+    "successful_experiments": 288,
+    "success_rate": 1.0
+  },
+  "scaling_trends": {
+    "star": {
+      "attack_success_by_size": {
+        "50": 1.0,
+        "100": 1.0,
+        "200": 1.0,
+        "300": 1.0,
+        "400": 1.0,
+        "500": 1.0
+      },
+      "signal_strength_by_size": {
+        "50": 0.98,
+        "100": 0.99,
+        "200": 0.995,
+        "300": 0.997,
+        "400": 0.885,
+        "500": 0.998
+      },
+      "sample_sizes": {
+        "50": 12,
+        "100": 12,
+        "200": 12,
+        "300": 12,
+        "400": 12,
+        "500": 12
+      }
+    },
+    "ring": {
+      "attack_success_by_size": {
+        "50": 1.0,
+        "100": 1.0,
+        "200": 1.0,
+        "300": 1.0,
+        "400": 1.0,
+        "500": 1.0
+      },
+      "signal_strength_by_size": {
+        "50": 0.982,
+        "100": 0.991,
+        "200": 0.995,
+        "300": 0.997,
+        "400": 0.998,
+        "500": 0.998
+      },
+      "sample_sizes": {
+        "50": 12,
+        "100": 12,
+        "200": 12,
+        "300": 12,
+        "400": 12,
+        "500": 12
+      }
+    },
+    "complete": {
+      "attack_success_by_size": {
+        "50": 1.0,
+        "100": 1.0,
+        "200": 1.0,
+        "300": 1.0,
+        "400": 1.0,
+        "500": 1.0
+      },
+      "signal_strength_by_size": {
+        "50": 0.703,
+        "100": 0.698,
+        "200": 0.69,
+        "300": 0.689,
+        "400": 0.684,
+        "500": 0.697
+      },
+      "sample_sizes": {
+        "50": 12,
+        "100": 12,
+        "200": 12,
+        "300": 12,
+        "400": 12,
+        "500": 12
+      }
+    },
+    "line": {
+      "attack_success_by_size": {
+        "50": 1.0,
+        "100": 1.0,
+        "200": 1.0,
+        "300": 1.0,
+        "400": 1.0,
+        "500": 1.0
+      },
+      "signal_strength_by_size": {
+        "50": 0.982,
+        "100": 0.991,
+        "200": 0.995,
+        "300": 0.997,
+        "400": 0.998,
+        "500": 0.998
+      },
+      "sample_sizes": {
+        "50": 12,
+        "100": 12,
+        "200": 12,
+        "300": 12,
+        "400": 12,
+        "500": 12
+      }
+    }
+  },
+  "topology_analysis": {
+    "vulnerability_ranking": {
+      "complete": {
+        "attack_success": 1.0,
+        "max_signal": 0.693655232550466
+      },
+      "line": {
+        "attack_success": 1.0,
+        "max_signal": 0.9933988937343821
+      },
+      "ring": {
+        "attack_success": 1.0,
+        "max_signal": 0.9933988937343821
+      },
+      "star": {
+        "attack_success": 1.0,
+        "max_signal": 0.974116701942669
+      }
+    },
+    "most_vulnerable": "complete",
+    "least_vulnerable": "star"
+  },
+  "dp_effectiveness": {
+    "without_dp": {
+      "attack_success": 1.0,
+      "max_signal": 0.9389845790590972
+    },
+    "with_dp": {
+      "attack_success": 1.0,
+      "max_signal": 0.9051950476342673
+    },
+    "protection_effectiveness": {
+      "attack_reduction": 0.0,
+      "relative_protection": 0.0
+    }
+  },
+  "complexity_bounds": {
+    "tested_size_range": {
+      "min": 50,
+      "max": 500
+    },
+    "extrapolation_validity": "valid",
+    "recommended_max_extrapolation": 1000,
+    "theoretical_limits": {
+      "information_theoretic": 0.8390888075059975,
+      "network_effect_bound": 0.9552786404500042
+    }
+  }
+}

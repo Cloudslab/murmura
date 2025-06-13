@@ -1,59 +1,72 @@
-# Murmura Experiments Archive
+# Experiments Archive - Four-Phase Experimental Design
 
-This directory contains all experimental scripts, results, and analyses for the Murmura federated learning framework research project.
+This repository contains the complete experimental infrastructure for the paper "Network Structures as an Attack Surface: Topology-Based Privacy Leakage in Federated Learning" following the four-phase experimental design outlined in Section 4.5.
+
+## Phase Overview
+
+Our evaluation employs a comprehensive four-phase approach that captures idealized deployment scenarios, realistic adversarial knowledge constraints, operational deployment conditions, and enterprise-scale implications.
+
+### Phase 1: Baseline Attack Effectiveness (Complete Knowledge)
+**Purpose**: Establish baseline attack effectiveness through exhaustive evaluation across 520 unique configurations
+- **Coverage**: Systematic evaluation across datasets, attack strategies, FL paradigms, network topologies, network sizes, and differential privacy protection levels
+- **Objective**: Provides theoretical upper bounds on privacy leakage under complete topology knowledge without sampling effects
+- **Results**: 84.1%, 65.0%, and 47.2% success rates for communication pattern, parameter magnitude, and topology structure attacks respectively
+
+### Phase 2: Realistic Adversarial Knowledge Analysis
+**Purpose**: Evaluate attack robustness across realistic adversarial knowledge constraints
+- **Coverage**: Analysis of 2,100 attack instances spanning six knowledge scenarios
+- **Scenarios**: Complete knowledge, statistical topology awareness, local neighborhood visibility (1-hop and 2-hop), and organizational structure knowledge (coarse and fine-grained)
+- **Key Finding**: 80% of realistic partial knowledge scenarios maintain effectiveness above security thresholds
+
+### Phase 3: Deployment Scenarios with Subsampling
+**Purpose**: Evaluate realistic deployment scenarios incorporating client and data subsampling
+- **Coverage**: 288 targeted configurations across moderate, strong, and very strong subsampling scenarios
+- **Subsampling Levels**: 
+  - Moderate: 50% clients, 80% data
+  - Strong: 30% clients, 60% data  
+  - Very Strong: 20% clients, 50% data
+- **Objective**: Quantify privacy amplification effects and validate findings under practical deployment constraints
+
+### Phase 4: Enterprise-Scale Analysis
+**Purpose**: Address enterprise-scale implications through synthetic simulation methodology
+- **Scale**: Networks with 50-500 nodes
+- **Methodology**: Synthetic simulation framework calibrated against empirical data from smaller-scale experiments
+- **Objective**: Provide critical insights into scalability patterns and extrapolate findings to production deployment scenarios
 
 ## Directory Structure
 
 ```
 experiments_archive/
-├── scripts/                    # All experimental scripts
-│   ├── attack_experiments/     # Privacy attack experiments
-│   │   ├── paper_experiments.py
-│   │   └── rerun_attacks.py
-│   ├── scalability_experiments/
-│   │   └── scalability_experiments.py
-│   ├── figure_generation/      # Paper figure generation scripts
-│   │   ├── generate_correct_figures.py
-│   │   ├── generate_figure1_heatmap.py
-│   │   ├── generate_topology_vulnerability_figure.py
-│   │   ├── generate_updated_figures.py
-│   │   ├── figure_generation_summary.py
-│   │   └── validate_figures.py
-│   └── data_processing/        # Data analysis scripts
-│       ├── combine_scalability_data.py
-│       └── extract_scalability_metrics.py
-│
-├── results/                    # All experimental results
-│   ├── attack_results/         # Privacy attack results
-│   │   ├── results_phase1/     # Phase 1 attack results
-│   │   └── results_phase2/     # Phase 2 attack results
-│   ├── scalability_results/    # Scalability experiment data
-│   │   ├── experiment_checkpoint.json
-│   │   ├── scalability_analysis.json
-│   │   ├── scalability_results.json
-│   │   ├── scalability_summary.txt
-│   │   ├── extracted_metrics.json
-│   │   └── test_scalability_parallel/
-│   └── training_visualizations/
-│       ├── visualizations_phase1/  # 520 experiments
-│       └── visualizations_phase2/  # 288 experiments
-│
-├── figures/                    # Generated figures for papers
-│   └── analysis/              # All paper figures (PDF & PNG)
-│       ├── fig1_*.pdf/png     # Attack effectiveness figures
-│       ├── fig2_*.pdf/png     # Privacy mechanism figures
-│       ├── fig3_*.pdf/png     # Topology vulnerability figures
-│       ├── fig4_*.pdf/png     # Dataset comparison figures
-│       ├── fig5_*.pdf/png     # Network scaling figures
-│       └── ...
-│
-└── docs/                      # Documentation and papers
-    ├── README_figure_generation.md
-    ├── updated_results_section.tex
-    ├── paper_updated_experimental_results.tex
-    ├── ATTACK_IMPLEMENTATION_COMPARISON.md
-    ├── SCALABILITY_ANALYSIS.md
-    └── TOPOLOGY_PRIVACY_LEAKAGE_PAPER.md
+├── phase1_baseline_analysis/          # Phase 1: Complete Knowledge Baseline
+│   ├── results_phase1/                # 520 configuration results
+│   ├── results_phase2/                # Extended baseline results  
+│   ├── scripts/                       # Phase 1 execution scripts
+│   └── README_phase1.md              # Phase 1 specific documentation
+├── phase2_realistic_knowledge/        # Phase 2: Partial Knowledge Analysis
+│   ├── realistic_knowledge_full_analysis/  # 2,100 attack evaluations
+│   ├── scripts/                       # Phase 2 execution scripts
+│   └── README_phase2.md              # Phase 2 specific documentation
+├── phase3_deployment_scenarios/       # Phase 3: Subsampling Analysis
+│   ├── subsampling_analysis/          # Results with sampling effects
+│   ├── scripts/                       # Phase 3 execution scripts
+│   └── README_phase3.md              # Phase 3 specific documentation
+├── phase4_enterprise_scalability/     # Phase 4: Large-Scale Analysis
+│   ├── scalability_results/           # 50-500 node synthetic analysis
+│   ├── scripts/                       # Phase 4 execution scripts
+│   └── README_phase4.md              # Phase 4 specific documentation
+├── figures/                           # Generated figures for all phases
+│   ├── phase1_figures/                # Baseline analysis figures
+│   ├── phase2_figures/                # Realistic knowledge figures
+│   ├── phase3_figures/                # Deployment scenario figures
+│   └── phase4_figures/                # Scalability analysis figures
+├── scripts/                          # Cross-phase utilities
+│   ├── analysis/                     # Analysis utilities
+│   ├── figure_generation/            # Figure generation scripts
+│   └── data_processing/              # Data processing utilities
+└── docs/                             # Comprehensive documentation
+    ├── EXPERIMENTAL_METHODOLOGY.md   # Complete experimental design
+    ├── ATTACK_IMPLEMENTATION.md      # Attack vector details
+    └── STATISTICAL_ANALYSIS.md       # Statistical validation methods
 ```
 
 ## Experiment Types
