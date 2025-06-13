@@ -4,8 +4,6 @@
 
 **Murmura** is a comprehensive Ray-based framework for federated and decentralized machine learning. Built for researchers and developers, it provides production-ready tools for distributed machine learning with advanced privacy guarantees and flexible network topologies.
 
-> **📦 Experimental Data Archive**: All experimental results, scripts, and analyses from our research are archived in the `experiments_archive/` directory (770MB, Git LFS). This includes privacy attack experiments, scalability analyses, and 808 training visualizations.
-
 ## 🌐 What is Murmura?
 
 Murmura is a sophisticated federated learning framework that supports both centralized and fully decentralized learning environments. Built on Ray for distributed computing, it enables researchers to experiment with various network topologies, aggregation strategies, and privacy-preserving techniques across single-node and multi-node clusters.
