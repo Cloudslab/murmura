@@ -19,13 +19,13 @@ sns.set_palette("husl")
 
 # Configure matplotlib for publication
 plt.rcParams.update({
-    'font.size': 10,
-    'axes.labelsize': 12,
-    'axes.titlesize': 14,
-    'xtick.labelsize': 10,
-    'ytick.labelsize': 10,
-    'legend.fontsize': 10,
-    'figure.titlesize': 16,
+    'font.size': 14,
+    'axes.labelsize': 18,
+    'axes.titlesize': 20,
+    'xtick.labelsize': 14,
+    'ytick.labelsize': 14,
+    'legend.fontsize': 14,
+    'figure.titlesize': 22,
     'font.family': 'serif',
     'font.serif': 'Times New Roman'
 })
@@ -117,7 +117,7 @@ def create_baseline_effectiveness_figure():
         for j, (bar, mean) in enumerate(zip(bars, means)):
             if mean > 0:
                 ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + errors[j] + 0.01, 
-                       f'{mean:.1%}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+                       f'{mean:.1%}', ha='center', va='bottom', fontsize=13, fontweight='bold')
     
     ax.set_xlabel('Network Topology', fontweight='bold')
     ax.set_ylabel('Attack Success Rate', fontweight='bold')
@@ -191,7 +191,7 @@ def create_realistic_scenarios_figure():
             # Use white text for dark cells, black for light cells
             text_color = 'white' if value < 0.5 else 'black'
             ax.text(j, i, f'{value:.1%}', ha='center', va='center', 
-                   fontweight='bold', fontsize=11, color=text_color)
+                   fontweight='bold', fontsize=15, color=text_color)
     
     # Add threshold line indicator
     threshold_line = 0.3
@@ -201,7 +201,7 @@ def create_realistic_scenarios_figure():
             if value >= threshold_line:
                 # Add green check mark for effective attacks
                 ax.text(j+0.35, i-0.35, '✓', ha='center', va='center', 
-                       fontsize=16, fontweight='bold', color='green')
+                       fontsize=22, fontweight='bold', color='green')
     
     ax.set_title('Attack Effectiveness Under Realistic Partial Topology Knowledge\n(✓ indicates effectiveness above 30% threshold)', 
                  fontweight='bold', pad=20)
@@ -270,7 +270,7 @@ def create_dp_effectiveness_figure():
         for j, (bar, mean) in enumerate(zip(bars, means)):
             if mean > 0:
                 ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + errors[j] + 0.01, 
-                       f'{mean:.1%}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+                       f'{mean:.1%}', ha='center', va='bottom', fontsize=13, fontweight='bold')
     
     # Add threshold line
     ax.axhline(y=0.3, color='red', linestyle='--', alpha=0.7, linewidth=2, label='30% Effectiveness Threshold')
@@ -333,7 +333,7 @@ def create_dataset_comparison_figure():
     ax.set_title('Attack Effectiveness Across Data Modalities\n(Domain-Agnostic Vulnerability Analysis)', fontweight='bold', pad=20)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0%}'.format(y)))
     ax.grid(True, alpha=0.3)
-    ax.legend(title='Dataset', title_fontsize=12, fontsize=10)
+    ax.legend(title='Dataset', title_fontsize=18, fontsize=14)
     
     # Add threshold line
     ax.axhline(y=0.3, color='red', linestyle='--', alpha=0.7, linewidth=2, label='30% Effectiveness Threshold')
@@ -390,7 +390,7 @@ def create_scalability_figure():
     ax.annotate('Scale Independence:\nConsistent effectiveness\nacross network sizes', 
                 xy=(350, 0.7), xytext=(250, 0.85),
                 arrowprops=dict(arrowstyle='->', color='black', alpha=0.7),
-                fontsize=10, ha='center', bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.8))
+                fontsize=14, ha='center', bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.8))
     
     plt.tight_layout()
     plt.savefig('../../figures/phase4_figures/fig5_network_scaling.pdf', dpi=300, bbox_inches='tight')
@@ -444,7 +444,7 @@ def create_summary_results_table():
     # Create table
     table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
     table.auto_set_font_size(False)
-    table.set_fontsize(11)
+    table.set_fontsize(15)
     table.scale(1.2, 2)
     
     # Style the table
@@ -457,7 +457,7 @@ def create_summary_results_table():
             table[(i, j)].set_facecolor('#f0f0f0' if i % 2 == 0 else 'white')
     
     plt.title('Comprehensive Experimental Results Summary\n(Attack Success Rates Across All Four Phases)', 
-              fontsize=16, fontweight='bold', pad=20)
+              fontsize=22, fontweight='bold', pad=20)
     
     plt.tight_layout()
     plt.savefig('../../figures/results_summary_table.pdf', dpi=300, bbox_inches='tight')

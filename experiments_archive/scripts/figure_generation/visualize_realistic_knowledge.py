@@ -61,14 +61,14 @@ def create_scenario_comparison_plot(summary: Dict[str, Any], output_dir: str) ->
         for bar, val in zip(bars, success_rates):
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + 0.02,
-                   f'{val:.2f}', ha='center', va='bottom', fontsize=10)
+                   f'{val:.2f}', ha='center', va='bottom', fontsize=14)
         
         # Formatting
-        ax.set_title(attack_label, fontsize=14)
-        ax.set_ylabel("Attack Success Rate" if attack_idx == 0 else "", fontsize=12)
+        ax.set_title(attack_label, fontsize=20)
+        ax.set_ylabel("Attack Success Rate" if attack_idx == 0 else "", fontsize=18)
         ax.set_ylim(0, 1.0)
         ax.set_xticks(range(len(scenario_labels)))
-        ax.set_xticklabels(scenario_labels, rotation=45, ha='right', fontsize=10)
+        ax.set_xticklabels(scenario_labels, rotation=45, ha='right', fontsize=14)
         ax.grid(True, alpha=0.3, axis='y')
         ax.axhline(y=0.3, color='red', linestyle='--', alpha=0.5, linewidth=1)
     
@@ -121,9 +121,9 @@ def create_degradation_heatmap(summary: Dict[str, Any], output_dir: str) -> None
                 vmin=-100,
                 vmax=100)
     
-    plt.title("Attack Success Reduction with Partial Knowledge", fontsize=14)
-    plt.xlabel("Attack Type", fontsize=12)
-    plt.ylabel("Knowledge Scenario", fontsize=12)
+    plt.title("Attack Success Reduction with Partial Knowledge", fontsize=20)
+    plt.xlabel("Attack Type", fontsize=18)
+    plt.ylabel("Knowledge Scenario", fontsize=18)
     
     plt.tight_layout()
     plt.savefig(f"{output_dir}/degradation_heatmap.pdf", dpi=300, bbox_inches='tight')
@@ -167,9 +167,9 @@ def create_paper_figure(summary: Dict[str, Any], output_dir: str) -> None:
         ax1.bar(x + i*width, success_rates, width, 
                label=attack.replace(" Attack", ""), color=colors[i], alpha=0.8)
     
-    ax1.set_xlabel("Knowledge Scenario", fontsize=12)
-    ax1.set_ylabel("Attack Success Rate", fontsize=12)
-    ax1.set_title("(a) Attack Success Across Knowledge Scenarios", fontsize=14)
+    ax1.set_xlabel("Knowledge Scenario", fontsize=18)
+    ax1.set_ylabel("Attack Success Rate", fontsize=18)
+    ax1.set_title("(a) Attack Success Across Knowledge Scenarios", fontsize=20)
     ax1.set_xticks(x + width)
     ax1.set_xticklabels(scenario_labels)
     ax1.legend(loc='upper right')
@@ -195,10 +195,10 @@ def create_paper_figure(summary: Dict[str, Any], output_dir: str) -> None:
     bars = ax2.bar(neighborhood_labels, comm_success, color='#1f77b4', alpha=0.8)
     for bar, val in zip(bars, comm_success):
         ax2.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.02,
-                f'{val:.2f}', ha='center', va='bottom', fontsize=10)
+                f'{val:.2f}', ha='center', va='bottom', fontsize=14)
     
-    ax2.set_ylabel("Success Rate", fontsize=12)
-    ax2.set_title("(b) Neighborhood Knowledge\n(Communication Attack)", fontsize=12)
+    ax2.set_ylabel("Success Rate", fontsize=18)
+    ax2.set_title("(b) Neighborhood Knowledge\n(Communication Attack)", fontsize=18)
     ax2.set_ylim(0, 1.0)
     ax2.axhline(y=0.3, color='red', linestyle='--', alpha=0.5, linewidth=1)
     ax2.grid(True, alpha=0.3, axis='y')
@@ -223,11 +223,11 @@ def create_paper_figure(summary: Dict[str, Any], output_dir: str) -> None:
         ax3.bar(x_pos, org_success, 0.25, 
                label=attack.replace(" Attack", ""), color=colors[i], alpha=0.8)
     
-    ax3.set_ylabel("Success Rate", fontsize=12)
-    ax3.set_title("(c) Organizational Knowledge", fontsize=12)
+    ax3.set_ylabel("Success Rate", fontsize=18)
+    ax3.set_title("(c) Organizational Knowledge", fontsize=18)
     ax3.set_xticks(np.arange(len(org_labels)) + 0.25)
     ax3.set_xticklabels(org_labels)
-    ax3.legend(fontsize=10)
+    ax3.legend(fontsize=14)
     ax3.set_ylim(0, 1.0)
     ax3.axhline(y=0.3, color='red', linestyle='--', alpha=0.5, linewidth=1)
     ax3.grid(True, alpha=0.3, axis='y')
