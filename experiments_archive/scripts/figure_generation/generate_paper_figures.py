@@ -15,7 +15,16 @@ warnings.filterwarnings('ignore')
 
 # Set style for publication-quality figures
 plt.style.use('seaborn-v0_8-whitegrid')
-sns.set_palette("husl")
+
+# User-specified exact color palette: salmon to aqua gradient
+user_color_palette = ["#e27c7c", "#a86464", "#6d4b4b", "#503f3f", "#333333", "#3c4e4b", "#466964", "#599e94", "#6cd4c5"]
+
+# Create color variations for different plot types
+color_3 = [user_color_palette[0], user_color_palette[4], user_color_palette[8]]  # Salmon, middle, aqua
+color_4 = [user_color_palette[0], user_color_palette[2], user_color_palette[6], user_color_palette[8]]  # Well-spaced 4 colors
+color_6 = [user_color_palette[0], user_color_palette[1], user_color_palette[3], user_color_palette[5], user_color_palette[7], user_color_palette[8]]  # 6-color selection
+
+sns.set_palette(user_color_palette)
 
 # Configure matplotlib for publication
 plt.rcParams.update({
@@ -159,7 +168,7 @@ def create_dataset_violin_plot():
                          widths=0.7, showmeans=True, showmedians=True, showextrema=True)
     
     # Style the violin plot
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c'] * 2  # Repeat colors for each dataset
+    colors = color_3 * 2  # Repeat colors for each dataset
     for i, pc in enumerate(parts['bodies']):
         pc.set_facecolor(colors[i])
         pc.set_alpha(0.7)
@@ -247,8 +256,8 @@ def create_network_scaling_by_topology():
     # Create the figure
     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     
-    # Colors for topologies
-    colors = {'star': '#1f77b4', 'ring': '#ff7f0e', 'complete': '#2ca02c', 'line': '#d62728'}
+    # Colors for topologies - salmon to aqua palette
+    colors = {'star': color_4[0], 'ring': color_4[1], 'complete': color_4[2], 'line': color_4[3]}
     
     # Create x-axis mapping where 5-30 takes same space as 50-500
     real_nodes = sorted(real_data['node_count'].unique())
@@ -347,9 +356,9 @@ def create_network_scaling_by_dp():
     # Create the figure
     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     
-    # Colors for DP settings
-    color_no_dp = '#1f77b4'
-    color_with_dp = '#ff7f0e'
+    # Colors for DP settings - salmon to aqua palette
+    color_no_dp = color_3[0]  # Salmon
+    color_with_dp = color_3[2]  # Aqua
     
     # Create x-axis mapping where 5-30 takes same space as 50-500
     real_nodes = sorted(real_data_no_dp['node_count'].unique())
@@ -435,13 +444,13 @@ def create_subsampling_flow():
     
     x_positions = range(len(subsampling_scenarios))
     
-    # Plot lines for each attack vector
+    # Plot lines for each attack vector - salmon to aqua palette
     line1 = ax.plot(x_positions, comm_rates, 'o-', linewidth=3, markersize=8, 
-                    color='#1f77b4', label='Communication Pattern')
+                    color=color_3[0], label='Communication Pattern')
     line2 = ax.plot(x_positions, param_rates, 's-', linewidth=3, markersize=8, 
-                    color='#ff7f0e', label='Parameter Magnitude')
+                    color=color_3[1], label='Parameter Magnitude')
     line3 = ax.plot(x_positions, topo_rates, '^-', linewidth=3, markersize=8, 
-                    color='#2ca02c', label='Topology Structure')
+                    color=color_3[2], label='Topology Structure')
     
     # Add percentage decrease annotations
     for i, (comm_dec, param_dec, topo_dec) in enumerate(zip(comm_decreases, param_decreases, topo_decreases)):
@@ -449,19 +458,19 @@ def create_subsampling_flow():
             # Communication Pattern
             ax.annotate(f'-{comm_dec:.1f}%', xy=(i, comm_rates[i]), 
                        xytext=(i-0.1, comm_rates[i] + 0.05),
-                       fontsize=13, fontweight='bold', color='#1f77b4',
+                       fontsize=13, fontweight='bold', color=color_3[0],
                        ha='center')
             
             # Parameter Magnitude  
             ax.annotate(f'-{param_dec:.1f}%', xy=(i, param_rates[i]), 
                        xytext=(i, param_rates[i] + 0.05),
-                       fontsize=13, fontweight='bold', color='#ff7f0e',
+                       fontsize=13, fontweight='bold', color=color_3[1],
                        ha='center')
             
             # Topology Structure
             ax.annotate(f'-{topo_dec:.1f}%', xy=(i, topo_rates[i]), 
-                       xytext=(i+0.1, topo_rates[i] + 0.05),
-                       fontsize=13, fontweight='bold', color='#2ca02c',
+                       xytext=(i-0.05, topo_rates[i] + 0.05),
+                       fontsize=13, fontweight='bold', color=color_3[2],
                        ha='center')
     
     # Add threshold line
@@ -528,15 +537,15 @@ def create_security_effectiveness_landscape():
     complexity_scores = [1, 4, 3, 2, 6, 5]  # Complete=1 (easy), Organizational=6 (complex/practical)
     bubble_sizes = [score * 200 for score in complexity_scores]  # Larger bubbles for better visibility
     
-    # Color by security effectiveness level
+    # Color by security effectiveness level - salmon to aqua palette
     colors = []
     for attacks in effective_attacks:
         if attacks == 0:
-            colors.append('#2ca02c')  # Green - All attacks neutralized
+            colors.append(color_3[2])  # Aqua - All attacks neutralized
         elif attacks == 1:
-            colors.append('#ff7f0e')  # Orange - Partial protection
+            colors.append(color_3[1])  # Mid-tone - Partial protection
         else:
-            colors.append('#d62728')  # Red - Poor protection
+            colors.append(color_3[0])  # Salmon - Poor protection
     
     # Create scatter plot
     scatter = ax.scatter(x_positions, y_positions, s=bubble_sizes, c=colors, alpha=0.7, edgecolors='black', linewidth=2)
@@ -590,24 +599,24 @@ def create_security_effectiveness_landscape():
     ax.axhspan(1.5, 2.5, alpha=0.15, color='yellow', label='Reduced Risk Zone')
     ax.axhspan(2.5, 3.8, alpha=0.15, color='green', label='Secure Zone')
     
-    # Add reference lines
-    ax.axvline(x=70, color='green', linestyle='--', alpha=0.7, linewidth=2, label='Strong Protection (70%+)')
-    ax.axvline(x=50, color='orange', linestyle='--', alpha=0.7, linewidth=2, label='Moderate Protection (50%+)')
+    # Add reference lines - salmon to aqua palette
+    ax.axvline(x=70, color=color_3[2], linestyle='--', alpha=0.7, linewidth=2, label='Strong Protection (70%+)')
+    ax.axvline(x=50, color=color_3[1], linestyle='--', alpha=0.7, linewidth=2, label='Moderate Protection (50%+)')
     
     # Create cleaner legend with better positioning
     from matplotlib.patches import Patch
     from matplotlib.lines import Line2D
     
     legend_elements = [
-        # Security effectiveness colors
-        Patch(facecolor='#d62728', alpha=0.7, label='Poor Security (≤1 attack neutralized)'),
-        Patch(facecolor='#ff7f0e', alpha=0.7, label='Partial Security (2 attacks neutralized)'),
-        Patch(facecolor='#2ca02c', alpha=0.7, label='Full Security (3 attacks neutralized)'),
+        # Security effectiveness colors - salmon to aqua palette
+        Patch(facecolor=color_3[0], alpha=0.7, label='Poor Security (≤1 attack neutralized)'),
+        Patch(facecolor=color_3[1], alpha=0.7, label='Partial Security (2 attacks neutralized)'),
+        Patch(facecolor=color_3[2], alpha=0.7, label='Full Security (3 attacks neutralized)'),
         # Spacer
         Line2D([0], [0], color='none', label=''),
         # Reference lines
-        Line2D([0], [0], color='green', linestyle='--', linewidth=2, label='Strong Protection (70%+)'),
-        Line2D([0], [0], color='orange', linestyle='--', linewidth=2, label='Moderate Protection (50%+)')
+        Line2D([0], [0], color=color_3[2], linestyle='--', linewidth=2, label='Strong Protection (70%+)'),
+        Line2D([0], [0], color=color_3[1], linestyle='--', linewidth=2, label='Moderate Protection (50%+)')
     ]
     
     ax.legend(handles=legend_elements, loc='upper left', fontsize=14, 
@@ -655,8 +664,10 @@ def create_attack_effectiveness_heatmap():
     # Create the figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     
-    # Create heatmap
-    im = ax.imshow(pivot_data.values, cmap='RdYlBu_r', aspect='auto', vmin=0, vmax=1)
+    # Create heatmap with salmon to aqua colormap
+    from matplotlib.colors import LinearSegmentedColormap
+    user_cmap = LinearSegmentedColormap.from_list('user_palette', [color_3[0], color_3[1], color_3[2]])
+    im = ax.imshow(pivot_data.values, cmap=user_cmap, aspect='auto', vmin=0, vmax=1)
     
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax, shrink=0.8)

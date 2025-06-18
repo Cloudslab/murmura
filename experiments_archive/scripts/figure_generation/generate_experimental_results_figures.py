@@ -15,7 +15,16 @@ warnings.filterwarnings('ignore')
 
 # Set style for publication-quality figures
 plt.style.use('seaborn-v0_8-whitegrid')
-sns.set_palette("husl")
+
+# User-specified exact color palette: salmon to aqua gradient
+user_color_palette = ["#e27c7c", "#a86464", "#6d4b4b", "#503f3f", "#333333", "#3c4e4b", "#466964", "#599e94", "#6cd4c5"]
+
+# Create color variations for different plot types
+color_3 = [user_color_palette[0], user_color_palette[4], user_color_palette[8]]  # Salmon, middle, aqua
+color_4 = [user_color_palette[0], user_color_palette[2], user_color_palette[6], user_color_palette[8]]  # Well-spaced 4 colors
+color_6 = [user_color_palette[0], user_color_palette[1], user_color_palette[3], user_color_palette[5], user_color_palette[7], user_color_palette[8]]  # 6-color selection
+
+sns.set_palette(user_color_palette)
 
 # Configure matplotlib for publication
 plt.rcParams.update({
@@ -101,7 +110,7 @@ def create_baseline_effectiveness_figure():
     # Create grouped bar plot
     topologies = ['star', 'ring', 'complete', 'line']
     attacks = ['Communication\nPattern', 'Parameter\nMagnitude', 'Topology\nStructure']
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    colors = color_3
     
     x = np.arange(len(topologies))
     width = 0.25
@@ -170,8 +179,10 @@ def create_realistic_scenarios_figure():
     # Create the figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     
-    # Create heatmap
-    im = ax.imshow(pivot_data.values, cmap='RdYlBu_r', aspect='auto', vmin=0, vmax=1)
+    # Create heatmap with salmon to aqua colormap
+    from matplotlib.colors import LinearSegmentedColormap
+    user_cmap = LinearSegmentedColormap.from_list('user_palette', [color_3[0], color_3[1], color_3[2]])
+    im = ax.imshow(pivot_data.values, cmap=user_cmap, aspect='auto', vmin=0, vmax=1)
     
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax, shrink=0.8)
@@ -245,7 +256,7 @@ def create_dp_effectiveness_figure():
     # Create grouped bar plot
     dp_levels = ['No DP\n(ε=∞)', 'Weak DP\n(ε=8.0)', 'Medium DP\n(ε=4.0)', 'Strong DP\n(ε=1.0)']
     attacks = ['Communication\nPattern', 'Parameter\nMagnitude', 'Topology\nStructure']
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    colors = color_3
     
     x = np.arange(len(dp_levels))
     width = 0.25
@@ -323,9 +334,9 @@ def create_dataset_comparison_figure():
     
     plot_df = pd.DataFrame(plot_data)
     
-    # Create violin plot
+    # Create violin plot with salmon to aqua palette
     sns.violinplot(data=plot_df, x='Attack Vector', y='Success Rate', hue='Dataset', 
-                   ax=ax, palette=['skyblue', 'lightcoral'], inner='box')
+                   ax=ax, palette=[color_3[1], color_3[0]], inner='box')
     
     # Customize the plot
     ax.set_ylabel('Attack Success Rate', fontweight='bold')
@@ -366,13 +377,13 @@ def create_scalability_figure():
     # Create the figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 6))
     
-    # Plot lines with markers
+    # Plot lines with markers - salmon to aqua palette
     ax.plot(network_sizes, comm_pattern_rates, 'o-', label='Communication Pattern', 
-            linewidth=3, markersize=8, color='#1f77b4')
+            linewidth=3, markersize=8, color=color_3[0])
     ax.plot(network_sizes, param_magnitude_rates, 's-', label='Parameter Magnitude', 
-            linewidth=3, markersize=8, color='#ff7f0e')
+            linewidth=3, markersize=8, color=color_3[1])
     ax.plot(network_sizes, topology_structure_rates, '^-', label='Topology Structure', 
-            linewidth=3, markersize=8, color='#2ca02c')
+            linewidth=3, markersize=8, color=color_3[2])
     
     # Add threshold line
     ax.axhline(y=0.3, color='red', linestyle='--', alpha=0.7, linewidth=2, label='30% Effectiveness Threshold')
@@ -447,14 +458,15 @@ def create_summary_results_table():
     table.set_fontsize(15)
     table.scale(1.2, 2)
     
-    # Style the table
+    # Style the table with salmon to aqua palette
     for i in range(len(df.columns)):
-        table[(0, i)].set_facecolor('#4CAF50')
+        table[(0, i)].set_facecolor(color_3[2])  # Aqua header
         table[(0, i)].set_text_props(weight='bold', color='white')
     
     for i in range(1, len(df) + 1):
         for j in range(len(df.columns)):
-            table[(i, j)].set_facecolor('#f0f0f0' if i % 2 == 0 else 'white')
+            # Alternating light salmon and white rows
+            table[(i, j)].set_facecolor('#FFF5F5' if i % 2 == 0 else 'white')
     
     plt.title('Comprehensive Experimental Results Summary\n(Attack Success Rates Across All Four Phases)', 
               fontsize=22, fontweight='bold', pad=20)
