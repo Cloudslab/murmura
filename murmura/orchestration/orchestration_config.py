@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field, model_validator
 from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.network_management.topology import TopologyConfig
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
-from murmura.defenses.defense_config import DefenseConfig
 
 
 class OrchestrationConfig(BaseModel):
@@ -103,12 +102,6 @@ class OrchestrationConfig(BaseModel):
     enable_subsampling_amplification: bool = Field(
         default=False,
         description="Enable privacy amplification by subsampling in DP accounting",
-    )
-
-    # ADDED: Defense mechanism configuration
-    defenses: DefenseConfig = Field(
-        default_factory=DefenseConfig,
-        description="Defense mechanism configuration (PSR, DCS, ATO)",
     )
 
     @model_validator(mode="after")
