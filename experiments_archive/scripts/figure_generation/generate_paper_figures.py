@@ -143,6 +143,7 @@ def create_dataset_violin_plot():
         
         combined_data[label].append(success_rate)
     
+    
     # Add subsampling scenarios (Phase 3) by applying reduction factors to baseline data
     np.random.seed(42)
     for _, row in df_baseline.iterrows():
@@ -175,10 +176,13 @@ def create_dataset_violin_plot():
     
     # Customize other elements
     parts['cmeans'].set_color('red')
-    parts['cmedians'].set_color('black') 
-    parts['cbars'].set_color('black')
-    parts['cmins'].set_color('black')
-    parts['cmaxes'].set_color('black')
+    parts['cmedians'].set_color('black')
+    if 'cbars' in parts:
+        parts['cbars'].set_color('black')
+    if 'cmins' in parts:
+        parts['cmins'].set_color('black')
+    if 'cmaxes' in parts:
+        parts['cmaxes'].set_color('black')
     
     # Add data point overlays to show the range
     for i, label in enumerate(full_labels):
@@ -214,8 +218,8 @@ def create_dataset_violin_plot():
     ax.legend(loc='upper right')
     
     plt.tight_layout()
-    plt.savefig('../../figures/phase1_figures/dataset_violin_plot.pdf', dpi=300, bbox_inches='tight')
-    plt.savefig('../../figures/phase1_figures/dataset_violin_plot.png', dpi=300, bbox_inches='tight')
+    plt.savefig('../../figures/phase1_figures/dataset_violin_plot.pdf', dpi=600, bbox_inches='tight', format='pdf')
+    plt.savefig('../../figures/phase1_figures/dataset_violin_plot.png', dpi=600, bbox_inches='tight', format='png')
     plt.close()
 
 def create_network_scaling_by_topology():
@@ -272,17 +276,20 @@ def create_network_scaling_by_topology():
     for topology in ['star', 'ring', 'complete', 'line']:
         topo_data = real_data[real_data['topology'] == topology]
         if len(topo_data) > 0:
+            # Use solid lines for real data
             line, = ax.plot(real_x_positions[:len(topo_data)], topo_data['success_rate'], 
-                   'o-', color=colors[topology], linewidth=2, markersize=6,
-                   label=f'{topology.capitalize()} (Real)', alpha=0.8)
+                   'o-', color=colors[topology], linewidth=4, markersize=10,
+                   label=f'{topology.capitalize()} (Real)', alpha=1.0, markeredgecolor='black', markeredgewidth=1)
             real_lines.append(line)
     
     # Plot synthetic data (50-500 nodes) - dashed lines
     for topology in ['star', 'ring', 'complete', 'line']:
         if topology in synthetic_data:
+            # Use different markers for synthetic data
+            markers = {'star': 's', 'ring': 'D', 'complete': '^', 'line': 'v'}
             line, = ax.plot(synthetic_x_positions, synthetic_data[topology], 
-                   '--', color=colors[topology], linewidth=2, markersize=4,
-                   label=f'{topology.capitalize()} (Sim)', alpha=0.8)
+                   markers[topology] + '--', color=colors[topology], linewidth=3, markersize=8,
+                   label=f'{topology.capitalize()} (Sim)', alpha=1.0, markeredgecolor='black', markeredgewidth=1)
             sim_lines.append(line)
     
     # Create custom x-axis labels
@@ -379,11 +386,11 @@ def create_network_scaling_by_dp():
     
     # Plot synthetic data (50-500 nodes) - dashed lines
     ax.plot(synthetic_x_positions, synthetic_no_dp, 
-           '--', color=color_no_dp, linewidth=2, markersize=4,
+           's--', color=color_no_dp, linewidth=2.5, markersize=6,
            label='No DP (Sim)', alpha=0.8)
     
     ax.plot(synthetic_x_positions, synthetic_with_dp, 
-           '--', color=color_with_dp, linewidth=2, markersize=4,
+           's--', color=color_with_dp, linewidth=2.5, markersize=6,
            label='With DP (Sim)', alpha=0.8)
     
     # Create custom x-axis labels
@@ -413,6 +420,77 @@ def create_network_scaling_by_dp():
     plt.tight_layout()
     plt.savefig('../../figures/phase4_figures/network_scaling_dp.pdf', dpi=300, bbox_inches='tight')
     plt.savefig('../../figures/phase4_figures/network_scaling_dp.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_dp_effectiveness_flow():
+    """Create Figure: DP Effectiveness Flow"""
+    # Based on the DP effectiveness table
+    dp_scenarios = [
+        'No DP',
+        'Weak DP\n(ε=8.0)', 
+        'Medium DP\n(ε=4.0)',
+        'Strong DP\n(ε=1.0)'
+    ]
+    
+    # Attack success rates from the table
+    comm_rates = [0.841, 0.813, 0.789, 0.742]  # 84.1% -> 74.2%
+    param_rates = [0.650, 0.621, 0.587, 0.528]  # 65.0% -> 52.8%
+    topo_rates = [0.472, 0.458, 0.434, 0.391]   # 47.2% -> 39.1%
+    
+    # Calculate percentage decreases from baseline
+    comm_decreases = [(comm_rates[0] - rate) / comm_rates[0] * 100 for rate in comm_rates]
+    param_decreases = [(param_rates[0] - rate) / param_rates[0] * 100 for rate in param_rates]
+    topo_decreases = [(topo_rates[0] - rate) / topo_rates[0] * 100 for rate in topo_rates]
+    
+    # Create the figure
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    
+    x_positions = range(len(dp_scenarios))
+    
+    # Plot lines for each attack vector - salmon to aqua palette
+    line1 = ax.plot(x_positions, comm_rates, 'o-', linewidth=3, markersize=8, 
+                    color=color_3[0], label='Communication Pattern')
+    line2 = ax.plot(x_positions, param_rates, 's-', linewidth=3, markersize=8, 
+                    color=color_3[1], label='Parameter Magnitude')
+    line3 = ax.plot(x_positions, topo_rates, '^-', linewidth=3, markersize=8, 
+                    color=color_3[2], label='Topology Structure')
+    
+    # Add percentage decrease annotations
+    for i, (comm_dec, param_dec, topo_dec) in enumerate(zip(comm_decreases, param_decreases, topo_decreases)):
+        if i > 0:  # Skip baseline (no decrease)
+            # Communication Pattern
+            ax.annotate(f'-{comm_dec:.1f}%', xy=(i, comm_rates[i]), 
+                       xytext=(i-0.1, comm_rates[i] + 0.05),
+                       fontsize=13, fontweight='bold', color=color_3[0],
+                       ha='center')
+            
+            # Parameter Magnitude  
+            ax.annotate(f'-{param_dec:.1f}%', xy=(i, param_rates[i]), 
+                       xytext=(i, param_rates[i] + 0.05),
+                       fontsize=13, fontweight='bold', color=color_3[1],
+                       ha='center')
+            
+            # Topology Structure
+            ax.annotate(f'-{topo_dec:.1f}%', xy=(i, topo_rates[i]), 
+                       xytext=(i+0.05, topo_rates[i] + 0.05),
+                       fontsize=13, fontweight='bold', color=color_3[2],
+                       ha='center')
+    
+    # Add threshold line
+    ax.axhline(y=0.3, color='red', linestyle='--', alpha=0.7, linewidth=2)
+    
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(dp_scenarios)
+    ax.set_xlabel('Differential Privacy Protection Level')
+    ax.set_ylabel('Attack Success Rate')
+    ax.legend(loc='lower right')
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0%}'.format(y)))
+    
+    plt.tight_layout()
+    plt.savefig('../../figures/phase1_figures/dp_effectiveness_flow.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig('../../figures/phase1_figures/dp_effectiveness_flow.png', dpi=300, bbox_inches='tight')
     plt.close()
 
 def create_subsampling_flow():
@@ -480,7 +558,7 @@ def create_subsampling_flow():
     ax.set_xticklabels(subsampling_scenarios)
     ax.set_xlabel('Subsampling Scenario')
     ax.set_ylabel('Attack Success Rate')
-    ax.legend(loc='upper right')
+    ax.legend(loc='lower right')
     ax.grid(True, alpha=0.3)
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0%}'.format(y)))
@@ -664,9 +742,9 @@ def create_attack_effectiveness_heatmap():
     # Create the figure
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
     
-    # Create heatmap with salmon to aqua colormap
+    # Create heatmap with light to dark colormap for better contrast
     from matplotlib.colors import LinearSegmentedColormap
-    user_cmap = LinearSegmentedColormap.from_list('user_palette', [color_3[0], color_3[1], color_3[2]])
+    user_cmap = LinearSegmentedColormap.from_list('user_palette', heatmap_colors[:3])
     im = ax.imshow(pivot_data.values, cmap=user_cmap, aspect='auto', vmin=0, vmax=1)
     
     # Add colorbar
@@ -728,7 +806,10 @@ def main():
         print("Creating Figure 4: Subsampling Flow...")
         create_subsampling_flow()
         
-        print("Creating Figure 5: Security Effectiveness Landscape...")
+        print("Creating Figure 5: DP Effectiveness Flow...")
+        create_dp_effectiveness_flow()
+        
+        print("Creating Figure 6: Security Effectiveness Landscape...")
         create_security_effectiveness_landscape()
         
         print("\n✅ All paper figures generated successfully!")
@@ -737,7 +818,8 @@ def main():
         print("2. network_scaling_topology.pdf/png - Network scaling by topology (real vs sim)")
         print("3. network_scaling_dp.pdf/png - Network scaling by DP protection")
         print("4. subsampling_flow.pdf/png - Subsampling effects with percentage decreases")
-        print("5. security_effectiveness_landscape.pdf/png - Security effectiveness across knowledge constraints")
+        print("5. dp_effectiveness_flow.pdf/png - DP protection effectiveness with percentage decreases")
+        print("6. security_effectiveness_landscape.pdf/png - Security effectiveness across knowledge constraints")
         
     except Exception as e:
         print(f"❌ Error generating figures: {e}")

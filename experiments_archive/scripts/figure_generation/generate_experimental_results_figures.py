@@ -338,6 +338,32 @@ def create_dataset_comparison_figure():
     sns.violinplot(data=plot_df, x='Attack Vector', y='Success Rate', hue='Dataset', 
                    ax=ax, palette=[color_3[1], color_3[0]], inner='box')
     
+    # Add confidence intervals as red lines
+    attack_positions = {
+        'Communication\nPattern': 0,
+        'Parameter\nMagnitude': 1, 
+        'Topology\nStructure': 2
+    }
+    
+    datasets = ['mnist', 'ham10000']
+    width = 0.4
+    for i, dataset in enumerate(datasets):
+        dataset_summary = summary[summary['dataset'] == dataset]
+        for _, row in dataset_summary.iterrows():
+            attack_pos = attack_positions[row['attack_short']]
+            x_pos = attack_pos + (i - 0.5) * width
+            
+            # Draw confidence interval lines in red
+            mean_val = row['mean']
+            ci_val = row['ci']
+            ax.plot([x_pos, x_pos], [mean_val - ci_val, mean_val + ci_val], 
+                   color='red', linewidth=2, alpha=0.8, zorder=10)
+            # Add caps to the confidence interval
+            ax.plot([x_pos - 0.05, x_pos + 0.05], [mean_val - ci_val, mean_val - ci_val], 
+                   color='red', linewidth=2, alpha=0.8, zorder=10)
+            ax.plot([x_pos - 0.05, x_pos + 0.05], [mean_val + ci_val, mean_val + ci_val], 
+                   color='red', linewidth=2, alpha=0.8, zorder=10)
+    
     # Customize the plot
     ax.set_ylabel('Attack Success Rate', fontweight='bold')
     ax.set_xlabel('Attack Vector', fontweight='bold')
