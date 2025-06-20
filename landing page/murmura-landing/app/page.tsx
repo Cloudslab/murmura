@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 // Import icons from lucide-react
-import { Network, Shield, Code2, Settings, BarChart3, BrainCircuit, Atom, Check } from "lucide-react"
+import { Network, Shield, Code2, Settings, BarChart3, BrainCircuit, Atom, Check, Server, Lock, GitBranch } from "lucide-react"
 // Import SVG component from next/image
 import Link from "next/link"
 import NewsletterForm from "@/components/newsletter-form"
@@ -52,7 +52,7 @@ export default function Home() {
             </nav>
             <div>
               <Button variant="outline" className="flex items-center gap-2" asChild>
-                <Link href="https://github.com/murtazahr/murmura" target="_blank" rel="noopener noreferrer">
+                <Link href="https://github.com/Cloudslab/murmura" target="_blank" rel="noopener noreferrer">
                   <span className="flex items-center gap-2">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
@@ -72,26 +72,33 @@ export default function Home() {
               <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
                 <div className="flex flex-col justify-center space-y-4">
                   <div className="inline-flex items-center rounded-lg bg-muted px-3 py-1 text-sm max-w-fit">
-                    <span className="mr-2 rounded-md bg-purple-600 px-2 py-0.5 text-xs text-white">New</span>
-                    <span className="text-muted-foreground">Under active development</span>
+                    <span className="mr-2 rounded-md bg-purple-600 px-2 py-0.5 text-xs text-white">v1.0.1-beta</span>
+                    <span className="text-muted-foreground">Beta release available</span>
                   </div>
                   <div className="space-y-2">
                     <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                      Decentralized Learning Framework
+                      Ray-Based Federated & Decentralized ML Framework
                     </h1>
                     <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                      Empowering researchers and developers to experiment with distributed machine learning while
-                      maintaining privacy.
+                      Comprehensive tools for distributed machine learning research with advanced privacy guarantees, flexible network topologies, and Byzantine-robust aggregation.
                     </p>
                   </div>
                   <div className="flex flex-col gap-2 min-[400px]:flex-row">
                     <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white" asChild>
-                      <Link href="https://github.com/murtazahr/murmura" target="_blank" rel="noopener noreferrer">
+                      <Link href="https://github.com/Cloudslab/murmura" target="_blank" rel="noopener noreferrer">
                         <span className="flex items-center gap-2">
                           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                             <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
                           </svg>
                           <span>GitHub Repository</span>
+                        </span>
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link href="https://doi.org/10.5281/zenodo.15622123" target="_blank" rel="noopener noreferrer">
+                        <span className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          <span>DOI: 10.5281/zenodo.15622123</span>
                         </span>
                       </Link>
                     </Button>
@@ -112,8 +119,8 @@ export default function Home() {
               <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
                 <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">What is Murmura?</h2>
                 <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-                  Murmura is a framework for federated learning in decentralized/P2P environments. It helps researchers
-                  and developers experiment with distributed machine learning while maintaining privacy.
+                  Murmura is a comprehensive Ray-based framework for federated and decentralized machine learning. Built for researchers
+                  and developers, it provides tools for distributed ML with advanced privacy guarantees and flexible network topologies.
                 </p>
                 <div className="mt-6 flex flex-col md:flex-row gap-4 md:gap-8">
                   <div className="flex flex-col items-center gap-2 rounded-lg border bg-background p-6 text-center shadow-sm">
@@ -139,8 +146,8 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="mt-8 inline-flex items-center rounded-lg bg-blue-100 dark:bg-blue-900/30 px-4 py-2 text-sm">
-                  <span className="mr-2 rounded-md bg-blue-600 px-2 py-0.5 text-xs text-white">Note</span>
-                  <span className="text-blue-800 dark:text-blue-200">Murmura is currently under active development</span>
+                  <span className="mr-2 rounded-md bg-blue-600 px-2 py-0.5 text-xs text-white">Beta</span>
+                  <span className="text-blue-800 dark:text-blue-200">Version 1.0.1-beta is now available with core features implemented</span>
                 </div>
               </div>
             </div>
@@ -157,34 +164,34 @@ export default function Home() {
               </div>
               <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3 lg:gap-8 mt-12">
                 <FeatureCard
-                    icon={<Network className="h-10 w-10" />}
-                    title="Decentralized Federated Learning"
-                    description="Implement federated learning algorithms in fully decentralized environments without central coordination."
+                    icon={<Server className="h-10 w-10" />}
+                    title="Ray-Based Distributed Computing"
+                    description="Multi-node cluster support with automatic actor lifecycle management and intelligent resource optimization."
                 />
                 <FeatureCard
-                    icon={<Settings className="h-10 w-10" />}
-                    title="P2P Network Simulation"
-                    description="Simulate various network conditions and topologies to test algorithm robustness."
+                    icon={<Network className="h-10 w-10" />}
+                    title="Flexible Network Topologies"
+                    description="Star, ring, complete graph, line, and custom topologies with automatic compatibility validation."
+                />
+                <FeatureCard
+                    icon={<Lock className="h-10 w-10" />}
+                    title="Comprehensive Differential Privacy"
+                    description="Client-level DP with Opacus integration, RDP privacy accounting, and automatic noise calibration."
                 />
                 <FeatureCard
                     icon={<Shield className="h-10 w-10" />}
-                    title="Privacy-Preserving Protocols"
-                    description="Implement and test various privacy-preserving learning protocols and techniques."
-                />
-                <FeatureCard
-                    icon={<Code2 className="h-10 w-10" />}
-                    title="Customizable Node Behaviors"
-                    description="Define custom node behaviors and network topologies for diverse experimental setups."
+                    title="Byzantine-Robust Aggregation"
+                    description="Trimmed mean and secure aggregation strategies for adversarial environments."
                 />
                 <FeatureCard
                     icon={<BarChart3 className="h-10 w-10" />}
-                    title="Performance Metrics"
-                    description="Comprehensive metrics and analysis tools to evaluate algorithm performance."
+                    title="Real-Time Monitoring"
+                    description="Privacy budget tracking, resource usage monitoring, and comprehensive metrics export."
                 />
                 <FeatureCard
-                    icon={<BrainCircuit className="h-10 w-10" />}
-                    title="Model Integration"
-                    description="Easily integrate with popular machine learning frameworks and models."
+                    icon={<GitBranch className="h-10 w-10" />}
+                    title="Multiple Aggregation Strategies"
+                    description="FedAvg, TrimmedMean, and GossipAvg with privacy-enabled variants for diverse use cases."
                 />
               </div>
             </div>
@@ -198,19 +205,21 @@ export default function Home() {
                   <div className="inline-flex items-center rounded-lg bg-muted px-3 py-1 text-sm">
                     <span className="text-purple-600 font-medium">Development Status</span>
                   </div>
-                  <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">Alpha Release 1</h2>
+                  <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">Beta Release 1.0.1</h2>
                   <p className="text-muted-foreground md:text-lg">
-                    Murmura is currently in active development with key components being implemented and tested for our
-                    first alpha release. Our team is working diligently to create a robust framework for decentralized
-                    learning research.
+                    Murmura has reached beta status with core features implemented and tested. The framework is now
+                    available for researchers to experiment with federated and decentralized learning scenarios,
+                    complete with privacy guarantees and flexible deployment options.
                   </p>
                   <ul className="space-y-2">
-                    <StatusItem text="Core P2P networking layer" status="completed" />
-                    <StatusItem text="Basic federated learning algorithms" status="completed" />
-                    <StatusItem text="Privacy-preserving protocols" status="in-progress" />
-                    <StatusItem text="Performance metrics dashboard" status="in-progress" />
-                    <StatusItem text="Advanced network simulation" status="planned" />
-                    <StatusItem text="Documentation and examples" status="planned" />
+                    <StatusItem text="Ray-based distributed computing framework" status="completed" />
+                    <StatusItem text="FedAvg, TrimmedMean, and GossipAvg algorithms" status="completed" />
+                    <StatusItem text="Differential privacy with Opacus integration" status="completed" />
+                    <StatusItem text="Byzantine-robust aggregation strategies" status="completed" />
+                    <StatusItem text="Flexible network topologies support" status="completed" />
+                    <StatusItem text="Real-time metrics and monitoring" status="completed" />
+                    <StatusItem text="Advanced network fault simulation" status="in-progress" />
+                    <StatusItem text="Homomorphic encryption integration" status="planned" />
                   </ul>
                 </div>
                 <div className="flex justify-center">
@@ -234,24 +243,24 @@ export default function Home() {
               <div className="mx-auto mt-12 max-w-3xl">
                 <div className="space-y-8">
                   <RoadmapItem
-                      title="AI Agent Integration"
-                      description="Integrate AI agents within the framework to enable autonomous learning and adaptation in decentralized environments."
-                      icon={<BrainCircuit className="h-8 w-8 text-purple-600" />}
+                      title="Enhanced Privacy Techniques"
+                      description="Implement homomorphic encryption and secure multi-party computation for stronger privacy guarantees in federated learning."
+                      icon={<Lock className="h-8 w-8 text-purple-600" />}
                   />
                   <RoadmapItem
-                      title="Quantum Node Emulation"
-                      description="Develop quantum node emulation capabilities for experimenting with quantum federated learning approaches."
-                      icon={<Atom className="h-8 w-8 text-blue-600" />}
-                  />
-                  <RoadmapItem
-                      title="Advanced Privacy Techniques"
-                      description="Implement cutting-edge privacy-preserving techniques including homomorphic encryption and secure multi-party computation."
-                      icon={<Shield className="h-8 w-8 text-indigo-600" />}
-                  />
-                  <RoadmapItem
-                      title="Real-world Deployment Tools"
-                      description="Create tools and frameworks for deploying Murmura-based systems in real-world decentralized environments."
+                      title="Advanced Network Simulation"
+                      description="Realistic network conditions simulation with fault injection, latency modeling, and dynamic topology changes."
                       icon={<Network className="h-8 w-8 text-blue-600" />}
+                  />
+                  <RoadmapItem
+                      title="AI Agent Integration"
+                      description="Autonomous learning agents for dynamic environments with self-adaptive learning strategies and intelligent resource allocation."
+                      icon={<BrainCircuit className="h-8 w-8 text-indigo-600" />}
+                  />
+                  <RoadmapItem
+                      title="Production Deployment Tools"
+                      description="Enterprise-ready deployment capabilities with monitoring, scaling, and management tools for real-world federated learning."
+                      icon={<Server className="h-8 w-8 text-blue-600" />}
                   />
                 </div>
               </div>
@@ -285,7 +294,7 @@ export default function Home() {
             </Link>
             <nav className="flex gap-4 md:gap-6">
               <Link
-                  href="https://github.com/murtazahr/murmura"
+                  href="https://github.com/Cloudslab/murmura"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-medium hover:underline underline-offset-4"
