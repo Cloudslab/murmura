@@ -31,7 +31,7 @@ export async function subscribeToNewsletter(formData: FormData) {
                     
                     <div style="color: #444; font-size: 15px; line-height: 1.6; margin: 25px 0;">
                         <p>Thank you for your interest in Murmura. We're delighted to have you with us on this journey.</p>
-                        <p>We're working diligently on our alpha release and will keep you informed of our progress and upcoming features. Your early support means a great deal to us.</p>
+                        <p>We're working diligently on our first stable release and will keep you informed of our progress and upcoming features. Your early support means a great deal to us.</p>
                         <p>If you have any questions or feedback, please don't hesitate to reach out by replying directly to this email.</p>
                     </div>
                     
