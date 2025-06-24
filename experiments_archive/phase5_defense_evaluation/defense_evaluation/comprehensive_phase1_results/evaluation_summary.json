@@ -1,0 +1,386 @@
+{
+  "summary_stats": {
+    "total_evaluations": 6240,
+    "successful_evaluations": 6240,
+    "failed_evaluations": 0,
+    "start_time": "2025-06-21T20:23:04.890824",
+    "defense_effectiveness": {
+      "structural_noise_weak": {
+        "mean": 15.267058123525524,
+        "std": 11.9740320317354,
+        "min": 0.0,
+        "max": 45.966003246210846,
+        "count": 520
+      },
+      "structural_noise_strong": {
+        "mean": 15.440670355945507,
+        "std": 12.31849718145244,
+        "min": 0.0,
+        "max": 49.10040646797424,
+        "count": 520
+      },
+      "structural_noise_medium": {
+        "mean": 15.378423282363725,
+        "std": 12.528613519144113,
+        "min": 0.0,
+        "max": 49.93348887982548,
+        "count": 520
+      },
+      "topology_aware_dp_weak": {
+        "mean": 9.57718575362853,
+        "std": 11.161911131104477,
+        "min": 0.0,
+        "max": 35.82560559993062,
+        "count": 520
+      },
+      "topology_aware_dp_medium": {
+        "mean": 8.355505730501957,
+        "std": 10.507099737350273,
+        "min": 0.0,
+        "max": 38.90713841330171,
+        "count": 520
+      },
+      "topology_aware_dp_strong": {
+        "mean": 9.073473806751666,
+        "std": 10.916971692769001,
+        "min": 0.0,
+        "max": 37.451606033182685,
+        "count": 520
+      },
+      "topology_reconfig_weak": {
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "count": 520
+      },
+      "topology_reconfig_medium": {
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "count": 520
+      },
+      "topology_reconfig_strong": {
+        "mean": 1.2828111344389497,
+        "std": 4.558092036627859,
+        "min": 0.0,
+        "max": 30.58940981707127,
+        "count": 520
+      },
+      "combined_weak": {
+        "mean": 14.145578728714474,
+        "std": 12.394424916296792,
+        "min": 0.0,
+        "max": 45.347403543415,
+        "count": 520
+      },
+      "combined_medium": {
+        "mean": 15.039344036110432,
+        "std": 12.499805559776991,
+        "min": 0.0,
+        "max": 49.23831247714091,
+        "count": 520
+      },
+      "combined_strong": {
+        "mean": 14.767031798744844,
+        "std": 12.215031196531513,
+        "min": 0.0,
+        "max": 49.92793934750867,
+        "count": 520
+      }
+    },
+    "attack_reductions": {
+      "structural_noise_weak": {
+        "Communication Pattern Attack": {
+          "mean": 13.438100026335322,
+          "std": 14.813068880876374,
+          "min": 0.0,
+          "max": 44.44444444444445,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 4.34966365721275,
+          "std": 4.290961195538821,
+          "min": 0.0,
+          "max": 20.531239679958844,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 28.0134106870285,
+          "std": 32.254438297671456,
+          "min": 0.0,
+          "max": 99.18084784035136,
+          "count": 520
+        }
+      },
+      "structural_noise_strong": {
+        "Communication Pattern Attack": {
+          "mean": 15.303554968996146,
+          "std": 15.269188680803737,
+          "min": 0.0,
+          "max": 44.44444444444445,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 3.0126896734822166,
+          "std": 3.578161736197378,
+          "min": 0.0,
+          "max": 17.94986118130674,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 28.005766425358157,
+          "std": 32.77941128494841,
+          "min": 0.0,
+          "max": 99.81140814536505,
+          "count": 520
+        }
+      },
+      "structural_noise_medium": {
+        "Communication Pattern Attack": {
+          "mean": 14.7749242859537,
+          "std": 15.188991026209921,
+          "min": 0.0,
+          "max": 44.44444444444445,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 3.9530546211834428,
+          "std": 4.234511410665101,
+          "min": 0.0,
+          "max": 20.008789824135825,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 27.407290939954034,
+          "std": 32.71621632708467,
+          "min": 0.0,
+          "max": 99.7767637423933,
+          "count": 520
+        }
+      },
+      "topology_aware_dp_weak": {
+        "Communication Pattern Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 4.0800575971267685,
+          "std": 4.109621929075984,
+          "min": 0.0,
+          "max": 24.090682118457956,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 24.65149966375882,
+          "std": 33.24075677530354,
+          "min": 0.0,
+          "max": 99.95048056252733,
+          "count": 520
+        }
+      },
+      "topology_aware_dp_medium": {
+        "Communication Pattern Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 3.8072800736532977,
+          "std": 4.158281011853269,
+          "min": 0.0,
+          "max": 20.868794966582776,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 21.25923711785257,
+          "std": 31.071612871806305,
+          "min": 0.0,
+          "max": 99.69861222391508,
+          "count": 520
+        }
+      },
+      "topology_aware_dp_strong": {
+        "Communication Pattern Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 3.7763758387666684,
+          "std": 4.215812988480437,
+          "min": 0.0,
+          "max": 19.986332004813995,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 23.444045581488332,
+          "std": 32.05340928069767,
+          "min": 0.0,
+          "max": 99.48609034978058,
+          "count": 520
+        }
+      },
+      "topology_reconfig_weak": {
+        "Communication Pattern Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        }
+      },
+      "topology_reconfig_medium": {
+        "Communication Pattern Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        }
+      },
+      "topology_reconfig_strong": {
+        "Communication Pattern Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 3.848433403316849,
+          "std": 13.674276109883577,
+          "min": 0.0,
+          "max": 91.76822945121381,
+          "count": 520
+        }
+      },
+      "combined_weak": {
+        "Communication Pattern Attack": {
+          "mean": 10.932918252771195,
+          "std": 13.443523299479036,
+          "min": 0.0,
+          "max": 44.44444444444445,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 4.069193408833253,
+          "std": 4.117936359296941,
+          "min": 0.0,
+          "max": 19.48790135590447,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 27.43462452453897,
+          "std": 32.50947728877604,
+          "min": 0.0,
+          "max": 98.66407518670198,
+          "count": 520
+        }
+      },
+      "combined_medium": {
+        "Communication Pattern Attack": {
+          "mean": 13.56401278460102,
+          "std": 15.196347450130524,
+          "min": 0.0,
+          "max": 44.44444444444445,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 4.069083674931868,
+          "std": 4.262999544966838,
+          "min": 0.0,
+          "max": 20.090579676992874,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 27.48493564879841,
+          "std": 33.10887768059897,
+          "min": 0.0,
+          "max": 99.39225196320751,
+          "count": 520
+        }
+      },
+      "combined_strong": {
+        "Communication Pattern Attack": {
+          "mean": 13.914842646460293,
+          "std": 15.306804502227141,
+          "min": 0.0,
+          "max": 44.44444444444445,
+          "count": 520
+        },
+        "Parameter Magnitude Attack": {
+          "mean": 3.7590414454422274,
+          "std": 4.0384848101507815,
+          "min": 0.0,
+          "max": 18.016577320971315,
+          "count": 520
+        },
+        "Topology Structure Attack": {
+          "mean": 26.627211304332008,
+          "std": 31.580433728143205,
+          "min": 0.0,
+          "max": 99.82657162803257,
+          "count": 520
+        }
+      }
+    },
+    "experiment_summary": {},
+    "dataset_breakdown": {
+      "mnist": 2820,
+      "ham10000": 3420
+    },
+    "total_time_seconds": 222.75335001945496,
+    "end_time": "2025-06-21T20:26:47.641800"
+  },
+  "evaluation_metadata": {
+    "total_experiments": 520,
+    "total_defenses": 12,
+    "max_workers": 6,
+    "dataset_filter": null,
+    "max_experiments": null
+  }
+}

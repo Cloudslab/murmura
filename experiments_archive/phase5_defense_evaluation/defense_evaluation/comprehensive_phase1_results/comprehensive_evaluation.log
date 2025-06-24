@@ -1,0 +1,196 @@
+2025-06-21 20:22:30,850 - INFO - Initialized evaluator with 12 defense configurations
+2025-06-21 20:22:30,851 - INFO - ================================================================================
+2025-06-21 20:22:30,851 - INFO - STARTING COMPREHENSIVE PHASE1 DEFENSE EVALUATION
+2025-06-21 20:22:30,851 - INFO - ================================================================================
+2025-06-21 20:22:30,855 - INFO - Filtered to mnist experiments: 235
+2025-06-21 20:22:30,855 - INFO - Limited to 50 experiments
+2025-06-21 20:22:30,855 - INFO - Total evaluations to run: 600
+2025-06-21 20:22:30,855 - INFO - Experiments: 50
+2025-06-21 20:22:30,856 - INFO - Defense mechanisms: 12
+2025-06-21 20:22:30,856 - INFO - Processing batch 1/12 (50 evaluations)
+2025-06-21 20:22:32,732 - INFO - Processing batch 2/12 (50 evaluations)
+2025-06-21 20:22:34,557 - INFO - Processing batch 3/12 (50 evaluations)
+2025-06-21 20:22:36,305 - INFO - Processing batch 4/12 (50 evaluations)
+2025-06-21 20:22:37,985 - INFO - Processing batch 5/12 (50 evaluations)
+2025-06-21 20:22:40,161 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_5.json
+2025-06-21 20:22:40,161 - INFO - Processing batch 6/12 (50 evaluations)
+2025-06-21 20:22:42,506 - INFO - Processing batch 7/12 (50 evaluations)
+2025-06-21 20:22:44,762 - INFO - Processing batch 8/12 (50 evaluations)
+2025-06-21 20:22:47,093 - INFO - Processing batch 9/12 (50 evaluations)
+2025-06-21 20:22:48,938 - INFO - Processing batch 10/12 (50 evaluations)
+2025-06-21 20:22:50,558 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_10.json
+2025-06-21 20:22:50,558 - INFO - Processing batch 11/12 (50 evaluations)
+2025-06-21 20:22:52,738 - INFO - Processing batch 12/12 (50 evaluations)
+2025-06-21 20:22:55,595 - INFO - Final results saved to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/comprehensive_phase1_evaluation_results.json
+2025-06-21 20:22:55,595 - INFO - Summary saved to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/evaluation_summary.json
+2025-06-21 20:22:55,600 - INFO - ================================================================================
+2025-06-21 20:22:55,600 - INFO - COMPREHENSIVE EVALUATION COMPLETED
+2025-06-21 20:22:55,600 - INFO - Total time: 24.06 seconds
+2025-06-21 20:22:55,600 - INFO - Successful evaluations: 600
+2025-06-21 20:22:55,600 - INFO - Failed evaluations: 0
+2025-06-21 20:22:55,600 - INFO - ================================================================================
+2025-06-21 20:23:04,888 - INFO - Initialized evaluator with 12 defense configurations
+2025-06-21 20:23:04,888 - INFO - ================================================================================
+2025-06-21 20:23:04,888 - INFO - STARTING COMPREHENSIVE PHASE1 DEFENSE EVALUATION
+2025-06-21 20:23:04,888 - INFO - ================================================================================
+2025-06-21 20:23:04,890 - INFO - Total evaluations to run: 6240
+2025-06-21 20:23:04,890 - INFO - Experiments: 520
+2025-06-21 20:23:04,890 - INFO - Defense mechanisms: 12
+2025-06-21 20:23:04,890 - INFO - Processing batch 1/125 (50 evaluations)
+2025-06-21 20:23:06,691 - INFO - Processing batch 2/125 (50 evaluations)
+2025-06-21 20:23:08,474 - INFO - Processing batch 3/125 (50 evaluations)
+2025-06-21 20:23:10,404 - INFO - Processing batch 4/125 (50 evaluations)
+2025-06-21 20:23:12,312 - INFO - Processing batch 5/125 (50 evaluations)
+2025-06-21 20:23:13,947 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_5.json
+2025-06-21 20:23:13,947 - INFO - Processing batch 6/125 (50 evaluations)
+2025-06-21 20:23:15,799 - INFO - Processing batch 7/125 (50 evaluations)
+2025-06-21 20:23:17,512 - INFO - Processing batch 8/125 (50 evaluations)
+2025-06-21 20:23:19,155 - INFO - Processing batch 9/125 (50 evaluations)
+2025-06-21 20:23:20,845 - INFO - Processing batch 10/125 (50 evaluations)
+2025-06-21 20:23:22,495 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_10.json
+2025-06-21 20:23:22,495 - INFO - Processing batch 11/125 (50 evaluations)
+2025-06-21 20:23:24,292 - INFO - Processing batch 12/125 (50 evaluations)
+2025-06-21 20:23:26,174 - INFO - Processing batch 13/125 (50 evaluations)
+2025-06-21 20:23:28,042 - INFO - Processing batch 14/125 (50 evaluations)
+2025-06-21 20:23:29,917 - INFO - Processing batch 15/125 (50 evaluations)
+2025-06-21 20:23:31,746 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_15.json
+2025-06-21 20:23:31,746 - INFO - Processing batch 16/125 (50 evaluations)
+2025-06-21 20:23:33,491 - INFO - Processing batch 17/125 (50 evaluations)
+2025-06-21 20:23:35,390 - INFO - Processing batch 18/125 (50 evaluations)
+2025-06-21 20:23:37,230 - INFO - Processing batch 19/125 (50 evaluations)
+2025-06-21 20:23:39,040 - INFO - Processing batch 20/125 (50 evaluations)
+2025-06-21 20:23:40,749 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_20.json
+2025-06-21 20:23:40,749 - INFO - Processing batch 21/125 (50 evaluations)
+2025-06-21 20:23:42,510 - INFO - Processing batch 22/125 (50 evaluations)
+2025-06-21 20:23:44,139 - INFO - Processing batch 23/125 (50 evaluations)
+2025-06-21 20:23:45,952 - INFO - Processing batch 24/125 (50 evaluations)
+2025-06-21 20:23:47,719 - INFO - Processing batch 25/125 (50 evaluations)
+2025-06-21 20:23:49,391 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_25.json
+2025-06-21 20:23:49,392 - INFO - Processing batch 26/125 (50 evaluations)
+2025-06-21 20:23:51,161 - INFO - Processing batch 27/125 (50 evaluations)
+2025-06-21 20:23:52,854 - INFO - Processing batch 28/125 (50 evaluations)
+2025-06-21 20:23:54,697 - INFO - Processing batch 29/125 (50 evaluations)
+2025-06-21 20:23:56,474 - INFO - Processing batch 30/125 (50 evaluations)
+2025-06-21 20:23:58,193 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_30.json
+2025-06-21 20:23:58,193 - INFO - Processing batch 31/125 (50 evaluations)
+2025-06-21 20:23:59,849 - INFO - Processing batch 32/125 (50 evaluations)
+2025-06-21 20:24:01,650 - INFO - Processing batch 33/125 (50 evaluations)
+2025-06-21 20:24:03,307 - INFO - Processing batch 34/125 (50 evaluations)
+2025-06-21 20:24:05,207 - INFO - Processing batch 35/125 (50 evaluations)
+2025-06-21 20:24:06,966 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_35.json
+2025-06-21 20:24:06,966 - INFO - Processing batch 36/125 (50 evaluations)
+2025-06-21 20:24:09,104 - INFO - Processing batch 37/125 (50 evaluations)
+2025-06-21 20:24:10,886 - INFO - Processing batch 38/125 (50 evaluations)
+2025-06-21 20:24:12,542 - INFO - Processing batch 39/125 (50 evaluations)
+2025-06-21 20:24:14,307 - INFO - Processing batch 40/125 (50 evaluations)
+2025-06-21 20:24:16,007 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_40.json
+2025-06-21 20:24:16,007 - INFO - Processing batch 41/125 (50 evaluations)
+2025-06-21 20:24:17,888 - INFO - Processing batch 42/125 (50 evaluations)
+2025-06-21 20:24:19,758 - INFO - Processing batch 43/125 (50 evaluations)
+2025-06-21 20:24:21,517 - INFO - Processing batch 44/125 (50 evaluations)
+2025-06-21 20:24:23,292 - INFO - Processing batch 45/125 (50 evaluations)
+2025-06-21 20:24:25,133 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_45.json
+2025-06-21 20:24:25,133 - INFO - Processing batch 46/125 (50 evaluations)
+2025-06-21 20:24:26,936 - INFO - Processing batch 47/125 (50 evaluations)
+2025-06-21 20:24:28,707 - INFO - Processing batch 48/125 (50 evaluations)
+2025-06-21 20:24:30,545 - INFO - Processing batch 49/125 (50 evaluations)
+2025-06-21 20:24:32,299 - INFO - Processing batch 50/125 (50 evaluations)
+2025-06-21 20:24:34,093 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_50.json
+2025-06-21 20:24:34,093 - INFO - Processing batch 51/125 (50 evaluations)
+2025-06-21 20:24:35,970 - INFO - Processing batch 52/125 (50 evaluations)
+2025-06-21 20:24:37,775 - INFO - Processing batch 53/125 (50 evaluations)
+2025-06-21 20:24:39,540 - INFO - Processing batch 54/125 (50 evaluations)
+2025-06-21 20:24:41,320 - INFO - Processing batch 55/125 (50 evaluations)
+2025-06-21 20:24:43,106 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_55.json
+2025-06-21 20:24:43,106 - INFO - Processing batch 56/125 (50 evaluations)
+2025-06-21 20:24:45,001 - INFO - Processing batch 57/125 (50 evaluations)
+2025-06-21 20:24:46,845 - INFO - Processing batch 58/125 (50 evaluations)
+2025-06-21 20:24:48,672 - INFO - Processing batch 59/125 (50 evaluations)
+2025-06-21 20:24:50,526 - INFO - Processing batch 60/125 (50 evaluations)
+2025-06-21 20:24:52,226 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_60.json
+2025-06-21 20:24:52,226 - INFO - Processing batch 61/125 (50 evaluations)
+2025-06-21 20:24:54,051 - INFO - Processing batch 62/125 (50 evaluations)
+2025-06-21 20:24:55,838 - INFO - Processing batch 63/125 (50 evaluations)
+2025-06-21 20:24:57,576 - INFO - Processing batch 64/125 (50 evaluations)
+2025-06-21 20:24:59,416 - INFO - Processing batch 65/125 (50 evaluations)
+2025-06-21 20:25:01,123 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_65.json
+2025-06-21 20:25:01,123 - INFO - Processing batch 66/125 (50 evaluations)
+2025-06-21 20:25:02,888 - INFO - Processing batch 67/125 (50 evaluations)
+2025-06-21 20:25:04,667 - INFO - Processing batch 68/125 (50 evaluations)
+2025-06-21 20:25:06,370 - INFO - Processing batch 69/125 (50 evaluations)
+2025-06-21 20:25:08,051 - INFO - Processing batch 70/125 (50 evaluations)
+2025-06-21 20:25:09,765 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_70.json
+2025-06-21 20:25:09,765 - INFO - Processing batch 71/125 (50 evaluations)
+2025-06-21 20:25:11,641 - INFO - Processing batch 72/125 (50 evaluations)
+2025-06-21 20:25:13,477 - INFO - Processing batch 73/125 (50 evaluations)
+2025-06-21 20:25:15,169 - INFO - Processing batch 74/125 (50 evaluations)
+2025-06-21 20:25:16,936 - INFO - Processing batch 75/125 (50 evaluations)
+2025-06-21 20:25:18,667 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_75.json
+2025-06-21 20:25:18,667 - INFO - Processing batch 76/125 (50 evaluations)
+2025-06-21 20:25:20,443 - INFO - Processing batch 77/125 (50 evaluations)
+2025-06-21 20:25:22,301 - INFO - Processing batch 78/125 (50 evaluations)
+2025-06-21 20:25:24,177 - INFO - Processing batch 79/125 (50 evaluations)
+2025-06-21 20:25:26,018 - INFO - Processing batch 80/125 (50 evaluations)
+2025-06-21 20:25:27,797 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_80.json
+2025-06-21 20:25:27,797 - INFO - Processing batch 81/125 (50 evaluations)
+2025-06-21 20:25:29,523 - INFO - Processing batch 82/125 (50 evaluations)
+2025-06-21 20:25:31,228 - INFO - Processing batch 83/125 (50 evaluations)
+2025-06-21 20:25:32,981 - INFO - Processing batch 84/125 (50 evaluations)
+2025-06-21 20:25:34,774 - INFO - Processing batch 85/125 (50 evaluations)
+2025-06-21 20:25:36,687 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_85.json
+2025-06-21 20:25:36,687 - INFO - Processing batch 86/125 (50 evaluations)
+2025-06-21 20:25:38,561 - INFO - Processing batch 87/125 (50 evaluations)
+2025-06-21 20:25:40,376 - INFO - Processing batch 88/125 (50 evaluations)
+2025-06-21 20:25:42,061 - INFO - Processing batch 89/125 (50 evaluations)
+2025-06-21 20:25:43,896 - INFO - Processing batch 90/125 (50 evaluations)
+2025-06-21 20:25:45,795 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_90.json
+2025-06-21 20:25:45,796 - INFO - Processing batch 91/125 (50 evaluations)
+2025-06-21 20:25:47,516 - INFO - Processing batch 92/125 (50 evaluations)
+2025-06-21 20:25:49,169 - INFO - Processing batch 93/125 (50 evaluations)
+2025-06-21 20:25:50,818 - INFO - Processing batch 94/125 (50 evaluations)
+2025-06-21 20:25:52,741 - INFO - Processing batch 95/125 (50 evaluations)
+2025-06-21 20:25:54,532 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_95.json
+2025-06-21 20:25:54,532 - INFO - Processing batch 96/125 (50 evaluations)
+2025-06-21 20:25:56,205 - INFO - Processing batch 97/125 (50 evaluations)
+2025-06-21 20:25:57,918 - INFO - Processing batch 98/125 (50 evaluations)
+2025-06-21 20:25:59,664 - INFO - Processing batch 99/125 (50 evaluations)
+2025-06-21 20:26:01,484 - INFO - Processing batch 100/125 (50 evaluations)
+2025-06-21 20:26:03,308 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_100.json
+2025-06-21 20:26:03,308 - INFO - Processing batch 101/125 (50 evaluations)
+2025-06-21 20:26:05,099 - INFO - Processing batch 102/125 (50 evaluations)
+2025-06-21 20:26:06,970 - INFO - Processing batch 103/125 (50 evaluations)
+2025-06-21 20:26:08,680 - INFO - Processing batch 104/125 (50 evaluations)
+2025-06-21 20:26:10,433 - INFO - Processing batch 105/125 (50 evaluations)
+2025-06-21 20:26:12,305 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_105.json
+2025-06-21 20:26:12,305 - INFO - Processing batch 106/125 (50 evaluations)
+2025-06-21 20:26:13,972 - INFO - Processing batch 107/125 (50 evaluations)
+2025-06-21 20:26:15,630 - INFO - Processing batch 108/125 (50 evaluations)
+2025-06-21 20:26:17,429 - INFO - Processing batch 109/125 (50 evaluations)
+2025-06-21 20:26:19,334 - INFO - Processing batch 110/125 (50 evaluations)
+2025-06-21 20:26:21,203 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_110.json
+2025-06-21 20:26:21,203 - INFO - Processing batch 111/125 (50 evaluations)
+2025-06-21 20:26:22,985 - INFO - Processing batch 112/125 (50 evaluations)
+2025-06-21 20:26:24,622 - INFO - Processing batch 113/125 (50 evaluations)
+2025-06-21 20:26:26,409 - INFO - Processing batch 114/125 (50 evaluations)
+2025-06-21 20:26:28,167 - INFO - Processing batch 115/125 (50 evaluations)
+2025-06-21 20:26:29,997 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_115.json
+2025-06-21 20:26:29,997 - INFO - Processing batch 116/125 (50 evaluations)
+2025-06-21 20:26:31,789 - INFO - Processing batch 117/125 (50 evaluations)
+2025-06-21 20:26:33,565 - INFO - Processing batch 118/125 (50 evaluations)
+2025-06-21 20:26:35,392 - INFO - Processing batch 119/125 (50 evaluations)
+2025-06-21 20:26:37,123 - INFO - Processing batch 120/125 (50 evaluations)
+2025-06-21 20:26:38,936 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_120.json
+2025-06-21 20:26:38,937 - INFO - Processing batch 121/125 (50 evaluations)
+2025-06-21 20:26:40,601 - INFO - Processing batch 122/125 (50 evaluations)
+2025-06-21 20:26:42,453 - INFO - Processing batch 123/125 (50 evaluations)
+2025-06-21 20:26:44,234 - INFO - Processing batch 124/125 (50 evaluations)
+2025-06-21 20:26:46,017 - INFO - Processing batch 125/125 (40 evaluations)
+2025-06-21 20:26:47,638 - INFO - Saved intermediate results to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/intermediate_results_batch_125.json
+2025-06-21 20:26:54,331 - INFO - Final results saved to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/comprehensive_phase1_evaluation_results.json
+2025-06-21 20:26:54,331 - INFO - Summary saved to /Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/comprehensive_phase1_results/evaluation_summary.json
+2025-06-21 20:26:54,394 - INFO - ================================================================================
+2025-06-21 20:26:54,394 - INFO - COMPREHENSIVE EVALUATION COMPLETED
+2025-06-21 20:26:54,394 - INFO - Total time: 222.75 seconds
+2025-06-21 20:26:54,394 - INFO - Successful evaluations: 6240
+2025-06-21 20:26:54,394 - INFO - Failed evaluations: 0
+2025-06-21 20:26:54,394 - INFO - ================================================================================

@@ -1,0 +1,10 @@
+activity_type,current_epoch,is_aggregator,metrics,param_convergence,round_num,strategy_name,timestamp,total_epochs
+local_training,,,{},,1,,1749455947.0727947,1
+aggregation,,True,,,1,FedAvg,1749455964.0712883,
+model_update,,,,0.5680863560199703,1,,1749455965.2035387,
+local_training,,,{},,2,,1749455965.7192326,1
+aggregation,,True,,,2,FedAvg,1749455980.854754,
+model_update,,,,0.4605440633519377,2,,1749455981.971225,
+local_training,,,{},,3,,1749455982.5008068,1
+aggregation,,True,,,3,FedAvg,1749455989.1638138,
+model_update,,,,0.4809288741382717,3,,1749455990.2913368,

@@ -1,0 +1,302 @@
+{
+  "dp_regular": {
+    "methodology": "Structural noise applied on top of existing DP protection",
+    "baseline_dp_only": {
+      "no_dp": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6040820617101104,
+          "Topology Structure Attack": 0.3922455079723115
+        },
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6682055289775857,
+          "Topology Structure Attack": 0.2289308019942114
+        }
+      ],
+      "strong_dp": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6347902827477983,
+          "Topology Structure Attack": 0.2856209499602916
+        },
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.5805930432022858,
+          "Topology Structure Attack": 0.05538448830740607
+        }
+      ]
+    },
+    "structural_noise_only": {},
+    "layered_protection": {
+      "no_dp+structural_weak": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.5849818672059455,
+          "Topology Structure Attack": 0.6084769825191629
+        },
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.5902485452236131,
+          "Topology Structure Attack": 0.4318079131393931
+        }
+      ],
+      "no_dp+structural_medium": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6420917694191449,
+          "Topology Structure Attack": 0.3727612056579481
+        },
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6387109945208376,
+          "Topology Structure Attack": 0.7911746509071212
+        }
+      ],
+      "no_dp+structural_strong": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.56843353947227,
+          "Topology Structure Attack": 0.5180517880034956
+        },
+        {
+          "Communication Pattern Attack": 0.6,
+          "Parameter Magnitude Attack": 0.5772756259740954,
+          "Topology Structure Attack": 0.5957163037404172
+        }
+      ],
+      "strong_dp+structural_weak": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6179631706529085,
+          "Topology Structure Attack": 0.2479227284595025
+        },
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6146555398254718,
+          "Topology Structure Attack": 0.41661274114161606
+        }
+      ],
+      "strong_dp+structural_medium": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.5657236001830286,
+          "Topology Structure Attack": 0.5801372837562883
+        },
+        {
+          "Communication Pattern Attack": 0.6,
+          "Parameter Magnitude Attack": 0.5665266386704326,
+          "Topology Structure Attack": 0.4826815315826336
+        }
+      ],
+      "strong_dp+structural_strong": [
+        {
+          "Communication Pattern Attack": 0.8,
+          "Parameter Magnitude Attack": 0.6010106708773383,
+          "Topology Structure Attack": 0.4936541308366338
+        },
+        {
+          "Communication Pattern Attack": 0.6,
+          "Parameter Magnitude Attack": 0.6140795440161229,
+          "Topology Structure Attack": 0.49178964704489936
+        }
+      ]
+    },
+    "enhancement_metrics": {
+      "no_dp+structural_weak": {
+        "Communication Pattern Attack": {
+          "baseline_success": 0.8,
+          "layered_success": 0.8,
+          "additional_reduction": 0.0
+        },
+        "Parameter Magnitude Attack": {
+          "baseline_success": 0.636143795343848,
+          "layered_success": 0.5876152062147793,
+          "additional_reduction": 7.628556544018185
+        },
+        "Topology Structure Attack": {
+          "baseline_success": 0.3105881549832614,
+          "layered_success": 0.520142447829278,
+          "additional_reduction": -67.47014961253436
+        }
+      },
+      "no_dp+structural_medium": {
+        "Communication Pattern Attack": {
+          "baseline_success": 0.8,
+          "layered_success": 0.8,
+          "additional_reduction": 0.0
+        },
+        "Parameter Magnitude Attack": {
+          "baseline_success": 0.636143795343848,
+          "layered_success": 0.6404013819699912,
+          "additional_reduction": -0.6692805396053364
+        },
+        "Topology Structure Attack": {
+          "baseline_success": 0.3105881549832614,
+          "layered_success": 0.5819679282825347,
+          "additional_reduction": -87.37608596628512
+        }
+      },
+      "no_dp+structural_strong": {
+        "Communication Pattern Attack": {
+          "baseline_success": 0.8,
+          "layered_success": 0.7,
+          "additional_reduction": 12.50000000000001
+        },
+        "Parameter Magnitude Attack": {
+          "baseline_success": 0.636143795343848,
+          "layered_success": 0.5728545827231828,
+          "additional_reduction": 9.948884683604621
+        },
+        "Topology Structure Attack": {
+          "baseline_success": 0.3105881549832614,
+          "layered_success": 0.5568840458719564,
+          "additional_reduction": -79.29983385939771
+        }
+      },
+      "strong_dp+structural_weak": {
+        "Communication Pattern Attack": {
+          "baseline_success": 0.8,
+          "layered_success": 0.8,
+          "additional_reduction": 0.0
+        },
+        "Parameter Magnitude Attack": {
+          "baseline_success": 0.607691662975042,
+          "layered_success": 0.6163093552391902,
+          "additional_reduction": -1.4181027631610186
+        },
+        "Topology Structure Attack": {
+          "baseline_success": 0.17050271913384882,
+          "layered_success": 0.33226773480055927,
+          "additional_reduction": -94.87532896159911
+        }
+      },
+      "strong_dp+structural_medium": {
+        "Communication Pattern Attack": {
+          "baseline_success": 0.8,
+          "layered_success": 0.7,
+          "additional_reduction": 12.50000000000001
+        },
+        "Parameter Magnitude Attack": {
+          "baseline_success": 0.607691662975042,
+          "layered_success": 0.5661251194267306,
+          "additional_reduction": 6.840071385020548
+        },
+        "Topology Structure Attack": {
+          "baseline_success": 0.17050271913384882,
+          "layered_success": 0.5314094076694609,
+          "additional_reduction": -211.6721014005011
+        }
+      },
+      "strong_dp+structural_strong": {
+        "Communication Pattern Attack": {
+          "baseline_success": 0.8,
+          "layered_success": 0.7,
+          "additional_reduction": 12.50000000000001
+        },
+        "Parameter Magnitude Attack": {
+          "baseline_success": 0.607691662975042,
+          "layered_success": 0.6075451074467306,
+          "additional_reduction": 0.024116758093051353
+        },
+        "Topology Structure Attack": {
+          "baseline_success": 0.17050271913384882,
+          "layered_success": 0.4927218889407666,
+          "additional_reduction": -188.98183644447795
+        }
+      }
+    }
+  },
+  "subsampling_dp": {
+    "methodology": "Structural noise applied on top of sub-sampling + DP protection",
+    "subsampling_dp_only": {
+      "no_dp+moderate_sampling": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.66272060170762,
+          "Topology Structure Attack": 0.1517356125796253
+        }
+      ],
+      "strong_dp+moderate_sampling": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6751499036192147,
+          "Topology Structure Attack": 0.4482109014110374
+        }
+      ],
+      "strong_dp+strong_sampling": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6934059319360105,
+          "Topology Structure Attack": 0.4917910040350638
+        }
+      ]
+    },
+    "layered_protection": {
+      "no_dp+moderate_sampling+structural_weak": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6738840799517668,
+          "Topology Structure Attack": 0.42447877657206357
+        }
+      ],
+      "no_dp+moderate_sampling+structural_medium": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6393220248823424,
+          "Topology Structure Attack": 0.3091029292935173
+        }
+      ],
+      "no_dp+moderate_sampling+structural_strong": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6005847262357176,
+          "Topology Structure Attack": 0.2805134831423051
+        }
+      ],
+      "strong_dp+moderate_sampling+structural_weak": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6318052426721127,
+          "Topology Structure Attack": 0.5064526032756934
+        }
+      ],
+      "strong_dp+moderate_sampling+structural_medium": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6419322519295847,
+          "Topology Structure Attack": 0.43436082418418653
+        }
+      ],
+      "strong_dp+moderate_sampling+structural_strong": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.675677541285637,
+          "Topology Structure Attack": 0.8167061250444481
+        }
+      ],
+      "strong_dp+strong_sampling+structural_weak": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.5811109344183765,
+          "Topology Structure Attack": 0.426096769719173
+        }
+      ],
+      "strong_dp+strong_sampling+structural_medium": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6494796836580456,
+          "Topology Structure Attack": 0.29133404498458215
+        }
+      ],
+      "strong_dp+strong_sampling+structural_strong": [
+        {
+          "Communication Pattern Attack": 0.9,
+          "Parameter Magnitude Attack": 0.6526981750455513,
+          "Topology Structure Attack": 0.28731193169254476
+        }
+      ]
+    },
+    "enhancement_metrics": {}
+  }
+}

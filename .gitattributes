@@ -6,3 +6,4 @@ experiments_archive/phase4_enterprise_scalability/scalability_results/scalabilit
 experiments_archive/phase2_realistic_knowledge/realistic_knowledge_full_analysis/realistic_knowledge_results.json filter=lfs diff=lfs merge=lfs -text
 experiments_archive/phase1_baseline_analysis/results_phase1/rerun_attack_results.json filter=lfs diff=lfs merge=lfs -text
 experiments_archive/phase1_baseline_analysis/results_phase2/rerun_attack_results.json filter=lfs diff=lfs merge=lfs -text
+experiments_archive/phase5_defense_evaluation/defense_evaluation/comprehensive_phase1_results/comprehensive_phase1_evaluation_results.json filter=lfs diff=lfs merge=lfs -text

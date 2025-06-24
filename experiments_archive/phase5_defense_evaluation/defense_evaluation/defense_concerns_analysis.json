@@ -1,0 +1,117 @@
+{
+  "baseline_dp_effectiveness": {
+    "no_dp": {
+      "mean_attack_success": 0.6845627472618123,
+      "std_attack_success": 0.07745714668847033,
+      "count": 104,
+      "attack_reduction_vs_no_dp": 0.0
+    },
+    "weak_dp": {
+      "mean_attack_success": 0.6474128661349859,
+      "std_attack_success": 0.07238742994842165,
+      "count": 104,
+      "attack_reduction_vs_no_dp": 5.426804376285807
+    },
+    "medium_dp": {
+      "mean_attack_success": 0.6437736396834288,
+      "std_attack_success": 0.07251811629904395,
+      "count": 104,
+      "attack_reduction_vs_no_dp": 5.958417652952363
+    },
+    "strong_dp": {
+      "mean_attack_success": 0.64721490029283,
+      "std_attack_success": 0.07452153548883199,
+      "count": 208,
+      "attack_reduction_vs_no_dp": 5.455722958687167
+    }
+  },
+  "defense_effectiveness": {
+    "structural_noise_weak": {
+      "mean": 15.267058123525524,
+      "std": 11.9740320317354,
+      "min": 0.0,
+      "max": 45.966003246210846,
+      "count": 520
+    },
+    "structural_noise_strong": {
+      "mean": 15.440670355945507,
+      "std": 12.31849718145244,
+      "min": 0.0,
+      "max": 49.10040646797424,
+      "count": 520
+    },
+    "structural_noise_medium": {
+      "mean": 15.378423282363725,
+      "std": 12.528613519144113,
+      "min": 0.0,
+      "max": 49.93348887982548,
+      "count": 520
+    },
+    "topology_aware_dp_weak": {
+      "mean": 9.57718575362853,
+      "std": 11.161911131104477,
+      "min": 0.0,
+      "max": 35.82560559993062,
+      "count": 520
+    },
+    "topology_aware_dp_medium": {
+      "mean": 8.355505730501957,
+      "std": 10.507099737350273,
+      "min": 0.0,
+      "max": 38.90713841330171,
+      "count": 520
+    },
+    "topology_aware_dp_strong": {
+      "mean": 9.073473806751666,
+      "std": 10.916971692769001,
+      "min": 0.0,
+      "max": 37.451606033182685,
+      "count": 520
+    },
+    "topology_reconfig_weak": {
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "count": 520
+    },
+    "topology_reconfig_medium": {
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "count": 520
+    },
+    "topology_reconfig_strong": {
+      "mean": 1.2828111344389497,
+      "std": 4.558092036627859,
+      "min": 0.0,
+      "max": 30.58940981707127,
+      "count": 520
+    },
+    "combined_weak": {
+      "mean": 14.145578728714474,
+      "std": 12.394424916296792,
+      "min": 0.0,
+      "max": 45.347403543415,
+      "count": 520
+    },
+    "combined_medium": {
+      "mean": 15.039344036110432,
+      "std": 12.499805559776991,
+      "min": 0.0,
+      "max": 49.23831247714091,
+      "count": 520
+    },
+    "combined_strong": {
+      "mean": 14.767031798744844,
+      "std": 12.215031196531513,
+      "min": 0.0,
+      "max": 49.92793934750867,
+      "count": 520
+    }
+  },
+  "key_findings": {
+    "strong_dp_reduction": 5.455722958687167,
+    "best_defense_reduction": 15.440670355945507,
+    "dp_outperforms_defenses": 
