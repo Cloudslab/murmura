@@ -1,8 +1,0 @@
-node_id,admin_level,certification,department,established_year,funding_source,institution_name,institution_type,staff_count
-0,international,HIPAA_compliant,radiology,2020,mixed,mayo_clinic,tier1_hospital,414
-1,national,HIPAA_compliant,oncology,2007,mixed,johns_hopkins,tier2_hospital,1400
-2,national,HIPAA_compliant,cardiology,1960,research_grant,stanford_med,research_center,3422
-3,national,HIPAA_compliant,neurology,1969,mixed,mass_general,mobile_unit,825
-4,international,ISO27001,pathology,2008,public,ucla_health,edge_device,3364
-5,international,SOC2,radiology,1973,mixed,mayo_clinic,tier1_hospital,1521
-6,regional,ISO27001,oncology,1993,research_grant,johns_hopkins,tier2_hospital,2412
