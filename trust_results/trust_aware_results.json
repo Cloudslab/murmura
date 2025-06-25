@@ -1,0 +1,220 @@
+{
+  "initial_metrics": {
+    "loss": 2.304134451675415,
+    "accuracy": 0.0676
+  },
+  "final_metrics": {
+    "loss": 0.35207239270359275,
+    "accuracy": 0.8828
+  },
+  "accuracy_improvement": 0.8152,
+  "round_metrics": [
+    {
+      "round": 1,
+      "train_loss": 0.09970076509769218,
+      "train_accuracy": 0.9755595358238233,
+      "test_loss": 0.7485006771087647,
+      "test_accuracy": 0.7901
+    },
+    {
+      "round": 2,
+      "train_loss": 0.048767918126315694,
+      "train_accuracy": 0.9854604109347409,
+      "test_loss": 0.35207239294052123,
+      "test_accuracy": 0.8828
+    }
+  ],
+  "topology": {
+    "initialized": true,
+    "cluster_info": {
+      "total_nodes": 1,
+      "cluster_resources": {
+        "memory": 8908783616.0,
+        "CPU": 11.0,
+        "object_store_memory": 2147483648.0,
+        "node:127.0.0.1": 1.0,
+        "node:__internal_head__": 1.0
+      },
+      "available_resources": {
+        "memory": 8908783616.0,
+        "CPU": 11.0,
+        "object_store_memory": 2147483648.0,
+        "node:127.0.0.1": 1.0,
+        "node:__internal_head__": 1.0
+      },
+      "nodes": [
+        {
+          "NodeID": "18d3aac24a6b3f0bae06a50703ae2c055b0fd86466b2f640dcd7f6c8",
+          "Alive": true,
+          "NodeManagerAddress": "127.0.0.1",
+          "NodeManagerHostname": "0348L-220348-M",
+          "NodeManagerPort": 59154,
+          "ObjectManagerPort": 59153,
+          "ObjectStoreSocketName": "/tmp/ray/session_2025-06-25_13-19-20_038424_80623/sockets/plasma_store",
+          "RayletSocketName": "/tmp/ray/session_2025-06-25_13-19-20_038424_80623/sockets/raylet",
+          "MetricsExportPort": 63641,
+          "NodeName": "127.0.0.1",
+          "RuntimeEnvAgentPort": 61092,
+          "DeathReason": 0,
+          "DeathReasonMessage": "",
+          "alive": true,
+          "Resources": {
+            "memory": 8908783616.0,
+            "CPU": 11.0,
+            "object_store_memory": 2147483648.0,
+            "node:127.0.0.1": 1.0,
+            "node:__internal_head__": 1.0
+          },
+          "Labels": {
+            "ray.io/node_id": "18d3aac24a6b3f0bae06a50703ae2c055b0fd86466b2f640dcd7f6c8"
+          }
+        }
+      ],
+      "is_multinode": false
+    },
+    "type": "ring",
+    "num_actors": 3,
+    "hub_index": null,
+    "adjacency_list": {
+      "0": [
+        2,
+        1
+      ],
+      "1": [
+        0,
+        2
+      ],
+      "2": [
+        1,
+        0
+      ]
+    }
+  },
+  "trust_enabled": true,
+  "trust_metrics": [],
+  "final_trust_report": {
+    "total_monitors": 3,
+    "node_reports": {
+      "node_0": {
+        "node_id": "node_0",
+        "timestamp": 1750821632.3352928,
+        "neighbors": {
+          "node_2": {
+            "trust_score": 0.5,
+            "trust_level": "suspicious",
+            "update_count": 2,
+            "drift_count": 1,
+            "drift_rate": 0.5,
+            "last_update": 1750821630.0187469,
+            "hsic_stats": {
+              "current_hsic": 1.0,
+              "mean_hsic": 1.0,
+              "std_hsic": 0.0,
+              "adaptive_threshold": 0.05,
+              "window_size": 2,
+              "drift_rate": 1.0
+            }
+          },
+          "node_1": {
+            "trust_score": 0.5,
+            "trust_level": "suspicious",
+            "update_count": 2,
+            "drift_count": 1,
+            "drift_rate": 0.5,
+            "last_update": 1750821630.0913842,
+            "hsic_stats": {
+              "current_hsic": 1.0,
+              "mean_hsic": 1.0,
+              "std_hsic": 0.0,
+              "adaptive_threshold": 0.05,
+              "window_size": 2,
+              "drift_rate": 1.0
+            }
+          }
+        }
+      },
+      "node_1": {
+        "node_id": "node_1",
+        "timestamp": 1750821632.3362439,
+        "neighbors": {
+          "node_0": {
+            "trust_score": 0.5,
+            "trust_level": "suspicious",
+            "update_count": 2,
+            "drift_count": 1,
+            "drift_rate": 0.5,
+            "last_update": 1750821630.1639419,
+            "hsic_stats": {
+              "current_hsic": 1.0,
+              "mean_hsic": 1.0,
+              "std_hsic": 0.0,
+              "adaptive_threshold": 0.05,
+              "window_size": 2,
+              "drift_rate": 1.0
+            }
+          },
+          "node_2": {
+            "trust_score": 0.5,
+            "trust_level": "suspicious",
+            "update_count": 2,
+            "drift_count": 1,
+            "drift_rate": 0.5,
+            "last_update": 1750821630.2366369,
+            "hsic_stats": {
+              "current_hsic": 1.0,
+              "mean_hsic": 1.0,
+              "std_hsic": 0.0,
+              "adaptive_threshold": 0.05,
+              "window_size": 2,
+              "drift_rate": 1.0
+            }
+          }
+        }
+      },
+      "node_2": {
+        "node_id": "node_2",
+        "timestamp": 1750821632.3369532,
+        "neighbors": {
+          "node_1": {
+            "trust_score": 0.5,
+            "trust_level": "suspicious",
+            "update_count": 2,
+            "drift_count": 1,
+            "drift_rate": 0.5,
+            "last_update": 1750821630.309695,
+            "hsic_stats": {
+              "current_hsic": 1.0,
+              "mean_hsic": 1.0,
+              "std_hsic": 0.0,
+              "adaptive_threshold": 0.05,
+              "window_size": 2,
+              "drift_rate": 1.0
+            }
+          },
+          "node_0": {
+            "trust_score": 0.5,
+            "trust_level": "suspicious",
+            "update_count": 2,
+            "drift_count": 1,
+            "drift_rate": 0.5,
+            "last_update": 1750821630.3825228,
+            "hsic_stats": {
+              "current_hsic": 1.0,
+              "mean_hsic": 1.0,
+              "std_hsic": 0.0,
+              "adaptive_threshold": 0.05,
+              "window_size": 2,
+              "drift_rate": 1.0
+            }
+          }
+        }
+      }
+    },
+    "global_stats": {
+      "total_excluded": 0,
+      "total_downgraded": 6,
+      "total_warned": 0,
+      "avg_trust_score": 0.5
+    }
+  }
+}

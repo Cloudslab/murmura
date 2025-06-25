@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, model_validator
 from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.network_management.topology import TopologyConfig
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
+from murmura.trust.trust_config import TrustMonitoringConfig
 
 
 class OrchestrationConfig(BaseModel):
@@ -102,6 +103,12 @@ class OrchestrationConfig(BaseModel):
     enable_subsampling_amplification: bool = Field(
         default=False,
         description="Enable privacy amplification by subsampling in DP accounting",
+    )
+    
+    # Trust monitoring configuration
+    trust_monitoring: Optional[Any] = Field(
+        default=None,
+        description="Trust monitoring configuration for detecting malicious behavior",
     )
 
     @model_validator(mode="after")
