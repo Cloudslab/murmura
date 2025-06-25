@@ -15,6 +15,10 @@ import numpy as np
 import ray
 
 from murmura.trust.hsic import ModelUpdateHSIC
+from murmura.trust.adaptive_trust_agent import (
+    DatasetIndependentTrustSystem,
+    TrustContext,
+)
 
 
 class TrustAction(Enum):
@@ -69,6 +73,8 @@ class TrustMonitor:
             "alpha": hsic_config.get("alpha", 0.9),
             "reduce_dim": hsic_config.get("reduce_dim", True),
             "target_dim": hsic_config.get("target_dim", 100),
+            "calibration_rounds": hsic_config.get("calibration_rounds", 5),
+            "baseline_percentile": hsic_config.get("baseline_percentile", 95.0),
         }
         
         # Trust configuration
@@ -97,7 +103,13 @@ class TrustMonitor:
         # Current model parameters (for comparison)
         self.current_parameters: Optional[Dict[str, np.ndarray]] = None
         
-        self.logger.info(f"Trust Monitor initialized for node {node_id}")
+        # Round tracking for calibration
+        self.current_round = 0
+        
+        # Adaptive trust system
+        self.adaptive_trust_system = DatasetIndependentTrustSystem()
+        
+        self.logger.info(f"Trust Monitor initialized for node {node_id} with adaptive agent")
         
     def set_current_parameters(self, parameters: Dict[str, np.ndarray]) -> None:
         """
@@ -107,6 +119,38 @@ class TrustMonitor:
             parameters: Current model parameters
         """
         self.current_parameters = {k: v.copy() for k, v in parameters.items()}
+    
+    def set_round_number(self, round_num: int) -> None:
+        """
+        Set the current round number for tracking.
+        
+        Args:
+            round_num: Current federated learning round number
+        """
+        self.current_round = round_num
+        
+        # Update adaptive system context
+        if hasattr(self, 'fl_context'):
+            self.fl_context['current_round'] = round_num
+    
+    def set_fl_context(self, 
+                      total_rounds: int, 
+                      current_accuracy: float = 0.5, 
+                      topology: str = 'ring') -> None:
+        """
+        Set federated learning context for adaptive decisions.
+        
+        Args:
+            total_rounds: Total number of FL rounds
+            current_accuracy: Current global model accuracy
+            topology: Network topology type
+        """
+        self.fl_context = {
+            'total_rounds': total_rounds,
+            'current_accuracy': current_accuracy,
+            'topology': topology,
+            'current_round': self.current_round
+        }
         
     def assess_update(
         self,
@@ -147,19 +191,43 @@ class TrustMonitor:
         if drift_detected:
             self.drift_count[neighbor_id] += 1
         
-        # Update reputation history
-        self.reputation_history[neighbor_id].append(1.0 - hsic_value)  # Higher HSIC = lower reputation
+        # Get FL context or use defaults
+        fl_context = getattr(self, 'fl_context', {})
         
-        # Calculate trust score (average reputation over window)
-        if len(self.reputation_history[neighbor_id]) > 0:
-            trust_score = np.mean(self.reputation_history[neighbor_id])
-        else:
-            trust_score = 1.0
+        # Prepare data for adaptive trust assessment
+        update_data = {
+            'round': self.current_round,
+            'total_rounds': fl_context.get('total_rounds', 10),
+            'accuracy': fl_context.get('current_accuracy', 0.5),
+            'hsic': hsic_value,
+            'update_norm': stats.get('update_norm', 0.01),
+            'consistency': stats.get('relative_update_norm', 0.8),
+            'neighbor_trusts': [self.trust_scores.get(nid, 1.0) for nid in self.trust_scores if nid != neighbor_id],
+            'topology': fl_context.get('topology', 'ring'),
+        }
         
+        # Use adaptive trust system for decision
+        adaptive_result = self.adaptive_trust_system.assess_trust(neighbor_id, update_data)
+        
+        # Extract results
+        is_malicious = adaptive_result['malicious']
+        confidence = adaptive_result['confidence']
+        trust_score = adaptive_result['trust_score']
+        
+        # Update trust score and reputation
         self.trust_scores[neighbor_id] = trust_score
+        self.reputation_history[neighbor_id].append(trust_score)
         
-        # Determine action based on thresholds
-        action = self._determine_action(neighbor_id, hsic_value, trust_score)
+        # Determine action based on adaptive decision
+        if is_malicious:
+            if confidence > 0.7:
+                action = TrustAction.EXCLUDE
+            elif confidence > 0.4:
+                action = TrustAction.DOWNGRADE
+            else:
+                action = TrustAction.WARN
+        else:
+            action = TrustAction.ACCEPT
         
         # Update trust level
         self.trust_levels[neighbor_id] = self._get_trust_level(trust_score)
@@ -176,6 +244,10 @@ class TrustMonitor:
             "update_count": self.update_count[neighbor_id],
             "drift_count": self.drift_count[neighbor_id],
             "drift_rate": self.drift_count[neighbor_id] / max(1, self.update_count[neighbor_id]),
+            "adaptive_decision": is_malicious,
+            "adaptive_confidence": confidence,
+            "adaptive_threshold": adaptive_result.get('adaptive_threshold', 0.5),
+            "adaptive_reasoning": adaptive_result.get('reasoning', 'No reasoning provided'),
             **stats,  # Include HSIC statistics
         }
         

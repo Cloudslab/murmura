@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from typing import Dict, Any, Optional, List, Tuple
 
 import numpy as np
@@ -52,7 +53,7 @@ def get_node_info() -> Dict[str, Any]:
 class VirtualClientActor:
     """Ray remote actor representing a virtual client in federated learning with multi-node support."""
 
-    def __init__(self, client_id: str) -> None:
+    def __init__(self, client_id: str, attack_config: Optional[Dict[str, Any]] = None) -> None:
         self.client_id = client_id
         self.data_partition: Optional[List[int]] = None
         self.metadata: Dict[str, Any] = {}
@@ -69,6 +70,25 @@ class VirtualClientActor:
         self.lazy_loading: bool = False
         self.dataset_metadata: Optional[Dict[str, Any]] = None
         self.dataset_loaded: bool = False
+        
+        # Attack capabilities
+        self.attack_config = attack_config or {}
+        self.attack_enabled = len(self.attack_config) > 0
+        self.attack_instance = None
+        self.current_round = 0
+        self.attack_history: List[Dict[str, Any]] = []
+        
+        if self.attack_enabled:
+            try:
+                # Import here to avoid circular imports
+                from murmura.attacks.simple_attacks import create_simple_attack
+                attack_type = self.attack_config.get("attack_type", "label_flipping")
+                self.attack_instance = create_simple_attack(attack_type, self.attack_config)
+                self.logger.warning(f"Attack mode enabled for client {client_id}")
+            except (ImportError, ValueError) as e:
+                self.logger.warning(f"Attack functionality disabled: {e}. Running in honest mode.")
+                self.attack_enabled = False
+                self.attack_instance = None
 
         # Set up logging for multi-node environment
         self._setup_logging()
@@ -88,6 +108,7 @@ class VirtualClientActor:
         self.logger.info(
             f"Actor {client_id} initialized on node {self.node_info['node_id']} "
             f"with device: {self.device_info['device']}"
+            f"{' (MALICIOUS)' if self.attack_enabled else ''}"
         )
 
     def _setup_logging(self) -> None:
@@ -873,12 +894,56 @@ class VirtualClientActor:
             # Get data sampling rate from kwargs or use default
             data_sampling_rate = kwargs.pop("data_sampling_rate", 1.0)
             features, labels = self._get_partition_data(data_sampling_rate)
+            original_features, original_labels = features.copy(), labels.copy()
+
+            # Apply attack if enabled
+            attack_info = {}
+            if self.attack_enabled and self.attack_instance:
+                # Get current model parameters for parameter-based attacks
+                model_params = None
+                if hasattr(self.model, 'get_parameters'):
+                    model_params = self.model.get_parameters()
+                
+                # Apply attack to training data
+                features, labels, attack_info = self.attack_instance.apply_attack(
+                    features, labels, model_params
+                )
+                
+                # Log attack information
+                if attack_info.get("attack_applied", False):
+                    self.logger.warning(
+                        f"Round {self.current_round}: Applied {self.attack_config.get('attack_type')} "
+                        f"with intensity {attack_info.get('intensity', 0):.3f}"
+                    )
+                
+                # Store attack history
+                self.attack_history.append({
+                    "round": self.current_round,
+                    "timestamp": time.time(),
+                    **attack_info
+                })
 
             # Ensure model is on correct device for multi-node environment
             if hasattr(self.model, "detect_and_set_device"):
                 self.model.detect_and_set_device()
 
+            # Train with potentially modified data
             result = self.model.train(features, labels, **kwargs)
+            
+            # Apply post-training parameter manipulation if needed
+            if (self.attack_enabled and self.attack_instance and 
+                attack_info.get("manipulated_params")):
+                # Replace model parameters with manipulated ones
+                manipulated_params = attack_info["manipulated_params"]
+                self.model.set_parameters(manipulated_params)
+                
+                self.logger.debug(
+                    f"Applied parameter manipulation to {len(manipulated_params)} parameters"
+                )
+            
+            # Potentially manipulate reported metrics to appear normal
+            if self.attack_enabled and self.attack_config.get("stealth_mode", True):
+                result = self._manipulate_metrics(result, attack_info)
 
             self.logger.debug(
                 f"Training completed - Loss: {result.get('loss', 'N/A'):.4f}, "
@@ -1132,3 +1197,88 @@ class VirtualClientActor:
                 "error": str(e),
                 "timestamp": int(time.time() * 1000),
             }
+    
+    def is_malicious(self) -> bool:
+        """
+        Check if this client is malicious.
+        
+        Returns:
+            True if client has attack capabilities enabled
+        """
+        return self.attack_enabled
+    
+    def set_round_number(self, round_num: int) -> None:
+        """
+        Update the current round number for attack progression.
+        
+        Args:
+            round_num: Current federated learning round
+        """
+        self.current_round = round_num
+        if self.attack_instance:
+            self.attack_instance.update_round(round_num)
+    
+    def get_attack_summary(self) -> Dict[str, Any]:
+        """
+        Get attack summary for this client.
+        
+        Returns:
+            Attack summary with statistics
+        """
+        if not self.attack_enabled:
+            return {"attack_enabled": False}
+        
+        total_attacks = len([h for h in self.attack_history if h.get("attack_applied", False)])
+        
+        summary = {
+            "attack_enabled": True,
+            "attack_type": self.attack_config.get("attack_type"),
+            "total_rounds": len(self.attack_history),
+            "attacks_applied": total_attacks,
+            "attack_rate": total_attacks / max(1, len(self.attack_history)),
+            "current_intensity": getattr(self.attack_instance, "current_intensity", 0),
+            "stealth_mode": self.attack_config.get("stealth_mode", False),
+        }
+        
+        # Add attack-specific statistics
+        if self.attack_history:
+            last_attack = self.attack_history[-1]
+            summary["last_attack_round"] = last_attack.get("round", 0)
+            summary["last_attack_intensity"] = last_attack.get("intensity", 0)
+        
+        return summary
+    
+    def _manipulate_metrics(
+        self, 
+        original_metrics: Dict[str, float], 
+        attack_info: Dict[str, Any]
+    ) -> Dict[str, float]:
+        """
+        Manipulate reported training metrics to appear normal.
+        
+        Args:
+            original_metrics: True training metrics
+            attack_info: Information about applied attack
+            
+        Returns:
+            Potentially manipulated metrics
+        """
+        if not attack_info.get("attack_applied", False):
+            return original_metrics
+        
+        # Add small amount of noise to metrics to make them appear normal
+        manipulated = original_metrics.copy()
+        
+        # Slightly improve reported accuracy to hide attack impact
+        if "accuracy" in manipulated:
+            noise = np.random.normal(0, 0.01)  # Small noise
+            improvement = self.attack_config.get("metric_manipulation", 0.02)
+            manipulated["accuracy"] = min(1.0, original_metrics["accuracy"] + improvement + noise)
+        
+        # Slightly reduce reported loss
+        if "loss" in manipulated:
+            noise = np.random.normal(0, 0.01)
+            reduction = self.attack_config.get("loss_manipulation", -0.05)
+            manipulated["loss"] = max(0.0, original_metrics["loss"] + reduction + noise)
+        
+        return manipulated

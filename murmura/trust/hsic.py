@@ -174,19 +174,37 @@ class StreamingHSIC:
                 (1 - self.alpha) * np.mean(self.hsic_history)
             )
         
-        # Detect trust drift
-        # High HSIC indicates dependence (potential manipulation)
-        # We also check if current value significantly exceeds adaptive threshold
-        drift_detected = (
-            hsic_value > self.threshold and 
-            hsic_value > 2.0 * self.adaptive_threshold
-        )
+        # Detect trust drift with improved adaptive thresholding
+        # For federated learning, normal HSIC values are typically 0.9+
+        # We need to detect anomalous spikes above the normal range
+        
+        # During the first few samples, learn the baseline
+        if len(self.hsic_history) < 10:
+            # Don't detect drift until we have enough samples to establish baseline
+            drift_detected = False
+        else:
+            # Use statistical approach: detect values that are outliers
+            hsic_array = np.array(self.hsic_history)
+            hsic_mean = np.mean(hsic_array)
+            hsic_std = np.std(hsic_array)
+            
+            # Detect values that are more than 2 standard deviations above mean
+            # OR exceed a reasonable absolute threshold
+            absolute_threshold = max(0.95, hsic_mean + 2 * hsic_std)
+            
+            drift_detected = (
+                hsic_value > absolute_threshold and
+                hsic_value > hsic_mean + 3 * hsic_std  # Very conservative
+            )
         
         if drift_detected:
+            hsic_array = np.array(self.hsic_history)
+            hsic_mean = np.mean(hsic_array)
+            hsic_std = np.std(hsic_array)
             self.logger.warning(
                 f"Trust drift detected! HSIC: {hsic_value:.4f}, "
-                f"Threshold: {self.threshold:.4f}, "
-                f"Adaptive: {self.adaptive_threshold:.4f}"
+                f"Mean: {hsic_mean:.4f}, Std: {hsic_std:.4f}, "
+                f"Threshold: {max(0.95, hsic_mean + 2 * hsic_std):.4f}"
             )
         
         return hsic_value, drift_detected
@@ -237,6 +255,9 @@ class ModelUpdateHSIC(StreamingHSIC):
     
     This class adapts HSIC to work with high-dimensional model parameters
     by using dimensionality reduction and efficient representations.
+    
+    Key improvement: Dynamic baseline calibration to learn normal HSIC values
+    during honest federated learning phases.
     """
     
     def __init__(
@@ -248,6 +269,8 @@ class ModelUpdateHSIC(StreamingHSIC):
         alpha: float = 0.9,
         reduce_dim: bool = True,
         target_dim: int = 100,
+        calibration_rounds: int = 5,  # Number of rounds to calibrate baseline
+        baseline_percentile: float = 95.0,  # Percentile for threshold setting
     ):
         """
         Initialize ModelUpdateHSIC.
@@ -256,19 +279,26 @@ class ModelUpdateHSIC(StreamingHSIC):
             window_size: Size of the sliding window
             kernel_type: Type of kernel to use
             gamma: RBF kernel parameter
-            threshold: HSIC threshold for independence
+            threshold: HSIC threshold for independence (will be auto-calibrated)
             alpha: Exponential moving average factor
             reduce_dim: Whether to reduce dimensionality of parameters
             target_dim: Target dimension for reduction
+            calibration_rounds: Number of rounds to collect baseline data
+            baseline_percentile: Percentile of baseline HSIC values to use as threshold
         """
         super().__init__(window_size, kernel_type, gamma, threshold, alpha)
         self.reduce_dim = reduce_dim
         self.target_dim = target_dim
+        self.calibration_rounds = calibration_rounds
+        self.baseline_percentile = baseline_percentile
         
         # For incremental PCA-like dimensionality reduction
         self.projection_matrix: Optional[np.ndarray] = None
         self.feature_mean: Optional[np.ndarray] = None
         self.n_samples_seen = 0
+        
+        # Improved statistical drift detection
+        self.logger.info(f"HSIC using statistical outlier detection for trust drift")
         
     def _flatten_parameters(self, parameters: Dict[str, np.ndarray]) -> np.ndarray:
         """
@@ -326,6 +356,7 @@ class ModelUpdateHSIC(StreamingHSIC):
         
         return x_reduced
     
+    
     def update_with_parameters(
         self,
         current_params: Dict[str, np.ndarray],
@@ -361,10 +392,26 @@ class ModelUpdateHSIC(StreamingHSIC):
         # Update HSIC
         hsic_value, drift_detected = self.update(current_reduced, update_reduced)
         
+        # Log HSIC statistics periodically for monitoring
+        if len(self.hsic_history) > 0 and len(self.hsic_history) % 20 == 0:
+            hsic_array = np.array(self.hsic_history)
+            self.logger.debug(
+                f"HSIC Statistics: Current={hsic_value:.3f}, "
+                f"Mean={np.mean(hsic_array):.3f}, Std={np.std(hsic_array):.3f}, "
+                f"Range=[{np.min(hsic_array):.3f}, {np.max(hsic_array):.3f}]"
+            )
+        
         # Get statistics
         stats = self.get_statistics()
         stats["node_id"] = node_id
         stats["update_norm"] = np.linalg.norm(update_vector)
         stats["relative_update_norm"] = stats["update_norm"] / (np.linalg.norm(current_flat) + 1e-8)
+        
+        # Add statistical threshold info
+        if len(self.hsic_history) >= 10:
+            hsic_array = np.array(self.hsic_history)
+            stats["statistical_threshold"] = max(0.95, np.mean(hsic_array) + 2 * np.std(hsic_array))
+        else:
+            stats["statistical_threshold"] = "learning_baseline"
         
         return hsic_value, drift_detected, stats

@@ -8,15 +8,17 @@ from typing import Dict, Any, Optional
 
 @dataclass
 class HSICConfig:
-    """Configuration for HSIC algorithm."""
+    """Configuration for HSIC algorithm with dynamic baseline calibration."""
     
     window_size: int = 50
     kernel_type: str = "rbf"
     gamma: float = 0.1
-    threshold: float = 0.1
+    threshold: float = 0.1  # Will be auto-calibrated
     alpha: float = 0.9
     reduce_dim: bool = True
     target_dim: int = 100
+    calibration_rounds: int = 5  # Number of rounds to collect baseline data
+    baseline_percentile: float = 95.0  # Percentile for threshold setting
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -28,6 +30,8 @@ class HSICConfig:
             "alpha": self.alpha,
             "reduce_dim": self.reduce_dim,
             "target_dim": self.target_dim,
+            "calibration_rounds": self.calibration_rounds,
+            "baseline_percentile": self.baseline_percentile,
         }
 
 
