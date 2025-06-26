@@ -201,7 +201,7 @@ def run_adaptive_trust_mnist(
     Args:
         num_actors: Number of federated learning actors
         num_rounds: Number of FL rounds
-        topology_type: Network topology (ring, complete, grid)
+        topology_type: Decentralized network topology (ring, complete, line)
         trust_profile: Trust monitoring profile (permissive, default, strict)
         use_beta_threshold: Whether to use Beta distribution thresholding
         attack_config: Attack configuration (if any)
@@ -270,11 +270,10 @@ def run_adaptive_trust_mnist(
         partitioner.partition(dataset, "train")
         logger.info(f"Created {num_actors} data partitions")
         
-        # Configure network topology
+        # Configure network topology (only decentralized topologies)
         topology_types = {
             "ring": TopologyType.RING,
             "complete": TopologyType.COMPLETE,
-            "star": TopologyType.STAR,
             "line": TopologyType.LINE,
         }
         
@@ -511,8 +510,8 @@ def main():
         help="Number of FL rounds (default: 15)"
     )
     parser.add_argument(
-        "--topology", choices=["ring", "complete", "star", "line"], default="ring",
-        help="Network topology (default: ring)"
+        "--topology", choices=["ring", "complete", "line"], default="ring",
+        help="Decentralized network topology (default: ring)"
     )
     
     # Trust configuration
