@@ -42,6 +42,16 @@ from murmura.privacy.dp_config import DPConfig
 from murmura.privacy.dp_model_wrapper import DPTorchModelWrapper
 from murmura.privacy.privacy_accountant import PrivacyAccountant
 
+# Import attack components
+from murmura.attacks.attack_config import (
+    AttackConfig,
+    AttackType,
+    AttackTiming,
+    create_progressive_label_attack,
+    create_backdoor_attack,
+    create_byzantine_attack,
+)
+
 
 def create_mnist_preprocessor():
     """
@@ -163,6 +173,49 @@ def main() -> None:
         type=int,
         default=5,
         help="Rounds between trust reports",
+    )
+    
+    # Attack simulation arguments
+    parser.add_argument(
+        "--attack_type",
+        choices=["none", "label_flipping", "backdoor", "byzantine"],
+        default="none",
+        help="Type of attack to simulate",
+    )
+    parser.add_argument(
+        "--malicious_fraction",
+        type=float,
+        default=0.25,
+        help="Fraction of actors that are malicious",
+    )
+    parser.add_argument(
+        "--attack_start_round",
+        type=int,
+        default=3,
+        help="Round to start the attack",
+    )
+    parser.add_argument(
+        "--attack_intensity",
+        type=float,
+        default=0.1,
+        help="Initial attack intensity (0.0 to 1.0)",
+    )
+    parser.add_argument(
+        "--attack_max_intensity",
+        type=float,
+        default=0.8,
+        help="Maximum attack intensity",
+    )
+    parser.add_argument(
+        "--attack_stealth",
+        action="store_true",
+        help="Enable stealth mode for attacks",
+    )
+    parser.add_argument(
+        "--attack_ramp_rounds",
+        type=int,
+        default=5,
+        help="Number of rounds to ramp up attack intensity",
     )
     
     # Differential privacy arguments
@@ -295,6 +348,44 @@ def main() -> None:
     else:
         trust_config = TrustMonitoringConfig(enabled=False)
 
+    # Configure attack simulation
+    attack_config = None
+    if args.attack_type != "none":
+        logger.info(f"Configuring {args.attack_type} attack simulation...")
+        
+        if args.attack_type == "label_flipping":
+            attack_config = create_progressive_label_attack(
+                malicious_fraction=args.malicious_fraction,
+                stealth=args.attack_stealth
+            )
+        elif args.attack_type == "backdoor":
+            attack_config = create_backdoor_attack(
+                malicious_fraction=args.malicious_fraction,
+                stealth=args.attack_stealth
+            )
+        elif args.attack_type == "byzantine":
+            attack_config = create_byzantine_attack(
+                malicious_fraction=args.malicious_fraction,
+                stealth=args.attack_stealth
+            )
+        
+        # Override with custom parameters if provided
+        if attack_config:
+            attack_config.start_round = args.attack_start_round
+            attack_config.initial_intensity = args.attack_intensity
+            attack_config.max_intensity = args.attack_max_intensity
+            attack_config.ramp_up_rounds = args.attack_ramp_rounds
+            
+            logger.info(f"Attack configuration:")
+            logger.info(f"  Type: {attack_config.attack_type.value}")
+            logger.info(f"  Malicious fraction: {attack_config.malicious_fraction}")
+            logger.info(f"  Start round: {attack_config.start_round}")
+            logger.info(f"  Initial intensity: {attack_config.initial_intensity}")
+            logger.info(f"  Max intensity: {attack_config.max_intensity}")
+            logger.info(f"  Stealth mode: {attack_config.stealth_mode}")
+    else:
+        logger.info("No attack simulation configured")
+
     # Configure topology
     topology_config = TopologyConfig(
         topology_type=TopologyType(args.topology_type),
@@ -332,11 +423,8 @@ def main() -> None:
         },
     )
 
-    # Configure resources
+    # Configure resources - let Ray handle allocation automatically
     resource_config = ResourceConfig(
-        cpus_per_actor=1,
-        gpus_per_actor=0,  # Set to fraction if GPUs available
-        memory_per_actor=2048,  # 2GB per actor
         placement_strategy="spread",
     )
 
@@ -367,12 +455,13 @@ def main() -> None:
         model=model,
     )
     
-    # Initialize the learning process
+    # Initialize the learning process with attack configuration
     learning_process.initialize(
         num_actors=orchestration_config.num_actors,
         topology_config=orchestration_config.topology,
         aggregation_config=orchestration_config.aggregation,
         partitioner=partitioner,
+        attack_config=attack_config.to_dict() if attack_config else None,
     )
 
     # Enable visualization if requested
@@ -407,6 +496,24 @@ def main() -> None:
         logger.info(
             f"Downgraded Nodes: {trust_report['global_stats']['total_downgraded']}"
         )
+    
+    # Log attack statistics if available
+    if args.attack_type != "none" and "attack_statistics" in results:
+        attack_stats = results["attack_statistics"]
+        logger.info("\n=== Attack Simulation Summary ===")
+        logger.info(f"Attack Type: {args.attack_type}")
+        logger.info(f"Malicious Fraction: {args.malicious_fraction}")
+        logger.info(f"Total Attacks Applied: {attack_stats.get('total_attacks', 0)}")
+        logger.info(f"Attack Detection Rate: {attack_stats.get('detection_rate', 0):.3f}")
+        logger.info(f"Total Attackers: {attack_stats.get('total_attackers', 0)}")
+        logger.info(f"Detected Attackers: {attack_stats.get('detected_attacks', 0)}")
+        
+        # Log per-attacker details
+        for attacker_id, attacker_stats in attack_stats.get("per_attacker", {}).items():
+            logger.info(f"  {attacker_id}: "
+                       f"Attacks={attacker_stats.get('attacks_applied', 0)}, "
+                       f"Detected={attacker_stats.get('detected', False)}, "
+                       f"Final Intensity={attacker_stats.get('final_intensity', 0):.3f}")
 
     # Log privacy metrics if DP enabled
     if args.enable_dp:

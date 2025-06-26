@@ -19,6 +19,7 @@ from murmura.trust.adaptive_trust_agent import (
     DatasetIndependentTrustSystem,
     TrustContext,
 )
+from murmura.trust.model_evaluator import EnhancedPerformanceTrustMonitor
 
 
 class TrustAction(Enum):
@@ -50,6 +51,8 @@ class TrustMonitor:
         node_id: str,
         hsic_config: Optional[Dict[str, Any]] = None,
         trust_config: Optional[Dict[str, Any]] = None,
+        model_template: Optional[Any] = None,
+        enable_performance_monitoring: bool = True,
     ):
         """
         Initialize the Trust Monitor.
@@ -58,6 +61,8 @@ class TrustMonitor:
             node_id: ID of the node this monitor is attached to
             hsic_config: Configuration for HSIC algorithm
             trust_config: Configuration for trust policies
+            model_template: Model architecture for performance evaluation
+            enable_performance_monitoring: Whether to enable performance-based trust
         """
         self.node_id = node_id
         self.logger = logging.getLogger(f"murmura.trust.TrustMonitor.{node_id}")
@@ -109,7 +114,76 @@ class TrustMonitor:
         # Adaptive trust system
         self.adaptive_trust_system = DatasetIndependentTrustSystem()
         
+        # Performance-based trust monitoring
+        self.enable_performance_monitoring = enable_performance_monitoring
+        self.performance_monitor: Optional[EnhancedPerformanceTrustMonitor] = None
+        
+        # Performance monitoring will be enabled later when we have access to the model
+        # For now, just store the configuration
+        self.model_template = model_template
+        self.enable_performance_monitoring = enable_performance_monitoring
+        
         self.logger.info(f"Trust Monitor initialized for node {node_id} with adaptive agent")
+    
+    def configure_beta_threshold(self, beta_config: Dict[str, Any]) -> None:
+        """
+        Configure Beta distribution-based thresholding.
+        
+        Args:
+            beta_config: Beta threshold configuration dictionary
+        """
+        try:
+            from murmura.trust.beta_threshold import BetaThreshold, BetaThresholdConfig
+            
+            # Create beta threshold config
+            if isinstance(beta_config, dict):
+                beta_threshold_config = BetaThresholdConfig(**beta_config)
+            else:
+                beta_threshold_config = beta_config
+                
+            # Create and configure beta threshold
+            beta_threshold = BetaThreshold(config=beta_threshold_config)
+            
+            # Configure adaptive trust system to use beta thresholding
+            if hasattr(self.adaptive_trust_system, 'set_beta_threshold'):
+                self.adaptive_trust_system.set_beta_threshold(beta_threshold)
+                self.logger.info(f"Beta threshold configured for node {self.node_id}")
+            elif hasattr(self.adaptive_trust_system, 'beta_threshold'):
+                self.adaptive_trust_system.beta_threshold = beta_threshold
+                self.adaptive_trust_system.use_beta_threshold = True
+                self.logger.info(f"Beta threshold configured for node {self.node_id}")
+            else:
+                self.logger.warning(f"Could not configure Beta threshold - adaptive system doesn't support it")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to configure Beta threshold: {e}")
+    
+    def set_test_data(self, test_features: np.ndarray, test_labels: np.ndarray) -> None:
+        """
+        Set test data for performance-based trust evaluation.
+        
+        Args:
+            test_features: Test input features
+            test_labels: Test labels
+        """
+        # Initialize performance monitor if not done yet - we can create a simple model from parameters
+        if self.enable_performance_monitoring and self.performance_monitor is None:
+            try:
+                # Create a simple evaluator that can work with parameter dictionaries
+                # We'll use a lightweight approach that doesn't need the full model architecture
+                from murmura.trust.performance_trust import PerformanceTrustMonitor
+                self.performance_monitor = PerformanceTrustMonitor(
+                    node_id=self.node_id,
+                    performance_threshold=0.05,
+                    window_size=10,
+                )
+                self.logger.info(f"Performance monitoring initialized for node {self.node_id}")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize performance monitor: {e}")
+        
+        if self.performance_monitor:
+            self.performance_monitor.set_test_data(test_features, test_labels)
+            self.logger.info(f"Set test data for performance monitoring: {len(test_features)} samples")
         
     def set_current_parameters(self, parameters: Dict[str, np.ndarray]) -> None:
         """
@@ -119,6 +193,10 @@ class TrustMonitor:
             parameters: Current model parameters
         """
         self.current_parameters = {k: v.copy() for k, v in parameters.items()}
+        
+        # Update performance monitor baseline if available
+        if self.performance_monitor:
+            self.performance_monitor.set_baseline(parameters)
     
     def set_round_number(self, round_num: int) -> None:
         """
@@ -174,7 +252,7 @@ class TrustMonitor:
         # Initialize HSIC monitor for this neighbor if needed
         if neighbor_id not in self.hsic_monitors:
             self.hsic_monitors[neighbor_id] = ModelUpdateHSIC(**self.hsic_config)
-            self.logger.debug(f"Created HSIC monitor for neighbor {neighbor_id}")
+            self.logger.info(f"Created HSIC monitor for neighbor {neighbor_id}")
         
         # Get HSIC monitor
         hsic_monitor = self.hsic_monitors[neighbor_id]
@@ -209,10 +287,38 @@ class TrustMonitor:
         # Use adaptive trust system for decision
         adaptive_result = self.adaptive_trust_system.assess_trust(neighbor_id, update_data)
         
-        # Extract results
-        is_malicious = adaptive_result['malicious']
+        # Performance-based assessment (if available)
+        performance_trust = 1.0
+        performance_suspicious = False
+        performance_stats = {}
+        
+        if self.performance_monitor:
+            try:
+                performance_trust, performance_suspicious, performance_stats = \
+                    self.performance_monitor.assess_neighbor_performance(
+                        neighbor_id, neighbor_parameters, self.current_parameters
+                    )
+            except Exception as e:
+                self.logger.warning(f"Performance assessment failed for {neighbor_id}: {e}")
+        
+        # CORRECTED: High HSIC = High Trust (correlation is good in FL)
+        # Convert HSIC to trust score: high HSIC -> high trust
+        hsic_trust = min(hsic_value, 1.0)  # HSIC values can be > 1, cap at 1.0
+        
+        # Combine all trust components
+        adaptive_trust = adaptive_result['trust_score']
+        
+        if self.performance_monitor:
+            # Weight: 40% HSIC, 40% performance, 20% adaptive
+            combined_trust = 0.4 * hsic_trust + 0.4 * performance_trust + 0.2 * adaptive_trust
+        else:
+            # Weight: 60% HSIC, 40% adaptive  
+            combined_trust = 0.6 * hsic_trust + 0.4 * adaptive_trust
+        
+        # Extract results - drift detection now means LOW correlation
+        is_malicious = drift_detected or performance_suspicious
         confidence = adaptive_result['confidence']
-        trust_score = adaptive_result['trust_score']
+        trust_score = combined_trust
         
         # Update trust score and reputation
         self.trust_scores[neighbor_id] = trust_score
@@ -248,6 +354,13 @@ class TrustMonitor:
             "adaptive_confidence": confidence,
             "adaptive_threshold": adaptive_result.get('adaptive_threshold', 0.5),
             "adaptive_reasoning": adaptive_result.get('reasoning', 'No reasoning provided'),
+            # Performance-based metrics
+            "performance_enabled": self.performance_monitor is not None,
+            "performance_trust": performance_trust,
+            "performance_suspicious": performance_suspicious,
+            "adaptive_trust_component": adaptive_trust,
+            "combined_trust_method": "adaptive+performance" if self.performance_monitor else "adaptive_only",
+            **performance_stats,  # Include performance statistics
             **stats,  # Include HSIC statistics
         }
         

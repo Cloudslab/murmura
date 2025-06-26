@@ -25,6 +25,12 @@ from dataclasses import dataclass
 from collections import deque
 import time
 
+from murmura.trust.beta_threshold import (
+    BetaThreshold,
+    ContextualBetaThreshold,
+    BetaThresholdConfig,
+)
+
 
 @dataclass
 class TrustContext:
@@ -61,7 +67,7 @@ class AdaptiveThresholdAgent:
     normal FL has HSIC values of 0.9+ which are not indicative of attacks.
     """
     
-    def __init__(self):
+    def __init__(self, use_beta_threshold: bool = True):
         self.logger = logging.getLogger(f"{__name__}.AdaptiveThresholdAgent")
         
         # Experience buffer for online learning
@@ -79,6 +85,21 @@ class AdaptiveThresholdAgent:
         
         # Context tracking
         self.context_history = deque(maxlen=50)
+        
+        # Beta distribution-based thresholding
+        self.use_beta_threshold = use_beta_threshold
+        if use_beta_threshold:
+            beta_config = BetaThresholdConfig(
+                base_percentile=0.98,           # Higher percentile for FL
+                early_rounds_adjustment=-0.05,  # More permissive early
+                late_rounds_adjustment=0.01,    # Very slightly stricter late
+                min_observations=8,             # More observations before activation
+                learning_rate=0.5,              # Slower learning to avoid overreaction
+            )
+            self.beta_threshold = ContextualBetaThreshold(beta_config)
+            self.logger.info("Using Beta distribution-based adaptive thresholding")
+        else:
+            self.beta_threshold = None
         
         self.logger.info("Initialized Adaptive Trust Agent with meta-learning capabilities")
         
@@ -206,42 +227,69 @@ class AdaptiveThresholdAgent:
         """
         Compute adaptive threshold based on FL phase and risk tolerance.
         
-        Key insight: Threshold should vary based on:
-        - Early rounds: More permissive (higher threshold)
-        - Late rounds: More strict (lower threshold)  
-        - High-risk scenarios: More strict
-        - Recent false positives: More permissive
+        Uses Beta distribution-based thresholding when available.
         """
         
-        base_threshold = 0.7  # Much higher base threshold to reduce false positives
+        # Use Beta distribution threshold if enabled
+        if self.use_beta_threshold and self.beta_threshold:
+            # Get context-aware Beta threshold
+            beta_threshold = self.beta_threshold.get_threshold(
+                fl_round=context.current_round,
+                total_rounds=context.total_rounds,
+                accuracy=context.global_accuracy
+            )
+            
+            # Apply additional adjustments for risk and false positives
+            risk_adjustment = context.recent_attack_rate * 0.1
+            fp_adjustment = context.false_positive_rate * 0.2
+            
+            # HSIC-based adjustment (high HSIC is NORMAL in FL)
+            hsic_adjustment = 0.0
+            if context.hsic_value > 0.995:
+                hsic_adjustment = -0.02
+            elif context.hsic_value < 0.8:
+                hsic_adjustment = -0.05
+            elif 0.9 <= context.hsic_value <= 0.98:
+                hsic_adjustment = 0.05  # Reward normal behavior
+            
+            adaptive_threshold = beta_threshold - risk_adjustment + fp_adjustment + hsic_adjustment
+            
+            self.logger.debug(
+                f"Beta threshold: {beta_threshold:.3f}, adjusted: {adaptive_threshold:.3f} "
+                f"(risk={risk_adjustment:.3f}, fp={fp_adjustment:.3f}, hsic={hsic_adjustment:.3f})"
+            )
+            
+            return np.clip(adaptive_threshold, 0.1, 0.95)
         
-        # FL Phase adjustment - be more permissive across all phases
+        # Fallback to manual threshold computation
+        base_threshold = 0.7
+        
+        # FL Phase adjustment
         fl_progress = context.current_round / max(1, context.total_rounds)
-        if fl_progress < 0.3:  # Early rounds - very permissive
+        if fl_progress < 0.3:
             phase_adjustment = 0.2
-        elif fl_progress > 0.8:  # Late rounds - only slightly more strict
-            phase_adjustment = -0.05  # Much less strict than before
-        else:  # Middle rounds - still permissive
+        elif fl_progress > 0.8:
+            phase_adjustment = -0.05
+        else:
             phase_adjustment = 0.1
         
         # Risk adjustment
         risk_adjustment = context.recent_attack_rate * 0.2
         
-        # False positive adjustment (CRITICAL for addressing current issue)
+        # False positive adjustment
         fp_adjustment = context.false_positive_rate * 0.4
         
         # Network stability adjustment
         stability_adjustment = (1.0 - context.network_stability) * 0.1
         
-        # HSIC-based adjustment (key insight: high HSIC is NORMAL in FL)
-        # HSIC values 0.85-0.99 are completely normal in FL
+        # HSIC-based adjustment
         hsic_adjustment = 0.0
-        if context.hsic_value > 0.995:  # Only flag EXTREMELY high values (almost perfect correlation)
-            hsic_adjustment = -0.05  # Very mild penalty
-        elif context.hsic_value < 0.8:  # Suspiciously low HSIC (very rare in normal FL)
+        if context.hsic_value > 0.995:
+            hsic_adjustment = -0.05
+        elif context.hsic_value < 0.8:
             hsic_adjustment = -0.1
-        elif 0.9 <= context.hsic_value <= 0.98:  # Normal FL range - reward this
-            hsic_adjustment = 0.1  # Positive adjustment for normal behavior
+        elif 0.9 <= context.hsic_value <= 0.98:
+            hsic_adjustment = 0.1
         
         adaptive_threshold = (base_threshold + 
                             phase_adjustment - 
@@ -362,6 +410,26 @@ class AdaptiveThresholdAgent:
         self.experience_buffer.append(experience)
         self.reward_history.append(reward)
         
+        # Update Beta distribution if enabled
+        if self.use_beta_threshold and self.beta_threshold and actual_outcome is not None:
+            # Calculate trust score from the context
+            # Higher trust score means less likely to be malicious
+            trust_score = 1.0 - self._evaluate_policy(self._extract_features(context))
+            
+            # Update Beta distribution
+            self.beta_threshold.update(
+                trust_score=trust_score,
+                is_malicious=actual_outcome,
+                fl_round=context.current_round,
+                total_rounds=context.total_rounds,
+                accuracy=context.global_accuracy
+            )
+            
+            self.logger.debug(
+                f"Updated Beta distribution: trust={trust_score:.3f}, "
+                f"malicious={actual_outcome}, reward={reward:.3f}"
+            )
+        
         # Simple online policy update (gradient ascent)
         if len(self.experience_buffer) >= 10:
             self._update_policy()
@@ -402,6 +470,12 @@ class AdaptiveThresholdAgent:
         # Log update
         avg_reward = np.mean([exp['reward'] for exp in recent_experiences])
         self.logger.debug(f"Updated policy weights, avg reward: {avg_reward:.3f}")
+    
+    def get_beta_statistics(self) -> Optional[Dict[str, Any]]:
+        """Get statistics from Beta distribution models."""
+        if self.use_beta_threshold and self.beta_threshold:
+            return self.beta_threshold.get_statistics()
+        return None
 
 
 class ContextTracker:
@@ -503,12 +577,13 @@ class DatasetIndependentTrustSystem:
     4. Explainable - provides reasoning for decisions
     """
     
-    def __init__(self):
+    def __init__(self, use_beta_threshold: bool = True):
         self.logger = logging.getLogger(f"{__name__}.DatasetIndependentTrustSystem")
-        self.agent = AdaptiveThresholdAgent()
+        self.agent = AdaptiveThresholdAgent(use_beta_threshold=use_beta_threshold)
         self.context_tracker = ContextTracker()
         
-        self.logger.info("Initialized Dataset-Independent Trust System with adaptive agent")
+        beta_msg = "with Beta distribution thresholding" if use_beta_threshold else "with manual thresholding"
+        self.logger.info(f"Initialized Dataset-Independent Trust System {beta_msg}")
         
     def assess_trust(self, node_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]:
         """Main trust assessment function."""

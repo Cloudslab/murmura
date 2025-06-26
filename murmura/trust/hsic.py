@@ -188,13 +188,15 @@ class StreamingHSIC:
             hsic_mean = np.mean(hsic_array)
             hsic_std = np.std(hsic_array)
             
-            # Detect values that are more than 2 standard deviations above mean
-            # OR exceed a reasonable absolute threshold
-            absolute_threshold = max(0.95, hsic_mean + 2 * hsic_std)
+            # CORRECTED: Low HSIC indicates drift (lack of correlation is bad)
+            # High HSIC (0.9+) is normal in FL - models should be correlated
+            
+            # Detect values that are significantly BELOW the normal range
+            lower_threshold = max(0.1, hsic_mean - 2 * hsic_std)
             
             drift_detected = (
-                hsic_value > absolute_threshold and
-                hsic_value > hsic_mean + 3 * hsic_std  # Very conservative
+                hsic_value < lower_threshold or  # Significantly below normal
+                hsic_value < 0.3  # Absolute low correlation threshold
             )
         
         if drift_detected:
@@ -299,6 +301,150 @@ class ModelUpdateHSIC(StreamingHSIC):
         
         # Improved statistical drift detection
         self.logger.info(f"HSIC using statistical outlier detection for trust drift")
+        
+        # Enhanced trust features beyond pure HSIC
+        self.enable_functional_features = True
+        self.update_history: Dict[str, deque] = {}  # Track parameter evolution
+        self.convergence_patterns: Dict[str, List[float]] = {}  # Track convergence behavior
+        
+    def _calculate_functional_trust_features(
+        self,
+        my_params: Dict[str, np.ndarray],
+        neighbor_params: Dict[str, np.ndarray],
+        neighbor_id: str,
+        previous_my_params: Optional[Dict[str, np.ndarray]] = None,
+        previous_neighbor_params: Optional[Dict[str, np.ndarray]] = None
+    ) -> Dict[str, float]:
+        """
+        Calculate functional trust features that are more intuitive than raw HSIC.
+        
+        These features focus on model behavior rather than just parameter correlation.
+        
+        Args:
+            my_params: My current model parameters
+            neighbor_params: Neighbor's model parameters  
+            neighbor_id: Neighbor identifier
+            previous_my_params: My previous parameters (for gradient analysis)
+            previous_neighbor_params: Neighbor's previous parameters
+            
+        Returns:
+            Dictionary of functional trust features
+        """
+        features = {}
+        
+        try:
+            # 1. Parameter magnitude similarity
+            my_norm = np.linalg.norm(self._flatten_parameters(my_params))
+            neighbor_norm = np.linalg.norm(self._flatten_parameters(neighbor_params))
+            magnitude_ratio = min(my_norm, neighbor_norm) / max(my_norm, neighbor_norm)
+            features['magnitude_similarity'] = magnitude_ratio
+            
+            # 2. Layer-wise parameter analysis
+            layer_similarities = []
+            for key in my_params:
+                if key in neighbor_params:
+                    my_layer = my_params[key].flatten()
+                    neighbor_layer = neighbor_params[key].flatten()
+                    
+                    # Cosine similarity for this layer
+                    cos_sim = np.dot(my_layer, neighbor_layer) / (
+                        np.linalg.norm(my_layer) * np.linalg.norm(neighbor_layer) + 1e-8
+                    )
+                    layer_similarities.append(cos_sim)
+            
+            features['avg_layer_similarity'] = np.mean(layer_similarities) if layer_similarities else 0.0
+            features['min_layer_similarity'] = np.min(layer_similarities) if layer_similarities else 0.0
+            
+            # 3. Gradient direction analysis (if previous parameters available)
+            if previous_my_params and previous_neighbor_params:
+                my_gradient = {}
+                neighbor_gradient = {}
+                
+                for key in my_params:
+                    if key in previous_my_params and key in neighbor_params and key in previous_neighbor_params:
+                        my_gradient[key] = my_params[key] - previous_my_params[key]
+                        neighbor_gradient[key] = neighbor_params[key] - previous_neighbor_params[key]
+                
+                if my_gradient and neighbor_gradient:
+                    my_grad_flat = self._flatten_parameters(my_gradient)
+                    neighbor_grad_flat = self._flatten_parameters(neighbor_gradient)
+                    
+                    # Gradient direction alignment
+                    grad_cosine = np.dot(my_grad_flat, neighbor_grad_flat) / (
+                        np.linalg.norm(my_grad_flat) * np.linalg.norm(neighbor_grad_flat) + 1e-8
+                    )
+                    features['gradient_alignment'] = grad_cosine
+                    
+                    # Gradient magnitude similarity
+                    grad_mag_ratio = min(np.linalg.norm(my_grad_flat), np.linalg.norm(neighbor_grad_flat)) / \
+                                   max(np.linalg.norm(my_grad_flat), np.linalg.norm(neighbor_grad_flat))
+                    features['gradient_magnitude_similarity'] = grad_mag_ratio
+                else:
+                    features['gradient_alignment'] = 1.0
+                    features['gradient_magnitude_similarity'] = 1.0
+            else:
+                features['gradient_alignment'] = 1.0  # No history yet
+                features['gradient_magnitude_similarity'] = 1.0
+            
+            # 4. Parameter update consistency tracking
+            if neighbor_id not in self.update_history:
+                self.update_history[neighbor_id] = deque(maxlen=10)
+            
+            # Store current similarity for consistency analysis
+            current_similarity = features['avg_layer_similarity']
+            self.update_history[neighbor_id].append(current_similarity)
+            
+            # Calculate consistency (low variance = high consistency)
+            if len(self.update_history[neighbor_id]) > 2:
+                similarities = list(self.update_history[neighbor_id])
+                consistency = 1.0 / (1.0 + np.std(similarities))  # High consistency if low variance
+                features['temporal_consistency'] = consistency
+            else:
+                features['temporal_consistency'] = 1.0
+            
+            # 5. Convergence behavior analysis
+            if len(self.update_history[neighbor_id]) > 1:
+                recent_similarities = list(self.update_history[neighbor_id])
+                if len(recent_similarities) >= 3:
+                    # Trend analysis: are we converging or diverging?
+                    recent_trend = np.mean(recent_similarities[-3:]) - np.mean(recent_similarities[-6:-3])
+                    features['convergence_trend'] = max(0.0, recent_trend)  # Positive = converging
+                else:
+                    features['convergence_trend'] = 0.0
+            else:
+                features['convergence_trend'] = 0.0
+            
+            # 6. Outlier detection in parameter space
+            # Check if neighbor's parameters are outliers compared to recent history
+            if len(self.update_history[neighbor_id]) > 3:
+                history_mean = np.mean(list(self.update_history[neighbor_id])[:-1])  # Exclude current
+                history_std = np.std(list(self.update_history[neighbor_id])[:-1])
+                
+                if history_std > 0:
+                    z_score = abs(current_similarity - history_mean) / history_std
+                    # Convert z-score to outlier probability (higher z-score = more likely outlier)
+                    outlier_score = min(1.0, z_score / 3.0)  # Normalize by 3-sigma
+                    features['outlier_probability'] = outlier_score
+                else:
+                    features['outlier_probability'] = 0.0
+            else:
+                features['outlier_probability'] = 0.0
+            
+        except Exception as e:
+            self.logger.debug(f"Error calculating functional features: {e}")
+            # Return safe defaults
+            features = {
+                'magnitude_similarity': 1.0,
+                'avg_layer_similarity': 1.0,
+                'min_layer_similarity': 1.0,
+                'gradient_alignment': 1.0,
+                'gradient_magnitude_similarity': 1.0,
+                'temporal_consistency': 1.0,
+                'convergence_trend': 0.0,
+                'outlier_probability': 0.0,
+            }
+        
+        return features
         
     def _flatten_parameters(self, parameters: Dict[str, np.ndarray]) -> np.ndarray:
         """

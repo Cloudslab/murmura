@@ -56,6 +56,14 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
         self.trust_monitors: Dict[str, TrustMonitor] = {}
         self.trust_enabled = False
         
+        # Attack tracking
+        self.attack_statistics: Dict[str, Any] = {
+            "total_attacks": 0,
+            "detected_attacks": 0,
+            "per_attacker": {},
+            "detection_rate": 0.0,
+        }
+        
         # Logger
         self.trust_logger = logging.getLogger(
             "murmura.trust.TrustAwareDecentralizedLearningProcess"
@@ -63,6 +71,77 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
         
         # Trust will be initialized in execute() when cluster_manager is available
         self._trust_initialized = False
+    
+    def initialize(
+        self,
+        num_actors: int,
+        topology_config,
+        aggregation_config,
+        partitioner,
+        attack_config: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Initialize the trust-aware learning process with optional attack configuration.
+        
+        Args:
+            num_actors: Number of client actors
+            topology_config: Network topology configuration
+            aggregation_config: Aggregation strategy configuration
+            partitioner: Data partitioner
+            attack_config: Optional attack configuration for creating malicious actors
+        """
+        # Store attack config for later use
+        self.attack_config = attack_config
+        
+        # Call parent initialize
+        super().initialize(num_actors, topology_config, aggregation_config, partitioner)
+        
+        # Create mixed actors if attack config is provided
+        if attack_config:
+            self._create_mixed_actors(num_actors, attack_config)
+            # Re-distribute models to the new actors
+            self._redistribute_models_and_data()
+    
+    def _create_mixed_actors(self, num_actors: int, attack_config: Dict[str, Any]) -> None:
+        """
+        Replace default actors with mixed honest/malicious actors.
+        
+        Args:
+            num_actors: Total number of actors
+            attack_config: Attack configuration
+        """
+        from murmura.attacks.malicious_client import create_mixed_actors
+        
+        # Create mixed actors
+        mixed_actors = create_mixed_actors(
+            num_actors=num_actors,
+            malicious_fraction=attack_config.get("malicious_fraction", 0.25),
+            attack_config=attack_config,
+            random_seed=42  # Fixed seed for reproducibility
+        )
+        
+        # Replace the actors in cluster manager
+        if hasattr(self.cluster_manager, 'actors'):
+            self.cluster_manager.actors = mixed_actors
+            self.trust_logger.info(f"Replaced actors with mixed population for attack simulation")
+    
+    def _redistribute_models_and_data(self) -> None:
+        """
+        Re-distribute models and data to the new mixed actors.
+        """
+        self.trust_logger.info("Re-distributing models and data to mixed actors...")
+        
+        # Re-distribute the model
+        if hasattr(self.cluster_manager, 'distribute_model'):
+            self.cluster_manager.distribute_model(self.model)
+        
+        # Re-distribute the dataset
+        if hasattr(self.cluster_manager, 'distribute_dataset'):
+            self.cluster_manager.distribute_dataset(
+                self.dataset,
+                feature_columns=self.config.feature_columns,
+                label_column=self.config.label_column
+            )
     
     def _initialize_trust_config(self) -> None:
         """Initialize trust monitoring configuration."""
@@ -106,11 +185,13 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
         for i, actor in enumerate(self.cluster_manager.actors):
             node_id = f"node_{i}"
             
-            # Create trust monitor actor
+            # Create trust monitor actor with performance monitoring enabled
             trust_monitor = TrustMonitor.remote(
                 node_id=node_id,
                 hsic_config=self.trust_config.hsic_config.to_dict(),
                 trust_config=self.trust_config.trust_policy_config.to_dict(),
+                model_template=None,  # Will be set later with model architecture
+                enable_performance_monitoring=True,
             )
             
             self.trust_monitors[node_id] = trust_monitor
@@ -254,6 +335,26 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
             # 1. Local Training
             self.logger.info(f"Training on clients for {epochs} epochs...")
             
+            # Update round numbers for malicious clients
+            for i, actor in enumerate(self.cluster_manager.actors):
+                try:
+                    # Set round number for attack progression
+                    if hasattr(actor, 'set_round_number'):
+                        ray.get(actor.set_round_number.remote(round_num), timeout=5)
+                except AttributeError:
+                    # Actor doesn't have set_round_number method (honest client)
+                    pass
+                except Exception as e:
+                    self.trust_logger.debug(f"Failed to set round number for actor {i}: {e}")
+            
+            # Update round numbers for trust monitors (for calibration)
+            if self.trust_enabled:
+                for node_id, trust_monitor in self.trust_monitors.items():
+                    try:
+                        ray.get(trust_monitor.set_round_number.remote(round_num), timeout=5)
+                    except Exception as e:
+                        self.trust_logger.debug(f"Failed to set round number for trust monitor {node_id}: {e}")
+            
             # Emit local training event
             self.training_monitor.emit_event(
                 LocalTrainingEvent(
@@ -299,7 +400,7 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
                     round_num, adjacency_list, test_features, test_labels
                 )
             
-            # 3. Collect trust metrics if enabled
+            # 3. Collect trust and attack metrics if enabled
             if self.trust_enabled and round_num % self.trust_config.trust_report_interval == 0:
                 round_trust_metrics = self._collect_trust_metrics()
                 trust_metrics.append({
@@ -309,6 +410,9 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
                 
                 # Log trust summary
                 self._log_trust_summary(round_trust_metrics)
+            
+            # Collect attack statistics
+            self._collect_attack_statistics(round_num)
             
             # 4. Evaluation
             test_metrics = self.model.evaluate(test_features, test_labels)
@@ -357,6 +461,9 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
         if self.trust_enabled:
             results["trust_metrics"] = trust_metrics
             results["final_trust_report"] = final_trust_metrics
+        
+        # Add attack statistics
+        results["attack_statistics"] = self._finalize_attack_statistics()
         
         return results
     
@@ -626,3 +733,96 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
                     self.trust_logger.debug(
                         f"{node_id} neighbors: {', '.join(neighbor_summary)}"
                     )
+    
+    def _collect_attack_statistics(self, round_num: int) -> None:
+        """
+        Collect attack statistics from malicious clients.
+        
+        Args:
+            round_num: Current round number
+        """
+        for i, actor in enumerate(self.cluster_manager.actors):
+            try:
+                # Check if actor is malicious
+                is_malicious = ray.get(actor.is_malicious.remote(), timeout=5)
+                
+                if is_malicious:
+                    client_id = f"client_{i}"
+                    
+                    # Get attack summary
+                    attack_summary = ray.get(actor.get_attack_summary.remote(), timeout=5)
+                    
+                    # Update statistics
+                    if client_id not in self.attack_statistics["per_attacker"]:
+                        self.attack_statistics["per_attacker"][client_id] = {
+                            "attacks_applied": 0,
+                            "detected": False,
+                            "final_intensity": 0.0,
+                            "attack_type": attack_summary.get("attack_type", "unknown"),
+                        }
+                    
+                    # Update with current round data
+                    attacker_stats = self.attack_statistics["per_attacker"][client_id]
+                    attacker_stats["attacks_applied"] = attack_summary.get("attacks_applied", 0)
+                    attacker_stats["final_intensity"] = attack_summary.get("current_intensity", 0.0)
+                    
+                    # Check if this attacker has been detected by trust monitoring
+                    if self.trust_enabled:
+                        node_id = f"node_{i}"
+                        if node_id in self.trust_monitors:
+                            excluded_neighbors = ray.get(
+                                self.trust_monitors[node_id].get_excluded_neighbors.remote(),
+                                timeout=5
+                            )
+                            
+                            # Check if any neighbor excluded this node (detection indicator)
+                            detected = False
+                            for j, other_actor in enumerate(self.cluster_manager.actors):
+                                if i != j:
+                                    other_node_id = f"node_{j}"
+                                    if other_node_id in self.trust_monitors:
+                                        other_excluded = ray.get(
+                                            self.trust_monitors[other_node_id].get_excluded_neighbors.remote(),
+                                            timeout=5
+                                        )
+                                        if node_id in other_excluded:
+                                            detected = True
+                                            break
+                            
+                            attacker_stats["detected"] = detected
+                    
+            except Exception as e:
+                # Not a malicious actor or method not available
+                self.trust_logger.debug(f"Actor {i} is not malicious or error: {e}")
+                continue
+    
+    def _finalize_attack_statistics(self) -> Dict[str, Any]:
+        """
+        Finalize and return attack statistics.
+        
+        Returns:
+            Final attack statistics
+        """
+        # Calculate totals
+        total_attacks = sum(
+            stats["attacks_applied"] 
+            for stats in self.attack_statistics["per_attacker"].values()
+        )
+        
+        detected_attackers = sum(
+            1 for stats in self.attack_statistics["per_attacker"].values()
+            if stats["detected"]
+        )
+        
+        total_attackers = len(self.attack_statistics["per_attacker"])
+        
+        detection_rate = detected_attackers / total_attackers if total_attackers > 0 else 0.0
+        
+        self.attack_statistics.update({
+            "total_attacks": total_attacks,
+            "detected_attacks": detected_attackers,
+            "total_attackers": total_attackers,
+            "detection_rate": detection_rate,
+        })
+        
+        return self.attack_statistics.copy()

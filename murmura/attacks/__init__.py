@@ -10,9 +10,11 @@ from murmura.attacks.simple_attacks import (
     LabelFlippingAttack,
     create_simple_attack,
 )
+from murmura.attacks.attack_config import SimpleAttackConfig
 
 __all__ = [
     "SimpleAttack",
     "LabelFlippingAttack", 
     "create_simple_attack",
+    "SimpleAttackConfig",
 ]
