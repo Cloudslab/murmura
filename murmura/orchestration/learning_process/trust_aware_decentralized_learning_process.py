@@ -671,26 +671,36 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
         
         all_trust_scores = []
         
+        # Track unique node assessments to avoid double-counting
+        excluded_nodes = set()
+        downgraded_nodes = set()
+        warned_nodes = set()
+        
         for node_id, monitor in self.trust_monitors.items():
             try:
                 report = ray.get(monitor.get_trust_report.remote())
                 metrics["node_reports"][node_id] = report
                 
-                # Aggregate statistics
+                # Aggregate statistics (count unique nodes, not relationships)
                 for neighbor_id, neighbor_info in report["neighbors"].items():
                     trust_score = neighbor_info["trust_score"]
                     all_trust_scores.append(trust_score)
                     
-                    # Count actions based on trust level
+                    # Track unique nodes based on trust level
                     if neighbor_info["trust_level"] == "untrusted":
-                        metrics["global_stats"]["total_excluded"] += 1
+                        excluded_nodes.add(neighbor_id)
                     elif neighbor_info["trust_level"] == "suspicious":
-                        metrics["global_stats"]["total_downgraded"] += 1
+                        downgraded_nodes.add(neighbor_id)
                     elif neighbor_info["drift_rate"] > 0.1:  # High drift rate
-                        metrics["global_stats"]["total_warned"] += 1
+                        warned_nodes.add(neighbor_id)
                         
             except Exception as e:
                 self.trust_logger.error(f"Failed to get report from {node_id}: {e}")
+        
+        # Set the counts based on unique nodes
+        metrics["global_stats"]["total_excluded"] = len(excluded_nodes)
+        metrics["global_stats"]["total_downgraded"] = len(downgraded_nodes)
+        metrics["global_stats"]["total_warned"] = len(warned_nodes)
         
         # Calculate average trust score
         if all_trust_scores:
@@ -707,18 +717,20 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
         """
         stats = trust_metrics["global_stats"]
         
+        total_nodes = len(self.trust_monitors)
+        
         self.trust_logger.info("=== Trust Monitoring Summary ===")
         self.trust_logger.info(
             f"Average Trust Score: {stats['avg_trust_score']:.3f}"
         )
         self.trust_logger.info(
-            f"Excluded Nodes: {stats['total_excluded']}"
+            f"Excluded Nodes: {stats['total_excluded']}/{total_nodes}"
         )
         self.trust_logger.info(
-            f"Downgraded Nodes: {stats['total_downgraded']}"
+            f"Downgraded Nodes: {stats['total_downgraded']}/{total_nodes}"
         )
         self.trust_logger.info(
-            f"Warned Nodes: {stats['total_warned']}"
+            f"Warned Nodes: {stats['total_warned']}/{total_nodes}"
         )
         
         # Log per-node summary if not too many nodes
