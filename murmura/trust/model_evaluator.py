@@ -48,6 +48,7 @@ class ModelEvaluator:
             self.eval_model.eval()
         else:
             # Create MNIST model directly if no template provided
+            # This is a fallback - in practice, model template should be provided
             from murmura.models.mnist_models import MNISTModel
             self.eval_model = MNISTModel().to(device)
             self.eval_model.eval()
