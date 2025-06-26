@@ -111,8 +111,8 @@ class TrustMonitor:
         # Round tracking for calibration
         self.current_round = 0
         
-        # Adaptive trust system
-        self.adaptive_trust_system = DatasetIndependentTrustSystem()
+        # Adaptive trust system with beta thresholding enabled by default
+        self.adaptive_trust_system = DatasetIndependentTrustSystem(use_beta_threshold=True)
         
         # Performance-based trust monitoring
         self.enable_performance_monitoring = enable_performance_monitoring
@@ -287,6 +287,13 @@ class TrustMonitor:
         # Use adaptive trust system for decision
         adaptive_result = self.adaptive_trust_system.assess_trust(neighbor_id, update_data)
         
+        # Log adaptive result for debugging if needed
+        self.logger.debug(f"Adaptive result: threshold={adaptive_result.get('adaptive_threshold')}, malicious={adaptive_result.get('malicious')}")
+        
+        # Update HSIC monitor with adaptive threshold from beta system
+        if 'adaptive_threshold' in adaptive_result:
+            hsic_monitor.set_adaptive_threshold(adaptive_result['adaptive_threshold'])
+        
         # Performance-based assessment (if available)
         performance_trust = 1.0
         performance_suspicious = False
@@ -301,9 +308,17 @@ class TrustMonitor:
             except Exception as e:
                 self.logger.warning(f"Performance assessment failed for {neighbor_id}: {e}")
         
-        # CORRECTED: High HSIC = High Trust (correlation is good in FL)
-        # Convert HSIC to trust score: high HSIC -> high trust
-        hsic_trust = min(hsic_value, 1.0)  # HSIC values can be > 1, cap at 1.0
+        # Convert HSIC to trust score using adaptive threshold
+        # High HSIC above threshold = high trust
+        # Low HSIC below threshold = low trust (suspicious)
+        adaptive_threshold = adaptive_result.get('adaptive_threshold', 0.5)
+        
+        if hsic_value >= adaptive_threshold:
+            # Above threshold = trustworthy, scale from threshold to 1.0
+            hsic_trust = min(1.0, 0.7 + 0.3 * (hsic_value / adaptive_threshold))
+        else:
+            # Below threshold = suspicious, scale by how far below
+            hsic_trust = max(0.0, hsic_value / adaptive_threshold * 0.7)
         
         # Combine all trust components
         adaptive_trust = adaptive_result['trust_score']
@@ -352,8 +367,9 @@ class TrustMonitor:
             "drift_rate": self.drift_count[neighbor_id] / max(1, self.update_count[neighbor_id]),
             "adaptive_decision": is_malicious,
             "adaptive_confidence": confidence,
-            "adaptive_threshold": adaptive_result.get('adaptive_threshold', 0.5),
             "adaptive_reasoning": adaptive_result.get('reasoning', 'No reasoning provided'),
+            "hsic_trust_component": hsic_trust,
+            "threshold_type": "adaptive" if hasattr(hsic_monitor, 'use_adaptive_threshold') and hsic_monitor.use_adaptive_threshold else "fixed",
             # Performance-based metrics
             "performance_enabled": self.performance_monitor is not None,
             "performance_trust": performance_trust,
@@ -361,7 +377,9 @@ class TrustMonitor:
             "adaptive_trust_component": adaptive_trust,
             "combined_trust_method": "adaptive+performance" if self.performance_monitor else "adaptive_only",
             **performance_stats,  # Include performance statistics
-            **stats,  # Include HSIC statistics
+            **stats,  # Include HSIC statistics (this might overwrite adaptive_threshold)
+            # CRITICAL: Put adaptive_threshold AFTER stats to prevent overwriting
+            "adaptive_threshold": adaptive_result.get('adaptive_threshold', 0.5),
         }
         
         # Log significant events
