@@ -173,18 +173,30 @@ def create_adaptive_trust_config(
 def create_attack_config(
     attack_type: str = "none",
     malicious_fraction: float = 0.0,
-    attack_intensity: float = 0.1
-) -> Optional[SimpleAttackConfig]:
-    """Create simple attack configuration for CIFAR-10."""
+    attack_intensity: str = "moderate",
+    stealth_level: str = "medium"
+) -> Optional[Dict[str, Any]]:
+    """Create attack configuration for gradual or simple attacks on CIFAR-10."""
     
     if attack_type == "none" or malicious_fraction <= 0:
         return None
     
-    return SimpleAttackConfig(
-        attack_type="label_flipping" if attack_type == "label_flipping" else "label_flipping",
-        attack_rate=attack_intensity,
-        enabled=True,
-    )
+    if attack_type == "gradual_label_flipping":
+        # Use the sophisticated gradual attack
+        return {
+            "malicious_fraction": malicious_fraction,
+            "attack_intensity": attack_intensity,  # low, moderate, high
+            "stealth_level": stealth_level,        # low, medium, high
+            "attack_type": "gradual_label_flipping"
+        }
+    else:
+        # Simple attack (legacy)
+        return {
+            "malicious_fraction": malicious_fraction,
+            "attack_intensity": "moderate",
+            "stealth_level": "medium",
+            "attack_type": "simple_label_flipping"
+        }
 
 
 def run_adaptive_trust_cifar10(
@@ -194,7 +206,7 @@ def run_adaptive_trust_cifar10(
     trust_profile: str = "default",
     use_beta_threshold: bool = True,
     model_type: str = "standard",
-    attack_config: Optional[SimpleAttackConfig] = None,
+    attack_config: Optional[Dict[str, Any]] = None,
     output_dir: str = "adaptive_trust_cifar10_results",
     log_level: str = "INFO"
 ) -> Dict[str, Any]:
@@ -208,7 +220,7 @@ def run_adaptive_trust_cifar10(
         trust_profile: Trust monitoring profile (permissive, default, strict)
         use_beta_threshold: Whether to use Beta distribution thresholding
         model_type: Model architecture (simple, standard, resnet)
-        attack_config: Attack configuration (if any)
+        attack_config: Attack configuration dictionary (if any)
         output_dir: Directory to save results
         log_level: Logging level
         
@@ -231,7 +243,7 @@ def run_adaptive_trust_cifar10(
     logger.info(f"Model Type: {model_type}")
     logger.info(f"Trust Profile: {trust_profile}")
     logger.info(f"Beta Thresholding: {use_beta_threshold}")
-    logger.info(f"Attacks: {attack_config.attack_type if attack_config else 'None'}")
+    logger.info(f"Attacks: {attack_config.get('attack_type', 'None') if attack_config else 'None'}")
     logger.info("=" * 80)
     
     start_time = time.time()
@@ -348,13 +360,12 @@ def run_adaptive_trust_cifar10(
         )
         
         # Initialize with attack config if provided
-        attack_dict = attack_config.to_dict() if attack_config else None
         learning_process.initialize(
             num_actors=num_actors,
             topology_config=topology_config,
             aggregation_config=aggregation_config,
             partitioner=partitioner,
-            attack_config=attack_dict,
+            attack_config=attack_config,
         )
         
         # Configure trust monitors with CIFAR-10 context
@@ -416,7 +427,7 @@ def run_adaptive_trust_cifar10(
                 "model_type": model_type,
                 "trust_profile": trust_profile,
                 "use_beta_threshold": use_beta_threshold,
-                "attack_type": attack_config.attack_type if attack_config else "none",
+                "attack_type": attack_config.get("attack_type", "none") if attack_config else "none",
                 "dataset": "cifar10",
                 "timestamp": time.time(),
             },
@@ -545,16 +556,20 @@ def main():
     
     # Attack configuration
     parser.add_argument(
-        "--attack_type", choices=["none", "label_flipping"], default="none",
-        help="Type of attack to simulate (default: none)"
+        "--attack_type", choices=["none", "gradual_label_flipping", "simple_label_flipping"], 
+        default="none", help="Type of attack to simulate (default: none)"
     )
     parser.add_argument(
         "--malicious_fraction", type=float, default=0.0,
         help="Fraction of malicious actors (default: 0.0)"
     )
     parser.add_argument(
-        "--attack_intensity", type=float, default=0.1,
-        help="Attack intensity (default: 0.1)"
+        "--attack_intensity", choices=["low", "moderate", "high"], default="moderate",
+        help="Attack intensity level for gradual attacks (default: moderate)"
+    )
+    parser.add_argument(
+        "--stealth_level", choices=["low", "medium", "high"], default="medium",
+        help="Attack stealth/evasion level for gradual attacks (default: medium)"
     )
     
     # Output configuration
@@ -583,7 +598,8 @@ def main():
     attack_config = create_attack_config(
         attack_type=args.attack_type,
         malicious_fraction=args.malicious_fraction,
-        attack_intensity=args.attack_intensity
+        attack_intensity=args.attack_intensity,
+        stealth_level=args.stealth_level
     )
     
     if args.run_baseline:

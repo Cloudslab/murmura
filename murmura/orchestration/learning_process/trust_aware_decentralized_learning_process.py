@@ -111,19 +111,37 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
             attack_config: Attack configuration
         """
         from murmura.attacks.malicious_client import create_mixed_actors
+        from murmura.attacks.gradual_label_flipping import create_gradual_attack_config
         
-        # Create mixed actors
+        # Create gradual attack configuration
+        dataset_name = getattr(self.config, 'dataset_name', 'mnist')
+        num_classes = 10  # Default for MNIST/CIFAR-10
+        
+        # Create attack config from simple config
+        gradual_config = create_gradual_attack_config(
+            dataset_name=dataset_name,
+            attack_intensity=attack_config.get("attack_intensity", "moderate"),
+            stealth_level=attack_config.get("stealth_level", "medium")
+        )
+        
+        # Create mixed actors with gradual attack
         mixed_actors = create_mixed_actors(
             num_actors=num_actors,
             malicious_fraction=attack_config.get("malicious_fraction", 0.25),
-            attack_config=attack_config,
+            attack_config=gradual_config,
+            dataset_name=dataset_name,
+            num_classes=num_classes,
             random_seed=42  # Fixed seed for reproducibility
         )
         
         # Replace the actors in cluster manager
         if hasattr(self.cluster_manager, 'actors'):
             self.cluster_manager.actors = mixed_actors
-            self.trust_logger.info(f"Replaced actors with mixed population for attack simulation")
+            self.trust_logger.info(
+                f"Replaced actors with mixed population: "
+                f"{int(num_actors * attack_config.get('malicious_fraction', 0.25))} malicious, "
+                f"{num_actors - int(num_actors * attack_config.get('malicious_fraction', 0.25))} honest"
+            )
     
     def _redistribute_models_and_data(self) -> None:
         """
@@ -755,57 +773,67 @@ class TrustAwareDecentralizedLearningProcess(DecentralizedLearningProcess):
         """
         for i, actor in enumerate(self.cluster_manager.actors):
             try:
-                # Check if actor is malicious
-                is_malicious = ray.get(actor.is_malicious.remote(), timeout=5)
+                node_id = f"node_{i}"
                 
-                if is_malicious:
-                    client_id = f"client_{i}"
+                # Try to get attack report (only malicious clients have this method)
+                attack_report = ray.get(actor.get_attack_report.remote(), timeout=5)
+                
+                # This is a malicious actor
+                if node_id not in self.attack_statistics["per_attacker"]:
+                    self.attack_statistics["per_attacker"][node_id] = {}
+                
+                # Store current attack report
+                self.attack_statistics["per_attacker"][node_id] = attack_report
+                
+                # Update totals
+                self.attack_statistics["total_attacks"] = sum(
+                    attacker_data.get("total_labels_flipped", 0)
+                    for attacker_data in self.attack_statistics["per_attacker"].values()
+                )
+                
+                # Check for detection by trust monitoring
+                detected_by_honest_nodes = 0
+                
+                if self.trust_enabled:
+                    # Check if honest nodes have flagged this malicious node
+                    for j, other_actor in enumerate(self.cluster_manager.actors):
+                        if i != j:  # Don't check self
+                            other_node_id = f"node_{j}"
+                            if other_node_id in self.trust_monitors:
+                                try:
+                                    excluded_neighbors = ray.get(
+                                        self.trust_monitors[other_node_id].get_excluded_neighbors.remote(),
+                                        timeout=5
+                                    )
+                                    
+                                    if node_id in excluded_neighbors:
+                                        detected_by_honest_nodes += 1
+                                        
+                                except Exception as e:
+                                    self.trust_logger.debug(f"Could not check trust from {other_node_id}: {e}")
+                
+                # Update detection status
+                if detected_by_honest_nodes > 0:
+                    # Mark as detected if any honest node excluded it
+                    ray.get(actor.mark_as_detected.remote(round_num, detected_by_honest_nodes), timeout=5)
                     
-                    # Get attack summary
-                    attack_summary = ray.get(actor.get_attack_summary.remote(), timeout=5)
-                    
-                    # Update statistics
-                    if client_id not in self.attack_statistics["per_attacker"]:
-                        self.attack_statistics["per_attacker"][client_id] = {
-                            "attacks_applied": 0,
-                            "detected": False,
-                            "final_intensity": 0.0,
-                            "attack_type": attack_summary.get("attack_type", "unknown"),
-                        }
-                    
-                    # Update with current round data
-                    attacker_stats = self.attack_statistics["per_attacker"][client_id]
-                    attacker_stats["attacks_applied"] = attack_summary.get("attacks_applied", 0)
-                    attacker_stats["final_intensity"] = attack_summary.get("current_intensity", 0.0)
-                    
-                    # Check if this attacker has been detected by trust monitoring
-                    if self.trust_enabled:
-                        node_id = f"node_{i}"
-                        if node_id in self.trust_monitors:
-                            excluded_neighbors = ray.get(
-                                self.trust_monitors[node_id].get_excluded_neighbors.remote(),
-                                timeout=5
-                            )
-                            
-                            # Check if any neighbor excluded this node (detection indicator)
-                            detected = False
-                            for j, other_actor in enumerate(self.cluster_manager.actors):
-                                if i != j:
-                                    other_node_id = f"node_{j}"
-                                    if other_node_id in self.trust_monitors:
-                                        other_excluded = ray.get(
-                                            self.trust_monitors[other_node_id].get_excluded_neighbors.remote(),
-                                            timeout=5
-                                        )
-                                        if node_id in other_excluded:
-                                            detected = True
-                                            break
-                            
-                            attacker_stats["detected"] = detected
-                    
+                    self.trust_logger.warning(
+                        f"ATTACK DETECTED: {node_id} excluded by {detected_by_honest_nodes} honest nodes at round {round_num}"
+                    )
+                
+                # Log attack progression
+                if attack_report.get("current_intensity", 0) > 0:
+                    self.trust_logger.info(
+                        f"Round {round_num}: {node_id} - Phase: {attack_report.get('current_phase', 'unknown')}, "
+                        f"Intensity: {attack_report.get('current_intensity', 0):.3f}, "
+                        f"Total poisoned: {attack_report.get('total_labels_flipped', 0)}"
+                    )
+                
+            except AttributeError:
+                # Not a malicious actor (doesn't have get_attack_report method)
+                continue
             except Exception as e:
-                # Not a malicious actor or method not available
-                self.trust_logger.debug(f"Actor {i} is not malicious or error: {e}")
+                self.trust_logger.debug(f"Error collecting attack stats from actor {i}: {e}")
                 continue
     
     def _finalize_attack_statistics(self) -> Dict[str, Any]:
