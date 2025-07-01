@@ -70,7 +70,7 @@ class TopologyManager:
         :return: Adjacency list of neighbours
         """
         return {
-            i: [i - 1] if i > 0 else [] + [i + 1] if i < self.num_clients - 1 else []
+            i: ([i - 1] if i > 0 else []) + ([i + 1] if i < self.num_clients - 1 else [])
             for i in range(self.num_clients)
         }
 

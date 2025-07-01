@@ -233,11 +233,16 @@ class AdaptiveThresholdAgent:
         # Use Beta distribution threshold if enabled
         if self.use_beta_threshold and self.beta_threshold:
             # Get context-aware Beta threshold
-            beta_threshold = self.beta_threshold.get_threshold(
-                fl_round=context.current_round,
-                total_rounds=context.total_rounds,
-                accuracy=context.global_accuracy
-            )
+            try:
+                # Try contextual beta threshold first
+                beta_threshold = self.beta_threshold.get_threshold(
+                    fl_round=context.current_round,
+                    total_rounds=context.total_rounds,
+                    accuracy=context.global_accuracy
+                )
+            except TypeError:
+                # Fallback to simple beta threshold
+                beta_threshold = self.beta_threshold.get_threshold()
             
             # Apply additional adjustments for risk and false positives
             risk_adjustment = context.recent_attack_rate * 0.1
@@ -617,3 +622,21 @@ class DatasetIndependentTrustSystem:
         """Provide feedback for online learning."""
         self.agent.update_from_feedback(context, decision, actual_outcome, reward)
         self.context_tracker.record_decision_outcome(decision, actual_outcome)
+    
+    def set_beta_threshold(self, beta_threshold):
+        """Set beta threshold for the adaptive agent."""
+        if hasattr(self.agent, 'beta_threshold'):
+            self.agent.beta_threshold = beta_threshold
+            self.agent.use_beta_threshold = True
+            self.logger.info("Beta threshold configured for adaptive trust system")
+        else:
+            self.logger.warning("Agent does not support beta threshold configuration")
+    
+    def configure_beta_threshold(self, beta_config):
+        """Configure beta threshold with given config."""
+        if hasattr(self.agent, 'beta_threshold') and self.agent.beta_threshold:
+            # Update existing beta threshold config
+            self.agent.beta_threshold.config = beta_config
+            self.logger.info("Updated beta threshold configuration")
+        else:
+            self.logger.warning("No beta threshold system to configure")

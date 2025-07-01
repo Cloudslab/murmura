@@ -180,8 +180,13 @@ class TopologyCoordinator:
             local_aggregated = self.strategy.aggregate(local_params_list, local_weights)
             all_aggregated_params.append(local_aggregated)
 
-        # Combine all local aggregations into a global aggregation
-        return self._combine_aggregated_params(all_aggregated_params)
+        # FIXED: For true decentralized learning, don't combine into global aggregation
+        # Each node maintains its own parameters after local gossip
+        # Return the first aggregated result as representative (not used in true decentralized)
+        if all_aggregated_params:
+            return all_aggregated_params[0]
+        else:
+            raise ValueError("No aggregated parameters available")
 
     def _coordinate_complete_topology(
         self, weights: Optional[List[float]] = None
@@ -254,8 +259,13 @@ class TopologyCoordinator:
                 )
                 all_aggregated_params.append(local_aggregated)
 
-            # Combine all local aggregations
-            return self._combine_aggregated_params(all_aggregated_params)
+            # FIXED: For true decentralized learning, don't combine into global aggregation
+            # Each node maintains its own parameters after local gossip
+            # Return the first aggregated result as representative (not used in true decentralized)
+            if all_aggregated_params:
+                return all_aggregated_params[0]
+            else:
+                raise ValueError("No aggregated parameters available")
 
     def _coordinate_line_topology(
         self, weights: Optional[List[float]] = None
@@ -320,8 +330,13 @@ class TopologyCoordinator:
             local_aggregated = self.strategy.aggregate(local_params_list, local_weights)
             all_aggregated_params.append(local_aggregated)
 
-        # Combine all local aggregations
-        return self._combine_aggregated_params(all_aggregated_params)
+        # FIXED: For true decentralized learning, don't combine into global aggregation
+        # Each node maintains its own parameters after local gossip
+        # Return the first aggregated result as representative (not used in true decentralized)
+        if all_aggregated_params:
+            return all_aggregated_params[0]
+        else:
+            raise ValueError("No aggregated parameters available")
 
     def _coordinate_custom_topology(
         self, weights: Optional[List[float]] = None
@@ -404,8 +419,13 @@ class TopologyCoordinator:
             local_aggregated = self.strategy.aggregate(local_params_list, local_weights)
             all_aggregated_params.append(local_aggregated)
 
-        # Combine all local aggregations
-        return self._combine_aggregated_params(all_aggregated_params)
+        # FIXED: For true decentralized learning, don't combine into global aggregation
+        # Each node maintains its own parameters after local gossip
+        # Return the first aggregated result as representative (not used in true decentralized)
+        if all_aggregated_params:
+            return all_aggregated_params[0]
+        else:
+            raise ValueError("No aggregated parameters available")
 
     @staticmethod
     def _combine_aggregated_params(

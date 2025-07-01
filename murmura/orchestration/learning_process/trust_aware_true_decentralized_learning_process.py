@@ -8,6 +8,7 @@ This module extends the true decentralized learning process to include:
 """
 
 import logging
+import time
 from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 import ray
@@ -130,7 +131,7 @@ class TrustAwareTrueDecentralizedLearningProcess(TrueDecentralizedLearningProces
         # CRITICAL: Re-apply topology to set actor references
         # Without this, trust_weighted_gossip_aggregate fails with "Actor references not set"
         try:
-            self.cluster_manager.apply_topology()
+            self.cluster_manager._apply_topology()
             self.trust_logger.info("Re-applied topology to mixed actors")
         except Exception as e:
             self.trust_logger.error(f"Failed to re-apply topology: {e}")
@@ -544,14 +545,19 @@ class TrustAwareTrueDecentralizedLearningProcess(TrueDecentralizedLearningProces
         if self.trust_enabled:
             self._log_suspected_malicious_nodes()
         
+        # Calculate final trust report with global stats
+        final_trust_report = self._generate_final_trust_report() if self.trust_enabled else {}
+        
         results = {
             "initial_metrics": initial_consensus,
             "final_metrics": final_consensus,
+            "accuracy_improvement": final_consensus['consensus_accuracy'] - initial_consensus['consensus_accuracy'],
             "consensus_improvement": final_consensus['consensus_accuracy'] - initial_consensus['consensus_accuracy'],
             "round_metrics": round_metrics,
             "topology": topology_info,
             "trust_enabled": self.trust_enabled,
-            "learning_type": "trust_aware_true_decentralized"
+            "learning_type": "trust_aware_true_decentralized",
+            "final_trust_report": final_trust_report
         }
         
         if self.trust_enabled:
@@ -604,47 +610,167 @@ class TrustAwareTrueDecentralizedLearningProcess(TrueDecentralizedLearningProces
     
     def _collect_attack_statistics(self, round_num: int) -> None:
         """Collect attack statistics from malicious clients."""
+        malicious_nodes = []
+        
         for i, actor in enumerate(self.cluster_manager.actors):
             try:
                 node_id = f"node_{i}"
                 
-                # Try to get attack report
-                attack_report = ray.get(actor.get_attack_report.remote(), timeout=5)
+                # Check if this actor has attack configuration (is malicious)
+                is_malicious = ray.get(actor.is_malicious.remote(), timeout=5)
                 
-                # This is a malicious actor
-                if node_id not in self.attack_statistics["per_attacker"]:
-                    self.attack_statistics["per_attacker"][node_id] = {}
-                
-                self.attack_statistics["per_attacker"][node_id] = attack_report
-                
-                # Check if detected
-                if self.trust_enabled:
-                    detected = node_id in self._get_excluded_nodes()
-                    if detected:
-                        ray.get(actor.mark_as_detected.remote(round_num, 1), timeout=5)
-                        self.trust_logger.warning(
-                            f"ATTACK DETECTED: {node_id} at round {round_num}"
-                        )
+                if is_malicious:
+                    malicious_nodes.append(node_id)
+                    self.trust_logger.info(f"Found malicious actor: {node_id}")
+                    
+                    # Try to get attack report
+                    try:
+                        attack_report = ray.get(actor.get_attack_report.remote(), timeout=5)
+                        if node_id not in self.attack_statistics["per_attacker"]:
+                            self.attack_statistics["per_attacker"][node_id] = {}
+                        self.attack_statistics["per_attacker"][node_id] = attack_report
+                    except AttributeError:
+                        # Actor doesn't have get_attack_report method
+                        self.attack_statistics["per_attacker"][node_id] = {"rounds_active": round_num}
+                    
+                    # Check if detected
+                    if self.trust_enabled:
+                        excluded_nodes = self._get_excluded_nodes()
+                        detected = node_id in excluded_nodes
+                        
+                        # Also check if marked as suspicious by neighbors
+                        suspicious_count = 0
+                        total_monitors = 0
+                        for monitor_id, monitor in self.trust_monitors.items():
+                            if monitor_id != node_id:  # Don't count self-evaluation
+                                try:
+                                    trust_report = ray.get(monitor.get_trust_report.remote(), timeout=5)
+                                    neighbors = trust_report.get('neighbors', {})
+                                    if node_id in neighbors:
+                                        total_monitors += 1
+                                        neighbor_data = neighbors[node_id]
+                                        trust_level = neighbor_data.get('trust_level', 'trusted')
+                                        if trust_level in ['suspicious', 'untrusted']:
+                                            suspicious_count += 1
+                                except Exception:
+                                    pass
+                        
+                        # Consider detected if majority finds it suspicious
+                        if total_monitors > 0:
+                            suspicious_ratio = suspicious_count / total_monitors
+                            if suspicious_ratio >= 0.5:  # Majority suspicious
+                                detected = True
+                                self.trust_logger.info(
+                                    f"Malicious {node_id} detected by trust levels: "
+                                    f"{suspicious_count}/{total_monitors} neighbors find it suspicious"
+                                )
+                        
+                        if detected:
+                            try:
+                                ray.get(actor.mark_as_detected.remote(round_num, 1), timeout=5)
+                            except AttributeError:
+                                pass  # Actor doesn't have mark_as_detected method
+                            self.trust_logger.warning(
+                                f"ATTACK DETECTED: {node_id} at round {round_num}"
+                            )
+                        else:
+                            self.trust_logger.debug(
+                                f"Malicious {node_id} not yet detected (excluded: {excluded_nodes}, "
+                                f"suspicious: {suspicious_count}/{total_monitors})"
+                            )
                 
             except AttributeError:
-                # Not a malicious actor
+                # Actor doesn't have is_malicious method, assume honest
                 continue
             except Exception as e:
-                self.trust_logger.debug(f"Error collecting attack stats from actor {i}: {e}")
+                self.trust_logger.debug(f"Error checking actor {i}: {e}")
+        
+        # Log trust monitor values for all nodes
+        if self.trust_enabled and round_num % 2 == 0:  # Log every 2 rounds
+            self._log_trust_monitor_values(round_num, malicious_nodes)
     
     def _get_excluded_nodes(self) -> List[str]:
-        """Get list of nodes excluded by trust monitoring."""
-        excluded = []
+        """Get list of nodes excluded by trust monitoring using consensus."""
+        # Track how many nodes exclude each neighbor
+        exclusion_votes = {}
+        flagging_counts = {}  # Track how many neighbors each node flags
+        
         for node_id, monitor in self.trust_monitors.items():
             try:
                 excluded_neighbors = ray.get(monitor.get_excluded_neighbors.remote(), timeout=5)
-                # If multiple nodes exclude this node, it's likely malicious
+                flagging_counts[node_id] = len(excluded_neighbors)
+                
                 for neighbor_id in excluded_neighbors:
-                    if excluded.count(neighbor_id) >= 2:  # At least 2 nodes must agree
-                        excluded.append(neighbor_id)
+                    if neighbor_id not in exclusion_votes:
+                        exclusion_votes[neighbor_id] = []
+                    exclusion_votes[neighbor_id].append(node_id)
             except Exception:
                 pass
-        return list(set(excluded))
+        
+        # Find nodes that flag too many others (likely malicious themselves)
+        total_nodes = len(self.trust_monitors)
+        suspicious_flaggers = []
+        for node_id, flag_count in flagging_counts.items():
+            # If a node flags more than half of the network, it's suspicious
+            if flag_count > total_nodes // 2:
+                suspicious_flaggers.append(node_id)
+                self.trust_logger.warning(f"Node {node_id} flags {flag_count}/{total_nodes} nodes - suspicious")
+        
+        # Determine truly excluded nodes using consensus, excluding votes from suspicious flaggers
+        truly_excluded = []
+        min_consensus = max(2, total_nodes // 3)  # Need at least 2 votes or 1/3 of network
+        
+        for neighbor_id, voters in exclusion_votes.items():
+            # Filter out votes from suspicious flaggers
+            clean_voters = [v for v in voters if v not in suspicious_flaggers]
+            
+            if len(clean_voters) >= min_consensus:
+                truly_excluded.append(neighbor_id)
+                self.trust_logger.warning(
+                    f"Node {neighbor_id} excluded by consensus: {len(clean_voters)} clean votes "
+                    f"(flagged by: {clean_voters})"
+                )
+        
+        return truly_excluded
+    
+    def _log_trust_monitor_values(self, round_num: int, malicious_nodes: List[str]) -> None:
+        """Log trust monitor values for debugging attack detection."""
+        self.trust_logger.info(f"\n=== TRUST MONITOR VALUES - ROUND {round_num} ===")
+        self.trust_logger.info(f"Malicious nodes: {malicious_nodes}")
+        
+        for node_id, monitor in self.trust_monitors.items():
+            try:
+                # Get trust report from monitor
+                trust_report = ray.get(monitor.get_trust_report.remote(), timeout=5)
+                
+                node_type = "MALICIOUS" if node_id in malicious_nodes else "HONEST"
+                self.trust_logger.info(f"\n{node_type} NODE {node_id}:")
+                
+                # Get neighbors this node is monitoring
+                neighbors = trust_report.get('neighbors', {})
+                if neighbors:
+                    for neighbor_id, neighbor_data in neighbors.items():
+                        neighbor_type = "MALICIOUS" if neighbor_id in malicious_nodes else "HONEST"
+                        trust_score = neighbor_data.get('trust_score', 'N/A')
+                        trust_level = neighbor_data.get('trust_level', 'N/A')
+                        drift_rate = neighbor_data.get('drift_rate', 'N/A')
+                        
+                        # Get HSIC stats if available
+                        hsic_stats = neighbor_data.get('hsic_stats', {})
+                        current_hsic = hsic_stats.get('current_hsic', 'N/A')
+                        adaptive_threshold = hsic_stats.get('adaptive_threshold', 'N/A')
+                        
+                        self.trust_logger.info(
+                            f"  -> {neighbor_type} {neighbor_id}: "
+                            f"trust={trust_score:.3f}, level={trust_level}, "
+                            f"hsic={current_hsic:.3f}, threshold={adaptive_threshold:.3f}, "
+                            f"drift_rate={drift_rate:.3f}"
+                        )
+                else:
+                    self.trust_logger.info(f"  No neighbors being monitored")
+                    
+            except Exception as e:
+                self.trust_logger.warning(f"Failed to get trust report from {node_id}: {e}")
     
     def _log_suspected_malicious_nodes(self) -> None:
         """Log final assessment of suspected malicious nodes."""
@@ -671,13 +797,117 @@ class TrustAwareTrueDecentralizedLearningProcess(TrueDecentralizedLearningProces
     
     def _finalize_attack_statistics(self) -> Dict[str, Any]:
         """Finalize attack statistics."""
-        total_attackers = len(self.attack_statistics["per_attacker"])
-        detected_attackers = len(self._get_excluded_nodes())
+        # Count malicious actors by checking is_malicious
+        total_attackers = 0
+        malicious_actors = []
+        
+        for i, actor in enumerate(self.cluster_manager.actors):
+            try:
+                node_id = f"node_{i}"
+                is_malicious = ray.get(actor.is_malicious.remote(), timeout=5)
+                if is_malicious:
+                    total_attackers += 1
+                    malicious_actors.append(node_id)
+                    # Ensure attacker is in per_attacker dict
+                    if node_id not in self.attack_statistics["per_attacker"]:
+                        self.attack_statistics["per_attacker"][node_id] = {"detected": False}
+            except Exception:
+                continue
+        
+        # Count detected attackers (those with majority suspicious ratings)
+        detected_attackers = 0
+        for node_id in malicious_actors:
+            suspicious_count = 0
+            total_monitors = 0
+            for monitor_id, monitor in self.trust_monitors.items():
+                if monitor_id != node_id:  # Don't count self-evaluation
+                    try:
+                        trust_report = ray.get(monitor.get_trust_report.remote(), timeout=5)
+                        neighbors = trust_report.get('neighbors', {})
+                        if node_id in neighbors:
+                            total_monitors += 1
+                            neighbor_data = neighbors[node_id]
+                            trust_level = neighbor_data.get('trust_level', 'trusted')
+                            if trust_level in ['suspicious', 'untrusted']:
+                                suspicious_count += 1
+                    except Exception:
+                        pass
+            
+            # Consider detected if majority finds it suspicious
+            if total_monitors > 0 and suspicious_count / total_monitors >= 0.5:
+                detected_attackers += 1
+                self.attack_statistics["per_attacker"][node_id]["detected"] = True
+                self.trust_logger.info(f"Attacker {node_id} marked as detected: {suspicious_count}/{total_monitors} suspicious")
         
         self.attack_statistics.update({
             "total_attackers": total_attackers,
             "detected_attacks": detected_attackers,
             "detection_rate": detected_attackers / total_attackers if total_attackers > 0 else 0.0,
+            "malicious_actors": malicious_actors,
         })
         
+        self.trust_logger.info(f"Final attack statistics: {total_attackers} attackers, {detected_attackers} detected, {detected_attackers/total_attackers*100 if total_attackers > 0 else 0:.1f}% detection rate")
+        
         return self.attack_statistics.copy()
+    
+    def _generate_final_trust_report(self) -> Dict[str, Any]:
+        """Generate final trust report with global statistics."""
+        if not self.trust_monitors:
+            return {}
+        
+        trust_levels = {"trusted": 0, "suspicious": 0, "untrusted": 0}
+        trust_scores = []
+        excluded_nodes = set()
+        downgraded_nodes = set()
+        
+        # Collect trust data from all monitors
+        for node_id, monitor in self.trust_monitors.items():
+            try:
+                trust_report = ray.get(monitor.get_trust_report.remote(), timeout=5)
+                neighbors = trust_report.get('neighbors', {})
+                
+                for neighbor_id, neighbor_data in neighbors.items():
+                    trust_level = neighbor_data.get('trust_level', 'trusted')
+                    trust_score = neighbor_data.get('trust_score', 1.0)
+                    
+                    # Count trust levels
+                    if trust_level in trust_levels:
+                        trust_levels[trust_level] += 1
+                    
+                    # Collect trust scores
+                    trust_scores.append(trust_score)
+                    
+                    # Track excluded and downgraded nodes
+                    if trust_level == 'untrusted':
+                        excluded_nodes.add(neighbor_id)
+                    elif trust_level == 'suspicious':
+                        downgraded_nodes.add(neighbor_id)
+                        
+            except Exception as e:
+                self.trust_logger.warning(f"Failed to get final trust report from {node_id}: {e}")
+        
+        # Calculate global statistics
+        total_excluded = len(excluded_nodes)
+        total_downgraded = len(downgraded_nodes)
+        avg_trust_score = np.mean(trust_scores) if trust_scores else 1.0
+        
+        # Create global stats
+        global_stats = {
+            "total_excluded": total_excluded,
+            "total_downgraded": total_downgraded, 
+            "avg_trust_score": avg_trust_score,
+            "trust_level_counts": trust_levels,
+            "excluded_nodes": list(excluded_nodes),
+            "downgraded_nodes": list(downgraded_nodes),
+            "total_trust_assessments": len(trust_scores)
+        }
+        
+        final_report = {
+            "global_stats": global_stats,
+            "timestamp": time.time(),
+            "total_monitors": len(self.trust_monitors)
+        }
+        
+        self.trust_logger.info(f"Final trust report: {total_excluded} excluded, {total_downgraded} downgraded, avg_trust={avg_trust_score:.3f}")
+        
+        return final_report

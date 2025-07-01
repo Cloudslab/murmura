@@ -13,8 +13,8 @@ from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
-from murmura.orchestration.learning_process.decentralized_learning_process import (
-    DecentralizedLearningProcess,
+from murmura.orchestration.learning_process.true_decentralized_learning_process import (
+    TrueDecentralizedLearningProcess,
 )
 from murmura.network_management.topology_compatibility import (
     TopologyCompatibilityManager,
@@ -541,9 +541,9 @@ def main() -> None:
                 data_preprocessor=mnist_preprocessor,
             )
 
-        logger.info("=== Setting Up Decentralized Learning Process ===")
+        logger.info("=== Setting Up True Decentralized Learning Process ===")
         # Create learning process with enhanced config
-        learning_process = DecentralizedLearningProcess(
+        learning_process = TrueDecentralizedLearningProcess(
             config=config,
             dataset=train_dataset,
             model=global_model,

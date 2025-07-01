@@ -1223,6 +1223,11 @@ class ClusterManager:
         adjacency = self.topology_manager.adjacency_list
         tasks = []
 
+        # First, set actor references on all actors for gossip aggregation
+        for actor in self.actors:
+            tasks.append(actor.set_actor_references.remote(self.actors))
+
+        # Then set specific neighbors
         for node, neighbours in adjacency.items():
             neighbour_actors = [self.actors[n] for n in neighbours]
             tasks.append(self.actors[node].set_neighbours.remote(neighbour_actors))

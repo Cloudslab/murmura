@@ -18,23 +18,28 @@ import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
 
 from murmura.attacks.gradual_label_flipping import GradualLabelFlippingAttack, AttackConfig
-from murmura.node.fl_node import FLNode
+from murmura.attacks.gradual_model_poisoning import GradualModelPoisoningAttack, BackdoorConfig
+from murmura.attacks.gradual_byzantine_gradient import GradualByzantineGradientAttack, ByzantineGradientConfig
+from murmura.node.client_actor import VirtualClientActor
 
 
 @ray.remote
-class MaliciousClient(FLNode):
+class MaliciousClient(VirtualClientActor):
     """
-    Malicious federated learning client that applies gradual label flipping.
+    Malicious federated learning client that applies gradual attacks.
     
     This client extends the normal FL client with attack capabilities while
-    maintaining the same interface to avoid detection.
+    maintaining the same interface to avoid detection. Supports multiple
+    attack types including label flipping and model poisoning (backdoor).
     """
     
     def __init__(self, 
                  node_id: str,
-                 attack_config: AttackConfig,
+                 attack_type: str,
+                 attack_config: Any,
                  dataset_name: str = "mnist",
                  num_classes: int = 10,
+                 input_shape: Optional[Tuple[int, ...]] = None,
                  **kwargs):
         """
         Initialize malicious client.
@@ -46,16 +51,37 @@ class MaliciousClient(FLNode):
             num_classes: Number of classes in dataset
             **kwargs: Additional arguments for base FLNode
         """
-        # Initialize base FL node
-        super().__init__(node_id=node_id, **kwargs)
+        # Initialize base client actor
+        super().__init__(client_id=node_id, **kwargs)
         
-        # Attack components
-        self.attack = GradualLabelFlippingAttack(
-            node_id=node_id,
-            config=attack_config,
-            num_classes=num_classes,
-            dataset_name=dataset_name
-        )
+        # Attack components based on attack type
+        self.attack_type = attack_type
+        
+        if attack_type == "label_flipping":
+            self.attack = GradualLabelFlippingAttack(
+                node_id=node_id,
+                config=attack_config,
+                num_classes=num_classes,
+                dataset_name=dataset_name
+            )
+        elif attack_type == "model_poisoning":
+            if input_shape is None:
+                # Default shapes for common datasets
+                input_shape = (28, 28) if dataset_name == "mnist" else (32, 32, 3)
+            self.attack = GradualModelPoisoningAttack(
+                node_id=node_id,
+                config=attack_config,
+                input_shape=input_shape,
+                dataset_name=dataset_name
+            )
+        elif attack_type == "byzantine_gradient":
+            self.attack = GradualByzantineGradientAttack(
+                node_id=node_id,
+                config=attack_config,
+                dataset_name=dataset_name
+            )
+        else:
+            raise ValueError(f"Unknown attack type: {attack_type}")
         
         # Malicious client state
         self.is_malicious = True
@@ -67,7 +93,7 @@ class MaliciousClient(FLNode):
         self._original_data_cache = {}
         
         self.logger = logging.getLogger(f"murmura.attacks.MaliciousClient.{node_id}")
-        self.logger.info(f"Initialized malicious client {node_id} with gradual label flipping")
+        self.logger.info(f"Initialized malicious client {node_id} with {attack_type} attack")
     
     def set_round_number(self, round_num: int) -> None:
         """
@@ -111,11 +137,24 @@ class MaliciousClient(FLNode):
         if data_key not in self._original_data_cache:
             self._original_data_cache[data_key] = (features.copy(), labels.copy())
         
-        # Apply attack (poison labels)
+        # Apply attack based on type
         if self.attack.is_attacking():
-            poisoned_features, poisoned_labels, attack_stats = self.attack.poison_labels(
-                features, labels
-            )
+            if self.attack_type == "label_flipping":
+                poisoned_features, poisoned_labels, attack_stats = self.attack.poison_labels(
+                    features, labels
+                )
+            elif self.attack_type == "model_poisoning":
+                poisoned_features, poisoned_labels, attack_stats = self.attack.poison_data(
+                    features, labels
+                )
+            elif self.attack_type == "byzantine_gradient":
+                # For Byzantine gradient attacks, we train normally but manipulate parameters later
+                poisoned_features, poisoned_labels = features, labels
+                attack_stats = {
+                    "attack_applied": True,
+                    "phase": self.attack.current_phase.value,
+                    "manipulation_deferred": True,  # Will manipulate parameters in get_model_parameters
+                }
             
             # Cache poisoned data
             self._poisoned_data_cache[data_key] = (poisoned_features, poisoned_labels)
@@ -156,28 +195,59 @@ class MaliciousClient(FLNode):
     
     def get_model_parameters(self) -> Dict[str, np.ndarray]:
         """
-        Get model parameters (potentially corrupted by poison training).
+        Get model parameters (potentially corrupted by attack).
         
         Returns:
             Model parameters dictionary
         """
-        # Get parameters from base class (these may be corrupted due to poison training)
+        # Get parameters from base class
         parameters = super().get_model_parameters()
+        
+        # Apply Byzantine gradient attack to parameters if applicable
+        if (self.attack_type == "byzantine_gradient" and 
+            hasattr(self.attack, 'manipulate_parameters') and 
+            self.attack.is_attacking()):
+            
+            parameters, manipulation_stats = self.attack.manipulate_parameters(parameters)
+            
+            # Log manipulation
+            if manipulation_stats.get("parameters_manipulated", 0) > 0:
+                self.logger.info(
+                    f"Round {self.current_round}: Manipulated {manipulation_stats['parameters_manipulated']} parameters "
+                    f"({manipulation_stats['phase']})"
+                )
         
         # Add metadata about corruption
         if hasattr(self, '_parameter_metadata'):
             self._parameter_metadata.update({
                 "corrupted_by_attack": self.attack.is_attacking(),
                 "attack_phase": self.attack.current_phase.value,
-                "cumulative_poison_rate": (
-                    self.attack.total_labels_flipped / 
-                    max(1, self.attack.total_samples_processed)
-                ),
+                "attack_type": self.attack_type,
             })
+            
+            # Add type-specific metadata
+            if self.attack_type in ["label_flipping", "model_poisoning"]:
+                if hasattr(self.attack, 'total_labels_flipped'):
+                    self._parameter_metadata["cumulative_poison_rate"] = (
+                        self.attack.total_labels_flipped / 
+                        max(1, self.attack.total_samples_processed)
+                    )
+                elif hasattr(self.attack, 'total_samples_poisoned'):
+                    self._parameter_metadata["cumulative_poison_rate"] = (
+                        self.attack.total_samples_poisoned / 
+                        max(1, self.attack.total_samples_processed)
+                    )
+            elif self.attack_type == "byzantine_gradient":
+                if hasattr(self.attack, 'total_parameters_manipulated'):
+                    self._parameter_metadata["cumulative_manipulation_rate"] = (
+                        self.attack.total_parameters_manipulated / 
+                        max(1, self.attack.total_updates_processed)
+                    )
         else:
             self._parameter_metadata = {
                 "corrupted_by_attack": self.attack.is_attacking(),
                 "attack_phase": self.attack.current_phase.value,
+                "attack_type": self.attack_type,
             }
         
         return parameters
@@ -280,9 +350,11 @@ class MaliciousClient(FLNode):
 
 def create_mixed_actors(num_actors: int,
                        malicious_fraction: float,
-                       attack_config: AttackConfig,
+                       attack_type: str,
+                       attack_config: Any,
                        dataset_name: str = "mnist",
                        num_classes: int = 10,
+                       input_shape: Optional[Tuple[int, ...]] = None,
                        random_seed: int = 42,
                        **kwargs) -> List[ray.ObjectRef]:
     """
@@ -291,9 +363,11 @@ def create_mixed_actors(num_actors: int,
     Args:
         num_actors: Total number of actors to create
         malicious_fraction: Fraction of actors that should be malicious (0.0 to 1.0)
+        attack_type: Type of attack ("label_flipping" or "model_poisoning")
         attack_config: Configuration for malicious actors
         dataset_name: Dataset name
         num_classes: Number of classes in dataset
+        input_shape: Shape of input data (for model poisoning)
         random_seed: Random seed for reproducible malicious actor selection
         **kwargs: Additional arguments for actor creation
         
@@ -315,15 +389,17 @@ def create_mixed_actors(num_actors: int,
             # Create malicious actor
             actor = MaliciousClient.remote(
                 node_id=node_id,
+                attack_type=attack_type,
                 attack_config=attack_config,
                 dataset_name=dataset_name,
                 num_classes=num_classes,
+                input_shape=input_shape,
                 **kwargs
             )
-            logging.info(f"Created malicious actor: {node_id}")
+            logging.info(f"Created malicious actor: {node_id} ({attack_type})")
         else:
             # Create honest actor
-            actor = FLNode.remote(node_id=node_id, **kwargs)
+            actor = VirtualClientActor.remote(client_id=node_id, **kwargs)
             logging.info(f"Created honest actor: {node_id}")
         
         actors.append(actor)

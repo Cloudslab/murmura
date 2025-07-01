@@ -27,8 +27,8 @@ from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
-from murmura.orchestration.learning_process.trust_aware_decentralized_learning_process import (
-    TrustAwareDecentralizedLearningProcess,
+from murmura.orchestration.learning_process.trust_aware_true_decentralized_learning_process import (
+    TrustAwareTrueDecentralizedLearningProcess,
 )
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.model.pytorch_model import TorchModelWrapper
@@ -37,9 +37,10 @@ from murmura.model.pytorch_model import TorchModelWrapper
 from murmura.trust.trust_config import TrustMonitoringConfig, HSICConfig, TrustPolicyConfig
 from murmura.trust.beta_threshold import BetaThresholdConfig
 
-# Attack components (simplified)
-from murmura.attacks.simple_attacks import create_simple_attack
-from murmura.attacks.attack_config import SimpleAttackConfig
+# Attack components
+from murmura.attacks.gradual_label_flipping import create_gradual_attack_config
+from murmura.attacks.gradual_model_poisoning import create_backdoor_config
+from murmura.attacks.gradual_byzantine_gradient import create_byzantine_gradient_config
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -66,6 +67,7 @@ def setup_logging(log_level: str = "INFO") -> None:
 def create_adaptive_trust_config(
     profile: str = "default",
     use_beta_threshold: bool = True,
+    topology_type: str = "ring",
     custom_config: Optional[Dict[str, Any]] = None
 ) -> TrustMonitoringConfig:
     """
@@ -74,6 +76,7 @@ def create_adaptive_trust_config(
     Args:
         profile: Trust profile (permissive, default, strict)
         use_beta_threshold: Whether to use Beta distribution-based thresholding
+        topology_type: Network topology (ring, complete, line) for optimization
         custom_config: Custom configuration overrides
     """
     
@@ -119,7 +122,7 @@ def create_adaptive_trust_config(
         baseline_percentile=95.0,
     )
     
-    # Trust policy configuration
+    # Trust policy configuration (topology-aware)
     if profile == "permissive":
         trust_policy = TrustPolicyConfig(
             warn_threshold=0.3,
@@ -144,6 +147,17 @@ def create_adaptive_trust_config(
             min_samples_for_action=8,
             weight_reduction_factor=0.6,
         )
+    
+    # Adjust trust policy for topology characteristics
+    if topology_type == "complete":
+        # Complete graph: more neighbors, can be more strict
+        trust_policy.exclude_threshold = max(0.1, trust_policy.exclude_threshold - 0.1)
+        trust_policy.min_samples_for_action = max(3, trust_policy.min_samples_for_action - 2)
+    elif topology_type == "line":
+        # Line topology: fewer neighbors, be more permissive to avoid isolation
+        trust_policy.exclude_threshold = min(0.8, trust_policy.exclude_threshold + 0.1)
+        trust_policy.min_samples_for_action = min(15, trust_policy.min_samples_for_action + 3)
+    # Ring topology uses default values
     
     # Apply custom overrides
     if custom_config:
@@ -172,29 +186,78 @@ def create_attack_config(
     attack_type: str = "none",
     malicious_fraction: float = 0.0,
     attack_intensity: str = "moderate",
-    stealth_level: str = "medium"
+    stealth_level: str = "medium",
+    target_class: int = 0
 ) -> Optional[Dict[str, Any]]:
-    """Create attack configuration for gradual or simple attacks."""
+    """Create attack configuration for different attack types."""
     
     if attack_type == "none" or malicious_fraction <= 0:
         return None
     
-    if attack_type == "gradual_label_flipping":
-        # Use the sophisticated gradual attack
-        return {
+    if attack_type == "gradual_label_flipping" or attack_type == "label_flipping":
+        # Use the gradual label flipping attack configuration
+        attack_config_obj = create_gradual_attack_config(
+            dataset_name="mnist",
+            attack_intensity=attack_intensity,
+            stealth_level=stealth_level
+        )
+        
+        # Convert AttackConfig object to dictionary and add extra fields
+        config = {
+            "attack_config": attack_config_obj,
             "malicious_fraction": malicious_fraction,
-            "attack_intensity": attack_intensity,  # low, moderate, high
-            "stealth_level": stealth_level,        # low, medium, high
-            "attack_type": "gradual_label_flipping"
+            "attack_type": "label_flipping",
+            "attack_intensity": attack_intensity,
+            "stealth_level": stealth_level
         }
+        
+        return config
+    
+    elif attack_type == "model_poisoning" or attack_type == "backdoor":
+        # Use the gradual model poisoning (backdoor) attack configuration
+        attack_config_obj = create_backdoor_config(
+            dataset_name="mnist",
+            attack_intensity=attack_intensity,
+            stealth_level=stealth_level,
+            target_class=target_class
+        )
+        
+        # Convert BackdoorConfig object to dictionary and add extra fields
+        config = {
+            "attack_config": attack_config_obj,
+            "malicious_fraction": malicious_fraction,
+            "attack_type": "model_poisoning",
+            "attack_intensity": attack_intensity,
+            "stealth_level": stealth_level,
+            "target_class": target_class,
+            "input_shape": (28, 28)  # MNIST shape
+        }
+        
+        return config
+    
+    elif attack_type == "byzantine_gradient" or attack_type == "gradient":
+        # Use the gradual Byzantine gradient attack configuration
+        attack_config_obj = create_byzantine_gradient_config(
+            dataset_name="mnist",
+            attack_intensity=attack_intensity,
+            stealth_level=stealth_level,
+            manipulation_strategy="mixed"  # Can be made configurable
+        )
+        
+        # Convert ByzantineGradientConfig object to dictionary and add extra fields
+        config = {
+            "attack_config": attack_config_obj,
+            "malicious_fraction": malicious_fraction,
+            "attack_type": "byzantine_gradient",
+            "attack_intensity": attack_intensity,
+            "stealth_level": stealth_level,
+        }
+        
+        return config
+    
     else:
-        # Simple attack (legacy)
-        return {
-            "malicious_fraction": malicious_fraction,
-            "attack_intensity": "moderate",
-            "stealth_level": "medium",
-            "attack_type": "simple_label_flipping"
-        }
+        # Unknown attack type
+        raise ValueError(f"Unknown attack type: {attack_type}. Supported types: none, label_flipping, model_poisoning, byzantine_gradient")
 
 
 def run_adaptive_trust_mnist(
@@ -235,10 +298,14 @@ def run_adaptive_trust_mnist(
     logger.info("ADAPTIVE TRUST MNIST EXPERIMENT")
     logger.info("=" * 80)
     logger.info(f"Actors: {num_actors}, Rounds: {num_rounds}")
-    logger.info(f"Topology: {topology_type}")
+    logger.info(f"Topology: {topology_type.upper()}")
     logger.info(f"Trust Profile: {trust_profile}")
     logger.info(f"Beta Thresholding: {use_beta_threshold}")
-    logger.info(f"Attacks: {attack_config.get('attack_type', 'None') if attack_config else 'None'}")
+    if attack_config:
+        attack_info = f"{attack_config.get('attack_type', 'None')} ({attack_config.get('attack_intensity', 'moderate')})"
+        logger.info(f"Attack: {attack_info}, Malicious: {attack_config.get('malicious_fraction', 0)*100:.0f}%")
+    else:
+        logger.info(f"Attack: None")
     logger.info("=" * 80)
     
     start_time = time.time()
@@ -289,9 +356,17 @@ def run_adaptive_trust_mnist(
             "line": TopologyType.LINE,
         }
         
+        # Validate topology choice
+        if topology_type not in topology_types:
+            logger.warning(f"Unknown topology '{topology_type}', defaulting to 'ring'")
+            topology_type = "ring"
+        
+        selected_topology = topology_types[topology_type]
         topology_config = TopologyConfig(
-            topology_type=topology_types.get(topology_type, TopologyType.RING),
+            topology_type=selected_topology,
         )
+        
+        logger.info(f"Using {topology_type.upper()} topology with {selected_topology}")
         
         # Configure aggregation
         aggregation_config = AggregationConfig(
@@ -300,10 +375,11 @@ def run_adaptive_trust_mnist(
         )
         
         # Configure adaptive trust monitoring
-        logger.info(f"Configuring adaptive trust monitoring (profile: {trust_profile})...")
+        logger.info(f"Configuring adaptive trust monitoring (profile: {trust_profile}, topology: {topology_type})...")
         trust_config = create_adaptive_trust_config(
             profile=trust_profile,
-            use_beta_threshold=use_beta_threshold
+            use_beta_threshold=use_beta_threshold,
+            topology_type=topology_type
         )
         
         # Configure Ray resources
@@ -340,8 +416,8 @@ def run_adaptive_trust_mnist(
         )
         
         # Create trust-aware learning process
-        logger.info("Initializing trust-aware learning process...")
-        learning_process = TrustAwareDecentralizedLearningProcess(
+        logger.info("Initializing trust-aware true decentralized learning process...")
+        learning_process = TrustAwareTrueDecentralizedLearningProcess(
             config=orchestration_config,
             dataset=dataset,
             model=model,
@@ -426,7 +502,8 @@ def run_adaptive_trust_mnist(
             "performance_metrics": {
                 "total_time": time.time() - start_time,
                 "accuracy_improvement": results.get("accuracy_improvement", 0),
-                "final_accuracy": results.get("final_metrics", {}).get("accuracy", 0),
+                "initial_accuracy": results.get("initial_metrics", {}).get("consensus_accuracy", 0),
+                "final_accuracy": results.get("final_metrics", {}).get("consensus_accuracy", 0),
             }
         }
         
@@ -446,9 +523,13 @@ def run_adaptive_trust_mnist(
         logger.info("=" * 60)
         
         # FL Performance
-        logger.info(f"Initial Accuracy: {results.get('initial_metrics', {}).get('accuracy', 0):.4f}")
-        logger.info(f"Final Accuracy: {results.get('final_metrics', {}).get('accuracy', 0):.4f}")
-        logger.info(f"Accuracy Improvement: {results.get('accuracy_improvement', 0):.4f}")
+        initial_acc = results.get('initial_metrics', {}).get('consensus_accuracy', 0)
+        final_acc = results.get('final_metrics', {}).get('consensus_accuracy', 0)
+        accuracy_improvement = results.get('accuracy_improvement', final_acc - initial_acc)
+        
+        logger.info(f"Initial Accuracy: {initial_acc:.4f}")
+        logger.info(f"Final Accuracy: {final_acc:.4f}")
+        logger.info(f"Accuracy Improvement: {accuracy_improvement:.4f}")
         logger.info(f"Total Training Time: {time.time() - start_time:.2f}s")
         
         # Trust Analysis
@@ -522,7 +603,7 @@ def main():
     )
     parser.add_argument(
         "--topology", choices=["ring", "complete", "line"], default="ring",
-        help="Decentralized network topology (default: ring)"
+        help="Decentralized network topology: ring (2 neighbors), complete (all neighbors), line (1-2 neighbors) (default: ring)"
     )
     
     # Trust configuration
@@ -537,7 +618,7 @@ def main():
     
     # Attack configuration
     parser.add_argument(
-        "--attack_type", choices=["none", "gradual_label_flipping", "simple_label_flipping"], 
+        "--attack_type", choices=["none", "gradual_label_flipping", "label_flipping", "model_poisoning", "backdoor", "byzantine_gradient", "gradient"], 
         default="none", help="Type of attack to simulate (default: none)"
     )
     parser.add_argument(
@@ -551,6 +632,10 @@ def main():
     parser.add_argument(
         "--stealth_level", choices=["low", "medium", "high"], default="medium",
         help="Attack stealth/evasion level for gradual attacks (default: medium)"
+    )
+    parser.add_argument(
+        "--target_class", type=int, default=0,
+        help="Target class for model poisoning attacks (default: 0)"
     )
     
     # Output configuration
@@ -580,7 +665,8 @@ def main():
         attack_type=args.attack_type,
         malicious_fraction=args.malicious_fraction,
         attack_intensity=args.attack_intensity,
-        stealth_level=args.stealth_level
+        stealth_level=args.stealth_level,
+        target_class=args.target_class
     )
     
     if args.run_baseline:

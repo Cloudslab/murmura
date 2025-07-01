@@ -375,7 +375,12 @@ def create_gradual_attack_config(
         )
     else:  # moderate
         config = AttackConfig(
-            start_round=3,
+            start_round=1,              # Start earlier for testing
+            dormant_rounds=1,           # Shorter dormant phase
+            subtle_rounds=2,            # Shorter phases
+            moderate_rounds=2,
+            aggressive_rounds=2,
+            maximum_rounds=2,
             subtle_intensity=0.05,
             moderate_intensity=0.15,
             aggressive_intensity=0.30,

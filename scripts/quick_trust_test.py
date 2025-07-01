@@ -1,117 +1,130 @@
 #!/usr/bin/env python3
 """
-Quick Trust System Test
+Quick trust system testing script for rapid iteration.
 
-Fast test script to verify the trust monitoring system is working correctly
-before running full baseline experiments. Runs minimal configurations to
-check for basic functionality and zero false positives.
+Usage:
+    python scripts/quick_trust_test.py                    # Baseline test
+    python scripts/quick_trust_test.py --attack moderate  # Attack test
+    python scripts/quick_trust_test.py --all             # All scenarios
 """
 
-import subprocess
+import argparse
 import sys
 import time
 from pathlib import Path
 
-def run_command(cmd, description, timeout=600):
-    """Run a command with timeout and error handling."""
-    print(f"\n🧪 {description}")
-    print(f"💻 Command: {' '.join(cmd)}")
+# Add murmura to path
+sys.path.append(str(Path(__file__).parent.parent))
+
+from murmura.examples.adaptive_trust_mnist_example import run_adaptive_trust_mnist
+
+
+def quick_test(attack_intensity=None, rounds=3):
+    """Run a quick test scenario."""
     
+    if attack_intensity:
+        attack_config = {
+            'attack_type': 'gradual_label_flipping',
+            'malicious_fraction': 0.167,  # 1 out of 6
+            'attack_intensity': attack_intensity,
+            'stealth_level': 'medium'
+        }
+        scenario_name = f"{attack_intensity.title()} Attack"
+    else:
+        attack_config = None
+        scenario_name = "Honest Baseline"
+    
+    print(f"🔍 Testing: {scenario_name} ({rounds} rounds)")
     start_time = time.time()
+    
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            cwd=Path(__file__).parent.parent
+        result = run_adaptive_trust_mnist(
+            num_rounds=rounds,
+            attack_config=attack_config,
+            log_level='WARNING'
         )
         
-        execution_time = time.time() - start_time
+        elapsed = time.time() - start_time
+        # Attack statistics are nested in fl_results
+        fl_results = result.get('fl_results', {})
+        attack_stats = fl_results.get('attack_statistics', {})
         
-        if result.returncode == 0:
-            print(f"✅ Success! ({execution_time:.2f}s)")
-            # Extract key metrics from output
-            if "Final Accuracy:" in result.stdout:
-                for line in result.stdout.split('\n'):
-                    if "Final Accuracy:" in line or "False Positive Rate:" in line or "Excluded Nodes:" in line:
-                        print(f"📊 {line.strip()}")
-            return True
+        total_attackers = attack_stats.get('total_attackers', 0)
+        detected = attack_stats.get('detected_attacks', 0) 
+        detection_rate = attack_stats.get('detection_rate', 0)
+        
+        print(f"   Time: {elapsed:.1f}s")
+        print(f"   Attackers: {total_attackers}")
+        print(f"   Detected: {detected}")
+        print(f"   Rate: {detection_rate*100:.1f}%")
+        
+        if attack_config is None:
+            # Baseline - should have 0 exclusions
+            if detected == 0:
+                print("   ✅ No false positives")
+                return True
+            else:
+                print("   ⚠️  False positives detected")
+                return False
         else:
-            print(f"❌ Failed! ({execution_time:.2f}s)")
-            print(f"Error: {result.stderr[-500:]}")
-            return False
-            
-    except subprocess.TimeoutExpired:
-        print(f"⏰ Timeout after {timeout}s")
-        return False
+            # Attack - should detect
+            if detection_rate >= 0.5:
+                print("   ✅ Attack detected")
+                return True
+            else:
+                print("   ❌ Attack missed")
+                return False
+                
     except Exception as e:
-        print(f"💥 Exception: {str(e)}")
+        print(f"   ❌ Failed: {e}")
         return False
+
 
 def main():
-    """Run quick trust system tests."""
+    parser = argparse.ArgumentParser(description="Quick trust system testing")
     
-    print("🚀 Quick Trust System Test")
-    print("=" * 50)
-    print("This script runs minimal configurations to verify the trust system works correctly.")
-    print("Expected results: Zero false positives, good FL performance")
+    parser.add_argument(
+        '--attack',
+        choices=['low', 'moderate', 'high'],
+        help='Test attack scenario with specified intensity'
+    )
     
-    tests = [
-        {
-            "cmd": [
-                "python", "murmura/examples/adaptive_trust_mnist_example.py",
-                "--num_actors", "4",
-                "--num_rounds", "8", 
-                "--topology", "ring",
-                "--trust_profile", "default",
-                "--log_level", "INFO"
-            ],
-            "description": "Quick MNIST test (4 actors, 8 rounds)",
-            "timeout": 300
-        },
-        {
-            "cmd": [
-                "python", "murmura/examples/adaptive_trust_cifar10_example.py",
-                "--num_actors", "4",
-                "--num_rounds", "10",
-                "--model_type", "simple",
-                "--topology", "ring",
-                "--trust_profile", "default", 
-                "--log_level", "INFO"
-            ],
-            "description": "Quick CIFAR-10 test (4 actors, 10 rounds, simple model)",
-            "timeout": 600
-        }
-    ]
+    parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Test all scenarios'
+    )
     
-    print(f"\n📋 Running {len(tests)} quick tests...")
+    parser.add_argument(
+        '--rounds',
+        type=int,
+        default=3,
+        help='Number of rounds (default: 3 for speed)'
+    )
     
-    successful_tests = 0
-    for i, test in enumerate(tests, 1):
-        print(f"\n{'=' * 60}")
-        print(f"🧪 Test {i}/{len(tests)}")
-        print(f"{'=' * 60}")
+    args = parser.parse_args()
+    
+    print("⚡ QUICK TRUST SYSTEM TEST")
+    print("=" * 40)
+    
+    if args.all:
+        scenarios = [None, 'low', 'moderate', 'high']
+        results = []
         
-        success = run_command(test["cmd"], test["description"], test["timeout"])
-        if success:
-            successful_tests += 1
-    
-    print(f"\n{'=' * 60}")
-    print(f"🏁 Quick Test Results: {successful_tests}/{len(tests)} successful")
-    print(f"{'=' * 60}")
-    
-    if successful_tests == len(tests):
-        print("✅ All tests passed! Trust system is working correctly.")
-        print("🚀 Ready to run full baseline experiments.")
-        print("\nNext steps:")
-        print("  python scripts/run_trust_baseline_experiments.py")
+        for scenario in scenarios:
+            results.append(quick_test(scenario, args.rounds))
+            print()
+        
+        passed = sum(results)
+        total = len(results)
+        print(f"Results: {passed}/{total} passed")
+        
+        return 0 if passed == total else 1
+        
     else:
-        print("❌ Some tests failed. Check the logs above for errors.")
-        print("🔧 Fix issues before running full experiments.")
-        
-    return successful_tests == len(tests)
+        success = quick_test(args.attack, args.rounds)
+        return 0 if success else 1
 
-if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
+
+if __name__ == '__main__':
+    sys.exit(main())

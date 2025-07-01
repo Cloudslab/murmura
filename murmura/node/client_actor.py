@@ -73,25 +73,57 @@ class VirtualClientActor:
         
         # Attack capabilities
         self.attack_config = attack_config or {}
-        self.attack_enabled = len(self.attack_config) > 0
+        self.attack_enabled = (
+            self.attack_config is not None and 
+            (isinstance(self.attack_config, dict) and len(self.attack_config) > 0) or
+            (hasattr(self.attack_config, '__dict__'))  # For AttackConfig objects
+        )
         self.attack_instance = None
         self.current_round = 0
         self.attack_history: List[Dict[str, Any]] = []
         
+        # Set up logging for multi-node environment
+        self._setup_logging()
+
         if self.attack_enabled:
             try:
                 # Import here to avoid circular imports
-                from murmura.attacks.simple_attacks import create_simple_attack
-                attack_type = self.attack_config.get("attack_type", "label_flipping")
-                self.attack_instance = create_simple_attack(attack_type, self.attack_config)
-                self.logger.warning(f"Attack mode enabled for client {client_id}")
+                from murmura.attacks.gradual_label_flipping import GradualLabelFlippingAttack, AttackConfig
+                
+                # Handle different attack config types
+                if isinstance(self.attack_config, dict):
+                    attack_type = self.attack_config.get("attack_type", "label_flipping")
+                    
+                    if attack_type == "gradual_label_flipping":
+                        # Create attack config from dict
+                        attack_config_obj = AttackConfig(**self.attack_config)
+                        self.attack_instance = GradualLabelFlippingAttack(
+                            node_id=client_id,
+                            config=attack_config_obj,
+                            num_classes=self.attack_config.get("num_classes", 10),
+                            dataset_name=self.attack_config.get("dataset_name", "mnist")
+                        )
+                    else:
+                        from murmura.attacks.simple_attacks import create_simple_attack
+                        self.attack_instance = create_simple_attack(attack_type, self.attack_config)
+                    
+                elif hasattr(self.attack_config, '__dict__'):
+                    # Attack config object (like AttackConfig)
+                    self.attack_instance = GradualLabelFlippingAttack(
+                        node_id=client_id,
+                        config=self.attack_config,
+                        num_classes=getattr(self.attack_config, 'num_classes', 10),
+                        dataset_name=getattr(self.attack_config, 'dataset_name', 'mnist')
+                    )
+                    attack_type = "gradual_label_flipping"
+                else:
+                    raise ValueError(f"Unknown attack config type: {type(self.attack_config)}")
+                
+                self.logger.warning(f"Attack mode enabled for client {client_id}: {attack_type}")
             except (ImportError, ValueError) as e:
                 self.logger.warning(f"Attack functionality disabled: {e}. Running in honest mode.")
                 self.attack_enabled = False
                 self.attack_instance = None
-
-        # Set up logging for multi-node environment
-        self._setup_logging()
 
         # Initialize device info
         self.device_info = {
@@ -899,20 +931,40 @@ class VirtualClientActor:
             # Apply attack if enabled
             attack_info = {}
             if self.attack_enabled and self.attack_instance:
-                # Get current model parameters for parameter-based attacks
-                model_params = None
-                if hasattr(self.model, 'get_parameters'):
-                    model_params = self.model.get_parameters()
-                
-                # Apply attack to training data
-                features, labels, attack_info = self.attack_instance.apply_attack(
-                    features, labels, model_params
+                # Check if this is a gradual attack
+                is_gradual_attack = (
+                    (isinstance(self.attack_config, dict) and 
+                     self.attack_config.get("attack_type") == "gradual_label_flipping") or
+                    hasattr(self.attack_config, '__dict__')  # AttackConfig object
                 )
+                
+                if is_gradual_attack:
+                    # Update attack for current round
+                    self.attack_instance.update_round(self.current_round)
+                    
+                    # Apply gradual label flipping
+                    features, labels, attack_info = self.attack_instance.poison_labels(
+                        features, labels
+                    )
+                else:
+                    # Get current model parameters for parameter-based attacks
+                    model_params = None
+                    if hasattr(self.model, 'get_parameters'):
+                        model_params = self.model.get_parameters()
+                    
+                    # Apply simple attack to training data
+                    features, labels, attack_info = self.attack_instance.apply_attack(
+                        features, labels, model_params
+                    )
                 
                 # Log attack information
                 if attack_info.get("attack_applied", False):
+                    attack_type = (
+                        self.attack_config.get('attack_type') if isinstance(self.attack_config, dict)
+                        else 'gradual_label_flipping'
+                    )
                     self.logger.warning(
-                        f"Round {self.current_round}: Applied {self.attack_config.get('attack_type')} "
+                        f"Round {self.current_round}: Applied {attack_type} "
                         f"with intensity {attack_info.get('intensity', 0):.3f}"
                     )
                 
@@ -942,7 +994,11 @@ class VirtualClientActor:
                 )
             
             # Potentially manipulate reported metrics to appear normal
-            if self.attack_enabled and self.attack_config.get("stealth_mode", True):
+            stealth_mode = (
+                self.attack_config.get("stealth_mode", True) if isinstance(self.attack_config, dict)
+                else getattr(self.attack_config, 'stealth_mode', True)
+            )
+            if self.attack_enabled and stealth_mode:
                 result = self._manipulate_metrics(result, attack_info)
 
             self.logger.debug(
@@ -1083,6 +1139,15 @@ class VirtualClientActor:
         """
         self.neighbours = neighbours
         self.logger.debug(f"Set {len(neighbours)} neighbours")
+    
+    def set_actor_references(self, actors: List[Any]) -> None:
+        """
+        Set references to all actors for gossip aggregation.
+        
+        :param actors: List of all actor references
+        """
+        self._actor_references = actors
+        self.logger.debug(f"Set references to {len(actors)} actors")
 
     def get_neighbours(self) -> List[str]:
         """
@@ -1232,12 +1297,18 @@ class VirtualClientActor:
         
         summary = {
             "attack_enabled": True,
-            "attack_type": self.attack_config.get("attack_type"),
+            "attack_type": (
+                self.attack_config.get("attack_type") if isinstance(self.attack_config, dict)
+                else getattr(self.attack_config, 'attack_type', None)
+            ),
             "total_rounds": len(self.attack_history),
             "attacks_applied": total_attacks,
             "attack_rate": total_attacks / max(1, len(self.attack_history)),
             "current_intensity": getattr(self.attack_instance, "current_intensity", 0),
-            "stealth_mode": self.attack_config.get("stealth_mode", False),
+            "stealth_mode": (
+                self.attack_config.get("stealth_mode", False) if isinstance(self.attack_config, dict)
+                else getattr(self.attack_config, 'stealth_mode', False)
+            ),
         }
         
         # Add attack-specific statistics
@@ -1272,13 +1343,253 @@ class VirtualClientActor:
         # Slightly improve reported accuracy to hide attack impact
         if "accuracy" in manipulated:
             noise = np.random.normal(0, 0.01)  # Small noise
-            improvement = self.attack_config.get("metric_manipulation", 0.02)
+            improvement = (
+                self.attack_config.get("metric_manipulation", 0.02) if isinstance(self.attack_config, dict)
+                else getattr(self.attack_config, 'metric_manipulation', 0.02)
+            )
             manipulated["accuracy"] = min(1.0, original_metrics["accuracy"] + improvement + noise)
         
         # Slightly reduce reported loss
         if "loss" in manipulated:
             noise = np.random.normal(0, 0.01)
-            reduction = self.attack_config.get("loss_manipulation", -0.05)
+            reduction = (
+                self.attack_config.get("loss_manipulation", -0.05) if isinstance(self.attack_config, dict)
+                else getattr(self.attack_config, 'loss_manipulation', -0.05)
+            )
             manipulated["loss"] = max(0.0, original_metrics["loss"] + reduction + noise)
         
         return manipulated
+    
+    def gossip_aggregate(
+        self,
+        neighbor_indices: List[int],
+        mixing_parameter: float = 0.5
+    ) -> Dict[str, Any]:
+        """
+        Perform gossip-based aggregation with neighbors.
+        
+        This implements true decentralized learning where each node:
+        1. Gets parameters from neighbors
+        2. Aggregates them with its own parameters
+        3. Updates its model
+        
+        Args:
+            neighbor_indices: Indices of neighbor actors to exchange with
+            mixing_parameter: Weight for own parameters (neighbors get 1-mixing_parameter)
+            
+        Returns:
+            Dictionary with aggregation results
+        """
+        try:
+            if not self.model:
+                return {"success": False, "error": "Model not initialized"}
+            
+            # Get own parameters
+            own_params = self.model.get_parameters()
+            
+            # Collect neighbor parameters
+            neighbor_params_list = []
+            successful_exchanges = 0
+            
+            # Get reference to parent actor list (passed during topology setup)
+            if not hasattr(self, '_actor_references'):
+                return {
+                    "success": False, 
+                    "error": "Actor references not set. Topology not properly initialized."
+                }
+            
+            for neighbor_idx in neighbor_indices:
+                try:
+                    # Get neighbor actor reference
+                    neighbor_actor = self._actor_references[neighbor_idx]
+                    
+                    # Get neighbor's parameters
+                    neighbor_params = ray.get(
+                        neighbor_actor.get_model_parameters.remote(),
+                        timeout=30
+                    )
+                    neighbor_params_list.append(neighbor_params)
+                    successful_exchanges += 1
+                    
+                except Exception as e:
+                    self.logger.warning(
+                        f"Failed to get parameters from neighbor {neighbor_idx}: {e}"
+                    )
+            
+            if not neighbor_params_list:
+                return {
+                    "success": False,
+                    "error": "No neighbor parameters received",
+                    "attempted": len(neighbor_indices),
+                    "successful": 0
+                }
+            
+            # Perform weighted aggregation
+            # Own weight vs. average of neighbors
+            own_weight = mixing_parameter
+            neighbor_weight = (1 - mixing_parameter) / len(neighbor_params_list)
+            
+            # Aggregate parameters
+            aggregated_params = {}
+            
+            for param_name in own_params:
+                # Start with own parameters weighted
+                aggregated_params[param_name] = own_weight * own_params[param_name]
+                
+                # Add weighted neighbor parameters
+                for neighbor_params in neighbor_params_list:
+                    if param_name in neighbor_params:
+                        aggregated_params[param_name] += neighbor_weight * neighbor_params[param_name]
+            
+            # Update own model with aggregated parameters
+            self.model.set_parameters(aggregated_params)
+            
+            self.logger.debug(
+                f"Gossip aggregation completed: {successful_exchanges}/{len(neighbor_indices)} "
+                f"neighbors, mixing_parameter={mixing_parameter}"
+            )
+            
+            return {
+                "success": True,
+                "neighbors_contacted": len(neighbor_indices),
+                "successful_exchanges": successful_exchanges,
+                "mixing_parameter": mixing_parameter
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Gossip aggregation failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def trust_weighted_gossip_aggregate(
+        self,
+        neighbor_indices: List[int],
+        trust_weights: Dict[str, float],
+        mixing_parameter: float = 0.5
+    ) -> Dict[str, Any]:
+        """
+        Perform trust-weighted gossip aggregation with neighbors.
+        
+        This is similar to gossip_aggregate but uses trust scores to weight neighbors.
+        
+        Args:
+            neighbor_indices: Indices of neighbor actors to exchange with
+            trust_weights: Dictionary mapping neighbor index (as string) to trust weight
+            mixing_parameter: Weight for own parameters
+            
+        Returns:
+            Dictionary with aggregation results
+        """
+        try:
+            if not self.model:
+                return {"success": False, "error": "Model not initialized"}
+            
+            # Get own parameters
+            own_params = self.model.get_parameters()
+            
+            # Collect neighbor parameters
+            neighbor_params_list = []
+            neighbor_trust_scores = []
+            successful_exchanges = 0
+            
+            if not hasattr(self, '_actor_references'):
+                return {
+                    "success": False, 
+                    "error": "Actor references not set"
+                }
+            
+            for neighbor_idx in neighbor_indices:
+                try:
+                    # Get neighbor's parameters
+                    neighbor_actor = self._actor_references[neighbor_idx]
+                    neighbor_params = ray.get(
+                        neighbor_actor.get_model_parameters.remote(),
+                        timeout=30
+                    )
+                    
+                    # Get trust weight for this neighbor
+                    trust_score = trust_weights.get(str(neighbor_idx), 1.0)
+                    
+                    neighbor_params_list.append(neighbor_params)
+                    neighbor_trust_scores.append(trust_score)
+                    successful_exchanges += 1
+                    
+                except Exception as e:
+                    self.logger.warning(
+                        f"Failed to get parameters from neighbor {neighbor_idx}: {e}"
+                    )
+            
+            if not neighbor_params_list:
+                return {
+                    "success": False,
+                    "error": "No neighbor parameters received",
+                    "attempted": len(neighbor_indices),
+                    "successful": 0
+                }
+            
+            # Normalize trust weights
+            total_neighbor_trust = sum(neighbor_trust_scores)
+            if total_neighbor_trust > 0:
+                normalized_trust_scores = [s / total_neighbor_trust for s in neighbor_trust_scores]
+            else:
+                # If all trust scores are 0, use equal weights
+                normalized_trust_scores = [1.0 / len(neighbor_trust_scores)] * len(neighbor_trust_scores)
+            
+            # Calculate final weights (own weight + neighbor weights)
+            own_weight = mixing_parameter
+            neighbor_weight_total = 1 - mixing_parameter
+            
+            # Aggregate parameters
+            aggregated_params = {}
+            
+            for param_name in own_params:
+                # Start with own parameters weighted
+                aggregated_params[param_name] = own_weight * own_params[param_name]
+                
+                # Add trust-weighted neighbor parameters
+                for i, neighbor_params in enumerate(neighbor_params_list):
+                    if param_name in neighbor_params:
+                        neighbor_weight = neighbor_weight_total * normalized_trust_scores[i]
+                        aggregated_params[param_name] += neighbor_weight * neighbor_params[param_name]
+            
+            # Update own model
+            self.model.set_parameters(aggregated_params)
+            
+            self.logger.debug(
+                f"Trust-weighted gossip completed: {successful_exchanges}/{len(neighbor_indices)} "
+                f"neighbors, avg trust score: {np.mean(neighbor_trust_scores):.3f}"
+            )
+            
+            return {
+                "success": True,
+                "neighbors_contacted": len(neighbor_indices),
+                "successful_exchanges": successful_exchanges,
+                "mixing_parameter": mixing_parameter,
+                "average_trust_score": float(np.mean(neighbor_trust_scores))
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Trust-weighted gossip failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def get_partition_data(self, sample_rate: float = 1.0) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Get a sample of partition data for validation purposes.
+        
+        Args:
+            sample_rate: Fraction of data to sample (0.0 to 1.0)
+            
+        Returns:
+            Tuple of (features, labels) or None if error
+        """
+        try:
+            features, labels = self._get_partition_data(sample_rate)
+            return (features, labels)
+        except Exception as e:
+            self.logger.warning(f"Failed to get partition data: {e}")
+            return None

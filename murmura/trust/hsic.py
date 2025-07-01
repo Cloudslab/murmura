@@ -194,19 +194,26 @@ class StreamingHSIC:
             # Detect values that are significantly BELOW the normal range
             lower_threshold = max(0.1, hsic_mean - 2 * hsic_std)
             
+            # Get effective threshold (adaptive if available, otherwise fixed)
+            effective_threshold = self.get_effective_threshold()
+            
             drift_detected = (
-                hsic_value < lower_threshold or  # Significantly below normal
-                hsic_value < 0.3  # Absolute low correlation threshold
+                hsic_value < lower_threshold or  # Significantly below statistical baseline
+                hsic_value < effective_threshold  # Below adaptive/fixed threshold
             )
         
         if drift_detected:
             hsic_array = np.array(self.hsic_history)
             hsic_mean = np.mean(hsic_array)
             hsic_std = np.std(hsic_array)
+            effective_threshold = self.get_effective_threshold()
+            threshold_type = "adaptive" if self.use_adaptive_threshold else "fixed"
+            
             self.logger.warning(
                 f"Trust drift detected! HSIC: {hsic_value:.4f}, "
                 f"Mean: {hsic_mean:.4f}, Std: {hsic_std:.4f}, "
-                f"Threshold: {max(0.95, hsic_mean + 2 * hsic_std):.4f}"
+                f"Statistical threshold: {lower_threshold:.4f}, "
+                f"{threshold_type.title()} threshold: {effective_threshold:.4f}"
             )
         
         return hsic_value, drift_detected
@@ -301,6 +308,10 @@ class ModelUpdateHSIC(StreamingHSIC):
         
         # Improved statistical drift detection
         self.logger.info(f"HSIC using statistical outlier detection for trust drift")
+        
+        # Adaptive threshold from beta distribution system
+        self.adaptive_threshold: Optional[float] = None
+        self.use_adaptive_threshold = False
         
         # Enhanced trust features beyond pure HSIC
         self.enable_functional_features = True
@@ -561,3 +572,26 @@ class ModelUpdateHSIC(StreamingHSIC):
             stats["statistical_threshold"] = "learning_baseline"
         
         return hsic_value, drift_detected, stats
+    
+    def set_adaptive_threshold(self, threshold: float) -> None:
+        """
+        Set adaptive threshold from beta distribution system.
+        
+        Args:
+            threshold: Adaptive threshold value from trust monitor
+        """
+        self.adaptive_threshold = threshold
+        self.use_adaptive_threshold = True
+        self.logger.debug(f"Updated adaptive threshold to {threshold:.4f}")
+    
+    def get_effective_threshold(self) -> float:
+        """
+        Get the effective threshold being used for drift detection.
+        
+        Returns:
+            Current effective threshold
+        """
+        if self.use_adaptive_threshold and self.adaptive_threshold is not None:
+            return self.adaptive_threshold
+        else:
+            return 0.3  # Fallback to original fixed threshold

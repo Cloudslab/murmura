@@ -339,19 +339,28 @@ class TrustMonitor:
         self.trust_scores[neighbor_id] = trust_score
         self.reputation_history[neighbor_id].append(trust_score)
         
-        # Determine action based on adaptive decision
+        # Determine action based on adaptive decision and beta threshold
         if is_malicious:
-            if confidence > 0.7:
+            # Use adaptive threshold for action determination
+            adaptive_threshold = adaptive_result.get('adaptive_threshold', 0.5)
+            
+            # Scale confidence relative to adaptive threshold
+            if confidence > adaptive_threshold * 1.5:  # Well above threshold
                 action = TrustAction.EXCLUDE
-            elif confidence > 0.4:
+            elif confidence > adaptive_threshold * 0.8:  # Moderately above threshold
                 action = TrustAction.DOWNGRADE
             else:
                 action = TrustAction.WARN
         else:
             action = TrustAction.ACCEPT
         
-        # Update trust level
-        self.trust_levels[neighbor_id] = self._get_trust_level(trust_score)
+        # Update trust level based on action taken
+        if action == TrustAction.EXCLUDE:
+            self.trust_levels[neighbor_id] = TrustLevel.UNTRUSTED
+        elif action == TrustAction.DOWNGRADE or action == TrustAction.WARN:
+            self.trust_levels[neighbor_id] = TrustLevel.SUSPICIOUS
+        else:
+            self.trust_levels[neighbor_id] = self._get_trust_level(trust_score)
         
         # Record update time
         self.last_update_time[neighbor_id] = time.time()
@@ -385,9 +394,10 @@ class TrustMonitor:
         # Log significant events
         if action != TrustAction.ACCEPT:
             self.logger.warning(
-                f"Trust issue with neighbor {neighbor_id}: "
+                f"Trust drift detected for neighbor {neighbor_id}: "
                 f"Action={action.value}, HSIC={hsic_value:.4f}, "
-                f"Trust={trust_score:.4f}, Level={self.trust_levels[neighbor_id].value}"
+                f"Trust={trust_score:.4f}, Level={self.trust_levels[neighbor_id].value}, "
+                f"Confidence={confidence:.3f}"
             )
         
         return action, trust_score, detailed_stats
