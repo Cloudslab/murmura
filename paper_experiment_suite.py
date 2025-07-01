@@ -74,4 +74,463 @@ class PaperExperimentSuite:
                                          focused_study: str = None) -> List[ExperimentConfig]:
         """Generate systematic experiment configurations."""
         
-        configs = []\n        \n        if quick_test:\n            # Quick validation tests\n            base_configs = [\n                # Baseline (no attack)\n                {\"dataset\": \"mnist\", \"attack_type\": \"none\", \"malicious_fraction\": 0.0},\n                # Basic attacks\n                {\"dataset\": \"mnist\", \"attack_type\": \"label_flipping\", \"malicious_fraction\": 0.167},\n                {\"dataset\": \"mnist\", \"attack_type\": \"model_poisoning\", \"malicious_fraction\": 0.167},\n                {\"dataset\": \"mnist\", \"attack_type\": \"byzantine_gradient\", \"malicious_fraction\": 0.167},\n                # Different topology\n                {\"dataset\": \"mnist\", \"attack_type\": \"label_flipping\", \"malicious_fraction\": 0.167, \"topology\": \"complete\"},\n            ]\n        \n        elif focused_study == \"topology_comparison\":\n            # Focus on topology effects\n            topologies = [\"ring\", \"complete\", \"line\"]\n            attack_types = [\"label_flipping\", \"model_poisoning\", \"byzantine_gradient\"]\n            \n            base_configs = []\n            for topology, attack_type in itertools.product(topologies, attack_types):\n                base_configs.extend([\n                    # Different malicious fractions\n                    {\"dataset\": \"mnist\", \"topology\": topology, \"attack_type\": attack_type, \"malicious_fraction\": 0.167},\n                    {\"dataset\": \"mnist\", \"topology\": topology, \"attack_type\": attack_type, \"malicious_fraction\": 0.25},\n                    {\"dataset\": \"mnist\", \"topology\": topology, \"attack_type\": attack_type, \"malicious_fraction\": 0.33},\n                ])\n        \n        elif focused_study == \"attack_intensity\":\n            # Focus on attack intensity effects\n            intensities = [\"low\", \"moderate\", \"high\"]\n            stealth_levels = [\"low\", \"medium\", \"high\"]\n            \n            base_configs = []\n            for intensity, stealth in itertools.product(intensities, stealth_levels):\n                base_configs.extend([\n                    {\"dataset\": \"mnist\", \"attack_type\": \"label_flipping\", \"attack_intensity\": intensity, \"stealth_level\": stealth, \"malicious_fraction\": 0.25},\n                    {\"dataset\": \"mnist\", \"attack_type\": \"model_poisoning\", \"attack_intensity\": intensity, \"stealth_level\": stealth, \"malicious_fraction\": 0.25},\n                    {\"dataset\": \"mnist\", \"attack_type\": \"byzantine_gradient\", \"attack_intensity\": intensity, \"stealth_level\": stealth, \"malicious_fraction\": 0.25},\n                ])\n        \n        elif focused_study == \"scalability\":\n            # Focus on scalability with different network sizes\n            num_actors_options = [6, 8, 10, 12, 16]\n            \n            base_configs = []\n            for num_actors in num_actors_options:\n                base_configs.extend([\n                    # Baseline\n                    {\"dataset\": \"mnist\", \"num_actors\": num_actors, \"attack_type\": \"none\", \"malicious_fraction\": 0.0},\n                    # Fixed malicious fraction\n                    {\"dataset\": \"mnist\", \"num_actors\": num_actors, \"attack_type\": \"label_flipping\", \"malicious_fraction\": 0.25},\n                    {\"dataset\": \"mnist\", \"num_actors\": num_actors, \"attack_type\": \"model_poisoning\", \"malicious_fraction\": 0.25},\n                    # Test different topologies\n                    {\"dataset\": \"mnist\", \"num_actors\": num_actors, \"attack_type\": \"label_flipping\", \"malicious_fraction\": 0.25, \"topology\": \"complete\"},\n                ])\n        \n        elif focused_study == \"cross_dataset\":\n            # Compare MNIST vs CIFAR-10\n            datasets = [\"mnist\", \"cifar10\"]\n            attack_types = [\"label_flipping\", \"model_poisoning\", \"byzantine_gradient\"]\n            \n            base_configs = []\n            for dataset, attack_type in itertools.product(datasets, attack_types):\n                base_configs.extend([\n                    # Baseline\n                    {\"dataset\": dataset, \"attack_type\": \"none\", \"malicious_fraction\": 0.0},\n                    # Standard attack\n                    {\"dataset\": dataset, \"attack_type\": attack_type, \"malicious_fraction\": 0.25},\n                    # High intensity\n                    {\"dataset\": dataset, \"attack_type\": attack_type, \"malicious_fraction\": 0.33, \"attack_intensity\": \"high\"},\n                ])\n        \n        else:\n            # Comprehensive study (all combinations)\n            datasets = [\"mnist\", \"cifar10\"]\n            topologies = [\"ring\", \"complete\", \"line\"]\n            trust_profiles = [\"default\", \"strict\"]  # Skip permissive for paper focus\n            attack_types = [\"none\", \"label_flipping\", \"model_poisoning\", \"byzantine_gradient\"]\n            intensities = [\"low\", \"moderate\", \"high\"]\n            malicious_fractions = [0.0, 0.167, 0.25, 0.33, 0.5]\n            num_actors_options = [6, 8, 10]\n            \n            base_configs = []\n            \n            for dataset, topology, trust_profile, num_actors in itertools.product(\n                datasets, topologies, trust_profiles, num_actors_options\n            ):\n                # Baseline experiments\n                base_configs.append({\n                    \"dataset\": dataset, \"topology\": topology, \"trust_profile\": trust_profile,\n                    \"num_actors\": num_actors, \"attack_type\": \"none\", \"malicious_fraction\": 0.0\n                })\n                \n                # Attack experiments\n                for attack_type, malicious_fraction, intensity in itertools.product(\n                    attack_types[1:], malicious_fractions[1:], intensities\n                ):\n                    # Skip configurations with < 1 malicious node\n                    if int(num_actors * malicious_fraction) >= 1:\n                        base_configs.append({\n                            \"dataset\": dataset, \"topology\": topology, \"trust_profile\": trust_profile,\n                            \"num_actors\": num_actors, \"attack_type\": attack_type,\n                            \"malicious_fraction\": malicious_fraction, \"attack_intensity\": intensity\n                        })\n        \n        # Convert to ExperimentConfig objects with defaults\n        for i, base_config in enumerate(base_configs):\n            config_dict = {\n                # Defaults\n                \"dataset\": \"mnist\",\n                \"num_actors\": 6,\n                \"num_rounds\": 15,  # Will be adjusted for CIFAR-10\n                \"topology\": \"ring\",\n                \"trust_profile\": \"default\",\n                \"use_beta_threshold\": True,\n                \"attack_type\": \"none\",\n                \"malicious_fraction\": 0.0,\n                \"attack_intensity\": \"moderate\",\n                \"stealth_level\": \"medium\",\n                \"target_class\": 0,\n                \"experiment_id\": f\"exp_{i:04d}\",\n                \"random_seed\": 42,\n                # Override with specific config\n                **base_config\n            }\n            \n            # Adjust rounds for CIFAR-10\n            if config_dict[\"dataset\"] == \"cifar10\":\n                config_dict[\"num_rounds\"] = 20\n            \n            configs.append(ExperimentConfig(**config_dict))\n        \n        self.logger.info(f\"Generated {len(configs)} experiment configurations\")\n        return configs\n    \n    def run_single_experiment(self, config: ExperimentConfig) -> Dict[str, Any]:\n        \"\"\"Run a single experiment using existing scripts.\"\"\"\n        \n        start_time = time.time()\n        exp_dir = os.path.join(self.output_dir, config.experiment_id)\n        os.makedirs(exp_dir, exist_ok=True)\n        \n        try:\n            # Determine script to run\n            if config.dataset == \"mnist\":\n                script_path = \"murmura/examples/adaptive_trust_mnist_example.py\"\n            elif config.dataset == \"cifar10\":\n                script_path = \"murmura/examples/adaptive_trust_cifar10_example.py\"\n            else:\n                raise ValueError(f\"Unknown dataset: {config.dataset}\")\n            \n            # Build command arguments\n            cmd_args = [\n                \"--num_actors\", str(config.num_actors),\n                \"--num_rounds\", str(config.num_rounds),\n                \"--topology\", config.topology,\n                \"--trust_profile\", config.trust_profile,\n                \"--attack_type\", config.attack_type,\n                \"--malicious_fraction\", str(config.malicious_fraction),\n                \"--attack_intensity\", config.attack_intensity,\n                \"--stealth_level\", config.stealth_level,\n                \"--target_class\", str(config.target_class),\n                \"--output_dir\", exp_dir,\n                \"--log_level\", \"WARNING\"  # Reduce log noise\n            ]\n            \n            if not config.use_beta_threshold:\n                cmd_args.append(\"--disable_beta\")\n            \n            # Run experiment\n            cmd = [\"python\", script_path] + cmd_args\n            self.logger.info(f\"Running: {config.experiment_id} ({config.dataset}, {config.attack_type})\")\n            \n            result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)  # 1 hour timeout\n            \n            if result.returncode != 0:\n                raise RuntimeError(f\"Experiment failed: {result.stderr}\")\n            \n            # Load and analyze results\n            results = self._load_experiment_results(exp_dir)\n            \n            # Extract metrics using our collector\n            experiment_config_dict = asdict(config)\n            if results:  # Only add attack_config if we have results\n                experiment_config_dict[\"attack_config\"] = {\n                    \"attack_type\": config.attack_type,\n                    \"malicious_fraction\": config.malicious_fraction,\n                    \"attack_intensity\": config.attack_intensity,\n                    \"stealth_level\": config.stealth_level\n                }\n            \n            # Create a simplified metrics collector for post-processing\n            metrics_collector = MetricsCollector(experiment_config_dict)\n            comprehensive_metrics = metrics_collector.finalize_metrics(results)\n            \n            # Save comprehensive metrics\n            save_metrics(comprehensive_metrics, os.path.join(exp_dir, \"comprehensive_metrics.json\"))\n            \n            # Extract key metrics for summary\n            trust_metrics = comprehensive_metrics[\"trust_metrics\"]\n            performance_metrics = comprehensive_metrics[\"performance_metrics\"]\n            \n            summary_metrics = {\n                \"experiment_id\": config.experiment_id,\n                \"config\": asdict(config),\n                \"success\": True,\n                \"duration\": time.time() - start_time,\n                \n                # Key metrics for paper\n                \"precision\": trust_metrics[\"precision\"],\n                \"recall\": trust_metrics[\"recall\"],\n                \"f1_score\": trust_metrics[\"f1_score\"],\n                \"detection_accuracy\": trust_metrics[\"accuracy\"],\n                \"avg_detection_latency\": trust_metrics[\"avg_detection_latency\"],\n                \"false_positive_rate\": trust_metrics[\"false_positives\"] / max(1, trust_metrics[\"false_positives\"] + trust_metrics[\"true_negatives\"]),\n                \n                \"initial_accuracy\": performance_metrics[\"initial_accuracy\"],\n                \"final_accuracy\": performance_metrics[\"final_accuracy\"],\n                \"accuracy_degradation\": performance_metrics[\"accuracy_degradation\"],\n                \n                \"avg_memory_mb\": performance_metrics[\"avg_memory_mb\"],\n                \"peak_memory_mb\": performance_metrics[\"peak_memory_mb\"],\n                \"avg_cpu_percent\": performance_metrics[\"avg_cpu_percent\"],\n                \"trust_overhead_mb\": performance_metrics[\"trust_memory_overhead_mb\"],\n                \"communication_overhead_percent\": performance_metrics[\"communication_overhead_percent\"],\n                \n                \"trust_score_separation\": trust_metrics[\"trust_score_separation\"],\n                \"avg_trust_honest\": trust_metrics[\"avg_trust_honest\"],\n                \"avg_trust_malicious\": trust_metrics[\"avg_trust_malicious\"],\n            }\n            \n            self.logger.info(f\"Completed {config.experiment_id}: P={trust_metrics['precision']:.3f}, \"\n                           f\"R={trust_metrics['recall']:.3f}, Latency={trust_metrics['avg_detection_latency']:.1f}\")\n            \n            return summary_metrics\n            \n        except Exception as e:\n            self.logger.error(f\"Experiment {config.experiment_id} failed: {str(e)}\")\n            return {\n                \"experiment_id\": config.experiment_id,\n                \"config\": asdict(config),\n                \"success\": False,\n                \"duration\": time.time() - start_time,\n                \"error\": str(e),\n                \"precision\": 0.0, \"recall\": 0.0, \"f1_score\": 0.0,\n                \"detection_accuracy\": 0.0, \"avg_detection_latency\": float('inf'),\n                \"false_positive_rate\": 0.0,\n                \"initial_accuracy\": 0.0, \"final_accuracy\": 0.0, \"accuracy_degradation\": 0.0,\n                \"avg_memory_mb\": 0.0, \"peak_memory_mb\": 0.0, \"avg_cpu_percent\": 0.0,\n                \"trust_overhead_mb\": 0.0, \"communication_overhead_percent\": 0.0,\n                \"trust_score_separation\": 0.0, \"avg_trust_honest\": 0.0, \"avg_trust_malicious\": 0.0\n            }\n    \n    def _load_experiment_results(self, exp_dir: str) -> Dict[str, Any]:\n        \"\"\"Load experiment results from output directory.\"\"\"\n        # Look for results files\n        result_files = [f for f in os.listdir(exp_dir) \n                       if f.startswith(\"adaptive_trust_results_\") and f.endswith(\".json\")]\n        \n        if not result_files:\n            return {}\n        \n        # Load the most recent results\n        latest_file = sorted(result_files)[-1]\n        try:\n            with open(os.path.join(exp_dir, latest_file), 'r') as f:\n                return json.load(f)\n        except Exception as e:\n            self.logger.warning(f\"Failed to load results from {latest_file}: {e}\")\n            return {}\n    \n    def run_experiment_suite(self, \n                           configs: List[ExperimentConfig],\n                           parallel: bool = True,\n                           max_workers: int = 4) -> pd.DataFrame:\n        \"\"\"Run the complete experiment suite.\"\"\"\n        \n        self.logger.info(f\"Starting experiment suite with {len(configs)} experiments\")\n        \n        results = []\n        \n        if parallel and len(configs) > 1:\n            # Parallel execution\n            with ProcessPoolExecutor(max_workers=max_workers) as executor:\n                future_to_config = {executor.submit(self.run_single_experiment, config): config \n                                  for config in configs}\n                \n                for future in as_completed(future_to_config):\n                    try:\n                        result = future.result()\n                        results.append(result)\n                        self.logger.info(f\"Progress: {len(results)}/{len(configs)} completed\")\n                    except Exception as e:\n                        config = future_to_config[future]\n                        self.logger.error(f\"Failed to get result for {config.experiment_id}: {e}\")\n        else:\n            # Sequential execution\n            for i, config in enumerate(configs):\n                self.logger.info(f\"Running experiment {i+1}/{len(configs)}: {config.experiment_id}\")\n                result = self.run_single_experiment(config)\n                results.append(result)\n        \n        # Convert to DataFrame\n        df = pd.DataFrame(results)\n        \n        # Save results\n        df.to_csv(os.path.join(self.output_dir, \"experiment_results.csv\"), index=False)\n        \n        # Generate summary statistics\n        self._generate_paper_statistics(df)\n        \n        self.logger.info(f\"Experiment suite completed. Results saved to {self.output_dir}\")\n        return df\n    \n    def _generate_paper_statistics(self, df: pd.DataFrame):\n        \"\"\"Generate summary statistics for paper.\"\"\"\n        \n        successful_df = df[df[\"success\"] == True]\n        \n        if len(successful_df) == 0:\n            self.logger.warning(\"No successful experiments to analyze\")\n            return\n        \n        # Overall performance\n        overall_stats = {\n            \"total_experiments\": len(df),\n            \"successful_experiments\": len(successful_df),\n            \"success_rate\": len(successful_df) / len(df),\n            \n            \"detection_performance\": {\n                \"avg_precision\": successful_df[\"precision\"].mean(),\n                \"std_precision\": successful_df[\"precision\"].std(),\n                \"avg_recall\": successful_df[\"recall\"].mean(),\n                \"std_recall\": successful_df[\"recall\"].std(),\n                \"avg_f1_score\": successful_df[\"f1_score\"].mean(),\n                \"std_f1_score\": successful_df[\"f1_score\"].std(),\n                \"avg_detection_latency\": successful_df[successful_df[\"avg_detection_latency\"] != float('inf')][\"avg_detection_latency\"].mean(),\n            },\n            \n            \"overhead_analysis\": {\n                \"avg_memory_mb\": successful_df[\"avg_memory_mb\"].mean(),\n                \"avg_trust_overhead_mb\": successful_df[\"trust_overhead_mb\"].mean(),\n                \"avg_cpu_percent\": successful_df[\"avg_cpu_percent\"].mean(),\n                \"communication_overhead\": successful_df[\"communication_overhead_percent\"].mean(),\n            },\n            \n            \"robustness_analysis\": {\n                \"avg_accuracy_degradation\": successful_df[\"accuracy_degradation\"].mean(),\n                \"avg_trust_separation\": successful_df[\"trust_score_separation\"].mean(),\n            }\n        }\n        \n        # By attack type\n        attack_analysis = {}\n        for attack_type in successful_df[\"config\"].apply(lambda x: x[\"attack_type\"]).unique():\n            attack_df = successful_df[successful_df[\"config\"].apply(lambda x: x[\"attack_type\"]) == attack_type]\n            attack_analysis[attack_type] = {\n                \"count\": len(attack_df),\n                \"avg_precision\": attack_df[\"precision\"].mean(),\n                \"avg_recall\": attack_df[\"recall\"].mean(),\n                \"avg_f1_score\": attack_df[\"f1_score\"].mean(),\n                \"avg_detection_latency\": attack_df[attack_df[\"avg_detection_latency\"] != float('inf')][\"avg_detection_latency\"].mean() if len(attack_df[attack_df[\"avg_detection_latency\"] != float('inf')]) > 0 else None,\n            }\n        \n        # By topology\n        topology_analysis = {}\n        for topology in successful_df[\"config\"].apply(lambda x: x[\"topology\"]).unique():\n            topo_df = successful_df[successful_df[\"config\"].apply(lambda x: x[\"topology\"]) == topology]\n            topology_analysis[topology] = {\n                \"count\": len(topo_df),\n                \"avg_precision\": topo_df[\"precision\"].mean(),\n                \"avg_recall\": topo_df[\"recall\"].mean(),\n                \"avg_memory_mb\": topo_df[\"avg_memory_mb\"].mean(),\n                \"avg_detection_latency\": topo_df[topo_df[\"avg_detection_latency\"] != float('inf')][\"avg_detection_latency\"].mean() if len(topo_df[topo_df[\"avg_detection_latency\"] != float('inf')]) > 0 else None,\n            }\n        \n        paper_stats = {\n            \"overall\": overall_stats,\n            \"by_attack_type\": attack_analysis,\n            \"by_topology\": topology_analysis,\n            \"generation_time\": time.strftime(\"%Y-%m-%d %H:%M:%S\")\n        }\n        \n        # Save paper statistics\n        with open(os.path.join(self.output_dir, \"paper_statistics.json\"), \"w\") as f:\n            json.dump(paper_stats, f, indent=2, default=str)\n        \n        # Print summary\n        print(\"\\n\" + \"=\"*60)\n        print(\"PAPER EXPERIMENT RESULTS SUMMARY\")\n        print(\"=\"*60)\n        print(f\"Total Experiments: {overall_stats['total_experiments']}\")\n        print(f\"Successful: {overall_stats['successful_experiments']} ({overall_stats['success_rate']:.1%})\")\n        print(f\"\\nDetection Performance:\")\n        print(f\"  Average Precision: {overall_stats['detection_performance']['avg_precision']:.3f} ± {overall_stats['detection_performance']['std_precision']:.3f}\")\n        print(f\"  Average Recall: {overall_stats['detection_performance']['avg_recall']:.3f} ± {overall_stats['detection_performance']['std_recall']:.3f}\")\n        print(f\"  Average F1-Score: {overall_stats['detection_performance']['avg_f1_score']:.3f} ± {overall_stats['detection_performance']['std_f1_score']:.3f}\")\n        if overall_stats['detection_performance']['avg_detection_latency']:\n            print(f\"  Average Detection Latency: {overall_stats['detection_performance']['avg_detection_latency']:.1f} rounds\")\n        print(f\"\\nOverhead Analysis:\")\n        print(f\"  Average Memory Usage: {overall_stats['overhead_analysis']['avg_memory_mb']:.1f} MB\")\n        print(f\"  Trust Monitor Overhead: {overall_stats['overhead_analysis']['avg_trust_overhead_mb']:.1f} MB\")\n        print(f\"  Average CPU Usage: {overall_stats['overhead_analysis']['avg_cpu_percent']:.1f}%\")\n        print(f\"  Communication Overhead: {overall_stats['overhead_analysis']['communication_overhead']:.1f}%\")\n        print(\"=\"*60)\n\n\ndef main():\n    \"\"\"Main function with command-line interface.\"\"\"\n    \n    parser = argparse.ArgumentParser(\n        description=\"Paper Experiment Suite for Trust-Based Drift Detection\"\n    )\n    \n    parser.add_argument(\n        \"--output_dir\", type=str, default=\"paper_experiments\",\n        help=\"Output directory for results (default: paper_experiments)\"\n    )\n    parser.add_argument(\n        \"--study_type\", type=str, default=\"comprehensive\",\n        choices=[\"quick_test\", \"topology_comparison\", \"attack_intensity\", \"scalability\", \"cross_dataset\", \"comprehensive\"],\n        help=\"Type of study to run (default: comprehensive)\"\n    )\n    parser.add_argument(\n        \"--parallel\", action=\"store_true\", default=True,\n        help=\"Run experiments in parallel (default: True)\"\n    )\n    parser.add_argument(\n        \"--max_workers\", type=int, default=4,\n        help=\"Maximum parallel workers (default: 4)\"\n    )\n    \n    args = parser.parse_args()\n    \n    # Create experiment suite\n    suite = PaperExperimentSuite(args.output_dir)\n    \n    # Generate configurations based on study type\n    if args.study_type == \"quick_test\":\n        configs = suite.generate_experiment_configurations(quick_test=True)\n    else:\n        configs = suite.generate_experiment_configurations(focused_study=args.study_type if args.study_type != \"comprehensive\" else None)\n    \n    # Run experiments\n    results_df = suite.run_experiment_suite(\n        configs=configs,\n        parallel=args.parallel,\n        max_workers=args.max_workers\n    )\n    \n    print(f\"\\nExperiment suite completed!\")\n    print(f\"Results saved to: {args.output_dir}\")\n    print(f\"CSV file: {os.path.join(args.output_dir, 'experiment_results.csv')}\")\n    print(f\"Statistics: {os.path.join(args.output_dir, 'paper_statistics.json')}\")\n\n\nif __name__ == \"__main__\":\n    main()
+        configs = []
+        
+        if quick_test:
+            # Quick validation tests
+            base_configs = [
+                # Baseline (no attack)
+                {"dataset": "mnist", "attack_type": "none", "malicious_fraction": 0.0},
+                # Basic attacks
+                {"dataset": "mnist", "attack_type": "label_flipping", "malicious_fraction": 0.167},
+                {"dataset": "mnist", "attack_type": "model_poisoning", "malicious_fraction": 0.167},
+                {"dataset": "mnist", "attack_type": "byzantine_gradient", "malicious_fraction": 0.167},
+                # Different topology
+                {"dataset": "mnist", "attack_type": "label_flipping", "malicious_fraction": 0.167, "topology": "complete"},
+            ]
+        
+        elif focused_study == "topology_comparison":
+            # Focus on topology effects
+            topologies = ["ring", "complete", "line"]
+            attack_types = ["label_flipping", "model_poisoning", "byzantine_gradient"]
+            
+            base_configs = []
+            for topology, attack_type in itertools.product(topologies, attack_types):
+                base_configs.extend([
+                    # Different malicious fractions
+                    {"dataset": "mnist", "topology": topology, "attack_type": attack_type, "malicious_fraction": 0.167},
+                    {"dataset": "mnist", "topology": topology, "attack_type": attack_type, "malicious_fraction": 0.25},
+                    {"dataset": "mnist", "topology": topology, "attack_type": attack_type, "malicious_fraction": 0.33},
+                ])
+        
+        elif focused_study == "attack_intensity":
+            # Focus on attack intensity effects
+            intensities = ["low", "moderate", "high"]
+            stealth_levels = ["low", "medium", "high"]
+            
+            base_configs = []
+            for intensity, stealth in itertools.product(intensities, stealth_levels):
+                base_configs.extend([
+                    {"dataset": "mnist", "attack_type": "label_flipping", "attack_intensity": intensity, "stealth_level": stealth, "malicious_fraction": 0.25},
+                    {"dataset": "mnist", "attack_type": "model_poisoning", "attack_intensity": intensity, "stealth_level": stealth, "malicious_fraction": 0.25},
+                    {"dataset": "mnist", "attack_type": "byzantine_gradient", "attack_intensity": intensity, "stealth_level": stealth, "malicious_fraction": 0.25},
+                ])
+        
+        elif focused_study == "scalability":
+            # Focus on scalability with different network sizes
+            num_actors_options = [6, 8, 10, 12, 16]
+            
+            base_configs = []
+            for num_actors in num_actors_options:
+                base_configs.extend([
+                    # Baseline
+                    {"dataset": "mnist", "num_actors": num_actors, "attack_type": "none", "malicious_fraction": 0.0},
+                    # Fixed malicious fraction
+                    {"dataset": "mnist", "num_actors": num_actors, "attack_type": "label_flipping", "malicious_fraction": 0.25},
+                    {"dataset": "mnist", "num_actors": num_actors, "attack_type": "model_poisoning", "malicious_fraction": 0.25},
+                    # Test different topologies
+                    {"dataset": "mnist", "num_actors": num_actors, "attack_type": "label_flipping", "malicious_fraction": 0.25, "topology": "complete"},
+                ])
+        
+        elif focused_study == "cross_dataset":
+            # Compare MNIST vs CIFAR-10
+            datasets = ["mnist", "cifar10"]
+            attack_types = ["label_flipping", "model_poisoning", "byzantine_gradient"]
+            
+            base_configs = []
+            for dataset, attack_type in itertools.product(datasets, attack_types):
+                base_configs.extend([
+                    # Baseline
+                    {"dataset": dataset, "attack_type": "none", "malicious_fraction": 0.0},
+                    # Standard attack
+                    {"dataset": dataset, "attack_type": attack_type, "malicious_fraction": 0.25},
+                    # High intensity
+                    {"dataset": dataset, "attack_type": attack_type, "malicious_fraction": 0.33, "attack_intensity": "high"},
+                ])
+        
+        else:
+            # Comprehensive study (all combinations)
+            datasets = ["mnist", "cifar10"]
+            topologies = ["ring", "complete", "line"]
+            trust_profiles = ["default", "strict"]  # Skip permissive for paper focus
+            attack_types = ["none", "label_flipping", "model_poisoning", "byzantine_gradient"]
+            intensities = ["low", "moderate", "high"]
+            malicious_fractions = [0.0, 0.167, 0.25, 0.33, 0.5]
+            num_actors_options = [6, 8, 10]
+            
+            base_configs = []
+            
+            for dataset, topology, trust_profile, num_actors in itertools.product(
+                datasets, topologies, trust_profiles, num_actors_options
+            ):
+                # Baseline experiments
+                base_configs.append({
+                    "dataset": dataset, "topology": topology, "trust_profile": trust_profile,
+                    "num_actors": num_actors, "attack_type": "none", "malicious_fraction": 0.0
+                })
+                
+                # Attack experiments
+                for attack_type, malicious_fraction, intensity in itertools.product(
+                    attack_types[1:], malicious_fractions[1:], intensities
+                ):
+                    # Skip configurations with < 1 malicious node
+                    if int(num_actors * malicious_fraction) >= 1:
+                        base_configs.append({
+                            "dataset": dataset, "topology": topology, "trust_profile": trust_profile,
+                            "num_actors": num_actors, "attack_type": attack_type,
+                            "malicious_fraction": malicious_fraction, "attack_intensity": intensity
+                        })
+        
+        # Convert to ExperimentConfig objects with defaults
+        for i, base_config in enumerate(base_configs):
+            config_dict = {
+                # Defaults
+                "dataset": "mnist",
+                "num_actors": 6,
+                "num_rounds": 15,  # Will be adjusted for CIFAR-10
+                "topology": "ring",
+                "trust_profile": "default",
+                "use_beta_threshold": True,
+                "attack_type": "none",
+                "malicious_fraction": 0.0,
+                "attack_intensity": "moderate",
+                "stealth_level": "medium",
+                "target_class": 0,
+                "experiment_id": f"exp_{i:04d}",
+                "random_seed": 42,
+                # Override with specific config
+                **base_config
+            }
+            
+            # Adjust rounds for CIFAR-10
+            if config_dict["dataset"] == "cifar10":
+                config_dict["num_rounds"] = 20
+            
+            configs.append(ExperimentConfig(**config_dict))
+        
+        self.logger.info(f"Generated {len(configs)} experiment configurations")
+        return configs
+    
+    def run_single_experiment(self, config: ExperimentConfig) -> Dict[str, Any]:
+        """Run a single experiment using existing scripts."""
+        
+        start_time = time.time()
+        exp_dir = os.path.join(self.output_dir, config.experiment_id)
+        os.makedirs(exp_dir, exist_ok=True)
+        
+        try:
+            # Determine script to run
+            if config.dataset == "mnist":
+                script_path = "murmura/examples/adaptive_trust_mnist_example.py"
+            elif config.dataset == "cifar10":
+                script_path = "murmura/examples/adaptive_trust_cifar10_example.py"
+            else:
+                raise ValueError(f"Unknown dataset: {config.dataset}")
+            
+            # Build command arguments
+            cmd_args = [
+                "--num_actors", str(config.num_actors),
+                "--num_rounds", str(config.num_rounds),
+                "--topology", config.topology,
+                "--trust_profile", config.trust_profile,
+                "--attack_type", config.attack_type,
+                "--malicious_fraction", str(config.malicious_fraction),
+                "--attack_intensity", config.attack_intensity,
+                "--stealth_level", config.stealth_level,
+                "--target_class", str(config.target_class),
+                "--output_dir", exp_dir,
+                "--log_level", "WARNING"  # Reduce log noise
+            ]
+            
+            if not config.use_beta_threshold:
+                cmd_args.append("--disable_beta")
+            
+            # Run experiment
+            cmd = ["python", script_path] + cmd_args
+            self.logger.info(f"Running: {config.experiment_id} ({config.dataset}, {config.attack_type})")
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)  # 1 hour timeout
+            
+            if result.returncode != 0:
+                raise RuntimeError(f"Experiment failed: {result.stderr}")
+            
+            # Load and analyze results
+            results = self._load_experiment_results(exp_dir)
+            
+            # Extract metrics using our collector
+            experiment_config_dict = asdict(config)
+            if results:  # Only add attack_config if we have results
+                experiment_config_dict["attack_config"] = {
+                    "attack_type": config.attack_type,
+                    "malicious_fraction": config.malicious_fraction,
+                    "attack_intensity": config.attack_intensity,
+                    "stealth_level": config.stealth_level
+                }
+            
+            # Create a simplified metrics collector for post-processing
+            metrics_collector = MetricsCollector(experiment_config_dict)
+            comprehensive_metrics = metrics_collector.finalize_metrics(results)
+            
+            # Save comprehensive metrics
+            save_metrics(comprehensive_metrics, os.path.join(exp_dir, "comprehensive_metrics.json"))
+            
+            # Extract key metrics for summary
+            trust_metrics = comprehensive_metrics["trust_metrics"]
+            performance_metrics = comprehensive_metrics["performance_metrics"]
+            
+            summary_metrics = {
+                "experiment_id": config.experiment_id,
+                "config": asdict(config),
+                "success": True,
+                "duration": time.time() - start_time,
+                
+                # Key metrics for paper
+                "precision": trust_metrics["precision"],
+                "recall": trust_metrics["recall"],
+                "f1_score": trust_metrics["f1_score"],
+                "detection_accuracy": trust_metrics["accuracy"],
+                "avg_detection_latency": trust_metrics["avg_detection_latency"],
+                "false_positive_rate": trust_metrics["false_positives"] / max(1, trust_metrics["false_positives"] + trust_metrics["true_negatives"]),
+                
+                "initial_accuracy": performance_metrics["initial_accuracy"],
+                "final_accuracy": performance_metrics["final_accuracy"],
+                "accuracy_degradation": performance_metrics["accuracy_degradation"],
+                
+                "avg_memory_mb": performance_metrics["avg_memory_mb"],
+                "peak_memory_mb": performance_metrics["peak_memory_mb"],
+                "avg_cpu_percent": performance_metrics["avg_cpu_percent"],
+                "trust_overhead_mb": performance_metrics["trust_memory_overhead_mb"],
+                "communication_overhead_percent": performance_metrics["communication_overhead_percent"],
+                
+                "trust_score_separation": trust_metrics["trust_score_separation"],
+                "avg_trust_honest": trust_metrics["avg_trust_honest"],
+                "avg_trust_malicious": trust_metrics["avg_trust_malicious"],
+            }
+            
+            self.logger.info(f"Completed {config.experiment_id}: P={trust_metrics['precision']:.3f}, "
+                           f"R={trust_metrics['recall']:.3f}, Latency={trust_metrics['avg_detection_latency']:.1f}")
+            
+            return summary_metrics
+            
+        except Exception as e:
+            self.logger.error(f"Experiment {config.experiment_id} failed: {str(e)}")
+            return {
+                "experiment_id": config.experiment_id,
+                "config": asdict(config),
+                "success": False,
+                "duration": time.time() - start_time,
+                "error": str(e),
+                "precision": 0.0, "recall": 0.0, "f1_score": 0.0,
+                "detection_accuracy": 0.0, "avg_detection_latency": float('inf'),
+                "false_positive_rate": 0.0,
+                "initial_accuracy": 0.0, "final_accuracy": 0.0, "accuracy_degradation": 0.0,
+                "avg_memory_mb": 0.0, "peak_memory_mb": 0.0, "avg_cpu_percent": 0.0,
+                "trust_overhead_mb": 0.0, "communication_overhead_percent": 0.0,
+                "trust_score_separation": 0.0, "avg_trust_honest": 0.0, "avg_trust_malicious": 0.0
+            }
+    
+    def _load_experiment_results(self, exp_dir: str) -> Dict[str, Any]:
+        """Load experiment results from output directory."""
+        # Look for results files
+        result_files = [f for f in os.listdir(exp_dir) 
+                       if f.startswith("adaptive_trust_results_") and f.endswith(".json")]
+        
+        if not result_files:
+            return {}
+        
+        # Load the most recent results
+        latest_file = sorted(result_files)[-1]
+        try:
+            with open(os.path.join(exp_dir, latest_file), 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            self.logger.warning(f"Failed to load results from {latest_file}: {e}")
+            return {}
+    
+    def run_experiment_suite(self, 
+                           configs: List[ExperimentConfig],
+                           parallel: bool = True,
+                           max_workers: int = 4) -> pd.DataFrame:
+        """Run the complete experiment suite."""
+        
+        self.logger.info(f"Starting experiment suite with {len(configs)} experiments")
+        
+        results = []
+        
+        if parallel and len(configs) > 1:
+            # Parallel execution
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                future_to_config = {executor.submit(self.run_single_experiment, config): config 
+                                  for config in configs}
+                
+                for future in as_completed(future_to_config):
+                    try:
+                        result = future.result()
+                        results.append(result)
+                        self.logger.info(f"Progress: {len(results)}/{len(configs)} completed")
+                    except Exception as e:
+                        config = future_to_config[future]
+                        self.logger.error(f"Failed to get result for {config.experiment_id}: {e}")
+        else:
+            # Sequential execution
+            for i, config in enumerate(configs):
+                self.logger.info(f"Running experiment {i+1}/{len(configs)}: {config.experiment_id}")
+                result = self.run_single_experiment(config)
+                results.append(result)
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(results)
+        
+        # Save results
+        df.to_csv(os.path.join(self.output_dir, "experiment_results.csv"), index=False)
+        
+        # Generate summary statistics
+        self._generate_paper_statistics(df)
+        
+        self.logger.info(f"Experiment suite completed. Results saved to {self.output_dir}")
+        return df
+    
+    def _generate_paper_statistics(self, df: pd.DataFrame):
+        """Generate summary statistics for paper."""
+        
+        successful_df = df[df["success"] == True]
+        
+        if len(successful_df) == 0:
+            self.logger.warning("No successful experiments to analyze")
+            return
+        
+        # Overall performance
+        overall_stats = {
+            "total_experiments": len(df),
+            "successful_experiments": len(successful_df),
+            "success_rate": len(successful_df) / len(df),
+            
+            "detection_performance": {
+                "avg_precision": successful_df["precision"].mean(),
+                "std_precision": successful_df["precision"].std(),
+                "avg_recall": successful_df["recall"].mean(),
+                "std_recall": successful_df["recall"].std(),
+                "avg_f1_score": successful_df["f1_score"].mean(),
+                "std_f1_score": successful_df["f1_score"].std(),
+                "avg_detection_latency": successful_df[successful_df["avg_detection_latency"] != float('inf')]["avg_detection_latency"].mean(),
+            },
+            
+            "overhead_analysis": {
+                "avg_memory_mb": successful_df["avg_memory_mb"].mean(),
+                "avg_trust_overhead_mb": successful_df["trust_overhead_mb"].mean(),
+                "avg_cpu_percent": successful_df["avg_cpu_percent"].mean(),
+                "communication_overhead": successful_df["communication_overhead_percent"].mean(),
+            },
+            
+            "robustness_analysis": {
+                "avg_accuracy_degradation": successful_df["accuracy_degradation"].mean(),
+                "avg_trust_separation": successful_df["trust_score_separation"].mean(),
+            }
+        }
+        
+        # By attack type
+        attack_analysis = {}
+        for attack_type in successful_df["config"].apply(lambda x: x["attack_type"]).unique():
+            attack_df = successful_df[successful_df["config"].apply(lambda x: x["attack_type"]) == attack_type]
+            attack_analysis[attack_type] = {
+                "count": len(attack_df),
+                "avg_precision": attack_df["precision"].mean(),
+                "avg_recall": attack_df["recall"].mean(),
+                "avg_f1_score": attack_df["f1_score"].mean(),
+                "avg_detection_latency": attack_df[attack_df["avg_detection_latency"] != float('inf')]["avg_detection_latency"].mean() if len(attack_df[attack_df["avg_detection_latency"] != float('inf')]) > 0 else None,
+            }
+        
+        # By topology
+        topology_analysis = {}
+        for topology in successful_df["config"].apply(lambda x: x["topology"]).unique():
+            topo_df = successful_df[successful_df["config"].apply(lambda x: x["topology"]) == topology]
+            topology_analysis[topology] = {
+                "count": len(topo_df),
+                "avg_precision": topo_df["precision"].mean(),
+                "avg_recall": topo_df["recall"].mean(),
+                "avg_memory_mb": topo_df["avg_memory_mb"].mean(),
+                "avg_detection_latency": topo_df[topo_df["avg_detection_latency"] != float('inf')]["avg_detection_latency"].mean() if len(topo_df[topo_df["avg_detection_latency"] != float('inf')]) > 0 else None,
+            }
+        
+        paper_stats = {
+            "overall": overall_stats,
+            "by_attack_type": attack_analysis,
+            "by_topology": topology_analysis,
+            "generation_time": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # Save paper statistics
+        with open(os.path.join(self.output_dir, "paper_statistics.json"), "w") as f:
+            json.dump(paper_stats, f, indent=2, default=str)
+        
+        # Print summary
+        print("\n" + "="*60)
+        print("PAPER EXPERIMENT RESULTS SUMMARY")
+        print("="*60)
+        print(f"Total Experiments: {overall_stats['total_experiments']}")
+        print(f"Successful: {overall_stats['successful_experiments']} ({overall_stats['success_rate']:.1%})")
+        print(f"\nDetection Performance:")
+        print(f"  Average Precision: {overall_stats['detection_performance']['avg_precision']:.3f} ± {overall_stats['detection_performance']['std_precision']:.3f}")
+        print(f"  Average Recall: {overall_stats['detection_performance']['avg_recall']:.3f} ± {overall_stats['detection_performance']['std_recall']:.3f}")
+        print(f"  Average F1-Score: {overall_stats['detection_performance']['avg_f1_score']:.3f} ± {overall_stats['detection_performance']['std_f1_score']:.3f}")
+        if overall_stats['detection_performance']['avg_detection_latency']:
+            print(f"  Average Detection Latency: {overall_stats['detection_performance']['avg_detection_latency']:.1f} rounds")
+        print(f"\nOverhead Analysis:")
+        print(f"  Average Memory Usage: {overall_stats['overhead_analysis']['avg_memory_mb']:.1f} MB")
+        print(f"  Trust Monitor Overhead: {overall_stats['overhead_analysis']['avg_trust_overhead_mb']:.1f} MB")
+        print(f"  Average CPU Usage: {overall_stats['overhead_analysis']['avg_cpu_percent']:.1f}%")
+        print(f"  Communication Overhead: {overall_stats['overhead_analysis']['communication_overhead']:.1f}%")
+        print("="*60)
+
+
+def main():
+    """Main function with command-line interface."""
+    
+    parser = argparse.ArgumentParser(
+        description="Paper Experiment Suite for Trust-Based Drift Detection"
+    )
+    
+    parser.add_argument(
+        "--output_dir", type=str, default="paper_experiments",
+        help="Output directory for results (default: paper_experiments)"
+    )
+    parser.add_argument(
+        "--study_type", type=str, default="comprehensive",
+        choices=["quick_test", "topology_comparison", "attack_intensity", "scalability", "cross_dataset", "comprehensive"],
+        help="Type of study to run (default: comprehensive)"
+    )
+    parser.add_argument(
+        "--parallel", action="store_true", default=True,
+        help="Run experiments in parallel (default: True)"
+    )
+    parser.add_argument(
+        "--max_workers", type=int, default=4,
+        help="Maximum parallel workers (default: 4)"
+    )
+    
+    args = parser.parse_args()
+    
+    # Create experiment suite
+    suite = PaperExperimentSuite(args.output_dir)
+    
+    # Generate configurations based on study type
+    if args.study_type == "quick_test":
+        configs = suite.generate_experiment_configurations(quick_test=True)
+    else:
+        configs = suite.generate_experiment_configurations(focused_study=args.study_type if args.study_type != "comprehensive" else None)
+    
+    # Run experiments
+    results_df = suite.run_experiment_suite(
+        configs=configs,
+        parallel=args.parallel,
+        max_workers=args.max_workers
+    )
+    
+    print(f"\nExperiment suite completed!")
+    print(f"Results saved to: {args.output_dir}")
+    print(f"CSV file: {os.path.join(args.output_dir, 'experiment_results.csv')}")
+    print(f"Statistics: {os.path.join(args.output_dir, 'paper_statistics.json')}")
+
+
+if __name__ == "__main__":
+    main()
