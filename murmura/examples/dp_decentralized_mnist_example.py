@@ -673,10 +673,10 @@ def main() -> None:
             # Display results_phase1
             logger.info("=== Training Results ===")
             logger.info(
-                f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
+                f"Initial consensus accuracy: {results['initial_metrics']['consensus_accuracy']:.4f}"
             )
-            logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
-            logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
+            logger.info(f"Final consensus accuracy: {results['final_metrics']['consensus_accuracy']:.4f}")
+            logger.info(f"Consensus improvement: {results['consensus_improvement']:.4f}")
 
             # Display privacy results_phase1 if DP was enabled
             privacy_spent = None

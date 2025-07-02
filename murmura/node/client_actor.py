@@ -1403,10 +1403,10 @@ class VirtualClientActor:
                     # Get neighbor actor reference
                     neighbor_actor = self._actor_references[neighbor_idx]
                     
-                    # Get neighbor's parameters
+                    # Get neighbor's parameters (increased timeout for large models)
                     neighbor_params = ray.get(
                         neighbor_actor.get_model_parameters.remote(),
-                        timeout=30
+                        timeout=120
                     )
                     neighbor_params_list.append(neighbor_params)
                     successful_exchanges += 1

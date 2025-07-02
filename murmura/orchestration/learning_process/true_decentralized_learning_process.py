@@ -235,7 +235,7 @@ class TrueDecentralizedLearningProcess(LearningProcess):
         # Wait for all gossip exchanges to complete
         if gossip_tasks:
             try:
-                results = ray.get([task for _, task in gossip_tasks], timeout=300)
+                results = ray.get([task for _, task in gossip_tasks], timeout=600)
                 
                 # Log exchange statistics
                 successful_exchanges = sum(1 for r in results if r.get('success', False))

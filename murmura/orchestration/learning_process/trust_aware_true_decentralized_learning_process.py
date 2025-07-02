@@ -304,7 +304,7 @@ class TrustAwareTrueDecentralizedLearningProcess(TrueDecentralizedLearningProces
                 # Get neighbor's parameters
                 params = ray.get(
                     self.cluster_manager.actors[neighbor_idx].get_model_parameters.remote(),
-                    timeout=30
+                    timeout=120
                 )
                 neighbor_params[neighbor_idx] = params
                 
