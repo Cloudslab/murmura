@@ -739,6 +739,15 @@ class LearningProcess(ABC):
 
         if self.cluster_manager:
             try:
+                # Clean up all actors before shutting down cluster manager
+                self.logger.debug("Cleaning up actor resources...")
+                for actor in self.cluster_manager.actors:
+                    try:
+                        # Call cleanup on each actor if available
+                        ray.get(actor.cleanup.remote(), timeout=5)
+                    except Exception as e:
+                        self.logger.debug(f"Actor cleanup error (non-critical): {e}")
+                
                 self.cluster_manager.shutdown()
                 self.logger.info("Learning process shut down successfully.")
             except Exception as e:

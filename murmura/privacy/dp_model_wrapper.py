@@ -103,8 +103,7 @@ class DPTorchModelWrapper(TorchModelWrapper):
             # Set up accounting method
             if self.dp_config.accounting_method.value == "rdp":
                 # Use RDP accountant (default and recommended)
-                if self.dp_config.alphas is not None:
-                    self.privacy_engine.set_alphas(self.dp_config.alphas)
+                pass
 
             self.logger.info(
                 f"Initialized DP with target (ε={self.dp_config.target_epsilon}, "

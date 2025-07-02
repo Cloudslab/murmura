@@ -211,7 +211,8 @@ class TrueDecentralizedLearningProcess(LearningProcess):
     
     def _perform_gossip_exchange(self, round_num: int, adjacency_list: Dict[int, List[int]]) -> None:
         """
-        Perform true gossip-based parameter exchange.
+        Perform true gossip-based parameter exchange using sequential execution
+        to avoid deadlocks from simultaneous parameter requests.
         
         Each node:
         1. Exchanges parameters with neighbors
@@ -220,33 +221,26 @@ class TrueDecentralizedLearningProcess(LearningProcess):
         """
         self.logger.info("Performing decentralized gossip exchange...")
         
-        # Prepare tasks for parallel gossip updates
-        gossip_tasks = []
+        successful_exchanges = 0
+        total_exchanges = len([node for node, neighbors in adjacency_list.items() if neighbors])
         
+        # Execute gossip exchanges sequentially to avoid deadlocks
         for node_idx, neighbors in adjacency_list.items():
             if neighbors:  # Only if node has neighbors
-                # Create gossip task for this node
-                task = self.cluster_manager.actors[node_idx].gossip_aggregate.remote(
-                    neighbor_indices=neighbors,
-                    mixing_parameter=0.5  # How much to weight neighbor updates
-                )
-                gossip_tasks.append((node_idx, task))
-        
-        # Wait for all gossip exchanges to complete
-        if gossip_tasks:
-            try:
-                results = ray.get([task for _, task in gossip_tasks], timeout=600)
-                
-                # Log exchange statistics
-                successful_exchanges = sum(1 for r in results if r.get('success', False))
-                self.logger.info(
-                    f"Completed {successful_exchanges}/{len(gossip_tasks)} gossip exchanges"
-                )
-                
-                # Emit parameter transfer events
-                for (node_idx, _), result in zip(gossip_tasks, results):
+                try:
+                    # Execute gossip task for this node
+                    result = ray.get(
+                        self.cluster_manager.actors[node_idx].gossip_aggregate.remote(
+                            neighbor_indices=neighbors,
+                            mixing_parameter=0.5  # How much to weight neighbor updates
+                        ),
+                        timeout=120  # Shorter timeout since no deadlock
+                    )
+                    
                     if result.get('success', False):
-                        neighbors = adjacency_list.get(node_idx, [])
+                        successful_exchanges += 1
+                        
+                        # Emit parameter transfer event
                         self.training_monitor.emit_event(
                             ParameterTransferEvent(
                                 round_num=round_num,
@@ -255,10 +249,13 @@ class TrueDecentralizedLearningProcess(LearningProcess):
                                 param_summary={'exchanges': len(neighbors)}
                             )
                         )
+                    else:
+                        self.logger.warning(f"Gossip exchange failed for node {node_idx}: {result.get('error', 'Unknown')}")
                         
-            except Exception as e:
-                self.logger.error(f"Gossip exchange failed: {e}")
-                raise
+                except Exception as e:
+                    self.logger.error(f"Gossip exchange failed for node {node_idx}: {e}")
+        
+        self.logger.info(f"Completed {successful_exchanges}/{total_exchanges} gossip exchanges")
     
     def execute(self) -> Dict[str, Any]:
         """

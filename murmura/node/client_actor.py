@@ -1593,3 +1593,46 @@ class VirtualClientActor:
         except Exception as e:
             self.logger.warning(f"Failed to get partition data: {e}")
             return None
+
+    def get_privacy_spent(self) -> Dict[str, Any]:
+        """
+        Get privacy budget spent by this actor.
+        
+        Returns:
+            Dictionary containing privacy metrics or empty dict if not DP-enabled
+        """
+        try:
+            if self.model and hasattr(self.model, 'get_privacy_spent'):
+                return self.model.get_privacy_spent()
+            else:
+                return {"epsilon": 0.0, "delta": 0.0, "dp_enabled": False}
+        except Exception as e:
+            self.logger.warning(f"Failed to get privacy spent: {e}")
+            return {"epsilon": 0.0, "delta": 0.0, "dp_enabled": False, "error": str(e)}
+
+    def cleanup(self) -> None:
+        """Clean up resources to prevent semaphore leaks."""
+        try:
+            # Clean up model resources
+            if self.model and hasattr(self.model, 'cleanup'):
+                self.model.cleanup()
+            
+            # Clear dataset references
+            if self.mdataset:
+                del self.mdataset
+                self.mdataset = None
+            
+            # Force garbage collection
+            import gc
+            gc.collect()
+            
+            self.logger.debug("Actor cleanup completed")
+        except Exception as e:
+            self.logger.warning(f"Cleanup error (non-critical): {e}")
+
+    def __del__(self):
+        """Destructor to ensure cleanup on actor termination."""
+        try:
+            self.cleanup()
+        except Exception:
+            pass  # Ignore cleanup errors during destruction

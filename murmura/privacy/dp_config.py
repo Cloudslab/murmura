@@ -171,6 +171,7 @@ class DPConfig(BaseModel):
             auto_tune_noise=True,
             enable_client_dp=True,
             enable_central_dp=False,
+            alphas=[1 + x / 10.0 for x in range(1, 100)] + [11, 12, 14, 16, 20, 24, 28, 32, 64, 128],  # Extended range
         )
 
     @classmethod
@@ -195,6 +196,7 @@ class DPConfig(BaseModel):
             auto_tune_noise=True,
             enable_client_dp=True,
             enable_central_dp=False,
+            alphas=[1 + x / 10.0 for x in range(1, 100)] + [11, 12, 14, 16, 20, 24, 28, 32, 64, 128],  # Extended range
         )
 
     @classmethod

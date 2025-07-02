@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -435,12 +436,61 @@ class PrivacyAccountant:
 
         if OPACUS_AVAILABLE:
             try:
-                noise_multiplier = get_noise_multiplier(
-                    target_epsilon=target_epsilon,
-                    target_delta=target_delta,
-                    sample_rate=sample_rate,
-                    steps=steps,
-                )
+                # Use custom alphas if available to avoid warning
+                if self.dp_config.alphas is not None:
+                    from opacus.accountants.analysis.rdp import compute_rdp, get_privacy_spent
+                    
+                    # Compute noise multiplier with custom alphas to avoid warnings
+                    alphas = self.dp_config.alphas
+                    
+                    # Binary search for noise multiplier
+                    noise_min, noise_max = 0.1, 10.0
+                    for _ in range(50):  # Binary search iterations
+                        noise = (noise_min + noise_max) / 2
+                        rdp = compute_rdp(
+                            q=sample_rate,
+                            noise_multiplier=noise,
+                            steps=steps,
+                            orders=alphas
+                        )
+                        eps, _ = get_privacy_spent(orders=alphas, rdp=rdp, delta=target_delta)
+                        
+                        if eps < target_epsilon:
+                            noise_max = noise
+                        else:
+                            noise_min = noise
+                        
+                        if abs(eps - target_epsilon) < 0.01:  # Close enough
+                            break
+                    
+                    noise_multiplier = (noise_min + noise_max) / 2
+                else:
+                    # Use extended alphas range to avoid warning
+                    from opacus.accountants.analysis.rdp import compute_rdp, get_privacy_spent
+                    
+                    extended_alphas = [1 + x / 10.0 for x in range(1, 100)] + [11, 12, 14, 16, 20, 24, 28, 32, 64, 128]
+                    
+                    # Binary search for noise multiplier with extended alphas
+                    noise_min, noise_max = 0.1, 10.0
+                    for _ in range(50):  # Binary search iterations
+                        noise = (noise_min + noise_max) / 2
+                        rdp = compute_rdp(
+                            q=sample_rate,
+                            noise_multiplier=noise,
+                            steps=steps,
+                            orders=extended_alphas
+                        )
+                        eps, _ = get_privacy_spent(orders=extended_alphas, rdp=rdp, delta=target_delta)
+                        
+                        if eps < target_epsilon:
+                            noise_max = noise
+                        else:
+                            noise_min = noise
+                        
+                        if abs(eps - target_epsilon) < 0.01:  # Close enough
+                            break
+                    
+                    noise_multiplier = (noise_min + noise_max) / 2
 
                 self.logger.info(
                     f"Suggested noise multiplier: {noise_multiplier:.3f} "

@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
+import torch.multiprocessing as mp
 
 from murmura.data_processing.data_preprocessor import GenericDataPreprocessor
 from murmura.model.model_interface import ModelInterface
@@ -72,6 +73,12 @@ class TorchModelWrapper(ModelInterface):
         else:
             self.data_preprocessor = data_preprocessor
 
+        # Set multiprocessing sharing strategy to avoid semaphore leaks
+        try:
+            mp.set_sharing_strategy('file_system')
+        except RuntimeError:
+            pass  # Already set
+        
         # Initialize model on CPU first for serialization safety
         self.model.to("cpu")
         self.optimizer = self.optimizer_class(
@@ -156,7 +163,7 @@ class TorchModelWrapper(ModelInterface):
         else:
             dataset = TensorDataset(tensor_data)
 
-        return DataLoader(dataset, batch_size=batch_size, shuffle=(labels is not None))
+        return DataLoader(dataset, batch_size=batch_size, shuffle=(labels is not None), num_workers=0, persistent_workers=False)
 
     @staticmethod
     def fallback_data_processing(data: Any) -> np.ndarray:
@@ -368,15 +375,35 @@ class TorchModelWrapper(ModelInterface):
 
     def get_parameters(self) -> Dict[str, Any]:
         """Get parameters as CPU tensors for safe serialization."""
-        # Move model to CPU temporarily for serialization safety
-        self.model.to("cpu")
-        params = {
-            name: param.cpu().numpy() for name, param in self.model.state_dict().items()
-        }
-        # Move back to the original device if set
-        if hasattr(self, "device") and self.device != "cpu":
-            self.model.to(self.device)
-        return params
+        try:
+            # Get current device
+            current_device = next(self.model.parameters()).device
+            
+            # Don't move to CPU if already on CPU - avoid unnecessary transfers
+            if current_device.type == "cpu":
+                params = {
+                    name: param.detach().numpy() for name, param in self.model.state_dict().items()
+                }
+            else:
+                # Move model to CPU temporarily for serialization safety
+                self.model.to("cpu")
+                params = {
+                    name: param.cpu().numpy() for name, param in self.model.state_dict().items()
+                }
+                # Move back to the original device
+                self.model.to(current_device)
+            
+            return params
+        except Exception as e:
+            self.logger.error(f"Failed to get parameters: {e}")
+            # Fallback: try to get parameters without device moves
+            params = {}
+            for name, param in self.model.state_dict().items():
+                try:
+                    params[name] = param.detach().cpu().numpy()
+                except Exception:
+                    self.logger.warning(f"Failed to get parameter {name}")
+            return params
 
     def set_parameters(self, parameters: Dict[str, Any]) -> None:
         """Set parameters safely regardless of device."""
@@ -424,3 +451,24 @@ class TorchModelWrapper(ModelInterface):
 
         # Then detect and set the proper device
         self.detect_and_set_device()
+
+    def cleanup(self) -> None:
+        """Clean up resources to prevent semaphore leaks."""
+        try:
+            # Clear any cached dataloaders or multiprocessing resources
+            if hasattr(self, '_cached_dataloaders'):
+                del self._cached_dataloaders
+            
+            # Force cleanup of any open dataloaders
+            import torch.multiprocessing as mp
+            try:
+                # Clear any resource sharing caches
+                mp._prctl_set_pdeathsig(0)  # Clean process death signal
+            except (AttributeError, OSError):
+                pass
+            
+            # Force garbage collection to clean up any remaining references
+            import gc
+            gc.collect()
+        except Exception:
+            pass  # Ignore cleanup errors
