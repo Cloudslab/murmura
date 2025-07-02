@@ -1,6 +1,54 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
 
-.idea
+# IDE
+.idea/
+.vscode/
+
+# macOS
 .DS_Store
 
+# PyTorch models
 *.pt
+*.pth
+*.ckpt
+
+# Experiment results and logs
+*_results/
+*_results_*/
+paper_experiments/
+direct_experiments/
+logs/
+*.log
+!experiments/*.log
+!experiments/**/*.log
+
+# Test outputs
+test_outputs/
+quick_test_*/
+beta_test_*/
+trust_diagnostics/
+trust_evaluation_results/
+trust_analysis_results/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Ray temporary files
+/tmp/ray/
+
+# Data directories
+data/
+datasets/
+MNIST/
+CIFAR10/
+
+# Jupyter notebooks (unless in experiments)
+*.ipynb
+!experiments/**/*.ipynb
