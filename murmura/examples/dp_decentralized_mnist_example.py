@@ -1,8 +1,22 @@
 import argparse
 import os
 import logging
+import ray
 import torch
 import torch.nn as nn
+import torch.multiprocessing as mp
+
+# Set environment variables to prevent semaphore leaks
+os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Prevents HuggingFace tokenizer semaphore leaks
+os.environ["OMP_NUM_THREADS"] = "1"  # Prevents OpenMP semaphore leaks
+
+# Set multiprocessing sharing strategy before importing anything else
+# This prevents semaphore leaks in Ray actors
+try:
+    mp.set_sharing_strategy('file_system')
+    mp.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass  # Already set
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
@@ -680,34 +694,62 @@ def main() -> None:
 
             # Display privacy results_phase1 if DP was enabled
             privacy_spent = None
-            if (
-                args.enable_dp
-                and dp_config is not None
-                and hasattr(global_model, "get_privacy_spent")
-            ):
+            if args.enable_dp and dp_config is not None:
                 logger.info("=== Privacy Results ===")
-                privacy_spent = global_model.get_privacy_spent()
-                logger.info(
-                    f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
-                )
-                logger.info(
-                    f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
-                )
+                
+                # Collect privacy spending from all actors
+                actor_privacy_results = []
+                total_epsilon = 0.0
+                max_delta = 0.0
+                
+                for i, actor in enumerate(learning_process.cluster_manager.actors):
+                    try:
+                        actor_privacy = ray.get(actor.get_privacy_spent.remote(), timeout=10)
+                        actor_privacy_results.append({
+                            "actor_id": i,
+                            **actor_privacy
+                        })
+                        
+                        # Accumulate privacy budget (conservative approach)
+                        if actor_privacy.get("dp_enabled", False):
+                            total_epsilon += actor_privacy.get("epsilon", 0.0)
+                            max_delta = max(max_delta, actor_privacy.get("delta", 0.0))
+                        
+                        logger.info(
+                            f"Actor {i}: ε={actor_privacy.get('epsilon', 0.0):.3f}, "
+                            f"δ={actor_privacy.get('delta', 0.0):.2e}"
+                        )
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to get privacy spent from actor {i}: {e}")
+                        actor_privacy_results.append({
+                            "actor_id": i,
+                            "epsilon": 0.0,
+                            "delta": 0.0,
+                            "error": str(e)
+                        })
+                
+                # For decentralized learning, we use the maximum epsilon spent by any actor
+                # This is the correct privacy analysis for decentralized DP
+                max_epsilon = max([r.get("epsilon", 0.0) for r in actor_privacy_results])
+                
+                privacy_spent = {"epsilon": max_epsilon, "delta": max_delta}
+                
+                logger.info("=== Decentralized Privacy Analysis ===")
+                logger.info(f"Maximum actor privacy spent: ε={max_epsilon:.3f}, δ={max_delta:.2e}")
+                logger.info(f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
 
-                remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
+                remaining_eps = dp_config.target_epsilon - max_epsilon
                 logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
 
-                if privacy_spent["epsilon"] > dp_config.target_epsilon:
+                if max_epsilon > dp_config.target_epsilon:
                     logger.warning("Privacy budget exceeded!")
                 else:
                     logger.info("Privacy budget respected ✓")
 
-                # Get privacy summary from accountant
-                if "privacy_accountant" in locals():
-                    privacy_summary = privacy_accountant.get_privacy_summary()
-                    logger.info(
-                        f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
-                    )
+                # Calculate utilization based on maximum actor spending
+                utilization = (max_epsilon / dp_config.target_epsilon) * 100 if dp_config.target_epsilon > 0 else 0
+                logger.info(f"Privacy budget utilization: {utilization:.1f}%")
 
             # Generate visualizations_phase1 if requested
             if visualizer and (

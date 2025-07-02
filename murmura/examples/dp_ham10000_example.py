@@ -520,31 +520,33 @@ def main() -> None:
 
             # Display privacy results_phase1 if DP was enabled
             privacy_spent = None
-            if args.enable_dp and hasattr(global_model, "get_privacy_spent"):
+            if args.enable_dp and dp_config is not None:
                 logger.info("=== Privacy Results ===")
-                privacy_spent = global_model.get_privacy_spent()
-                logger.info(
-                    f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
-                )
-                if dp_config is not None:
+                
+                # For centralized learning, get privacy from the global model
+                if hasattr(global_model, "get_privacy_spent"):
+                    privacy_spent = global_model.get_privacy_spent()
                     logger.info(
-                        f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                        f"Global model privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
                     )
+                else:
+                    privacy_spent = {"epsilon": 0.0, "delta": 0.0}
+                    logger.info("No privacy spending recorded (DP may not be enabled)")
+                
+                logger.info("=== Centralized Privacy Analysis ===")
+                logger.info(f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
 
-                    remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
-                    logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
+                remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
+                logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
 
-                    if privacy_spent["epsilon"] > dp_config.target_epsilon:
-                        logger.warning("Privacy budget exceeded!")
-                    else:
-                        logger.info("Privacy budget respected ✓")
+                if privacy_spent["epsilon"] > dp_config.target_epsilon:
+                    logger.warning("Privacy budget exceeded!")
+                else:
+                    logger.info("Privacy budget respected ✓")
 
-                # Get privacy summary from accountant
-                if "privacy_accountant" in locals():
-                    privacy_summary = privacy_accountant.get_privacy_summary()
-                    logger.info(
-                        f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
-                    )
+                # Calculate utilization 
+                utilization = (privacy_spent["epsilon"] / dp_config.target_epsilon) * 100 if dp_config.target_epsilon > 0 else 0
+                logger.info(f"Privacy budget utilization: {utilization:.1f}%")
 
             # Create visualization if requested
             if visualizer and args.create_summary:

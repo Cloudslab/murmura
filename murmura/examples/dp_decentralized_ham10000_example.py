@@ -1,9 +1,22 @@
-# type: ignore
 import argparse
 import os
 import logging
+import ray
 import torch
 import torch.nn as nn
+import torch.multiprocessing as mp
+
+# Set environment variables to prevent semaphore leaks
+os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Prevents HuggingFace tokenizer semaphore leaks
+os.environ["OMP_NUM_THREADS"] = "1"  # Prevents OpenMP semaphore leaks
+
+# Set multiprocessing sharing strategy before importing anything else
+# This prevents semaphore leaks in Ray actors
+try:
+    mp.set_sharing_strategy('file_system')
+    mp.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass  # Already set
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
@@ -15,8 +28,8 @@ from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.data_processing.data_preprocessor import create_image_preprocessor
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
-from murmura.orchestration.learning_process.decentralized_learning_process import (
-    DecentralizedLearningProcess,
+from murmura.orchestration.learning_process.true_decentralized_learning_process import (
+    TrueDecentralizedLearningProcess,
 )
 from murmura.network_management.topology_compatibility import (
     TopologyCompatibilityManager,
@@ -114,6 +127,12 @@ def main() -> None:
         default="gossip_avg",
         help="Aggregation strategy (gossip_avg for decentralized)",
     )
+    parser.add_argument(
+        "--mixing_parameter",
+        type=float,
+        default=0.5,
+        help="Mixing parameter for gossip_avg strategy (0.5 = equal mixing)",
+    )
 
     # Topology arguments (excluding star for decentralized)
     parser.add_argument(
@@ -196,13 +215,74 @@ def main() -> None:
         help="DP preset configuration",
     )
 
-    # Logging and monitoring
+    # Multi-node Ray cluster arguments
+    parser.add_argument(
+        "--ray_address",
+        type=str,
+        default=None,
+        help="Ray cluster address. If None, uses local cluster.",
+    )
+    parser.add_argument(
+        "--ray_namespace",
+        type=str,
+        default="murmura_dp_decentralized",
+        help="Ray namespace for isolation",
+    )
+    parser.add_argument(
+        "--actors_per_node",
+        type=int,
+        default=None,
+        help="Number of actors per physical node. If None, distributes evenly.",
+    )
+    parser.add_argument(
+        "--cpus_per_actor",
+        type=float,
+        default=1.0,
+        help="CPU resources per actor",
+    )
+    parser.add_argument(
+        "--gpus_per_actor",
+        type=float,
+        default=None,
+        help="GPU resources per actor. If None, auto-calculated.",
+    )
+    parser.add_argument(
+        "--memory_per_actor",
+        type=int,
+        default=None,
+        help="Memory (MB) per actor",
+    )
+    parser.add_argument(
+        "--placement_strategy",
+        type=str,
+        choices=["spread", "pack", "strict_spread", "strict_pack"],
+        default="spread",
+        help="Actor placement strategy across nodes",
+    )
+    parser.add_argument(
+        "--auto_detect_cluster",
+        action="store_true",
+        help="Auto-detect Ray cluster from environment variables",
+    )
+
+    # Logging and monitoring arguments
     parser.add_argument(
         "--log_level",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         default="INFO",
         help="Logging level",
+    )
+    parser.add_argument(
+        "--monitor_resources",
+        action="store_true",
+        help="Monitor and log resource usage during training",
+    )
+    parser.add_argument(
+        "--health_check_interval",
+        type=int,
+        default=5,
+        help="Interval (rounds) for actor health checks",
     )
     parser.add_argument(
         "--save_path",
@@ -230,19 +310,6 @@ def main() -> None:
         help="Enable privacy amplification by subsampling",
     )
 
-    # Decentralized-specific arguments
-    parser.add_argument(
-        "--gossip_rounds",
-        type=int,
-        default=5,
-        help="Number of gossip rounds per iteration",
-    )
-    parser.add_argument(
-        "--gossip_subset_size",
-        type=int,
-        default=None,
-        help="Subset size for gossip averaging (None for all neighbors)",
-    )
 
     # Visualization arguments
     parser.add_argument(
@@ -252,9 +319,22 @@ def main() -> None:
         help="Directory to save visualizations_phase1",
     )
     parser.add_argument(
+        "--create_animation",
+        action="store_true",
+        help="Create animation of the training process",
+    )
+    parser.add_argument(
+        "--create_frames",
+        action="store_true",
+        help="Create individual frames of the training process",
+    )
+    parser.add_argument(
         "--create_summary",
         action="store_true",
         help="Create summary plot of the training process",
+    )
+    parser.add_argument(
+        "--fps", type=int, default=2, help="Frames per second for animation"
     )
     parser.add_argument(
         "--experiment_name",
@@ -307,13 +387,10 @@ def main() -> None:
                 if args.target_epsilon != 8.0:  # 8.0 is the default
                     dp_config.target_epsilon = args.target_epsilon
             elif args.dp_preset == "medium_privacy":
-                dp_config = DPConfig(
-                    target_epsilon=args.target_epsilon,
-                    target_delta=1e-5,
-                    max_grad_norm=1.0,
-                    enable_client_dp=True,
-                    enable_central_dp=False,
-                )
+                dp_config = DPConfig.create_for_ham10000()
+                # Override with user-specified epsilon if provided and different from default
+                if args.target_epsilon != 8.0:  # 8.0 is the default
+                    dp_config.target_epsilon = args.target_epsilon
             elif args.dp_preset == "low_privacy":
                 dp_config = DPConfig(
                     target_epsilon=args.target_epsilon
@@ -359,11 +436,21 @@ def main() -> None:
         else:
             logger.info("Differential privacy is DISABLED")
 
-        # Ray cluster configuration
+        # Create enhanced configuration with multi-node support
         ray_cluster_config = RayClusterConfig(
+            address=args.ray_address,
+            namespace=args.ray_namespace,
             logging_level=args.log_level,
+            auto_detect_cluster=args.auto_detect_cluster,
         )
-        resource_config = ResourceConfig()
+
+        resource_config = ResourceConfig(
+            actors_per_node=args.actors_per_node,
+            cpus_per_actor=args.cpus_per_actor,
+            gpus_per_actor=args.gpus_per_actor,
+            memory_per_actor=args.memory_per_actor,
+            placement_strategy=args.placement_strategy,
+        )
 
         logger.info("=== Loading HAM10000 Dataset ===")
         # Load HAM10000 dataset from Hugging Face
@@ -404,8 +491,7 @@ def main() -> None:
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
                 strategy_type=AggregationStrategyType(args.aggregation_strategy),
-                gossip_rounds=args.gossip_rounds,
-                gossip_subset_size=args.gossip_subset_size,
+                params={\"mixing_parameter\": args.mixing_parameter},
             ),
             dataset_name="kuchikihater/HAM10000",
             ray_cluster=ray_cluster_config,
@@ -417,6 +503,8 @@ def main() -> None:
             batch_size=args.batch_size,
             learning_rate=args.lr,
             test_split=args.test_split,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
             client_sampling_rate=args.client_sampling_rate,
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
@@ -478,20 +566,21 @@ def main() -> None:
                 data_preprocessor=image_preprocessor,
             )
 
-        logger.info("=== Setting Up Decentralized Learning Process ===")
+        logger.info("=== Setting Up True Decentralized Learning Process ===")
         logger.info(
             f"Dataset splits before learning process: {list(train_dataset._splits.keys())}"
         )
-        learning_process = DecentralizedLearningProcess(
+        learning_process = TrueDecentralizedLearningProcess(
             config=config,
             dataset=train_dataset,
             model=global_model,
         )
 
-        # Set up visualization if requested
+        # Set up visualization BEFORE executing the learning process
         visualizer = None
-        if args.create_summary:
+        if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
+            # Create visualization directory
             if args.experiment_name:
                 vis_dir = os.path.join(args.vis_dir, args.experiment_name)
             else:
@@ -501,17 +590,39 @@ def main() -> None:
                     + ("_dp" if args.enable_dp else "_no_dp"),
                 )
             os.makedirs(vis_dir, exist_ok=True)
+
+            # Create visualizer
             visualizer = NetworkVisualizer(output_dir=vis_dir)
+
+            # Register visualizer with learning process
             learning_process.register_observer(visualizer)
+            logger.info("Registered visualizer with learning process")
 
         try:
-            # Initialize learning process
-            logger.info("=== Initializing Learning Process ===")
+            # Initialize the learning process
             learning_process.initialize(
                 num_actors=config.num_actors,
                 topology_config=config.topology,
                 aggregation_config=config.aggregation,
                 partitioner=partitioner,
+            )
+
+            # Get and log cluster information
+            cluster_summary = learning_process.get_cluster_summary()
+            logger.info("=== Enhanced Cluster Summary ===")
+            logger.info(
+                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+            )
+            logger.info(f"Total nodes: {cluster_summary.get('total_nodes', 'unknown')}")
+            logger.info(
+                f"Total actors: {cluster_summary.get('total_actors', 'unknown')}"
+            )
+            logger.info(f"Topology: {cluster_summary.get('topology', 'unknown')}")
+            logger.info(
+                f"Placement strategy: {cluster_summary.get('placement_strategy', 'unknown')}"
+            )
+            logger.info(
+                f"Has placement group: {cluster_summary.get('has_placement_group', False)}"
             )
 
             # Print experiment summary
@@ -528,7 +639,8 @@ def main() -> None:
             logger.info(f"Image size: {args.image_size}x{args.image_size}")
             logger.info(f"Model: {args.model_complexity}")
             logger.info(f"Device: {device}")
-            logger.info(f"Gossip rounds: {args.gossip_rounds}")
+            logger.info(f"Resource monitoring: {config.monitor_resources}")
+            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
             if args.enable_dp and dp_config is not None:
                 logger.info("=== Differential Privacy Settings ===")
@@ -554,57 +666,130 @@ def main() -> None:
             else:
                 logger.info("Differential Privacy: DISABLED")
 
-            logger.info("=== Starting Decentralized Training ===")
-            # Execute learning process
+            logger.info("=== Starting HAM10000 DP Decentralized Learning ===")
+
+            # Monitor initial resource usage if enabled
+            if args.monitor_resources:
+                initial_resources = learning_process.monitor_resource_usage()
+                logger.info(
+                    f"Initial resource usage: {initial_resources.get('resource_utilization', {})}"
+                )
+
+            # Execute the learning process with enhanced monitoring
             results = learning_process.execute()
+
+            # Perform periodic health checks and resource monitoring during training
+            if args.monitor_resources:
+                final_resources = learning_process.monitor_resource_usage()
+                logger.info(
+                    f"Final resource usage: {final_resources.get('resource_utilization', {})}"
+                )
+
+            # Get final health status
+            health_status = learning_process.get_actor_health_status()
+            if "error" not in health_status:
+                logger.info(
+                    f"Final actor health: {health_status['healthy']}/{health_status['sampled_actors']} healthy"
+                )
+                if health_status.get("degraded", 0) > 0:
+                    logger.warning(f"Degraded actors: {health_status['degraded']}")
+                if health_status.get("error", 0) > 0:
+                    logger.error(f"Error actors: {health_status['error']}")
 
             # Display results_phase1
             logger.info("=== Training Results ===")
             logger.info(
-                f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
+                f"Initial consensus accuracy: {results['initial_metrics']['consensus_accuracy']:.4f}"
             )
-            logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
-            logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
+            logger.info(f"Final consensus accuracy: {results['final_metrics']['consensus_accuracy']:.4f}")
+            logger.info(f"Consensus improvement: {results['consensus_improvement']:.4f}")
 
             # Display privacy results_phase1 if DP was enabled
             privacy_spent = None
-            if args.enable_dp and hasattr(global_model, "get_privacy_spent"):
+            if args.enable_dp and dp_config is not None:
                 logger.info("=== Privacy Results ===")
-                privacy_spent = global_model.get_privacy_spent()
-                logger.info(
-                    f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
-                )
-                if dp_config is not None:
-                    logger.info(
-                        f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                
+                # Collect privacy spending from all actors
+                actor_privacy_results = []
+                total_epsilon = 0.0
+                max_delta = 0.0
+                
+                for i, actor in enumerate(learning_process.cluster_manager.actors):
+                    try:
+                        actor_privacy = ray.get(actor.get_privacy_spent.remote(), timeout=10)
+                        actor_privacy_results.append({
+                            "actor_id": i,
+                            **actor_privacy
+                        })
+                        
+                        # Accumulate privacy budget (conservative approach)
+                        if actor_privacy.get("dp_enabled", False):
+                            total_epsilon += actor_privacy.get("epsilon", 0.0)
+                            max_delta = max(max_delta, actor_privacy.get("delta", 0.0))
+                        
+                        logger.info(
+                            f"Actor {i}: ε={actor_privacy.get('epsilon', 0.0):.3f}, "
+                            f"δ={actor_privacy.get('delta', 0.0):.2e}"
+                        )
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to get privacy spent from actor {i}: {e}")
+                        actor_privacy_results.append({
+                            "actor_id": i,
+                            "epsilon": 0.0,
+                            "delta": 0.0,
+                            "error": str(e)
+                        })
+                
+                # For decentralized learning, we use the maximum epsilon spent by any actor
+                # This is the correct privacy analysis for decentralized DP
+                max_epsilon = max([r.get("epsilon", 0.0) for r in actor_privacy_results])
+                
+                privacy_spent = {"epsilon": max_epsilon, "delta": max_delta}
+                
+                logger.info("=== Decentralized Privacy Analysis ===")
+                logger.info(f"Maximum actor privacy spent: ε={max_epsilon:.3f}, δ={max_delta:.2e}")
+                logger.info(f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
+
+                remaining_eps = dp_config.target_epsilon - max_epsilon
+                logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
+
+                if max_epsilon > dp_config.target_epsilon:
+                    logger.warning("Privacy budget exceeded!")
+                else:
+                    logger.info("Privacy budget respected ✓")
+
+                # Calculate utilization based on maximum actor spending
+                utilization = (max_epsilon / dp_config.target_epsilon) * 100 if dp_config.target_epsilon > 0 else 0
+                logger.info(f"Privacy budget utilization: {utilization:.1f}%")
+
+            # Generate visualizations_phase1 if requested
+            if visualizer and (
+                args.create_animation or args.create_frames or args.create_summary
+            ):
+                logger.info("=== Generating Visualizations ===")
+
+                if args.create_animation:
+                    logger.info("Creating animation...")
+                    visualizer.render_training_animation(
+                        filename=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}_animation.mp4",
+                        fps=args.fps,
                     )
 
-                    remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
-                    logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
-
-                    if privacy_spent["epsilon"] > dp_config.target_epsilon:
-                        logger.warning("Privacy budget exceeded!")
-                    else:
-                        logger.info("Privacy budget respected ✓")
-
-                # Get privacy summary from accountant
-                if "privacy_accountant" in locals():
-                    privacy_summary = privacy_accountant.get_privacy_summary()
-                    logger.info(
-                        f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
+                if args.create_frames:
+                    logger.info("Creating frame sequence...")
+                    visualizer.render_frame_sequence(
+                        prefix=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}_step"
                     )
 
-            # Create visualization if requested
-            if visualizer and args.create_summary:
-                logger.info("=== Generating Visualization ===")
-                visualizer.render_summary_plot(
-                    filename=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}"
-                    + ("_dp" if args.enable_dp else "_no_dp")
-                    + "_summary.png"
-                )
+                if args.create_summary:
+                    logger.info("Creating summary plot...")
+                    visualizer.render_summary_plot(
+                        filename=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}_summary.png"
+                    )
 
-            # Save model
-            logger.info("=== Saving Model ===")
+            # Save the final model
+            logger.info("=== Saving Final Model ===")
             save_path = args.save_path
             if args.enable_dp:
                 # Add DP suffix to filename
@@ -621,10 +806,8 @@ def main() -> None:
                 "results_phase1": results,
                 "differential_privacy": {
                     "enabled": args.enable_dp,
-                    "config": dp_config.model_dump() if dp_config else None,
-                    "privacy_spent": privacy_spent
-                    if args.enable_dp and hasattr(global_model, "get_privacy_spent")
-                    else None,
+                    "config": dp_config.model_dump() if dp_config is not None else None,
+                    "privacy_spent": privacy_spent,
                 },
             }
 
@@ -634,12 +817,35 @@ def main() -> None:
             torch.save(checkpoint, save_path)
             logger.info(f"Model saved to '{save_path}'")
 
+            # Print final results_phase1 with enhanced cluster context
+            logger.info("=== HAM10000 DP Decentralized Training Results ===")
+            logger.info(
+                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
+            )
+            logger.info(
+                f"Total physical nodes: {cluster_summary.get('total_nodes', 'unknown')}"
+            )
+            logger.info(
+                f"Total virtual actors: {cluster_summary.get('total_actors', 'unknown')}"
+            )
+            logger.info(f"Topology used: {cluster_summary.get('topology', 'unknown')}")
+            logger.info(
+                f"Training completed with {config.rounds} rounds of {config.epochs} epochs each"
+            )
+
+            # Log topology-specific results_phase1
+            if "topology" in results:
+                topology_info = results["topology"]
+                logger.info(
+                    f"Network adjacency: {len(topology_info.get('adjacency_list', {}))} connections"
+                )
+
         finally:
-            logger.info("=== Shutting Down ===")
+            logger.info("=== Shutting Down Enhanced System ===")
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"DP Decentralized HAM10000 Learning Process failed: {str(e)}")
+        logger.error(f"HAM10000 DP Decentralized Learning Process failed: {str(e)}")
         import traceback
 
         traceback.print_exc()
