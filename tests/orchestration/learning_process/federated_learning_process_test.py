@@ -85,6 +85,14 @@ def mock_cluster_manager(mock_topology_manager):
         "layer1": np.array([2.0, 3.0])
     }
 
+    # Mock collect_privacy_metrics method
+    cluster_manager.collect_privacy_metrics.return_value = {
+        "dp_enabled": False,
+        "epsilon": 0.0,
+        "delta": 0.0,
+        "client_count": 3
+    }
+
     return cluster_manager
 
 
