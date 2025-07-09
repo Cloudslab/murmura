@@ -103,7 +103,7 @@ class DecentralizedLearningProcess(LearningProcess):
             0, {"status": "starting_decentralized", "rounds": rounds}
         )
 
-        # Prepare test data for global evaluation
+        # Prepare test data for evaluation
         test_dataset = self.dataset.get_split(test_split)
 
         # Get feature and label columns from config - these should be set during initialization
@@ -253,21 +253,16 @@ class DecentralizedLearningProcess(LearningProcess):
             client_data_sizes = [len(partition) for partition in partitions]
             weights = [float(size) for size in client_data_sizes]
 
-            # Perform topology-aware aggregation
-            aggregated_params = self.cluster_manager.aggregate_model_parameters(
-                weights=weights
-            )
+            # Perform topology-aware decentralized aggregation
+            # In true decentralized learning, each node performs local aggregation with neighbors
+            # No global model is maintained or distributed
+            self.cluster_manager.perform_decentralized_aggregation(weights=weights)
 
-            # 3. Model Update
-            # Update global model
-            self.model.set_parameters(aggregated_params)
-
-            # Distribute updated model to clients
-            self.cluster_manager.update_models(aggregated_params)
-
-            # Calculate parameter convergence
+            # Calculate parameter convergence across the network
+            # Use average of all node parameters as reference for convergence calculation
+            avg_params = self._calculate_average_parameters(node_params)
             param_convergence = self._calculate_parameter_convergence(
-                node_params, aggregated_params
+                node_params, avg_params
             )
 
             # Emit model update event
@@ -280,10 +275,14 @@ class DecentralizedLearningProcess(LearningProcess):
             )
 
             # 4. Evaluation
+            # In decentralized learning, evaluate using a representative model from the network
+            # Use the first node's model as representative for evaluation
+            representative_params = ray.get(self.cluster_manager.actors[0].get_model_parameters.remote())
+            self.model.set_parameters(representative_params)
             test_metrics = self.model.evaluate(test_features, test_labels)
-            self.logger.info(f"Global Model Test Loss: {test_metrics['loss']:.4f}")
+            self.logger.info(f"Representative Model Test Loss: {test_metrics['loss']:.4f}")
             self.logger.info(
-                f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
+                f"Representative Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
             )
 
             # Emit evaluation event
@@ -328,3 +327,24 @@ class DecentralizedLearningProcess(LearningProcess):
             results["cluster_info"] = cluster_summary
 
         return results
+
+    def _calculate_average_parameters(self, node_params: Dict[int, Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Calculate the average parameters across all nodes for convergence analysis.
+        
+        :param node_params: Dictionary mapping node indices to their parameters
+        :return: Averaged parameters dictionary
+        """
+        if not node_params:
+            return {}
+        
+        # Get the first node's parameters to determine structure
+        first_node_params = next(iter(node_params.values()))
+        avg_params = {}
+        
+        for param_name, param_value in first_node_params.items():
+            # Calculate average for this parameter across all nodes
+            param_values = [node_params[node_id][param_name] for node_id in node_params]
+            avg_params[param_name] = np.mean(param_values, axis=0)
+        
+        return avg_params

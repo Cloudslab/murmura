@@ -1170,6 +1170,71 @@ class ClusterManager:
 
         return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
+    def perform_decentralized_aggregation(
+        self, weights: Optional[List[float]] = None
+    ) -> None:
+        """
+        Perform decentralized aggregation where each node aggregates with its neighbors.
+        Unlike centralized aggregation, no global model is maintained or distributed.
+        Each node maintains its own local model after aggregating with neighbors.
+        
+        This leverages the existing topology coordinator but skips global combination.
+        Works with any aggregation strategy (GossipAvg, future strategies).
+        """
+        if not self.aggregation_strategy:
+            raise ValueError(
+                "Aggregation strategy not set. Call set_aggregation_strategy first."
+            )
+
+        if not self.topology_coordinator:
+            raise ValueError("Topology coordinator not initialized.")
+
+        # Get topology information
+        topology_info = self.get_topology_information()
+        adjacency_list = topology_info.get("adjacency_list", {})
+
+        # Each node performs local aggregation with its neighbors
+        # This is similar to what topology coordinator does, but we don't combine results globally
+        update_tasks = []
+        
+        for node_idx, actor in enumerate(self.actors):
+            neighbors = adjacency_list.get(node_idx, [])
+            if neighbors:
+                # Collect parameters from this node and its neighbors
+                neighbor_params = []
+                neighbor_weights = []
+                
+                # Include the node's own parameters
+                own_params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
+                neighbor_params.append(own_params)
+                neighbor_weights.append(weights[node_idx] if weights else 1.0)
+                
+                # Add neighbor parameters
+                for neighbor_idx in neighbors:
+                    if neighbor_idx < len(self.actors):
+                        neighbor_param = ray.get(
+                            self.actors[neighbor_idx].get_model_parameters.remote(), 
+                            timeout=1800
+                        )
+                        neighbor_params.append(neighbor_param)
+                        neighbor_weights.append(weights[neighbor_idx] if weights else 1.0)
+                
+                # Perform local aggregation using the configured strategy
+                if len(neighbor_params) > 1:
+                    # Normalize weights for this local aggregation
+                    total_weight = sum(neighbor_weights)
+                    normalized_weights = [w / total_weight for w in neighbor_weights] if total_weight > 0 else neighbor_weights
+                    
+                    aggregated_params = self.aggregation_strategy.aggregate(
+                        neighbor_params, normalized_weights
+                    )
+                    # Schedule asynchronous update of the node's model
+                    update_tasks.append(actor.set_model_parameters.remote(aggregated_params))
+        
+        # Wait for all updates to complete
+        if update_tasks:
+            ray.get(update_tasks, timeout=1800)
+
     def update_aggregation_strategy(
         self, strategy: AggregationStrategy, topology_check: bool = True
     ) -> None:
