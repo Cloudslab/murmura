@@ -8,10 +8,11 @@ from murmura.aggregation.aggregation_config import (
     AggregationConfig,
     AggregationStrategyType,
 )
-from murmura.models.mnist_models import MNISTModel
+from murmura.models.cifar10_models import CIFAR10Model, ResNetCIFAR10Model
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
+from murmura.data_processing.data_preprocessor import create_image_preprocessor
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 from murmura.orchestration.learning_process.decentralized_learning_process import (
     DecentralizedLearningProcess,
@@ -26,29 +27,8 @@ from murmura.visualization.network_visualizer import NetworkVisualizer
 from murmura.privacy.dp_config import DPConfig
 from murmura.privacy.dp_model_wrapper import DPTorchModelWrapper
 from murmura.privacy.privacy_accountant import PrivacyAccountant
-
-
-def create_mnist_preprocessor():
-    """
-    Create MNIST-specific data preprocessor.
-    """
-    try:
-        from murmura.data_processing.generic_preprocessor import (  # type: ignore[import-untyped]
-            create_image_preprocessor,
-        )
-
-        # MNIST-specific configuration
-        return create_image_preprocessor(
-            grayscale=True,  # MNIST is grayscale
-            normalize=True,  # Normalize to [0,1]
-            target_size=None,  # Keep original 28x28
-        )
-    except ImportError:
-        # Generic preprocessor not available, use automatic detection
-        logging.getLogger("murmura.dp_decentralized_mnist_example").info(
-            "Using automatic data type detection"
-        )
-        return None
+from murmura.model.pytorch_model import TorchModelWrapper
+from typing import Union
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -58,17 +38,19 @@ def setup_logging(log_level: str = "INFO") -> None:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler("dp_decentralized_mnist.log"),
+            logging.FileHandler("dp_decentralized_cifar10.log"),
         ],
     )
 
 
+
+
 def main() -> None:
     """
-    MNIST Decentralized Learning with Differential Privacy
+    CIFAR-10 Decentralized Learning with Differential Privacy
     """
     parser = argparse.ArgumentParser(
-        description="MNIST Decentralized Learning with Differential Privacy"
+        description="CIFAR-10 Decentralized Learning with Differential Privacy"
     )
 
     # Core learning arguments
@@ -116,6 +98,15 @@ def main() -> None:
         help="Mixing parameter for gossip_avg strategy (0.5 = equal mixing)",
     )
 
+    # Model arguments
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["simple", "resnet"],
+        default="simple",
+        help="Model architecture to use",
+    )
+
     # Topology arguments (only decentralized-compatible topologies)
     parser.add_argument(
         "--topology",
@@ -127,10 +118,10 @@ def main() -> None:
 
     # Training arguments
     parser.add_argument(
-        "--rounds", type=int, default=10, help="Number of learning rounds"
+        "--rounds", type=int, default=20, help="Number of learning rounds"
     )
     parser.add_argument(
-        "--epochs", type=int, default=1, help="Number of local epochs per round"
+        "--epochs", type=int, default=2, help="Number of local epochs per round"
     )
     parser.add_argument(
         "--batch_size", type=int, default=64, help="Batch size for training"
@@ -152,7 +143,7 @@ def main() -> None:
         "--target_epsilon_per_round",
         type=float,
         default=1.0,
-        help="Target privacy budget (epsilon) per round",
+        help="Target privacy budget per round (epsilon)",
     )
     parser.add_argument(
         "--target_delta",
@@ -185,64 +176,7 @@ def main() -> None:
         help="DP preset configuration",
     )
 
-    # Multi-node Ray cluster arguments
-    parser.add_argument(
-        "--ray_address",
-        type=str,
-        default=None,
-        help="Ray cluster address. If None, uses local cluster.",
-    )
-    parser.add_argument(
-        "--ray_namespace",
-        type=str,
-        default="murmura_dp_decentralized",
-        help="Ray namespace for isolation",
-    )
-    parser.add_argument(
-        "--actors_per_node",
-        type=int,
-        default=None,
-        help="Number of actors per physical node. If None, distributes evenly.",
-    )
-    parser.add_argument(
-        "--cpus_per_actor",
-        type=float,
-        default=1.0,
-        help="CPU resources per actor",
-    )
-    parser.add_argument(
-        "--gpus_per_actor",
-        type=float,
-        default=None,
-        help="GPU resources per actor. If None, auto-calculated.",
-    )
-    parser.add_argument(
-        "--memory_per_actor",
-        type=int,
-        default=None,
-        help="Memory (MB) per actor",
-    )
-    parser.add_argument(
-        "--placement_strategy",
-        type=str,
-        choices=["spread", "pack", "strict_spread", "strict_pack"],
-        default="spread",
-        help="Actor placement strategy across nodes",
-    )
-    parser.add_argument(
-        "--auto_detect_cluster",
-        action="store_true",
-        help="Auto-detect Ray cluster from environment variables",
-    )
-
-    # MNIST-specific arguments
-    parser.add_argument(
-        "--debug_data",
-        action="store_true",
-        help="Print debug information about MNIST data format",
-    )
-
-    # Logging and monitoring arguments
+    # Logging and monitoring
     parser.add_argument(
         "--log_level",
         type=str,
@@ -251,20 +185,9 @@ def main() -> None:
         help="Logging level",
     )
     parser.add_argument(
-        "--monitor_resources",
-        action="store_true",
-        help="Monitor and log resource usage during training",
-    )
-    parser.add_argument(
-        "--health_check_interval",
-        type=int,
-        default=5,
-        help="Interval (rounds) for actor health checks",
-    )
-    parser.add_argument(
         "--save_path",
         type=str,
-        default="dp_mnist_decentralized_model.pt",
+        default="dp_decentralized_cifar10_model.pt",
         help="Path to save the final model",
     )
 
@@ -291,26 +214,13 @@ def main() -> None:
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations_phase1",
-        help="Directory to save visualizations_phase1",
-    )
-    parser.add_argument(
-        "--create_animation",
-        action="store_true",
-        help="Create animation of the training process",
-    )
-    parser.add_argument(
-        "--create_frames",
-        action="store_true",
-        help="Create individual frames of the training process",
+        default="./visualizations_decentralized_cifar10",
+        help="Directory to save visualizations",
     )
     parser.add_argument(
         "--create_summary",
         action="store_true",
         help="Create summary plot of the training process",
-    )
-    parser.add_argument(
-        "--fps", type=int, default=2, help="Frames per second for animation"
     )
     parser.add_argument(
         "--experiment_name",
@@ -323,26 +233,7 @@ def main() -> None:
 
     # Set up logging
     setup_logging(args.log_level)
-    logger = logging.getLogger("murmura.dp_decentralized_mnist_example")
-
-    # Check compatibility of topology and strategy before proceeding
-    topology_type = TopologyType(args.topology)
-    strategy_type = AggregationStrategyType(args.aggregation_strategy)
-
-    # Validate decentralized compatibility
-    from murmura.aggregation.strategies.gossip_avg import GossipAvg
-
-    if not TopologyCompatibilityManager.is_compatible(GossipAvg, topology_type):
-        compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(
-            GossipAvg
-        )
-        logger.error(
-            f"Strategy {args.aggregation_strategy} is not compatible with topology {args.topology}."
-        )
-        logger.error(
-            f"Compatible topologies: {[t.value for t in compatible_topologies]}"
-        )
-        return
+    logger = logging.getLogger("murmura.dp_decentralized_cifar10_example")
 
     try:
         # Select device
@@ -356,7 +247,7 @@ def main() -> None:
         dp_config = None
         if args.enable_dp:
             logger.info("=== Configuring Differential Privacy ===")
-            
+
             # Privacy budget allocation:
             # - Total epsilon budget: What each client spends across ALL rounds and epochs
             # - Per-round epsilon: For tracking purposes only
@@ -376,7 +267,7 @@ def main() -> None:
             elif args.dp_preset == "medium_privacy":
                 dp_config = DPConfig(
                     target_epsilon=total_epsilon_budget,
-                    target_delta=1e-5,
+                    target_delta=args.target_delta,
                     max_grad_norm=1.0,
                     enable_client_dp=True,
                     enable_central_dp=False,
@@ -399,14 +290,6 @@ def main() -> None:
                     enable_central_dp=args.enable_central_dp,
                 )
 
-            logger.info(
-                f"DP Configuration: ε={dp_config.target_epsilon} (total), δ={dp_config.target_delta}"
-            )
-            logger.info(f"Max grad norm: {dp_config.max_grad_norm}")
-            logger.info(
-                f"Client DP: {dp_config.enable_client_dp}, Central DP: {dp_config.enable_central_dp}"
-            )
-
             # Update DP config with subsampling parameters if enabled
             if args.enable_subsampling_amplification:
                 dp_config.client_sampling_rate = args.client_sampling_rate
@@ -419,172 +302,166 @@ def main() -> None:
                 amplification_factor = dp_config.get_amplification_factor()
                 logger.info(f"Privacy amplification factor: {amplification_factor:.3f}")
 
+            logger.info(
+                f"DP Configuration: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+            )
+            logger.info(f"Max grad norm: {dp_config.max_grad_norm}")
+            logger.info(
+                f"Client DP: {dp_config.enable_client_dp}, Central DP: {dp_config.enable_central_dp}"
+            )
+
             # Initialize privacy accountant
             privacy_accountant = PrivacyAccountant(dp_config)
         else:
             logger.info("Differential privacy is DISABLED")
 
-        # Create enhanced configuration with multi-node support
+        # Ray cluster configuration
         ray_cluster_config = RayClusterConfig(
-            address=args.ray_address,
-            namespace=args.ray_namespace,
             logging_level=args.log_level,
-            auto_detect_cluster=args.auto_detect_cluster,
+        )
+        resource_config = ResourceConfig()
+
+        logger.info("=== Loading CIFAR-10 Dataset ===")
+        # Load CIFAR-10 dataset
+        train_dataset = MDataset.load_dataset_with_multinode_support(
+            DatasetSource.HUGGING_FACE,
+            dataset_name="cifar10",
+            split=args.split,
         )
 
-        resource_config = ResourceConfig(
-            actors_per_node=args.actors_per_node,
-            cpus_per_actor=args.cpus_per_actor,
-            gpus_per_actor=args.gpus_per_actor,
-            memory_per_actor=args.memory_per_actor,
-            placement_strategy=args.placement_strategy,
+        test_dataset = MDataset.load_dataset_with_multinode_support(
+            DatasetSource.HUGGING_FACE,
+            dataset_name="cifar10",
+            split=args.test_split,
         )
 
+        # Merge test split into main dataset
+        train_dataset.merge_splits(test_dataset)
+
+        # Create data preprocessor for CIFAR-10
+        preprocessor = create_image_preprocessor(
+            grayscale=False,  # CIFAR-10 is RGB
+            normalize=True,   # Normalize pixel values to [0,1]
+            target_size=(32, 32),  # CIFAR-10 native size
+        )
+
+        # Create configuration
         config = OrchestrationConfig(
             num_actors=args.num_actors,
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
             split=args.split,
-            topology=TopologyConfig(
-                topology_type=topology_type,
-                hub_index=0,  # Not used for decentralized topologies
-            ),
+            topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
-                strategy_type=strategy_type,
-                params={"mixing_parameter": args.mixing_parameter},
+                strategy_type=AggregationStrategyType(args.aggregation_strategy),
+                mixing_parameter=args.mixing_parameter,
             ),
-            dataset_name="ylecun/mnist",
+            dataset_name="cifar10",
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-            feature_columns=["image"],
+            feature_columns=["img"],
             label_column="label",
             rounds=args.rounds,
             epochs=args.epochs,
             batch_size=args.batch_size,
             learning_rate=args.lr,
             test_split=args.test_split,
-            monitor_resources=args.monitor_resources,
-            health_check_interval=args.health_check_interval,
             client_sampling_rate=args.client_sampling_rate,
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
         )
 
-        logger.info("=== Loading MNIST Dataset ===")
-        # Load MNIST Dataset for training and testing
-        train_dataset = MDataset.load_dataset_with_multinode_support(
-            DatasetSource.HUGGING_FACE,
-            dataset_name="ylecun/mnist",
-            split=config.split,
-        )
+        # Verify topology compatibility
+        logger.info("=== Verifying Topology Compatibility ===")
+        compatibility_manager = TopologyCompatibilityManager()
+        
+        # Check if topology is compatible with decentralized learning
+        if not compatibility_manager.is_compatible(
+            config.topology.topology_type, "decentralized"
+        ):
+            logger.error(
+                f"Topology {config.topology.topology_type} is not compatible with decentralized learning"
+            )
+            raise ValueError(
+                f"Topology {config.topology.topology_type} is not compatible with decentralized learning. "
+                f"Use one of: {', '.join(compatibility_manager.get_compatible_topologies('decentralized'))}"
+            )
 
-        test_dataset = MDataset.load_dataset_with_multinode_support(
-            DatasetSource.HUGGING_FACE,
-            dataset_name="ylecun/mnist",
-            split=args.test_split,
-        )
-
-        # Merge datasets to have both splits available
-        train_dataset.merge_splits(test_dataset)
-
-        # Debug MNIST data format if requested
-        if args.debug_data:
-            logger.info("=== Debugging MNIST Data Format ===")
-            try:
-                split_dataset = train_dataset.get_split(config.split)
-                feature_data = split_dataset["image"]
-
-                logger.info(f"MNIST {config.split} split")
-                logger.info(f"Number of samples: {len(feature_data)}")
-
-                if len(feature_data) > 0:
-                    sample = feature_data[0]
-                    logger.info(f"Sample type: {type(sample)}")
-                    logger.info(f"Sample shape: {getattr(sample, 'shape', 'N/A')}")
-                    logger.info(f"Sample mode: {getattr(sample, 'mode', 'N/A')}")
-                    if hasattr(sample, "size"):
-                        logger.info(f"Sample size: {sample.size}")
-            except Exception as e:
-                logger.error(f"Error debugging MNIST data format: {e}")
+        # Check if aggregation strategy is compatible with decentralized learning
+        if not compatibility_manager.is_compatible(
+            config.aggregation.strategy_type, "decentralized"
+        ):
+            logger.error(
+                f"Aggregation strategy {config.aggregation.strategy_type} is not compatible with decentralized learning"
+            )
+            raise ValueError(
+                f"Aggregation strategy {config.aggregation.strategy_type} is not compatible with decentralized learning. "
+                f"Use one of: {', '.join(compatibility_manager.get_compatible_strategies('decentralized'))}"
+            )
 
         logger.info("=== Creating Data Partitions ===")
-        # Create partitioner
         partitioner = PartitionerFactory.create(config)
 
-        logger.info("=== Creating MNIST Model ===")
-        # Create the MNIST model
-        model = MNISTModel(
-            use_dp_compatible_norm=True
-        )  # Use GroupNorm for DP compatibility
-        input_shape = (1, 28, 28)  # MNIST: 1 channel, 28x28 pixels
-
-        # Create MNIST-specific data preprocessor
-        mnist_preprocessor = create_mnist_preprocessor()
+        logger.info("=== Creating CIFAR-10 Model ===")
+        if args.model == "simple":
+            model = CIFAR10Model()
+        else:  # resnet
+            model = ResNetCIFAR10Model()
 
         # Create model wrapper (DP or regular)
+        global_model: Union[DPTorchModelWrapper, TorchModelWrapper]
         if args.enable_dp and dp_config:
             logger.info("Creating DP-aware model wrapper")
-            from typing import Union
-            from murmura.model.pytorch_model import TorchModelWrapper
-
-            global_model: Union[DPTorchModelWrapper, TorchModelWrapper] = (
-                DPTorchModelWrapper(
-                    model=model,
-                    dp_config=dp_config,
-                    loss_fn=nn.CrossEntropyLoss(),
-                    optimizer_class=torch.optim.SGD,  # SGD works better with DP
-                    optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
-                    input_shape=input_shape,
-                    device=device,
-                    data_preprocessor=mnist_preprocessor,
-                )
+            global_model = DPTorchModelWrapper(
+                model=model,
+                dp_config=dp_config,
+                loss_fn=nn.CrossEntropyLoss(),
+                optimizer_class=torch.optim.SGD,  # SGD works better with DP
+                optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
+                input_shape=(3, 32, 32),
+                device=device,
+                data_preprocessor=preprocessor,
             )
         else:
             logger.info("Creating regular model wrapper")
-            from murmura.model.pytorch_model import TorchModelWrapper
 
             global_model = TorchModelWrapper(
                 model=model,
                 loss_fn=nn.CrossEntropyLoss(),
-                optimizer_class=torch.optim.Adam,
-                optimizer_kwargs={"lr": args.lr},
-                input_shape=input_shape,
-                data_preprocessor=mnist_preprocessor,
+                optimizer_class=torch.optim.SGD,
+                optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
+                input_shape=(3, 32, 32),
+                device=device,
+                data_preprocessor=preprocessor,
             )
 
         logger.info("=== Setting Up Decentralized Learning Process ===")
-        # Create learning process with enhanced config
         learning_process = DecentralizedLearningProcess(
             config=config,
             dataset=train_dataset,
             model=global_model,
         )
 
-        # Set up visualization BEFORE executing the learning process
+        # Set up visualization if requested
         visualizer = None
-        if args.create_animation or args.create_frames or args.create_summary:
+        if args.create_summary:
             logger.info("=== Setting Up Visualization ===")
-            # Create visualization directory
             if args.experiment_name:
                 vis_dir = os.path.join(args.vis_dir, args.experiment_name)
             else:
                 vis_dir = os.path.join(
                     args.vis_dir,
-                    f"dp_decentralized_mnist_{args.topology}_{args.aggregation_strategy}"
+                    f"decentralized_cifar10_{args.model}_{args.topology}_{args.aggregation_strategy}"
                     + ("_dp" if args.enable_dp else "_no_dp"),
                 )
             os.makedirs(vis_dir, exist_ok=True)
-
-            # Create visualizer
             visualizer = NetworkVisualizer(output_dir=vis_dir)
-
-            # Register visualizer with learning process
             learning_process.register_observer(visualizer)
-            logger.info("Registered visualizer with learning process")
 
         try:
-            # Initialize the learning process
+            # Initialize learning process
+            logger.info("=== Initializing Decentralized Learning Process ===")
             learning_process.initialize(
                 num_actors=config.num_actors,
                 topology_config=config.topology,
@@ -592,39 +469,21 @@ def main() -> None:
                 partitioner=partitioner,
             )
 
-            # Get and log cluster information
-            cluster_summary = learning_process.get_cluster_summary()
-            logger.info("=== Enhanced Cluster Summary ===")
-            logger.info(
-                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
-            )
-            logger.info(f"Total nodes: {cluster_summary.get('total_nodes', 'unknown')}")
-            logger.info(
-                f"Total actors: {cluster_summary.get('total_actors', 'unknown')}"
-            )
-            logger.info(f"Topology: {cluster_summary.get('topology', 'unknown')}")
-            logger.info(
-                f"Placement strategy: {cluster_summary.get('placement_strategy', 'unknown')}"
-            )
-            logger.info(
-                f"Has placement group: {cluster_summary.get('has_placement_group', False)}"
-            )
-
             # Print experiment summary
-            logger.info("=== MNIST DP Decentralized Learning Setup ===")
-            logger.info("Dataset: MNIST")
+            logger.info("=== CIFAR-10 Decentralized Learning Setup ===")
+            logger.info("Dataset: CIFAR-10")
+            logger.info("Learning Mode: Decentralized (Peer-to-Peer)")
+            logger.info(f"Model: {args.model}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Partitioning: {config.partition_strategy} (α={args.alpha})")
-            logger.info(f"Aggregation strategy: {config.aggregation.strategy_type}")
+            logger.info(f"Aggregation: {config.aggregation.strategy_type}")
+            logger.info(f"Mixing parameter: {args.mixing_parameter}")
             logger.info(f"Topology: {config.topology.topology_type}")
             logger.info(f"Rounds: {config.rounds}")
             logger.info(f"Local epochs: {config.epochs}")
             logger.info(f"Batch size: {config.batch_size}")
             logger.info(f"Learning rate: {config.learning_rate}")
             logger.info(f"Device: {device}")
-            logger.info(f"Test split: {config.test_split}")
-            logger.info(f"Resource monitoring: {config.monitor_resources}")
-            logger.info(f"Health check interval: {config.health_check_interval} rounds")
 
             if args.enable_dp and dp_config is not None:
                 logger.info("=== Differential Privacy Settings ===")
@@ -642,37 +501,11 @@ def main() -> None:
             else:
                 logger.info("Differential Privacy: DISABLED")
 
-            logger.info("=== Starting MNIST DP Decentralized Learning ===")
-
-            # Monitor initial resource usage if enabled
-            if args.monitor_resources:
-                initial_resources = learning_process.monitor_resource_usage()
-                logger.info(
-                    f"Initial resource usage: {initial_resources.get('resource_utilization', {})}"
-                )
-
-            # Execute the learning process with enhanced monitoring
+            logger.info("=== Starting Decentralized Training ===")
+            # Execute learning process
             results = learning_process.execute()
 
-            # Perform periodic health checks and resource monitoring during training
-            if args.monitor_resources:
-                final_resources = learning_process.monitor_resource_usage()
-                logger.info(
-                    f"Final resource usage: {final_resources.get('resource_utilization', {})}"
-                )
-
-            # Get final health status
-            health_status = learning_process.get_actor_health_status()
-            if "error" not in health_status:
-                logger.info(
-                    f"Final actor health: {health_status['healthy']}/{health_status['sampled_actors']} healthy"
-                )
-                if health_status.get("degraded", 0) > 0:
-                    logger.warning(f"Degraded actors: {health_status['degraded']}")
-                if health_status.get("error", 0) > 0:
-                    logger.error(f"Error actors: {health_status['error']}")
-
-            # Display results_phase1
+            # Display results
             logger.info("=== Training Results ===")
             logger.info(
                 f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
@@ -680,23 +513,15 @@ def main() -> None:
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
-            # Display privacy results_phase1 if DP was enabled
+            # Display privacy results if DP was enabled
             privacy_spent = None
-            if args.enable_dp and dp_config is not None:
+            if args.enable_dp and "privacy_metrics" in results:
                 logger.info("=== Privacy Results ===")
-                
-                # Get privacy metrics from results
-                privacy_metrics = results.get("privacy_metrics", {})
-                
-                if privacy_metrics:
-                    privacy_spent = privacy_metrics
-                    logger.info(
-                        f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
-                    )
-                    logger.info(
-                        f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
-                    )
-                    
+                privacy_spent = results["privacy_metrics"]
+                logger.info(
+                    f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
+                )
+                if dp_config is not None:
                     logger.info(f"Per-round budget: ε={args.target_epsilon_per_round:.2f}")
                     logger.info(f"Total budget per client: ε={dp_config.target_epsilon:.2f}")
                     logger.info(f"Total epochs: {total_epochs}")
@@ -708,12 +533,6 @@ def main() -> None:
                         logger.warning("Privacy budget exceeded!")
                     else:
                         logger.info("Privacy budget respected ✓")
-                        
-                    # Show budget utilization
-                    utilization = (privacy_spent["epsilon"] / dp_config.target_epsilon) * 100
-                    logger.info(f"Privacy budget utilization: {utilization:.1f}%")
-                else:
-                    logger.warning("No privacy metrics available in results")
 
                 # Get privacy summary from accountant
                 if "privacy_accountant" in locals():
@@ -722,33 +541,17 @@ def main() -> None:
                         f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
                     )
 
-            # Generate visualizations_phase1 if requested
-            if visualizer and (
-                args.create_animation or args.create_frames or args.create_summary
-            ):
-                logger.info("=== Generating Visualizations ===")
+            # Create visualization if requested
+            if visualizer and args.create_summary:
+                logger.info("=== Generating Visualization ===")
+                visualizer.render_summary_plot(
+                    filename=f"decentralized_cifar10_{args.model}_{args.topology}_{args.aggregation_strategy}"
+                    + ("_dp" if args.enable_dp else "_no_dp")
+                    + "_summary.png"
+                )
 
-                if args.create_animation:
-                    logger.info("Creating animation...")
-                    visualizer.render_training_animation(
-                        filename=f"dp_decentralized_mnist_{args.topology}_{args.aggregation_strategy}_animation.mp4",
-                        fps=args.fps,
-                    )
-
-                if args.create_frames:
-                    logger.info("Creating frame sequence...")
-                    visualizer.render_frame_sequence(
-                        prefix=f"dp_decentralized_mnist_{args.topology}_{args.aggregation_strategy}_step"
-                    )
-
-                if args.create_summary:
-                    logger.info("Creating summary plot...")
-                    visualizer.render_summary_plot(
-                        filename=f"dp_decentralized_mnist_{args.topology}_{args.aggregation_strategy}_summary.png"
-                    )
-
-            # Save the final model
-            logger.info("=== Saving Final Model ===")
+            # Save model
+            logger.info("=== Saving Model ===")
             save_path = args.save_path
             if args.enable_dp:
                 # Add DP suffix to filename
@@ -762,12 +565,15 @@ def main() -> None:
                 "config": {
                     k: v for k, v in vars(args).items() if not k.startswith("_")
                 },
-                "results_phase1": results,
+                "results": results,
                 "differential_privacy": {
                     "enabled": args.enable_dp,
-                    "config": dp_config.model_dump() if dp_config is not None else None,
-                    "privacy_spent": privacy_spent,
+                    "config": dp_config.model_dump() if dp_config else None,
+                    "privacy_spent": privacy_spent
+                    if args.enable_dp and "privacy_metrics" in results
+                    else None,
                 },
+                "learning_mode": "decentralized",
             }
 
             os.makedirs(
@@ -776,35 +582,12 @@ def main() -> None:
             torch.save(checkpoint, save_path)
             logger.info(f"Model saved to '{save_path}'")
 
-            # Print final results_phase1 with enhanced cluster context
-            logger.info("=== MNIST DP Decentralized Training Results ===")
-            logger.info(
-                f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
-            )
-            logger.info(
-                f"Total physical nodes: {cluster_summary.get('total_nodes', 'unknown')}"
-            )
-            logger.info(
-                f"Total virtual actors: {cluster_summary.get('total_actors', 'unknown')}"
-            )
-            logger.info(f"Topology used: {cluster_summary.get('topology', 'unknown')}")
-            logger.info(
-                f"Training completed with {config.rounds} rounds of {config.epochs} epochs each"
-            )
-
-            # Log topology-specific results_phase1
-            if "topology" in results:
-                topology_info = results["topology"]
-                logger.info(
-                    f"Network adjacency: {len(topology_info.get('adjacency_list', {}))} connections"
-                )
-
         finally:
-            logger.info("=== Shutting Down Enhanced System ===")
+            logger.info("=== Shutting Down ===")
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"MNIST DP Decentralized Learning Process failed: {str(e)}")
+        logger.error(f"DP Decentralized CIFAR-10 Learning Process failed: {str(e)}")
         import traceback
 
         traceback.print_exc()

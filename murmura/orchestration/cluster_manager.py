@@ -1156,6 +1156,54 @@ class ClusterManager:
 
         return all_results
 
+    def collect_privacy_metrics(self) -> Dict[str, Any]:
+        """
+        Collect privacy metrics from all client actors.
+        
+        :return: Dictionary containing aggregated privacy metrics
+        """
+        privacy_metrics = []
+        
+        batch_size = 20
+        for i in range(0, len(self.actors), batch_size):
+            batch_actors = self.actors[i : i + batch_size]
+            batch_tasks = []
+            
+            for actor in batch_actors:
+                # Only collect from actors that have DP-enabled models
+                batch_tasks.append(actor.get_privacy_spent.remote())
+            
+            try:
+                batch_results = ray.get(batch_tasks, timeout=1800)
+                privacy_metrics.extend(batch_results)
+            except Exception as e:
+                logging.getLogger("murmura").error(
+                    f"Privacy collection failed for batch {i // batch_size}: {e}"
+                )
+                raise
+        
+        # Aggregate privacy metrics across all clients
+        if not privacy_metrics or all(m is None for m in privacy_metrics):
+            return {"epsilon": 0.0, "delta": 0.0, "client_count": 0, "dp_enabled": False}
+        
+        # Filter out None results (from non-DP models)
+        valid_metrics = [m for m in privacy_metrics if m is not None]
+        
+        if not valid_metrics:
+            return {"epsilon": 0.0, "delta": 0.0, "client_count": 0, "dp_enabled": False}
+        
+        # Calculate aggregated privacy metrics
+        max_epsilon = max(m["epsilon"] for m in valid_metrics)
+        max_delta = max(m["delta"] for m in valid_metrics)
+        
+        return {
+            "epsilon": max_epsilon,
+            "delta": max_delta,
+            "client_count": len(valid_metrics),
+            "dp_enabled": True,
+            "client_metrics": valid_metrics,
+        }
+
     def aggregate_model_parameters(
         self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:

@@ -1,16 +1,14 @@
-# type: ignore
 import argparse
 import os
 import logging
 import torch
 import torch.nn as nn
-from torchvision import transforms
 
 from murmura.aggregation.aggregation_config import (
     AggregationConfig,
     AggregationStrategyType,
 )
-from murmura.models.ham10000_models import HAM10000Model, HAM10000ModelComplex
+from murmura.models.cifar10_models import CIFAR10Model, ResNetCIFAR10Model
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
@@ -37,36 +35,24 @@ def setup_logging(log_level: str = "INFO") -> None:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler("dp_ham10000_federated.log"),
+            logging.FileHandler("dp_cifar10_federated.log"),
         ],
     )
 
 
-def get_ham10000_transforms(image_size: int = 128):
-    """Get appropriate transforms for HAM10000 dataset"""
-    return transforms.Compose(
-        [
-            transforms.Resize((image_size, image_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    )
 
 
 def main() -> None:
     """
-    HAM10000 Federated Learning with Differential Privacy
+    CIFAR-10 Federated Learning with Differential Privacy
     """
     parser = argparse.ArgumentParser(
-        description="Federated Learning for HAM10000 with Differential Privacy"
+        description="Federated Learning for CIFAR-10 with Differential Privacy"
     )
 
     # Core federated learning arguments
     parser.add_argument(
-        "--num_actors",
-        type=int,
-        default=7,
-        help="Number of virtual clients (7 matches HAM10000 classes)",
+        "--num_actors", type=int, default=10, help="Number of virtual clients"
     )
     parser.add_argument(
         "--partition_strategy",
@@ -86,7 +72,7 @@ def main() -> None:
     parser.add_argument(
         "--min_partition_size",
         type=int,
-        default=100,
+        default=500,
         help="Minimum samples per partition",
     )
     parser.add_argument(
@@ -103,6 +89,15 @@ def main() -> None:
         help="Aggregation strategy to use",
     )
 
+    # Model arguments
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["simple", "resnet"],
+        default="simple",
+        help="Model architecture to use",
+    )
+
     # Topology arguments
     parser.add_argument(
         "--topology",
@@ -114,33 +109,21 @@ def main() -> None:
 
     # Training arguments
     parser.add_argument(
-        "--rounds", type=int, default=10, help="Number of federated learning rounds"
+        "--rounds", type=int, default=20, help="Number of federated learning rounds"
     )
     parser.add_argument(
-        "--epochs", type=int, default=1, help="Number of local epochs per round"
+        "--epochs", type=int, default=2, help="Number of local epochs per round"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=32, help="Batch size for training"
+        "--batch_size", type=int, default=64, help="Batch size for training"
     )
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
     parser.add_argument(
         "--device",
         type=str,
         default="auto",
         choices=["auto", "cuda", "mps", "cpu"],
         help="Device to use for training",
-    )
-
-    # HAM10000 specific arguments
-    parser.add_argument(
-        "--image_size", type=int, default=128, help="Size to resize images to"
-    )
-    parser.add_argument(
-        "--model_complexity",
-        type=str,
-        default="simple",
-        choices=["simple", "complex"],
-        help="Model complexity level",
     )
 
     # Differential Privacy arguments
@@ -151,7 +134,7 @@ def main() -> None:
         "--target_epsilon_per_round",
         type=float,
         default=1.0,
-        help="Target privacy budget per round (epsilon)",
+        help="Per-round per-node privacy budget (epsilon) - total budget will be multiplied by number of rounds",
     )
     parser.add_argument(
         "--target_delta",
@@ -195,7 +178,7 @@ def main() -> None:
     parser.add_argument(
         "--save_path",
         type=str,
-        default="dp_ham10000_federated_model.pt",
+        default="dp_cifar10_federated_model.pt",
         help="Path to save the final model",
     )
 
@@ -222,8 +205,8 @@ def main() -> None:
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations_phase1",
-        help="Directory to save visualizations_phase1",
+        default="./visualizations_cifar10",
+        help="Directory to save visualizations",
     )
     parser.add_argument(
         "--create_summary",
@@ -241,7 +224,7 @@ def main() -> None:
 
     # Set up logging
     setup_logging(args.log_level)
-    logger = logging.getLogger("murmura.dp_ham10000_example")
+    logger = logging.getLogger("murmura.dp_cifar10_example")
 
     try:
         # Select device
@@ -253,7 +236,6 @@ def main() -> None:
 
         # Create DP configuration
         dp_config = None
-        total_epsilon_budget = None
         if args.enable_dp:
             logger.info("=== Configuring Differential Privacy ===")
             
@@ -276,7 +258,7 @@ def main() -> None:
             elif args.dp_preset == "medium_privacy":
                 dp_config = DPConfig(
                     target_epsilon=total_epsilon_budget,
-                    target_delta=1e-5,
+                    target_delta=args.target_delta,
                     max_grad_norm=1.0,
                     enable_client_dp=True,
                     enable_central_dp=False,
@@ -312,10 +294,8 @@ def main() -> None:
                 logger.info(f"Privacy amplification factor: {amplification_factor:.3f}")
 
             logger.info(
-                f"DP Configuration: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                f"DP Configuration: ε={dp_config.target_epsilon} (total), δ={dp_config.target_delta}"
             )
-            logger.info(f"Per-round budget: {args.target_epsilon_per_round}")
-            logger.info(f"Total budget per client: {total_epsilon_budget:.2f}")
             logger.info(f"Max grad norm: {dp_config.max_grad_norm}")
             logger.info(
                 f"Client DP: {dp_config.enable_client_dp}, Central DP: {dp_config.enable_central_dp}"
@@ -332,34 +312,29 @@ def main() -> None:
         )
         resource_config = ResourceConfig()
 
-        logger.info("=== Loading HAM10000 Dataset ===")
-        # Load HAM10000 dataset from Hugging Face
+        logger.info("=== Loading CIFAR-10 Dataset ===")
+        # Load CIFAR-10 dataset
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
-            dataset_name="kuchikihater/HAM10000",
+            dataset_name="cifar10",
             split=args.split,
         )
 
-        # For HAM10000, check if test split exists and create if not
-        # HAM10000 typically only has a train split, so we need to create train/test splits
-        logger.info(f"Initial dataset splits: {list(train_dataset._splits.keys())}")
+        test_dataset = MDataset.load_dataset_with_multinode_support(
+            DatasetSource.HUGGING_FACE,
+            dataset_name="cifar10",
+            split=args.test_split,
+        )
 
-        if args.test_split not in train_dataset._splits:
-            logger.warning(
-                f"Test split '{args.test_split}' not found. Creating train/test split from train data."
-            )
-            # Create train/test split from the single train split
-            train_dataset = train_dataset.train_test_split(
-                source_split=args.split,
-                test_size=0.2,
-                seed=42,
-                new_split_names=("train", "test"),
-            )
-            logger.info(
-                f"Created train/test split. Available splits: {list(train_dataset._splits.keys())}"
-            )
-        else:
-            logger.info(f"Test split '{args.test_split}' found. Using existing splits.")
+        # Merge test split into main dataset
+        train_dataset.merge_splits(test_dataset)
+
+        # Create data preprocessor for CIFAR-10
+        preprocessor = create_image_preprocessor(
+            grayscale=False,  # CIFAR-10 is RGB
+            normalize=True,   # Normalize pixel values to [0,1]
+            target_size=(32, 32),  # CIFAR-10 native size
+        )
 
         # Create configuration
         config = OrchestrationConfig(
@@ -372,11 +347,11 @@ def main() -> None:
             aggregation=AggregationConfig(
                 strategy_type=AggregationStrategyType(args.aggregation_strategy)
             ),
-            dataset_name="kuchikihater/HAM10000",
+            dataset_name="cifar10",
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-            feature_columns=["image"],
-            label_column="label",  # HAM10000 uses 'label' as the label column
+            feature_columns=["img"],
+            label_column="label",
             rounds=args.rounds,
             epochs=args.epochs,
             batch_size=args.batch_size,
@@ -390,31 +365,11 @@ def main() -> None:
         logger.info("=== Creating Data Partitions ===")
         partitioner = PartitionerFactory.create(config)
 
-        logger.info("=== Creating HAM10000 Model ===")
-        # Select model based on complexity
-        # Always use GroupNorm for federated learning with many clients to avoid
-        # BatchNorm issues with small batches
-        use_groupnorm = args.enable_dp or args.num_actors > 10
-
-        if args.model_complexity == "complex":
-            model = HAM10000ModelComplex(
-                input_size=args.image_size, use_dp_compatible_norm=use_groupnorm
-            )
-        else:
-            model = HAM10000Model(
-                input_size=args.image_size, use_dp_compatible_norm=use_groupnorm
-            )
-
-        # Create image preprocessor for HAM10000 dataset
-        logger.info("Creating image preprocessor for HAM10000 dataset")
-        image_preprocessor = create_image_preprocessor(
-            grayscale=False,  # HAM10000 is RGB
-            normalize=True,  # Normalize pixel values to [0,1]
-            target_size=(
-                args.image_size,
-                args.image_size,
-            ),  # Resize to model input size
-        )
+        logger.info("=== Creating CIFAR-10 Model ===")
+        if args.model == "simple":
+            model = CIFAR10Model()
+        else:  # resnet
+            model = ResNetCIFAR10Model()
 
         # Create model wrapper (DP or regular)
         global_model: Union[DPTorchModelWrapper, TorchModelWrapper]
@@ -426,9 +381,9 @@ def main() -> None:
                 loss_fn=nn.CrossEntropyLoss(),
                 optimizer_class=torch.optim.SGD,  # SGD works better with DP
                 optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
-                input_shape=(3, args.image_size, args.image_size),
+                input_shape=(3, 32, 32),
                 device=device,
-                data_preprocessor=image_preprocessor,
+                data_preprocessor=preprocessor,
             )
         else:
             logger.info("Creating regular model wrapper")
@@ -436,17 +391,14 @@ def main() -> None:
             global_model = TorchModelWrapper(
                 model=model,
                 loss_fn=nn.CrossEntropyLoss(),
-                optimizer_class=torch.optim.Adam,
-                optimizer_kwargs={"lr": args.lr},
-                input_shape=(3, args.image_size, args.image_size),
+                optimizer_class=torch.optim.SGD,
+                optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
+                input_shape=(3, 32, 32),
                 device=device,
-                data_preprocessor=image_preprocessor,
+                data_preprocessor=preprocessor,
             )
 
         logger.info("=== Setting Up Learning Process ===")
-        logger.info(
-            f"Dataset splits before learning process: {list(train_dataset._splits.keys())}"
-        )
         learning_process = FederatedLearningProcess(
             config=config,
             dataset=train_dataset,
@@ -462,7 +414,7 @@ def main() -> None:
             else:
                 vis_dir = os.path.join(
                     args.vis_dir,
-                    f"dp_ham10000_{args.topology}_{args.aggregation_strategy}"
+                    f"dp_cifar10_{args.topology}_{args.aggregation_strategy}"
                     + ("_dp" if args.enable_dp else "_no_dp"),
                 )
             os.makedirs(vis_dir, exist_ok=True)
@@ -480,8 +432,9 @@ def main() -> None:
             )
 
             # Print experiment summary
-            logger.info("=== HAM10000 DP Federated Learning Setup ===")
-            logger.info("Dataset: HAM10000 (7 skin lesion classes)")
+            logger.info("=== CIFAR-10 DP Federated Learning Setup ===")
+            logger.info("Dataset: CIFAR-10")
+            logger.info(f"Model: {args.model}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Partitioning: {config.partition_strategy} (α={args.alpha})")
             logger.info(f"Aggregation: {config.aggregation.strategy_type}")
@@ -490,17 +443,16 @@ def main() -> None:
             logger.info(f"Local epochs: {config.epochs}")
             logger.info(f"Batch size: {config.batch_size}")
             logger.info(f"Learning rate: {config.learning_rate}")
-            logger.info(f"Image size: {args.image_size}x{args.image_size}")
-            logger.info(f"Model: {args.model_complexity}")
             logger.info(f"Device: {device}")
 
             if args.enable_dp and dp_config is not None:
                 logger.info("=== Differential Privacy Settings ===")
                 logger.info(
-                    f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                    f"Total privacy budget per client: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
                 )
-                logger.info(f"Per-round budget: {args.target_epsilon_per_round}")
-                logger.info(f"Total budget per client: {total_epsilon_budget:.2f}")
+                logger.info(
+                    f"Per-round privacy budget: ε={per_round_epsilon}, δ={dp_config.target_delta}"
+                )
                 logger.info(f"Max gradient norm: {dp_config.max_grad_norm}")
                 logger.info(f"Client DP: {dp_config.enable_client_dp}")
                 logger.info(f"Central DP: {dp_config.enable_central_dp}")
@@ -517,7 +469,7 @@ def main() -> None:
             # Execute learning process
             results = learning_process.execute()
 
-            # Display results_phase1
+            # Display results
             logger.info("=== Training Results ===")
             logger.info(
                 f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
@@ -526,18 +478,21 @@ def main() -> None:
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
             # Display privacy results if DP was enabled
-            if args.enable_dp and "privacy_metrics" in results:
+            privacy_spent = None
+            if args.enable_dp and results.get("privacy_metrics", {}).get("dp_enabled", False):
                 logger.info("=== Privacy Results ===")
                 privacy_metrics = results["privacy_metrics"]
+                
+                logger.info(f"Privacy spent across {privacy_metrics['client_count']} clients:")
                 logger.info(
-                    f"Privacy spent: ε={privacy_metrics['epsilon']:.3f}, δ={privacy_metrics['delta']:.2e}"
+                    f"Max privacy spent: ε={privacy_metrics['epsilon']:.3f}, δ={privacy_metrics['delta']:.2e}"
                 )
+                logger.info(f"Per-round per-node budget: ε={args.target_epsilon_per_round}")
+                
                 if dp_config is not None:
                     logger.info(
-                        f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                        f"Total privacy budget per client: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
                     )
-                    logger.info(f"Per-round budget: {args.target_epsilon_per_round}")
-                    logger.info(f"Total budget per client: {total_epsilon_budget:.2f}")
 
                     remaining_eps = dp_config.target_epsilon - privacy_metrics["epsilon"]
                     logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
@@ -546,6 +501,14 @@ def main() -> None:
                         logger.warning("Privacy budget exceeded!")
                     else:
                         logger.info("Privacy budget respected ✓")
+                        
+                    # Show effective epsilon per round
+                    if args.rounds > 0:
+                        effective_eps_per_round = privacy_metrics["epsilon"] / args.rounds
+                        logger.info(f"Effective epsilon per round: ε={effective_eps_per_round:.3f}")
+                        logger.info(f"Per-round budget: ε={args.target_epsilon_per_round:.2f}")
+                        logger.info(f"Total budget per client: ε={dp_config.target_epsilon:.2f}")
+                        logger.info(f"Total epochs: {total_epochs}")
 
                 # Get privacy summary from accountant
                 if "privacy_accountant" in locals():
@@ -553,12 +516,18 @@ def main() -> None:
                     logger.info(
                         f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
                     )
+                    
+                # Set privacy_spent for compatibility with checkpoint saving
+                privacy_spent = {
+                    "epsilon": privacy_metrics["epsilon"],
+                    "delta": privacy_metrics["delta"],
+                }
 
             # Create visualization if requested
             if visualizer and args.create_summary:
                 logger.info("=== Generating Visualization ===")
                 visualizer.render_summary_plot(
-                    filename=f"dp_ham10000_{args.topology}_{args.aggregation_strategy}"
+                    filename=f"dp_cifar10_{args.model}_{args.topology}_{args.aggregation_strategy}"
                     + ("_dp" if args.enable_dp else "_no_dp")
                     + "_summary.png"
                 )
@@ -578,15 +547,13 @@ def main() -> None:
                 "config": {
                     k: v for k, v in vars(args).items() if not k.startswith("_")
                 },
-                "results_phase1": results,
+                "results": results,
                 "differential_privacy": {
                     "enabled": args.enable_dp,
                     "config": dp_config.model_dump() if dp_config else None,
-                    "privacy_spent": results.get("privacy_metrics", None)
-                    if args.enable_dp
+                    "privacy_spent": privacy_spent
+                    if args.enable_dp and hasattr(global_model, "get_privacy_spent")
                     else None,
-                    "per_round_budget": args.target_epsilon_per_round if args.enable_dp else None,
-                    "total_budget": total_epsilon_budget if args.enable_dp else None,
                 },
             }
 
@@ -601,7 +568,7 @@ def main() -> None:
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"DP HAM10000 Learning Process failed: {str(e)}")
+        logger.error(f"DP CIFAR-10 Learning Process failed: {str(e)}")
         import traceback
 
         traceback.print_exc()
