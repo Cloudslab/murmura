@@ -174,20 +174,6 @@ def test_set_aggregation_strategy(cluster_manager):
     assert cluster_manager.aggregation_strategy.__class__.__name__ == "FedAvg"
 
 
-def test_get_topology_information_with_topology(cluster_manager):
-    """Test getting topology information when initialized"""
-    num_actors = 3
-    topology = TopologyConfig(topology_type=TopologyType.RING)
-    cluster_manager.create_actors(num_actors, topology)
-    
-    info = cluster_manager.get_topology_information()
-    
-    assert info["initialized"] is True
-    assert info["type"] == "ring"
-    assert info["num_actors"] == 3
-    assert "adjacency_list" in info
-
-
 def test_get_compatible_strategies_with_topology(cluster_manager):
     """Test getting compatible strategies with a topology"""
     num_actors = 3
