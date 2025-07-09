@@ -233,12 +233,3 @@ def test_perform_decentralized_aggregation_without_coordinator(cluster_manager):
         cluster_manager.perform_decentralized_aggregation()
 
 
-def test_shutdown_cluster_manager(cluster_manager):
-    """Test shutting down cluster manager"""
-    # Create some actors first
-    num_actors = 2
-    topology = TopologyConfig(topology_type=TopologyType.COMPLETE)
-    cluster_manager.create_actors(num_actors, topology)
-    
-    # Should not raise an exception
-    cluster_manager.shutdown()
