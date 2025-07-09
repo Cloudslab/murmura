@@ -251,11 +251,11 @@ def test_execute_weighted_aggregation(
     # Execute the learning process
     decentralized_learning_process.execute()
 
-    # Verify aggregate_model_parameters was called with weights
-    mock_cluster_manager.aggregate_model_parameters.assert_called()
+    # Verify perform_decentralized_aggregation was called with weights
+    mock_cluster_manager.perform_decentralized_aggregation.assert_called()
 
     # Check that weights parameter was provided
-    _, kwargs = mock_cluster_manager.aggregate_model_parameters.call_args
+    _, kwargs = mock_cluster_manager.perform_decentralized_aggregation.call_args
     assert "weights" in kwargs
     weights = kwargs["weights"]
 
@@ -269,15 +269,13 @@ def test_execute_model_update(
     decentralized_learning_process, mock_cluster_manager, mock_model
 ):
     """Test the model update process in execute method"""
-    # Set the expected return value for aggregate_model_parameters
-    mock_cluster_manager.aggregate_model_parameters.return_value = {
-        "layer1": np.array([2.0, 3.0])
-    }
-
+    # In decentralized learning, we use the representative model from the first actor
+    # The first actor returns parameters [1.0, 2.0] as set in the fixture
+    
     # Execute the learning process
     decentralized_learning_process.execute()
 
-    # Verify global model was updated
+    # Verify representative model was updated (set_parameters should be called)
     assert mock_model.set_parameters.call_count >= 1
 
     # Get the actual parameters passed to set_parameters
@@ -285,9 +283,9 @@ def test_execute_model_update(
         0
     ]  # Last call, first positional arg
 
-    # Verify the parameters
+    # Verify the parameters match what the first actor returns
     assert "layer1" in call_args
-    assert np.allclose(call_args["layer1"], np.array([2.0, 3.0]))
+    assert np.allclose(call_args["layer1"], np.array([1.0, 2.0]))
 
 
 def test_execute_evaluation_after_rounds(decentralized_learning_process, mock_model):
