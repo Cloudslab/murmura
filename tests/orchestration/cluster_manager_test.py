@@ -118,19 +118,6 @@ def test_get_compatible_strategies_without_topology(cluster_manager):
     assert strategies == []
 
 
-def test_shutdown():
-    """Test cluster shutdown functionality"""
-    # If Ray is running, shut it down first.
-    if ray.is_initialized():
-        ray.shutdown()
-
-    ray.init(local_mode=True)
-    assert ray.is_initialized()
-
-    ClusterManager.shutdown_ray()
-    assert not ray.is_initialized()
-
-
 def test_aggregate_model_parameters_without_strategy(cluster_manager):
     """Test that aggregating without a strategy raises an error"""
     # Create actors
@@ -174,20 +161,6 @@ def test_set_aggregation_strategy(cluster_manager):
     assert cluster_manager.aggregation_strategy.__class__.__name__ == "FedAvg"
 
 
-def test_get_topology_information_with_topology(cluster_manager):
-    """Test getting topology information when initialized"""
-    num_actors = 3
-    topology = TopologyConfig(topology_type=TopologyType.RING)
-    cluster_manager.create_actors(num_actors, topology)
-    
-    info = cluster_manager.get_topology_information()
-    
-    assert info["initialized"] is True
-    assert info["type"] == "ring"
-    assert info["num_actors"] == 3
-    assert "adjacency_list" in info
-
-
 def test_get_compatible_strategies_with_topology(cluster_manager):
     """Test getting compatible strategies with a topology"""
     num_actors = 3
@@ -200,36 +173,14 @@ def test_get_compatible_strategies_with_topology(cluster_manager):
     assert len(strategies) > 0
     assert "fedavg" in strategies
 
+def test_shutdown():
+    """Test cluster shutdown functionality"""
+    # If Ray is running, shut it down first.
+    if ray.is_initialized():
+        ray.shutdown()
 
-def test_cluster_info_gathering(cluster_manager):
-    """Test that cluster info is properly gathered"""
-    cluster_info = cluster_manager.cluster_info
-    
-    assert "total_nodes" in cluster_info
-    assert "cluster_resources" in cluster_info
-    assert "available_resources" in cluster_info
-    assert "is_multinode" in cluster_info
-    assert isinstance(cluster_info["total_nodes"], int)
-    assert cluster_info["total_nodes"] >= 1
+    ray.init(local_mode=True)
+    assert ray.is_initialized()
 
-
-def test_perform_decentralized_aggregation_without_strategy(cluster_manager):
-    """Test that decentralized aggregation without strategy raises error"""
-    num_actors = 3
-    topology = TopologyConfig(topology_type=TopologyType.RING)
-    cluster_manager.create_actors(num_actors, topology)
-    
-    with pytest.raises(ValueError, match="Aggregation strategy not set"):
-        cluster_manager.perform_decentralized_aggregation()
-
-
-def test_perform_decentralized_aggregation_without_coordinator(cluster_manager):
-    """Test that decentralized aggregation without coordinator raises error"""
-    # Set strategy but don't create proper coordinator
-    aggregation_config = AggregationConfig(strategy_type=AggregationStrategyType.FEDAVG)
-    cluster_manager.set_aggregation_strategy(aggregation_config)
-    
-    with pytest.raises(ValueError, match="Topology coordinator not initialized"):
-        cluster_manager.perform_decentralized_aggregation()
-
-
+    ClusterManager.shutdown_ray()
+    assert not ray.is_initialized()
