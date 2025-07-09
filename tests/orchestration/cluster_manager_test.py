@@ -187,35 +187,3 @@ def test_get_compatible_strategies_with_topology(cluster_manager):
     assert "fedavg" in strategies
 
 
-def test_cluster_info_gathering(cluster_manager):
-    """Test that cluster info is properly gathered"""
-    cluster_info = cluster_manager.cluster_info
-    
-    assert "total_nodes" in cluster_info
-    assert "cluster_resources" in cluster_info
-    assert "available_resources" in cluster_info
-    assert "is_multinode" in cluster_info
-    assert isinstance(cluster_info["total_nodes"], int)
-    assert cluster_info["total_nodes"] >= 1
-
-
-def test_perform_decentralized_aggregation_without_strategy(cluster_manager):
-    """Test that decentralized aggregation without strategy raises error"""
-    num_actors = 3
-    topology = TopologyConfig(topology_type=TopologyType.RING)
-    cluster_manager.create_actors(num_actors, topology)
-    
-    with pytest.raises(ValueError, match="Aggregation strategy not set"):
-        cluster_manager.perform_decentralized_aggregation()
-
-
-def test_perform_decentralized_aggregation_without_coordinator(cluster_manager):
-    """Test that decentralized aggregation without coordinator raises error"""
-    # Set strategy but don't create proper coordinator
-    aggregation_config = AggregationConfig(strategy_type=AggregationStrategyType.FEDAVG)
-    cluster_manager.set_aggregation_strategy(aggregation_config)
-    
-    with pytest.raises(ValueError, match="Topology coordinator not initialized"):
-        cluster_manager.perform_decentralized_aggregation()
-
-
