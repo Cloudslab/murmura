@@ -118,19 +118,6 @@ def test_get_compatible_strategies_without_topology(cluster_manager):
     assert strategies == []
 
 
-def test_shutdown():
-    """Test cluster shutdown functionality"""
-    # If Ray is running, shut it down first.
-    if ray.is_initialized():
-        ray.shutdown()
-
-    ray.init(local_mode=True)
-    assert ray.is_initialized()
-
-    ClusterManager.shutdown_ray()
-    assert not ray.is_initialized()
-
-
 def test_aggregate_model_parameters_without_strategy(cluster_manager):
     """Test that aggregating without a strategy raises an error"""
     # Create actors
@@ -186,4 +173,14 @@ def test_get_compatible_strategies_with_topology(cluster_manager):
     assert len(strategies) > 0
     assert "fedavg" in strategies
 
+def test_shutdown():
+    """Test cluster shutdown functionality"""
+    # If Ray is running, shut it down first.
+    if ray.is_initialized():
+        ray.shutdown()
 
+    ray.init(local_mode=True)
+    assert ray.is_initialized()
+
+    ClusterManager.shutdown_ray()
+    assert not ray.is_initialized()
