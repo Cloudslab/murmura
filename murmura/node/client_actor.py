@@ -108,14 +108,37 @@ class VirtualClientActor:
                         self.attack_instance = create_simple_attack(attack_type, self.attack_config)
                     
                 elif hasattr(self.attack_config, '__dict__'):
-                    # Attack config object (like AttackConfig)
-                    self.attack_instance = GradualLabelFlippingAttack(
-                        node_id=client_id,
-                        config=self.attack_config,
-                        num_classes=getattr(self.attack_config, 'num_classes', 10),
-                        dataset_name=getattr(self.attack_config, 'dataset_name', 'mnist')
-                    )
-                    attack_type = "gradual_label_flipping"
+                    # Attack config object (like AttackConfig, BackdoorConfig, etc.)
+                    config_class_name = self.attack_config.__class__.__name__
+                    
+                    if config_class_name == "AttackConfig":
+                        # Gradual label flipping attack
+                        self.attack_instance = GradualLabelFlippingAttack(
+                            node_id=client_id,
+                            config=self.attack_config,
+                            num_classes=getattr(self.attack_config, 'num_classes', 10),
+                            dataset_name=getattr(self.attack_config, 'dataset_name', 'mnist')
+                        )
+                        attack_type = "gradual_label_flipping"
+                    elif config_class_name == "BackdoorConfig":
+                        # Gradual model poisoning attack
+                        from murmura.attacks.gradual_model_poisoning import GradualModelPoisoningAttack
+                        self.attack_instance = GradualModelPoisoningAttack(
+                            node_id=client_id,
+                            config=self.attack_config,
+                            input_shape=(28, 28),  # MNIST shape - BackdoorConfig needs input_shape, not num_classes
+                            dataset_name=getattr(self.attack_config, 'dataset_name', 'mnist')
+                        )
+                        attack_type = "model_poisoning"
+                    else:
+                        # Default to gradual label flipping for unknown config types
+                        self.attack_instance = GradualLabelFlippingAttack(
+                            node_id=client_id,
+                            config=self.attack_config,
+                            num_classes=getattr(self.attack_config, 'num_classes', 10),
+                            dataset_name=getattr(self.attack_config, 'dataset_name', 'mnist')
+                        )
+                        attack_type = "gradual_label_flipping"
                 else:
                     raise ValueError(f"Unknown attack config type: {type(self.attack_config)}")
                 
@@ -942,10 +965,20 @@ class VirtualClientActor:
                     # Update attack for current round
                     self.attack_instance.update_round(self.current_round)
                     
-                    # Apply gradual label flipping
-                    features, labels, attack_info = self.attack_instance.poison_labels(
-                        features, labels
-                    )
+                    # Apply gradual attack - different attack types use different method names
+                    if hasattr(self.attack_instance, 'poison_labels'):
+                        # GradualLabelFlippingAttack uses poison_labels
+                        features, labels, attack_info = self.attack_instance.poison_labels(
+                            features, labels
+                        )
+                    elif hasattr(self.attack_instance, 'poison_data'):
+                        # GradualModelPoisoningAttack uses poison_data
+                        features, labels, attack_info = self.attack_instance.poison_data(
+                            features, labels
+                        )
+                    else:
+                        # Fallback: no attack applied
+                        attack_info = {"attack_applied": False}
                 else:
                     # Get current model parameters for parameter-based attacks
                     model_params = None

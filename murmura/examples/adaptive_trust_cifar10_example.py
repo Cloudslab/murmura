@@ -39,7 +39,6 @@ from murmura.trust.beta_threshold import BetaThresholdConfig
 # Attack components
 from murmura.attacks.gradual_label_flipping import create_gradual_attack_config
 from murmura.attacks.gradual_model_poisoning import create_backdoor_config
-from murmura.attacks.gradual_byzantine_gradient import create_byzantine_gradient_config
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -67,6 +66,8 @@ def create_adaptive_trust_config(
     profile: str = "default",
     use_beta_threshold: bool = True,
     topology_type: str = "ring",
+    enable_ensemble: bool = False,
+    num_classes: int = 10,
     custom_config: Optional[Dict[str, Any]] = None
 ) -> TrustMonitoringConfig:
     """
@@ -176,6 +177,8 @@ def create_adaptive_trust_config(
         trust_policy_config=trust_policy,
         log_trust_metrics=True,
         trust_report_interval=3,    # Less frequent due to complexity
+        enable_ensemble_detection=enable_ensemble,
+        num_classes=num_classes,
     )
     
     # Store Beta config for later use
@@ -237,29 +240,9 @@ def create_attack_config(
         
         return config
     
-    elif attack_type == "byzantine_gradient" or attack_type == "gradient":
-        # Use the gradual Byzantine gradient attack configuration
-        attack_config_obj = create_byzantine_gradient_config(
-            dataset_name="cifar10",
-            attack_intensity=attack_intensity,
-            stealth_level=stealth_level,
-            manipulation_strategy="mixed"  # Can be made configurable
-        )
-        
-        # Convert ByzantineGradientConfig object to dictionary and add extra fields
-        config = {
-            "attack_config": attack_config_obj,
-            "malicious_fraction": malicious_fraction,
-            "attack_type": "byzantine_gradient",
-            "attack_intensity": attack_intensity,
-            "stealth_level": stealth_level,
-        }
-        
-        return config
-    
     else:
         # Unknown attack type
-        raise ValueError(f"Unknown attack type: {attack_type}. Supported types: none, label_flipping, model_poisoning, byzantine_gradient")
+        raise ValueError(f"Unknown attack type: {attack_type}. Supported types: none, label_flipping, model_poisoning")
 
 
 def run_adaptive_trust_cifar10(
@@ -271,7 +254,8 @@ def run_adaptive_trust_cifar10(
     model_type: str = "standard",
     attack_config: Optional[Dict[str, Any]] = None,
     output_dir: str = "adaptive_trust_cifar10_results",
-    log_level: str = "INFO"
+    log_level: str = "INFO",
+    enable_ensemble: bool = False
 ) -> Dict[str, Any]:
     """
     Run complete CIFAR-10 experiment with adaptive trust monitoring.
@@ -387,11 +371,14 @@ def run_adaptive_trust_cifar10(
         )
         
         # Configure adaptive trust monitoring for CIFAR-10
-        logger.info(f"Configuring adaptive trust monitoring for CIFAR-10 (profile: {trust_profile}, topology: {topology_type})...")
+        ensemble_msg = " with ensemble detection" if enable_ensemble else ""
+        logger.info(f"Configuring adaptive trust monitoring for CIFAR-10 (profile: {trust_profile}, topology: {topology_type}){ensemble_msg}...")
         trust_config = create_adaptive_trust_config(
             profile=trust_profile,
             use_beta_threshold=use_beta_threshold,
-            topology_type=topology_type
+            topology_type=topology_type,
+            enable_ensemble=enable_ensemble,
+            num_classes=10  # CIFAR-10 has 10 classes
         )
         
         # Configure Ray resources
@@ -444,45 +431,51 @@ def run_adaptive_trust_cifar10(
             attack_config=attack_config,
         )
         
-        # Configure trust monitors with CIFAR-10 context
-        logger.info("Configuring trust monitors for CIFAR-10...")
-        if hasattr(learning_process, 'trust_monitors') and learning_process.trust_monitors:
-            # Prepare test data for performance monitoring (subset of test split)
-            test_dataset = dataset.get_split("test")
-            test_features, test_labels = learning_process._prepare_test_data(
-                test_dataset, orchestration_config.feature_columns, orchestration_config.label_column
-            )
-            
-            # Use a smaller subset for performance monitoring (CIFAR-10 is more complex)
-            perf_test_size = min(300, len(test_features))  # Smaller subset due to complexity
-            indices = np.random.choice(len(test_features), perf_test_size, replace=False)
-            perf_test_features = test_features[indices]
-            perf_test_labels = test_labels[indices]
-            
-            logger.info(f"Prepared performance test data: {perf_test_size} samples")
-            
-            for node_id, trust_monitor_ref in learning_process.trust_monitors.items():
-                # Set FL context for CIFAR-10
-                ray.get(trust_monitor_ref.set_fl_context.remote(
-                    total_rounds=num_rounds,
-                    current_accuracy=0.1,  # Initial accuracy (random = 10% for 10 classes)
-                    topology=topology_type
-                ))
-                
-                # Configure Beta thresholding if available
-                if hasattr(trust_config, 'beta_threshold_config') and trust_config.beta_threshold_config:
-                    ray.get(trust_monitor_ref.configure_beta_threshold.remote(
-                        trust_config.beta_threshold_config.to_dict()
-                    ))
-                
-                # Set test data for performance monitoring
-                ray.get(trust_monitor_ref.set_test_data.remote(
-                    perf_test_features, perf_test_labels
-                ))
-                    
-            logger.info(f"Configured {len(learning_process.trust_monitors)} trust monitors for CIFAR-10")
-        else:
-            logger.warning("No trust monitors available for configuration")
+        # Trust monitors will be automatically configured during execution
+        # ==== PATTERN ANALYSIS MODE: Skip performance monitoring setup ====
+        # During pattern analysis, we focus on parameter collection rather than performance metrics
+        logger.info("Trust monitors will be configured for PATTERN ANALYSIS mode during execution")
+        
+        # ==== COMMENTED OUT: PERFORMANCE MONITORING SETUP ====
+        # # Configure trust monitors with CIFAR-10 context
+        # logger.info("Configuring trust monitors for CIFAR-10...")
+        # if hasattr(learning_process, 'trust_monitors') and learning_process.trust_monitors:
+        #     # Prepare test data for performance monitoring (subset of test split)
+        #     test_dataset = dataset.get_split("test")
+        #     test_features, test_labels = learning_process._prepare_test_data(
+        #         test_dataset, orchestration_config.feature_columns, orchestration_config.label_column
+        #     )
+        #     
+        #     # Use a smaller subset for performance monitoring (CIFAR-10 is more complex)
+        #     perf_test_size = min(300, len(test_features))  # Smaller subset due to complexity
+        #     indices = np.random.choice(len(test_features), perf_test_size, replace=False)
+        #     perf_test_features = test_features[indices]
+        #     perf_test_labels = test_labels[indices]
+        #     
+        #     logger.info(f"Prepared performance test data: {perf_test_size} samples")
+        #     
+        #     for node_id, trust_monitor_ref in learning_process.trust_monitors.items():
+        #         # Set FL context for CIFAR-10
+        #         ray.get(trust_monitor_ref.set_fl_context.remote(
+        #             total_rounds=num_rounds,
+        #             current_accuracy=0.1,  # Initial accuracy (random = 10% for 10 classes)
+        #             topology=topology_type
+        #         ))
+        #         
+        #         # Configure Beta thresholding if available
+        #         if hasattr(trust_config, 'beta_threshold_config') and trust_config.beta_threshold_config:
+        #             ray.get(trust_monitor_ref.configure_beta_threshold.remote(
+        #                 trust_config.beta_threshold_config.to_dict()
+        #             ))
+        #         
+        #         # Set test data for performance monitoring
+        #         ray.get(trust_monitor_ref.set_test_data.remote(
+        #             perf_test_features, perf_test_labels
+        #         ))
+        #             
+        #     logger.info(f"Configured {len(learning_process.trust_monitors)} trust monitors for CIFAR-10")
+        # else:
+        #     logger.warning("No trust monitors available for configuration")
         
         # Execute federated learning
         logger.info("=" * 60)
@@ -634,10 +627,14 @@ def main():
         "--disable_beta", action="store_true",
         help="Disable Beta distribution thresholding"
     )
+    parser.add_argument(
+        "--enable_ensemble", action="store_true",
+        help="Enable ensemble trust detection (combines multiple signals)"
+    )
     
     # Attack configuration
     parser.add_argument(
-        "--attack_type", choices=["none", "gradual_label_flipping", "label_flipping", "model_poisoning", "backdoor", "byzantine_gradient", "gradient"], 
+        "--attack_type", choices=["none", "gradual_label_flipping", "label_flipping", "model_poisoning", "backdoor"], 
         default="none", help="Type of attack to simulate (default: none)"
     )
     parser.add_argument(
@@ -700,7 +697,8 @@ def main():
             model_type=args.model_type,
             attack_config=None,  # No attacks
             output_dir=os.path.join(args.output_dir, "baseline"),
-            log_level=args.log_level
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
     elif args.run_comparison:
         # Run comparison between Beta and manual thresholding
@@ -717,7 +715,8 @@ def main():
             model_type=args.model_type,
             attack_config=attack_config,
             output_dir=os.path.join(args.output_dir, "beta_threshold"),
-            log_level=args.log_level
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
         
         # Manual threshold experiment
@@ -731,7 +730,8 @@ def main():
             model_type=args.model_type,
             attack_config=attack_config,
             output_dir=os.path.join(args.output_dir, "manual_threshold"),
-            log_level=args.log_level
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
     else:
         # Run single experiment
@@ -744,7 +744,8 @@ def main():
             model_type=args.model_type,
             attack_config=attack_config,
             output_dir=args.output_dir,
-            log_level=args.log_level
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
 
 

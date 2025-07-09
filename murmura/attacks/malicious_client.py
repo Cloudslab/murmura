@@ -19,7 +19,7 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from murmura.attacks.gradual_label_flipping import GradualLabelFlippingAttack, AttackConfig
 from murmura.attacks.gradual_model_poisoning import GradualModelPoisoningAttack, BackdoorConfig
-from murmura.attacks.gradual_byzantine_gradient import GradualByzantineGradientAttack, ByzantineGradientConfig
+# Byzantine gradient attack removed
 from murmura.node.client_actor import VirtualClientActor
 
 
@@ -74,14 +74,8 @@ class MaliciousClient(VirtualClientActor):
                 input_shape=input_shape,
                 dataset_name=dataset_name
             )
-        elif attack_type == "byzantine_gradient":
-            self.attack = GradualByzantineGradientAttack(
-                node_id=node_id,
-                config=attack_config,
-                dataset_name=dataset_name
-            )
         else:
-            raise ValueError(f"Unknown attack type: {attack_type}")
+            raise ValueError(f"Unknown attack type: {attack_type}. Supported: label_flipping, model_poisoning")
         
         # Malicious client state
         self.is_malicious = True
@@ -147,14 +141,7 @@ class MaliciousClient(VirtualClientActor):
                 poisoned_features, poisoned_labels, attack_stats = self.attack.poison_data(
                     features, labels
                 )
-            elif self.attack_type == "byzantine_gradient":
-                # For Byzantine gradient attacks, we train normally but manipulate parameters later
-                poisoned_features, poisoned_labels = features, labels
-                attack_stats = {
-                    "attack_applied": True,
-                    "phase": self.attack.current_phase.value,
-                    "manipulation_deferred": True,  # Will manipulate parameters in get_model_parameters
-                }
+            # Note: Byzantine gradient attack has been removed
             
             # Cache poisoned data
             self._poisoned_data_cache[data_key] = (poisoned_features, poisoned_labels)
@@ -203,19 +190,7 @@ class MaliciousClient(VirtualClientActor):
         # Get parameters from base class
         parameters = super().get_model_parameters()
         
-        # Apply Byzantine gradient attack to parameters if applicable
-        if (self.attack_type == "byzantine_gradient" and 
-            hasattr(self.attack, 'manipulate_parameters') and 
-            self.attack.is_attacking()):
-            
-            parameters, manipulation_stats = self.attack.manipulate_parameters(parameters)
-            
-            # Log manipulation
-            if manipulation_stats.get("parameters_manipulated", 0) > 0:
-                self.logger.info(
-                    f"Round {self.current_round}: Manipulated {manipulation_stats['parameters_manipulated']} parameters "
-                    f"({manipulation_stats['phase']})"
-                )
+        # Note: Byzantine gradient parameter manipulation has been removed
         
         # Add metadata about corruption
         if hasattr(self, '_parameter_metadata'):
@@ -237,12 +212,7 @@ class MaliciousClient(VirtualClientActor):
                         self.attack.total_samples_poisoned / 
                         max(1, self.attack.total_samples_processed)
                     )
-            elif self.attack_type == "byzantine_gradient":
-                if hasattr(self.attack, 'total_parameters_manipulated'):
-                    self._parameter_metadata["cumulative_manipulation_rate"] = (
-                        self.attack.total_parameters_manipulated / 
-                        max(1, self.attack.total_updates_processed)
-                    )
+            # Note: Byzantine gradient metadata has been removed
         else:
             self._parameter_metadata = {
                 "corrupted_by_attack": self.attack.is_attacking(),

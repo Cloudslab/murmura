@@ -34,24 +34,14 @@ from murmura.trust.beta_threshold import (
 
 @dataclass
 class TrustContext:
-    """Context information for adaptive threshold decisions."""
+    """Context information for adaptive threshold decisions - DECENTRALIZED FL ONLY."""
     
-    # Federated Learning Context
+    # Real FL Context (measurable in decentralized setting)
     current_round: int
     total_rounds: int
-    convergence_rate: float
-    global_accuracy: float
+    topology_type: str  # 'ring', 'complete', 'line'
     
-    # Network Context  
-    topology_type: str
-    network_stability: float
-    communication_latency: float
-    
-    # Historical Context
-    recent_attack_rate: float
-    false_positive_rate: float
-    
-    # Current Signal
+    # Real Parameter Signals (directly measured)
     hsic_value: float
     update_magnitude: float
     update_direction_consistency: float
@@ -86,38 +76,54 @@ class AdaptiveThresholdAgent:
         # Context tracking
         self.context_history = deque(maxlen=50)
         
-        # Beta distribution-based thresholding
+        # BASELINE LEARNING: Learn normal FL behavior patterns
+        self.baseline_learning_rounds = 3  # Learn baseline in first 3 rounds
+        self.baseline_hsic_values = deque(maxlen=100)
+        self.baseline_update_norms = deque(maxlen=100)
+        self.baseline_learned = False
+        self.hsic_baseline_mean = 0.9  # Default assumption
+        self.hsic_baseline_std = 0.05
+        self.update_norm_baseline_mean = 0.01
+        self.update_norm_baseline_std = 0.005
+        
+        # Beta distribution-based thresholding (now secondary to baseline learning)
         self.use_beta_threshold = use_beta_threshold
         if use_beta_threshold:
             beta_config = BetaThresholdConfig(
-                base_percentile=0.98,           # Higher percentile for FL
-                early_rounds_adjustment=-0.05,  # More permissive early
-                late_rounds_adjustment=0.01,    # Very slightly stricter late
-                min_observations=8,             # More observations before activation
-                learning_rate=0.5,              # Slower learning to avoid overreaction
+                base_percentile=0.5,            # Moderate percentile since baseline learning is primary
+                early_rounds_adjustment=-0.1,   # More permissive early rounds
+                late_rounds_adjustment=0.05,    # Slightly stricter in late rounds
+                min_observations=5,             # Wait for baseline learning to complete
+                learning_rate=0.4,              # Moderate learning rate
             )
             self.beta_threshold = ContextualBetaThreshold(beta_config)
-            self.logger.info("Using Beta distribution-based adaptive thresholding")
+            self.logger.info("Using Beta distribution-based adaptive thresholding (secondary to baseline learning)")
         else:
             self.beta_threshold = None
         
         self.logger.info("Initialized Adaptive Trust Agent with meta-learning capabilities")
         
     def _initialize_policy(self) -> np.ndarray:
-        """Initialize simple linear policy weights with FL-friendly bias."""
-        # 15 features as defined in _extract_features
-        # Initialize with negative bias to favor "honest" decisions
-        weights = np.random.normal(-0.5, 0.1, 15)  # Negative bias
+        """Initialize simple linear policy weights (used only during baseline learning)."""
+        # 8 real features only (no fake/hardcoded features)  
+        # Initialize with moderate weights since baseline learning is primary detection method
+        weights = np.random.normal(0.0, 0.1, 8)  # Neutral initialization
         
-        # Set specific weights for important features
-        # Feature 7 is HSIC value - should have minimal negative weight since high HSIC is normal in FL
-        weights[7] = -0.1  # Very small negative weight for HSIC
+        # Set specific weights for important features (moderate since baseline learning is primary)
+        # Feature 1 is HSIC value - moderate negative weight
+        weights[1] = -0.3  # Moderate negative weight for HSIC
+        
+        # Feature 2 is update norm - moderate positive weight
+        weights[2] = 0.2   # Moderate positive weight for update norm
+        
+        # Feature 3 is consistency - moderate negative weight
+        weights[3] = -0.2  # Moderate negative weight for inconsistency
         
         return weights
     
     def get_trust_decision(self, context: TrustContext) -> Tuple[bool, float, str]:
         """
-        Make trust decision based on full context.
+        Make trust decision based on full context using baseline learning.
         
         Args:
             context: Full FL and network context
@@ -125,64 +131,70 @@ class AdaptiveThresholdAgent:
         Returns:
             (is_malicious, confidence, reasoning)
         """
+        # Update baseline learning if still in learning phase
+        self._update_baseline_learning(context)
+        
         # Extract normalized features
         features = self._extract_features(context)
         
-        # Get malicious probability from policy
-        malicious_prob = self._evaluate_policy(features)
-        
-        # Get adaptive threshold based on context
-        threshold = self._get_adaptive_threshold(context)
-        
-        # Make decision
-        is_malicious = malicious_prob > threshold
-        confidence = abs(malicious_prob - threshold)
-        
-        # Generate reasoning
-        reasoning = self._generate_reasoning(context, malicious_prob, threshold)
+        # Use outlier detection if baseline is learned, otherwise use policy
+        if self.baseline_learned:
+            is_malicious, confidence, reasoning = self._detect_outlier_behavior(context)
+        else:
+            # During baseline learning, be very conservative
+            malicious_prob = self._evaluate_policy(features) * 0.1  # Very conservative
+            threshold = 0.9  # Very high threshold during learning
+            is_malicious = malicious_prob > threshold
+            confidence = abs(malicious_prob - threshold)
+            reasoning = f"Baseline learning phase ({context.current_round}/{self.baseline_learning_rounds}): Conservative detection"
         
         # Store context for learning
         self.context_history.append({
             'context': context,
             'features': features,
-            'prob': malicious_prob,
-            'threshold': threshold,
             'decision': is_malicious,
+            'confidence': confidence,
             'timestamp': time.time()
         })
         
         return is_malicious, confidence, reasoning
     
     def _extract_features(self, context: TrustContext) -> np.ndarray:
-        """Extract normalized feature vector from context."""
+        """
+        Extract normalized feature vector from context - ONLY REAL FEATURES FOR DECENTRALIZED FL.
         
-        # Raw features
+        RESEARCH NOTE: This uses only 8 real, measurable features suitable for publication:
+        1. FL Progress (0-1): current_round / total_rounds
+        2. HSIC Value (0-1): Real parameter correlation measurement  
+        3. Update Magnitude (>0): L2 norm of parameter update
+        4. Update Direction Consistency (0-1): Temporal consistency of updates
+        5. Neighbor Trust Mean (0-1): Average trust of neighboring nodes
+        6. Neighbor Trust Std (≥0): Variance in neighbor trust scores  
+        7. Neighbor Count (normalized): Number of neighbors / 10
+        8. FL Phase (0,0.5,1): Early/Mid/Late phase indicator
+        
+        Removed fake/hardcoded features: global_accuracy, convergence_rate, 
+        network_stability, communication_latency, attack_rate, false_positive_rate
+        """
+        
+        # Only use features that are meaningful and measurable in decentralized FL
         features = np.array([
-            # FL Progress indicators (0-1 normalized)
+            # FL Progress - Real feature from actual round counting
             context.current_round / max(1, context.total_rounds),
-            context.convergence_rate,
-            context.global_accuracy,
             
-            # Network health indicators  
-            context.network_stability,
-            1.0 / (1.0 + context.communication_latency),  # Inverse latency
-            
-            # Historical risk indicators
-            context.recent_attack_rate,
-            context.false_positive_rate,
-            
-            # Current signal strength
+            # HSIC Signal - Real correlation measurement between parameters
             context.hsic_value,
+            
+            # Parameter Update Properties - Real measurements
             context.update_magnitude,
             context.update_direction_consistency,
+            
+            # Neighbor Trust Statistics - Real trust scores from actual neighbors
             np.mean(context.neighbor_trust_scores) if context.neighbor_trust_scores else 0.5,
             np.std(context.neighbor_trust_scores) if len(context.neighbor_trust_scores) > 1 else 0.0,
+            len(context.neighbor_trust_scores) / 10.0,  # Number of neighbors (normalized)
             
-            # Composite indicators
-            self._compute_anomaly_score(context),
-            self._compute_consistency_score(context),
-            
-            # Phase indicator
+            # Phase indicator - Real FL phase based on actual rounds
             self._compute_phase_indicator(context),
         ])
         
@@ -232,23 +244,18 @@ class AdaptiveThresholdAgent:
         
         # Use Beta distribution threshold if enabled
         if self.use_beta_threshold and self.beta_threshold:
-            # Get context-aware Beta threshold
+            # Get context-aware Beta threshold (round-based only)
             try:
                 # Try contextual beta threshold first
                 beta_threshold = self.beta_threshold.get_threshold(
                     fl_round=context.current_round,
-                    total_rounds=context.total_rounds,
-                    accuracy=context.global_accuracy
+                    total_rounds=context.total_rounds
                 )
             except TypeError:
                 # Fallback to simple beta threshold
                 beta_threshold = self.beta_threshold.get_threshold()
             
-            # Apply additional adjustments for risk and false positives
-            risk_adjustment = context.recent_attack_rate * 0.1
-            fp_adjustment = context.false_positive_rate * 0.2
-            
-            # HSIC-based adjustment (high HSIC is NORMAL in FL)
+            # HSIC-based adjustment (high HSIC is NORMAL in FL) - ONLY REAL FEATURE
             hsic_adjustment = 0.0
             if context.hsic_value > 0.995:
                 hsic_adjustment = -0.02
@@ -257,19 +264,19 @@ class AdaptiveThresholdAgent:
             elif 0.9 <= context.hsic_value <= 0.98:
                 hsic_adjustment = 0.05  # Reward normal behavior
             
-            adaptive_threshold = beta_threshold - risk_adjustment + fp_adjustment + hsic_adjustment
+            adaptive_threshold = beta_threshold + hsic_adjustment
             
             self.logger.debug(
                 f"Beta threshold: {beta_threshold:.3f}, adjusted: {adaptive_threshold:.3f} "
-                f"(risk={risk_adjustment:.3f}, fp={fp_adjustment:.3f}, hsic={hsic_adjustment:.3f})"
+                f"(hsic={hsic_adjustment:.3f})"
             )
             
             return np.clip(adaptive_threshold, 0.1, 0.95)
         
-        # Fallback to manual threshold computation
-        base_threshold = 0.7
+        # Fallback to manual threshold computation using ONLY REAL FEATURES
+        base_threshold = 0.5  # Moderate threshold since baseline learning is primary
         
-        # FL Phase adjustment
+        # FL Phase adjustment - Real feature
         fl_progress = context.current_round / max(1, context.total_rounds)
         if fl_progress < 0.3:
             phase_adjustment = 0.2
@@ -278,16 +285,7 @@ class AdaptiveThresholdAgent:
         else:
             phase_adjustment = 0.1
         
-        # Risk adjustment
-        risk_adjustment = context.recent_attack_rate * 0.2
-        
-        # False positive adjustment
-        fp_adjustment = context.false_positive_rate * 0.4
-        
-        # Network stability adjustment
-        stability_adjustment = (1.0 - context.network_stability) * 0.1
-        
-        # HSIC-based adjustment
+        # HSIC-based adjustment - Real feature
         hsic_adjustment = 0.0
         if context.hsic_value > 0.995:
             hsic_adjustment = -0.05
@@ -296,44 +294,21 @@ class AdaptiveThresholdAgent:
         elif 0.9 <= context.hsic_value <= 0.98:
             hsic_adjustment = 0.1
         
-        adaptive_threshold = (base_threshold + 
-                            phase_adjustment - 
-                            risk_adjustment + 
-                            fp_adjustment - 
-                            stability_adjustment +
-                            hsic_adjustment)
+        adaptive_threshold = base_threshold + phase_adjustment + hsic_adjustment
         
         return np.clip(adaptive_threshold, 0.1, 0.9)
     
-    def _compute_anomaly_score(self, context: TrustContext) -> float:
-        """Compute composite anomaly score from multiple signals."""
+    def _compute_hsic_anomaly_score(self, context: TrustContext) -> float:
+        """Compute HSIC-based anomaly score (real measurement)."""
         
-        # HSIC anomaly (high values are NORMAL in FL!)
-        fl_progress = context.current_round / max(1, context.total_rounds)
         # In normal FL, HSIC typically ranges 0.90-0.99, with 0.94+ being very common
-        expected_hsic = 0.94  # Constant expected value since HSIC doesn't change much in normal FL
-        
         # Only flag extreme deviations
         if context.hsic_value > 0.995:  # Extremely high (suspicious)
-            hsic_anomaly = (context.hsic_value - 0.995) * 20  # Strong penalty for extreme values
+            return (context.hsic_value - 0.995) * 20  # Strong penalty for extreme values
         elif context.hsic_value < 0.85:  # Extremely low (suspicious)
-            hsic_anomaly = (0.85 - context.hsic_value) * 10
+            return (0.85 - context.hsic_value) * 10
         else:
-            hsic_anomaly = 0.0  # Normal range - no anomaly
-        
-        # Update magnitude anomaly (very large or very small updates suspicious)
-        # Normal updates are typically in range 0.001-0.1
-        if context.update_magnitude > 0.1:
-            magnitude_anomaly = min(1.0, (context.update_magnitude - 0.1) * 10)
-        elif context.update_magnitude < 0.001:
-            magnitude_anomaly = min(1.0, (0.001 - context.update_magnitude) * 1000)
-        else:
-            magnitude_anomaly = 0.0
-        
-        # Consistency anomaly
-        consistency_anomaly = 1.0 - context.update_direction_consistency
-        
-        return np.mean([hsic_anomaly, magnitude_anomaly, consistency_anomaly])
+            return 0.0  # Normal range - no anomaly
     
     def _compute_consistency_score(self, context: TrustContext) -> float:
         """Compute how consistent this node is with its neighbors."""
@@ -360,7 +335,7 @@ class AdaptiveThresholdAgent:
             return 1.0  # Late phase
     
     def _generate_reasoning(self, context: TrustContext, prob: float, threshold: float) -> str:
-        """Generate human-readable reasoning for the decision."""
+        """Generate human-readable reasoning for the decision - ONLY REAL FEATURES."""
         
         factors = []
         
@@ -386,8 +361,13 @@ class AdaptiveThresholdAgent:
         elif fl_progress > 0.8:
             factors.append("Late FL phase (more strict)")
         
-        if context.false_positive_rate > 0.1:
-            factors.append(f"Recent false positives ({context.false_positive_rate:.3f})")
+        neighbor_count = len(context.neighbor_trust_scores)
+        if neighbor_count > 0:
+            neighbor_trust_mean = np.mean(context.neighbor_trust_scores)
+            if neighbor_trust_mean < 0.5:
+                factors.append(f"Low neighbor trust ({neighbor_trust_mean:.3f})")
+            elif neighbor_trust_mean > 0.9:
+                factors.append(f"High neighbor trust ({neighbor_trust_mean:.3f})")
         
         decision_str = 'MALICIOUS' if prob > threshold else 'HONEST'
         confidence = abs(prob - threshold)
@@ -396,6 +376,115 @@ class AdaptiveThresholdAgent:
         reasoning += f"Factors: {', '.join(factors) if factors else 'Normal behavior pattern'}"
         
         return reasoning
+    
+    def _update_baseline_learning(self, context: TrustContext) -> None:
+        """
+        Update baseline learning with normal FL behavior patterns.
+        
+        Args:
+            context: Current FL context
+        """
+        # Only learn baseline in early rounds when attacks are less likely
+        if context.current_round <= self.baseline_learning_rounds:
+            self.baseline_hsic_values.append(context.hsic_value)
+            self.baseline_update_norms.append(context.update_magnitude)
+            
+            # Update running statistics
+            if len(self.baseline_hsic_values) >= 5:  # Need some samples
+                self.hsic_baseline_mean = np.mean(list(self.baseline_hsic_values))
+                self.hsic_baseline_std = max(0.01, np.std(list(self.baseline_hsic_values)))
+                
+                self.update_norm_baseline_mean = np.mean(list(self.baseline_update_norms))
+                self.update_norm_baseline_std = max(0.001, np.std(list(self.baseline_update_norms)))
+                
+                self.logger.debug(
+                    f"Baseline update: HSIC={self.hsic_baseline_mean:.3f}±{self.hsic_baseline_std:.3f}, "
+                    f"Update norm={self.update_norm_baseline_mean:.3f}±{self.update_norm_baseline_std:.3f}"
+                )
+        
+        # Mark baseline as learned after collecting enough data
+        if context.current_round > self.baseline_learning_rounds and len(self.baseline_hsic_values) >= 5:
+            if not self.baseline_learned:
+                self.baseline_learned = True
+                self.logger.info(
+                    f"Baseline learning complete: HSIC baseline={self.hsic_baseline_mean:.3f}±{self.hsic_baseline_std:.3f}, "
+                    f"Update norm baseline={self.update_norm_baseline_mean:.3f}±{self.update_norm_baseline_std:.3f}"
+                )
+    
+    def _detect_outlier_behavior(self, context: TrustContext) -> Tuple[bool, float, str]:
+        """
+        Detect malicious behavior using statistical outlier detection from learned baseline.
+        
+        Args:
+            context: Current FL context
+            
+        Returns:
+            (is_malicious, confidence, reasoning)
+        """
+        anomaly_scores = []
+        reasoning_parts = []
+        
+        # 1. HSIC anomaly detection
+        hsic_z_score = abs(context.hsic_value - self.hsic_baseline_mean) / self.hsic_baseline_std
+        hsic_anomaly = hsic_z_score > 2.0  # 2-sigma rule
+        anomaly_scores.append(hsic_z_score / 3.0)  # Normalize to [0,1] range
+        
+        if hsic_anomaly:
+            reasoning_parts.append(f"HSIC outlier (z={hsic_z_score:.2f}, value={context.hsic_value:.3f} vs baseline={self.hsic_baseline_mean:.3f}±{self.hsic_baseline_std:.3f})")
+        
+        # 2. Update magnitude anomaly detection
+        update_z_score = abs(context.update_magnitude - self.update_norm_baseline_mean) / self.update_norm_baseline_std
+        update_anomaly = update_z_score > 2.5  # Slightly more tolerant for update norms
+        anomaly_scores.append(update_z_score / 4.0)  # Normalize to [0,1] range
+        
+        if update_anomaly:
+            reasoning_parts.append(f"Update magnitude outlier (z={update_z_score:.2f}, value={context.update_magnitude:.4f} vs baseline={self.update_norm_baseline_mean:.4f}±{self.update_norm_baseline_std:.4f})")
+        
+        # 3. Consistency with neighbors
+        if context.neighbor_trust_scores:
+            neighbor_mean = np.mean(context.neighbor_trust_scores)
+            if neighbor_mean < 0.3:  # Very low neighbor trust
+                anomaly_scores.append(0.8)
+                reasoning_parts.append(f"Very low neighbor trust (mean={neighbor_mean:.3f})")
+            elif neighbor_mean < 0.5:
+                anomaly_scores.append(0.4)
+                reasoning_parts.append(f"Low neighbor trust (mean={neighbor_mean:.3f})")
+            else:
+                anomaly_scores.append(0.0)
+        else:
+            anomaly_scores.append(0.0)  # No neighbors, can't judge
+        
+        # 4. Temporal consistency (if we have history)
+        if len(self.context_history) > 2:
+            recent_hsic = [ctx['context'].hsic_value for ctx in list(self.context_history)[-3:]]
+            hsic_variance = np.var(recent_hsic)
+            if hsic_variance > self.hsic_baseline_std ** 2 * 4:  # High variance
+                anomaly_scores.append(0.6)
+                reasoning_parts.append(f"High HSIC variance ({hsic_variance:.4f})")
+            else:
+                anomaly_scores.append(0.0)
+        else:
+            anomaly_scores.append(0.0)
+        
+        # Combine anomaly scores
+        combined_anomaly_score = np.mean(anomaly_scores)
+        
+        # Dynamic threshold based on FL phase
+        fl_progress = context.current_round / max(1, context.total_rounds)
+        if fl_progress < 0.3:
+            threshold = 0.7  # More permissive early
+        elif fl_progress > 0.8:
+            threshold = 0.4  # More strict late
+        else:
+            threshold = 0.5  # Moderate middle
+        
+        is_malicious = combined_anomaly_score > threshold
+        confidence = combined_anomaly_score
+        
+        reasoning = f"Outlier detection: anomaly_score={combined_anomaly_score:.3f} vs threshold={threshold:.3f}. "
+        reasoning += f"Factors: {'; '.join(reasoning_parts) if reasoning_parts else 'Normal behavior'}"
+        
+        return is_malicious, confidence, reasoning
     
     def update_from_feedback(self, 
                            context: TrustContext, 
@@ -421,13 +510,12 @@ class AdaptiveThresholdAgent:
             # Higher trust score means less likely to be malicious
             trust_score = 1.0 - self._evaluate_policy(self._extract_features(context))
             
-            # Update Beta distribution
+            # Update Beta distribution (round-based context only)
             self.beta_threshold.update(
                 trust_score=trust_score,
                 is_malicious=actual_outcome,
                 fl_round=context.current_round,
-                total_rounds=context.total_rounds,
-                accuracy=context.global_accuracy
+                total_rounds=context.total_rounds
             )
             
             self.logger.debug(
@@ -484,91 +572,44 @@ class AdaptiveThresholdAgent:
 
 
 class ContextTracker:
-    """Tracks FL context for adaptive decision making."""
+    """Tracks FL context for adaptive decision making - REAL FEATURES ONLY."""
     
     def __init__(self):
         self.logger = logging.getLogger(f"{__name__}.ContextTracker")
-        self.fl_history = deque(maxlen=100)
-        self.network_stats = {}
-        self.attack_history = deque(maxlen=50)
-        self.false_positive_history = deque(maxlen=50)
+        self.fl_history = deque(maxlen=100)  # Only stores real measurements
         
     def build_context(self, node_id: str, update_data: Dict[str, Any]) -> TrustContext:
-        """Build comprehensive context for trust decision."""
+        """Build context for trust decision using ONLY REAL, MEASURABLE FEATURES."""
         
-        # Extract or compute context components
+        # Extract only real, measurable context components for decentralized FL
         context = TrustContext(
             current_round=update_data.get('round', 0),
             total_rounds=update_data.get('total_rounds', 10),
-            convergence_rate=self._compute_convergence_rate(),
-            global_accuracy=update_data.get('accuracy', 0.5),
             topology_type=update_data.get('topology', 'ring'),
-            network_stability=self._compute_network_stability(),
-            communication_latency=self._compute_avg_latency(),
-            recent_attack_rate=self._compute_recent_attack_rate(),
-            false_positive_rate=self._compute_false_positive_rate(),
             hsic_value=update_data.get('hsic', 0.9),
             update_magnitude=update_data.get('update_norm', 0.01),
             update_direction_consistency=update_data.get('consistency', 0.8),
             neighbor_trust_scores=update_data.get('neighbor_trusts', [])
         )
         
-        # Store for history tracking
+        # Store for history tracking (only real features)
         self.fl_history.append({
             'round': context.current_round,
-            'accuracy': context.global_accuracy,
-            'convergence_rate': context.convergence_rate,
+            'hsic_value': context.hsic_value,
+            'update_magnitude': context.update_magnitude,
             'timestamp': time.time()
         })
         
         return context
     
-    def record_decision_outcome(self, decision: bool, actual_outcome: Optional[bool]):
-        """Record decision outcome for false positive tracking."""
-        if actual_outcome is not None:
-            is_false_positive = decision and not actual_outcome
-            self.false_positive_history.append(is_false_positive)
+    # Removed record_decision_outcome method (relied on unknown ground truth)
     
-    def _compute_convergence_rate(self) -> float:
-        """Compute how fast the global model is converging."""
-        if len(self.fl_history) < 2:
-            return 0.5
-        
-        recent_accuracies = [h['accuracy'] for h in list(self.fl_history)[-5:]]
-        if len(recent_accuracies) < 2:
-            return 0.5
-        
-        # Simple convergence rate based on accuracy improvement
-        accuracy_trend = recent_accuracies[-1] - recent_accuracies[0]
-        convergence_rate = min(1.0, max(0.0, accuracy_trend * 10 + 0.5))
-        
-        return convergence_rate
-    
-    def _compute_network_stability(self) -> float:
-        """Compute network stability score."""
-        # For now, return high stability (can be improved with actual network metrics)
-        return 0.95
-    
-    def _compute_avg_latency(self) -> float:
-        """Compute average communication latency."""
-        # For now, return low latency (can be improved with actual measurements)
-        return 0.1
-    
-    def _compute_recent_attack_rate(self) -> float:
-        """Compute rate of attacks detected in recent rounds."""
-        if len(self.attack_history) == 0:
-            return 0.0
-        
-        recent_attacks = sum(self.attack_history)
-        return recent_attacks / len(self.attack_history)
-    
-    def _compute_false_positive_rate(self) -> float:
-        """Compute rate of false positives in recent rounds."""
-        if len(self.false_positive_history) == 0:
-            return 0.0
-        
-        recent_fps = sum(self.false_positive_history)
-        return recent_fps / len(self.false_positive_history)
+    # Removed fake feature computation methods:
+    # - _compute_convergence_rate (based on non-existent global accuracy)
+    # - _compute_network_stability (hardcoded to 0.95)
+    # - _compute_avg_latency (hardcoded to 0.1)
+    # - _compute_recent_attack_rate (based on unreliable ground truth)
+    # - _compute_false_positive_rate (based on unknown ground truth)
 
 
 class DatasetIndependentTrustSystem:

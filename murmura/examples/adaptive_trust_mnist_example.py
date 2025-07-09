@@ -40,7 +40,6 @@ from murmura.trust.beta_threshold import BetaThresholdConfig
 # Attack components
 from murmura.attacks.gradual_label_flipping import create_gradual_attack_config
 from murmura.attacks.gradual_model_poisoning import create_backdoor_config
-from murmura.attacks.gradual_byzantine_gradient import create_byzantine_gradient_config
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -50,6 +49,11 @@ def setup_logging(log_level: str = "INFO") -> None:
     # Create logs directory
     os.makedirs("logs", exist_ok=True)
     
+    # Clear any existing handlers to prevent duplication
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format=log_format,
@@ -57,127 +61,123 @@ def setup_logging(log_level: str = "INFO") -> None:
             logging.StreamHandler(),
             logging.FileHandler("logs/adaptive_trust_mnist.log"),
         ],
+        force=True  # Force reconfiguration
     )
     
     # Set specific loggers to reduce noise
     logging.getLogger("ray").setLevel(logging.WARNING)
     logging.getLogger("torch").setLevel(logging.WARNING)
+    logging.getLogger("ray.worker").setLevel(logging.ERROR)
+    logging.getLogger("ray.serve").setLevel(logging.ERROR)
+    logging.getLogger("ray.rllib").setLevel(logging.ERROR)
+    logging.getLogger("ray.tune").setLevel(logging.ERROR)
+    
+    # Prevent propagation for Ray loggers to avoid duplication
+    logging.getLogger("ray").propagate = False
 
 
-def create_adaptive_trust_config(
+def create_statistical_trust_config(
     profile: str = "default",
-    use_beta_threshold: bool = True,
     topology_type: str = "ring",
+    enable_ensemble: bool = False,
     custom_config: Optional[Dict[str, Any]] = None
 ) -> TrustMonitoringConfig:
     """
-    Create adaptive trust configuration with Beta distribution thresholding.
+    Create robust statistical trust configuration for decentralized learning.
     
     Args:
         profile: Trust profile (permissive, default, strict)
-        use_beta_threshold: Whether to use Beta distribution-based thresholding
         topology_type: Network topology (ring, complete, line) for optimization
+        enable_ensemble: Whether to enable ensemble detection
         custom_config: Custom configuration overrides
     """
     
-    # Beta threshold configuration optimized for FL
-    if use_beta_threshold:
-        if profile == "permissive":
-            beta_config = BetaThresholdConfig(
-                base_percentile=0.99,           # Very high percentile
-                early_rounds_adjustment=-0.02,  # Slightly more permissive early
-                late_rounds_adjustment=0.01,    # Slightly stricter late
-                min_observations=10,            # More observations before activation
-                learning_rate=0.3,              # Conservative learning
-            )
-        elif profile == "strict":
-            beta_config = BetaThresholdConfig(
-                base_percentile=0.96,           # Lower percentile
-                early_rounds_adjustment=-0.03,  # Less permissive early
-                late_rounds_adjustment=0.02,    # More strict late
-                min_observations=5,             # Fewer observations needed
-                learning_rate=0.7,              # Faster learning
-            )
-        else:  # default
-            beta_config = BetaThresholdConfig(
-                base_percentile=0.98,           # High percentile for FL
-                early_rounds_adjustment=-0.05,  # More permissive early
-                late_rounds_adjustment=0.01,    # Slightly stricter late
-                min_observations=8,             # Balanced observations
-                learning_rate=0.5,              # Moderate learning
-            )
-    else:
-        beta_config = None
-    
-    # HSIC configuration optimized for MNIST FL
-    hsic_config = HSICConfig(
-        window_size=30,             # Smaller window for faster adaptation
-        kernel_type="rbf",
-        gamma=0.1,
-        threshold=0.1,              # Will be overridden by Beta threshold
-        alpha=0.9,
-        reduce_dim=True,
-        target_dim=50,              # Appropriate for MNIST model size
-        calibration_rounds=3,
-        baseline_percentile=95.0,
-    )
-    
-    # Trust policy configuration (topology-aware)
+    # Statistical detection configuration (topology-aware)
     if profile == "permissive":
+        statistical_config = {
+            "window_size": 25,                    # Larger window for more data
+            "min_samples_for_detection": 8,      # More samples before detection
+            "outlier_contamination": 0.15,       # Expect more diversity
+            "enable_adaptive_thresholds": True,
+            # Adaptive detector settings
+            "use_adaptive_detector": True,
+            "learning_rate": 0.05,                # Slower learning for permissive mode
+            "warmup_rounds": 3,                   # Longer warmup for permissive mode
+        }
         trust_policy = TrustPolicyConfig(
-            warn_threshold=0.3,
-            downgrade_threshold=0.5,
-            exclude_threshold=0.7,
+            warn_threshold=0.4,                   # Higher thresholds (more permissive)
+            downgrade_threshold=0.6,
+            exclude_threshold=0.8,
             min_samples_for_action=10,
-            weight_reduction_factor=0.8,
+            weight_reduction_factor=0.8,          # Less aggressive weight reduction
         )
     elif profile == "strict":
+        statistical_config = {
+            "window_size": 15,                    # Smaller window for faster response
+            "min_samples_for_detection": 3,      # Fewer samples before detection
+            "outlier_contamination": 0.05,       # Expect less diversity
+            "enable_adaptive_thresholds": True,
+            # Adaptive detector settings
+            "use_adaptive_detector": True,
+            "learning_rate": 0.15,                # Faster learning for strict mode
+            "warmup_rounds": 1,                   # Very short warmup for strict mode
+        }
         trust_policy = TrustPolicyConfig(
-            warn_threshold=0.15,
-            downgrade_threshold=0.3,
-            exclude_threshold=0.5,
-            min_samples_for_action=5,
-            weight_reduction_factor=0.4,
-        )
-    else:  # default
-        trust_policy = TrustPolicyConfig(
-            warn_threshold=0.2,
+            warn_threshold=0.2,                   # Lower thresholds (more strict)
             downgrade_threshold=0.4,
             exclude_threshold=0.6,
+            min_samples_for_action=5,
+            weight_reduction_factor=0.4,          # More aggressive weight reduction
+        )
+    else:  # default
+        statistical_config = {
+            "window_size": 20,                    # Balanced window size
+            "min_samples_for_detection": 5,      # Balanced sample requirement
+            "outlier_contamination": 0.1,        # Standard contamination rate
+            "enable_adaptive_thresholds": True,
+            # Adaptive detector settings
+            "use_adaptive_detector": True,
+            "learning_rate": 0.1,
+            "warmup_rounds": 2,                   # Shorter warmup for 10-round experiments
+        }
+        trust_policy = TrustPolicyConfig(
+            warn_threshold=0.3,                   # Balanced thresholds
+            downgrade_threshold=0.5,
+            exclude_threshold=0.7,
             min_samples_for_action=8,
-            weight_reduction_factor=0.6,
+            weight_reduction_factor=0.6,          # Moderate weight reduction
         )
     
-    # Adjust trust policy for topology characteristics
+    # Adjust configuration for topology characteristics
     if topology_type == "complete":
         # Complete graph: more neighbors, can be more strict
-        trust_policy.exclude_threshold = max(0.1, trust_policy.exclude_threshold - 0.1)
+        trust_policy.exclude_threshold = max(0.2, trust_policy.exclude_threshold - 0.1)
         trust_policy.min_samples_for_action = max(3, trust_policy.min_samples_for_action - 2)
+        statistical_config["outlier_contamination"] = min(0.15, statistical_config["outlier_contamination"] + 0.05)
     elif topology_type == "line":
         # Line topology: fewer neighbors, be more permissive to avoid isolation
-        trust_policy.exclude_threshold = min(0.8, trust_policy.exclude_threshold + 0.1)
+        trust_policy.exclude_threshold = min(0.9, trust_policy.exclude_threshold + 0.1)
         trust_policy.min_samples_for_action = min(15, trust_policy.min_samples_for_action + 3)
+        statistical_config["window_size"] = min(30, statistical_config["window_size"] + 5)
     # Ring topology uses default values
     
     # Apply custom overrides
     if custom_config:
-        if "hsic" in custom_config:
-            for key, value in custom_config["hsic"].items():
-                setattr(hsic_config, key, value)
+        if "statistical" in custom_config:
+            statistical_config.update(custom_config["statistical"])
         if "trust_policy" in custom_config:
             for key, value in custom_config["trust_policy"].items():
                 setattr(trust_policy, key, value)
     
     config = TrustMonitoringConfig(
         enabled=True,
-        hsic_config=hsic_config,
+        statistical_config=statistical_config,     # Use statistical config instead of HSIC
         trust_policy_config=trust_policy,
         log_trust_metrics=True,
-        trust_report_interval=2,    # More frequent reporting
+        trust_report_interval=2,                   # More frequent reporting
+        enable_ensemble_detection=enable_ensemble,
+        topology=topology_type,                    # Store topology for optimization
     )
-    
-    # Store Beta config for later use
-    config.beta_threshold_config = beta_config
     
     return config
 
@@ -235,53 +235,34 @@ def create_attack_config(
         
         return config
     
-    elif attack_type == "byzantine_gradient" or attack_type == "gradient":
-        # Use the gradual Byzantine gradient attack configuration
-        attack_config_obj = create_byzantine_gradient_config(
-            dataset_name="mnist",
-            attack_intensity=attack_intensity,
-            stealth_level=stealth_level,
-            manipulation_strategy="mixed"  # Can be made configurable
-        )
-        
-        # Convert ByzantineGradientConfig object to dictionary and add extra fields
-        config = {
-            "attack_config": attack_config_obj,
-            "malicious_fraction": malicious_fraction,
-            "attack_type": "byzantine_gradient",
-            "attack_intensity": attack_intensity,
-            "stealth_level": stealth_level,
-        }
-        
-        return config
     
     else:
         # Unknown attack type
-        raise ValueError(f"Unknown attack type: {attack_type}. Supported types: none, label_flipping, model_poisoning, byzantine_gradient")
+        raise ValueError(f"Unknown attack type: {attack_type}. Supported types: none, label_flipping, model_poisoning")
 
 
-def run_adaptive_trust_mnist(
+def run_statistical_trust_mnist(
     num_actors: int = 6,
     num_rounds: int = 15,
     topology_type: str = "ring",
     trust_profile: str = "default",
-    use_beta_threshold: bool = True,
     attack_config: Optional[Dict[str, Any]] = None,
-    output_dir: str = "adaptive_trust_results",
-    log_level: str = "INFO"
+    output_dir: str = "statistical_trust_results",
+    log_level: str = "INFO",
+    enable_ensemble: bool = False
 ) -> Dict[str, Any]:
     """
-    Run complete MNIST experiment with adaptive trust monitoring.
+    Run complete MNIST experiment with robust statistical trust monitoring.
     
     Args:
         num_actors: Number of federated learning actors
         num_rounds: Number of FL rounds
         topology_type: Decentralized network topology (ring, complete, line)
         trust_profile: Trust monitoring profile (permissive, default, strict)
-        use_beta_threshold: Whether to use Beta distribution thresholding
         attack_config: Attack configuration dictionary (if any)
         output_dir: Directory to save results
         log_level: Logging level
+        enable_ensemble: Whether to enable ensemble detection
         
     Returns:
         Dictionary with experiment results
@@ -295,12 +276,12 @@ def run_adaptive_trust_mnist(
     os.makedirs(output_dir, exist_ok=True)
     
     logger.info("=" * 80)
-    logger.info("ADAPTIVE TRUST MNIST EXPERIMENT")
+    logger.info("STATISTICAL TRUST MNIST EXPERIMENT")
     logger.info("=" * 80)
     logger.info(f"Actors: {num_actors}, Rounds: {num_rounds}")
     logger.info(f"Topology: {topology_type.upper()}")
     logger.info(f"Trust Profile: {trust_profile}")
-    logger.info(f"Beta Thresholding: {use_beta_threshold}")
+    logger.info(f"Detection Method: Robust Statistical Analysis")
     if attack_config:
         attack_info = f"{attack_config.get('attack_type', 'None')} ({attack_config.get('attack_intensity', 'moderate')})"
         logger.info(f"Attack: {attack_info}, Malicious: {attack_config.get('malicious_fraction', 0)*100:.0f}%")
@@ -374,12 +355,13 @@ def run_adaptive_trust_mnist(
             params={"mixing_parameter": 0.5},
         )
         
-        # Configure adaptive trust monitoring
-        logger.info(f"Configuring adaptive trust monitoring (profile: {trust_profile}, topology: {topology_type})...")
-        trust_config = create_adaptive_trust_config(
+        # Configure statistical trust monitoring
+        ensemble_msg = " with ensemble detection" if enable_ensemble else ""
+        logger.info(f"Configuring statistical trust monitoring (profile: {trust_profile}, topology: {topology_type}){ensemble_msg}...")
+        trust_config = create_statistical_trust_config(
             profile=trust_profile,
-            use_beta_threshold=use_beta_threshold,
-            topology_type=topology_type
+            topology_type=topology_type,
+            enable_ensemble=enable_ensemble
         )
         
         # Configure Ray resources
@@ -432,45 +414,10 @@ def run_adaptive_trust_mnist(
             attack_config=attack_config,
         )
         
-        # Configure trust monitors with FL context, Beta thresholding, and performance monitoring
-        logger.info("Configuring trust monitors with FL context...")
-        if hasattr(learning_process, 'trust_monitors') and learning_process.trust_monitors:
-            # Prepare test data for performance monitoring (subset of test split)
-            test_dataset = dataset.get_split("test")
-            test_features, test_labels = learning_process._prepare_test_data(
-                test_dataset, orchestration_config.feature_columns, orchestration_config.label_column
-            )
-            
-            # Use a smaller subset for performance monitoring (reduce computational overhead)
-            perf_test_size = min(500, len(test_features))
-            indices = np.random.choice(len(test_features), perf_test_size, replace=False)
-            perf_test_features = test_features[indices]
-            perf_test_labels = test_labels[indices]
-            
-            logger.info(f"Prepared performance test data: {perf_test_size} samples")
-            
-            for node_id, trust_monitor_ref in learning_process.trust_monitors.items():
-                # Set FL context
-                ray.get(trust_monitor_ref.set_fl_context.remote(
-                    total_rounds=num_rounds,
-                    current_accuracy=0.1,  # Initial accuracy
-                    topology=topology_type
-                ))
-                
-                # Configure Beta thresholding if available
-                if hasattr(trust_config, 'beta_threshold_config') and trust_config.beta_threshold_config:
-                    ray.get(trust_monitor_ref.configure_beta_threshold.remote(
-                        trust_config.beta_threshold_config.to_dict()
-                    ))
-                
-                # Set test data for performance monitoring (now enabled)
-                ray.get(trust_monitor_ref.set_test_data.remote(
-                    perf_test_features, perf_test_labels
-                ))
-                    
-            logger.info(f"Configured {len(learning_process.trust_monitors)} trust monitors with FL context, Beta thresholding, and performance monitoring")
-        else:
-            logger.warning("No trust monitors available for configuration")
+        # Trust monitors will be automatically configured during execution
+        # ==== PATTERN ANALYSIS MODE: Skip performance monitoring setup ====
+        # During pattern analysis, we focus on parameter collection rather than performance metrics
+        logger.info("Trust monitors will be configured for PATTERN ANALYSIS mode during execution")
         
         # Execute federated learning
         logger.info("=" * 60)
@@ -489,7 +436,7 @@ def run_adaptive_trust_mnist(
                 "num_rounds": num_rounds,
                 "topology_type": topology_type,
                 "trust_profile": trust_profile,
-                "use_beta_threshold": use_beta_threshold,
+                "detection_method": "robust_statistical",
                 "attack_type": attack_config.get("attack_type", "none") if attack_config else "none",
                 "timestamp": time.time(),
             },
@@ -497,7 +444,7 @@ def run_adaptive_trust_mnist(
             "trust_analysis": {
                 "final_trust_report": final_trust_report,
                 "trust_enabled": trust_config.enabled,
-                "beta_thresholding": use_beta_threshold,
+                "detection_method": "robust_statistical",
             },
             "performance_metrics": {
                 "total_time": time.time() - start_time,
@@ -539,7 +486,7 @@ def run_adaptive_trust_mnist(
         logger.info(f"  Downgraded Nodes: {trust_stats.get('total_downgraded', 0)}/{num_actors}")
         logger.info(f"  Average Trust Score: {trust_stats.get('avg_trust_score', 1.0):.4f}")
         logger.info(f"  False Positive Rate: {trust_stats.get('false_positive_rate', 0):.3f}")
-        logger.info(f"  Beta Thresholding: {'Enabled' if use_beta_threshold else 'Disabled'}")
+        logger.info(f"  Detection Method: Robust Statistical Analysis")
         
         # Save detailed results
         results_file = os.path.join(output_dir, f"adaptive_trust_results_{int(time.time())}.json")
@@ -549,6 +496,10 @@ def run_adaptive_trust_mnist(
                     return obj.item()
                 elif hasattr(obj, "tolist"):
                     return obj.tolist()
+                elif hasattr(obj, 'value'):  # Handle enum values
+                    return obj.value
+                elif hasattr(obj, 'name'):  # Handle enum names
+                    return obj.name
                 return obj
             
             json.dump(comprehensive_results, f, indent=2, default=convert_numpy)
@@ -589,7 +540,7 @@ def main():
     """Main function with command-line interface."""
     
     parser = argparse.ArgumentParser(
-        description="Adaptive Trust MNIST Federated Learning Example"
+        description="Statistical Trust MNIST Federated Learning Example"
     )
     
     # Core experiment parameters
@@ -611,14 +562,15 @@ def main():
         "--trust_profile", choices=["permissive", "default", "strict"], default="default",
         help="Trust monitoring profile (default: default)"
     )
+    # Note: Beta distribution thresholding replaced with robust statistical detection
     parser.add_argument(
-        "--disable_beta", action="store_true",
-        help="Disable Beta distribution thresholding"
+        "--enable_ensemble", action="store_true",
+        help="Enable ensemble trust detection (combines multiple signals)"
     )
     
     # Attack configuration
     parser.add_argument(
-        "--attack_type", choices=["none", "gradual_label_flipping", "label_flipping", "model_poisoning", "backdoor", "byzantine_gradient", "gradient"], 
+        "--attack_type", choices=["none", "gradual_label_flipping", "label_flipping", "model_poisoning", "backdoor"], 
         default="none", help="Type of attack to simulate (default: none)"
     )
     parser.add_argument(
@@ -655,7 +607,7 @@ def main():
     )
     parser.add_argument(
         "--run_comparison", action="store_true",
-        help="Run comparison between Beta and manual thresholding"
+        help="Run comparison between different trust profiles (strict vs permissive)"
     )
     
     args = parser.parse_args()
@@ -672,56 +624,56 @@ def main():
     if args.run_baseline:
         # Run honest-only baseline
         print("Running honest-only baseline experiment...")
-        run_adaptive_trust_mnist(
+        run_statistical_trust_mnist(
             num_actors=args.num_actors,
             num_rounds=args.num_rounds,
             topology_type=args.topology,
             trust_profile=args.trust_profile,
-            use_beta_threshold=not args.disable_beta,
             attack_config=None,  # No attacks
             output_dir=os.path.join(args.output_dir, "baseline"),
-            log_level=args.log_level
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
     elif args.run_comparison:
-        # Run comparison between Beta and manual thresholding
-        print("Running Beta vs Manual thresholding comparison...")
+        # Run comparison between different trust profiles
+        print("Running trust profile comparison...")
         
-        # Beta threshold experiment
-        print("\n1. Running with Beta distribution thresholding...")
-        run_adaptive_trust_mnist(
+        # Strict profile experiment
+        print("\n1. Running with strict trust profile...")
+        run_statistical_trust_mnist(
             num_actors=args.num_actors,
             num_rounds=args.num_rounds,
             topology_type=args.topology,
-            trust_profile=args.trust_profile,
-            use_beta_threshold=True,
+            trust_profile="strict",
             attack_config=attack_config,
-            output_dir=os.path.join(args.output_dir, "beta_threshold"),
-            log_level=args.log_level
+            output_dir=os.path.join(args.output_dir, "strict_profile"),
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
         
-        # Manual threshold experiment
-        print("\n2. Running with manual thresholding...")
-        run_adaptive_trust_mnist(
+        # Permissive profile experiment
+        print("\n2. Running with permissive trust profile...")
+        run_statistical_trust_mnist(
             num_actors=args.num_actors,
             num_rounds=args.num_rounds,
             topology_type=args.topology,
-            trust_profile=args.trust_profile,
-            use_beta_threshold=False,
+            trust_profile="permissive",
             attack_config=attack_config,
-            output_dir=os.path.join(args.output_dir, "manual_threshold"),
-            log_level=args.log_level
+            output_dir=os.path.join(args.output_dir, "permissive_profile"),
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
     else:
         # Run single experiment
-        run_adaptive_trust_mnist(
+        run_statistical_trust_mnist(
             num_actors=args.num_actors,
             num_rounds=args.num_rounds,
             topology_type=args.topology,
             trust_profile=args.trust_profile,
-            use_beta_threshold=not args.disable_beta,
             attack_config=attack_config,
             output_dir=args.output_dir,
-            log_level=args.log_level
+            log_level=args.log_level,
+            enable_ensemble=args.enable_ensemble
         )
 
 

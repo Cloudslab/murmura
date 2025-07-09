@@ -39,6 +39,20 @@ class BetaThresholdConfig:
     
     # Enable context-specific models
     use_contextual_models: bool = True
+    
+    def to_dict(self) -> Dict:
+        """Convert to dictionary for serialization."""
+        return {
+            'alpha_prior': self.alpha_prior,
+            'beta_prior': self.beta_prior,
+            'base_percentile': self.base_percentile,
+            'early_rounds_adjustment': self.early_rounds_adjustment,
+            'late_rounds_adjustment': self.late_rounds_adjustment,
+            'learning_rate': self.learning_rate,
+            'min_observations': self.min_observations,
+            'observation_window': self.observation_window,
+            'use_contextual_models': self.use_contextual_models,
+        }
 
 
 class BetaThreshold:
@@ -184,13 +198,11 @@ class ContextualBetaThreshold:
         self.config = config or BetaThresholdConfig()
         self.logger = logging.getLogger(f"{__name__}.ContextualBetaThreshold")
         
-        # Separate Beta models for different contexts
+        # Separate Beta models for different contexts (round-based only for decentralized FL)
         self.models = {
             'early_rounds': BetaThreshold(config),
             'mid_rounds': BetaThreshold(config),
             'late_rounds': BetaThreshold(config),
-            'high_accuracy': BetaThreshold(config),
-            'low_accuracy': BetaThreshold(config),
         }
         
         # Global model (uses all observations)
@@ -198,11 +210,11 @@ class ContextualBetaThreshold:
         
         self.logger.info("Initialized contextual Beta threshold system")
     
-    def _get_context_key(self, fl_round: int, total_rounds: int, accuracy: float) -> List[str]:
-        """Determine which context models apply."""
+    def _get_context_key(self, fl_round: int, total_rounds: int) -> List[str]:
+        """Determine which context models apply - DECENTRALIZED FL VERSION."""
         contexts = []
         
-        # Round-based context
+        # Round-based context (only real feature available in decentralized FL)
         progress = fl_round / max(1, total_rounds)
         if progress < 0.3:
             contexts.append('early_rounds')
@@ -211,29 +223,25 @@ class ContextualBetaThreshold:
         else:
             contexts.append('mid_rounds')
         
-        # Accuracy-based context
-        if accuracy > 0.9:
-            contexts.append('high_accuracy')
-        elif accuracy < 0.6:
-            contexts.append('low_accuracy')
+        # Removed accuracy-based context since global accuracy doesn't exist in decentralized FL
         
         return contexts
     
     def update(self, trust_score: float, is_malicious: bool, 
-               fl_round: int, total_rounds: int, accuracy: float) -> None:
-        """Update relevant context models."""
+               fl_round: int, total_rounds: int) -> None:
+        """Update relevant context models - DECENTRALIZED FL VERSION."""
         # Always update global model
         self.global_model.update(trust_score, is_malicious)
         
-        # Update context-specific models
-        contexts = self._get_context_key(fl_round, total_rounds, accuracy)
+        # Update context-specific models (only round-based)
+        contexts = self._get_context_key(fl_round, total_rounds)
         for context in contexts:
             if context in self.models:
                 self.models[context].update(trust_score, is_malicious)
     
-    def get_threshold(self, fl_round: int, total_rounds: int, accuracy: float) -> float:
-        """Get context-aware threshold."""
-        contexts = self._get_context_key(fl_round, total_rounds, accuracy)
+    def get_threshold(self, fl_round: int, total_rounds: int) -> float:
+        """Get context-aware threshold - DECENTRALIZED FL VERSION."""
+        contexts = self._get_context_key(fl_round, total_rounds)
         
         # Get percentile adjustment based on context
         progress = fl_round / max(1, total_rounds)
