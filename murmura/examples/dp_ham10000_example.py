@@ -148,10 +148,10 @@ def main() -> None:
         "--enable_dp", action="store_true", help="Enable differential privacy"
     )
     parser.add_argument(
-        "--target_epsilon",
+        "--target_epsilon_per_round",
         type=float,
-        default=8.0,
-        help="Target privacy budget (epsilon)",
+        default=1.0,
+        help="Target privacy budget per round (epsilon)",
     )
     parser.add_argument(
         "--target_delta",
@@ -253,17 +253,33 @@ def main() -> None:
 
         # Create DP configuration
         dp_config = None
+        total_epsilon_budget = None
         if args.enable_dp:
             logger.info("=== Configuring Differential Privacy ===")
 
+            # Privacy budget allocation:
+            # - Total epsilon budget: What each client spends across ALL rounds and epochs
+            # - Per-round epsilon: For tracking purposes only
+            per_round_epsilon = args.target_epsilon_per_round
+            total_epsilon_budget = per_round_epsilon * args.rounds
+            total_epochs = args.epochs * args.rounds  # Total epochs across all rounds
+
+            logger.info(f"Privacy budget per round per client: {per_round_epsilon:.2f}")
+            logger.info(
+                f"Total privacy budget per client: {total_epsilon_budget:.2f} (across {args.rounds} rounds)"
+            )
+            logger.info(f"Total epochs across all rounds: {total_epochs}")
+            logger.info(
+                f"NOTE: Opacus will receive total budget ({total_epsilon_budget:.2f}) for {total_epochs} epochs"
+            )
+
             if args.dp_preset == "high_privacy":
                 dp_config = DPConfig.create_high_privacy()
-                # Override with user-specified epsilon if provided and different from default
-                if args.target_epsilon != 8.0:  # 8.0 is the default
-                    dp_config.target_epsilon = args.target_epsilon
+                # Override with total epsilon budget
+                dp_config.target_epsilon = total_epsilon_budget
             elif args.dp_preset == "medium_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=args.target_epsilon,
+                    target_epsilon=total_epsilon_budget,
                     target_delta=1e-5,
                     max_grad_norm=1.0,
                     enable_client_dp=True,
@@ -271,9 +287,7 @@ def main() -> None:
                 )
             elif args.dp_preset == "low_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=args.target_epsilon
-                    if args.target_epsilon != 8.0
-                    else 16.0,
+                    target_epsilon=total_epsilon_budget,
                     target_delta=1e-4,
                     max_grad_norm=2.0,
                     enable_client_dp=True,
@@ -281,7 +295,7 @@ def main() -> None:
                 )
             else:  # custom
                 dp_config = DPConfig(
-                    target_epsilon=args.target_epsilon,
+                    target_epsilon=total_epsilon_budget,
                     target_delta=args.target_delta,
                     max_grad_norm=args.max_grad_norm,
                     noise_multiplier=args.noise_multiplier,
@@ -304,6 +318,8 @@ def main() -> None:
             logger.info(
                 f"DP Configuration: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
             )
+            logger.info(f"Per-round budget: {args.target_epsilon_per_round}")
+            logger.info(f"Total budget per client: {total_epsilon_budget:.2f}")
             logger.info(f"Max grad norm: {dp_config.max_grad_norm}")
             logger.info(
                 f"Client DP: {dp_config.enable_client_dp}, Central DP: {dp_config.enable_central_dp}"
@@ -487,22 +503,19 @@ def main() -> None:
                 logger.info(
                     f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
                 )
+                logger.info(f"Per-round budget: {args.target_epsilon_per_round}")
+                logger.info(f"Total budget per client: {total_epsilon_budget:.2f}")
                 logger.info(f"Max gradient norm: {dp_config.max_grad_norm}")
                 logger.info(f"Client DP: {dp_config.enable_client_dp}")
                 logger.info(f"Central DP: {dp_config.enable_central_dp}")
                 logger.info(f"Mechanism: {dp_config.mechanism.value}")
                 logger.info(f"Accounting: {dp_config.accounting_method.value}")
 
-                # Suggest optimal noise if auto-tuning
+                # Note: Noise multiplier is auto-calculated by each client based on actual partition size
                 if dp_config.auto_tune_noise and dp_config.noise_multiplier is None:
-                    sample_rate = args.batch_size / 10015  # HAM10000 has ~10015 images
-                    suggested_noise = privacy_accountant.suggest_optimal_noise(
-                        sample_rate=sample_rate,
-                        epochs=args.epochs
-                        * args.rounds,  # Total epochs across all rounds
-                        dataset_size=10015,
+                    logger.info(
+                        "Noise multiplier will be auto-calculated by each client based on actual partition size"
                     )
-                    logger.info(f"Suggested noise multiplier: {suggested_noise:.3f}")
             else:
                 logger.info("Differential Privacy: DISABLED")
 
@@ -518,23 +531,26 @@ def main() -> None:
             logger.info(f"Final accuracy: {results['final_metrics']['accuracy']:.4f}")
             logger.info(f"Accuracy improvement: {results['accuracy_improvement']:.4f}")
 
-            # Display privacy results_phase1 if DP was enabled
-            privacy_spent = None
-            if args.enable_dp and hasattr(global_model, "get_privacy_spent"):
+            # Display privacy results if DP was enabled
+            if args.enable_dp and "privacy_metrics" in results:
                 logger.info("=== Privacy Results ===")
-                privacy_spent = global_model.get_privacy_spent()
+                privacy_metrics = results["privacy_metrics"]
                 logger.info(
-                    f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
+                    f"Privacy spent: ε={privacy_metrics['epsilon']:.3f}, δ={privacy_metrics['delta']:.2e}"
                 )
                 if dp_config is not None:
                     logger.info(
                         f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
                     )
+                    logger.info(f"Per-round budget: {args.target_epsilon_per_round}")
+                    logger.info(f"Total budget per client: {total_epsilon_budget:.2f}")
 
-                    remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
+                    remaining_eps = (
+                        dp_config.target_epsilon - privacy_metrics["epsilon"]
+                    )
                     logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
 
-                    if privacy_spent["epsilon"] > dp_config.target_epsilon:
+                    if privacy_metrics["epsilon"] > dp_config.target_epsilon:
                         logger.warning("Privacy budget exceeded!")
                     else:
                         logger.info("Privacy budget respected ✓")
@@ -574,9 +590,13 @@ def main() -> None:
                 "differential_privacy": {
                     "enabled": args.enable_dp,
                     "config": dp_config.model_dump() if dp_config else None,
-                    "privacy_spent": privacy_spent
-                    if args.enable_dp and hasattr(global_model, "get_privacy_spent")
+                    "privacy_spent": results.get("privacy_metrics", None)
+                    if args.enable_dp
                     else None,
+                    "per_round_budget": args.target_epsilon_per_round
+                    if args.enable_dp
+                    else None,
+                    "total_budget": total_epsilon_budget if args.enable_dp else None,
                 },
             }
 

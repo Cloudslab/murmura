@@ -1010,6 +1010,28 @@ class VirtualClientActor:
             self.logger.error(f"Failed to set model parameters: {e}")
             raise
 
+    def get_privacy_spent(self) -> Optional[Dict[str, Any]]:
+        """
+        Get privacy metrics from the model wrapper if available.
+
+        :return: Privacy metrics dictionary if model supports it, None otherwise.
+        """
+        if self.model is None:
+            raise ValueError("Model is not set")
+
+        try:
+            # Check if the model has the get_privacy_spent method
+            if hasattr(self.model, "get_privacy_spent"):
+                privacy_metrics = self.model.get_privacy_spent()
+                self.logger.debug("Privacy metrics retrieved from model")
+                return privacy_metrics
+            else:
+                self.logger.debug("Model does not support privacy metrics")
+                return None
+        except Exception as e:
+            self.logger.error(f"Failed to get privacy metrics: {e}")
+            raise
+
     def set_neighbours(self, neighbours: List[Any]) -> None:
         """
         Set neighbour actors for communication

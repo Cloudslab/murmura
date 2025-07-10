@@ -1156,6 +1156,64 @@ class ClusterManager:
 
         return all_results
 
+    def collect_privacy_metrics(self) -> Dict[str, Any]:
+        """
+        Collect privacy metrics from all client actors.
+
+        :return: Dictionary containing aggregated privacy metrics
+        """
+        privacy_metrics = []
+
+        batch_size = 20
+        for i in range(0, len(self.actors), batch_size):
+            batch_actors = self.actors[i : i + batch_size]
+            batch_tasks = []
+
+            for actor in batch_actors:
+                # Only collect from actors that have DP-enabled models
+                batch_tasks.append(actor.get_privacy_spent.remote())
+
+            try:
+                batch_results = ray.get(batch_tasks, timeout=1800)
+                privacy_metrics.extend(batch_results)
+            except Exception as e:
+                logging.getLogger("murmura").error(
+                    f"Privacy collection failed for batch {i // batch_size}: {e}"
+                )
+                raise
+
+        # Aggregate privacy metrics across all clients
+        if not privacy_metrics or all(m is None for m in privacy_metrics):
+            return {
+                "epsilon": 0.0,
+                "delta": 0.0,
+                "client_count": 0,
+                "dp_enabled": False,
+            }
+
+        # Filter out None results (from non-DP models)
+        valid_metrics = [m for m in privacy_metrics if m is not None]
+
+        if not valid_metrics:
+            return {
+                "epsilon": 0.0,
+                "delta": 0.0,
+                "client_count": 0,
+                "dp_enabled": False,
+            }
+
+        # Calculate aggregated privacy metrics
+        max_epsilon = max(m["epsilon"] for m in valid_metrics)
+        max_delta = max(m["delta"] for m in valid_metrics)
+
+        return {
+            "epsilon": max_epsilon,
+            "delta": max_delta,
+            "client_count": len(valid_metrics),
+            "dp_enabled": True,
+            "client_metrics": valid_metrics,
+        }
+
     def aggregate_model_parameters(
         self, weights: Optional[List[float]] = None
     ) -> Dict[str, Any]:
@@ -1177,7 +1235,7 @@ class ClusterManager:
         Perform decentralized aggregation where each node aggregates with its neighbors.
         Unlike centralized aggregation, no global model is maintained or distributed.
         Each node maintains its own local model after aggregating with neighbors.
-        
+
         This leverages the existing topology coordinator but skips global combination.
         Works with any aggregation strategy (GossipAvg, future strategies).
         """
@@ -1196,41 +1254,49 @@ class ClusterManager:
         # Each node performs local aggregation with its neighbors
         # This is similar to what topology coordinator does, but we don't combine results globally
         update_tasks = []
-        
+
         for node_idx, actor in enumerate(self.actors):
             neighbors = adjacency_list.get(node_idx, [])
             if neighbors:
                 # Collect parameters from this node and its neighbors
                 neighbor_params = []
                 neighbor_weights = []
-                
+
                 # Include the node's own parameters
                 own_params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 neighbor_params.append(own_params)
                 neighbor_weights.append(weights[node_idx] if weights else 1.0)
-                
+
                 # Add neighbor parameters
                 for neighbor_idx in neighbors:
                     if neighbor_idx < len(self.actors):
                         neighbor_param = ray.get(
-                            self.actors[neighbor_idx].get_model_parameters.remote(), 
-                            timeout=1800
+                            self.actors[neighbor_idx].get_model_parameters.remote(),
+                            timeout=1800,
                         )
                         neighbor_params.append(neighbor_param)
-                        neighbor_weights.append(weights[neighbor_idx] if weights else 1.0)
-                
+                        neighbor_weights.append(
+                            weights[neighbor_idx] if weights else 1.0
+                        )
+
                 # Perform local aggregation using the configured strategy
                 if len(neighbor_params) > 1:
                     # Normalize weights for this local aggregation
                     total_weight = sum(neighbor_weights)
-                    normalized_weights = [w / total_weight for w in neighbor_weights] if total_weight > 0 else neighbor_weights
-                    
+                    normalized_weights = (
+                        [w / total_weight for w in neighbor_weights]
+                        if total_weight > 0
+                        else neighbor_weights
+                    )
+
                     aggregated_params = self.aggregation_strategy.aggregate(
                         neighbor_params, normalized_weights
                     )
                     # Schedule asynchronous update of the node's model
-                    update_tasks.append(actor.set_model_parameters.remote(aggregated_params))
-        
+                    update_tasks.append(
+                        actor.set_model_parameters.remote(aggregated_params)
+                    )
+
         # Wait for all updates to complete
         if update_tasks:
             ray.get(update_tasks, timeout=1800)

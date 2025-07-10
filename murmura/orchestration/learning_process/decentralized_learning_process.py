@@ -144,6 +144,10 @@ class DecentralizedLearningProcess(LearningProcess):
 
         round_metrics = []
 
+        # Initialize cumulative privacy tracking
+        cumulative_privacy_spent = {"epsilon": 0.0, "delta": 0.0}
+        per_round_privacy_metrics = []
+
         # Training rounds
         for round_num in range(1, rounds + 1):
             self.logger.info(f"--- Round {round_num}/{rounds} ---")
@@ -277,10 +281,14 @@ class DecentralizedLearningProcess(LearningProcess):
             # 4. Evaluation
             # In decentralized learning, evaluate using a representative model from the network
             # Use the first node's model as representative for evaluation
-            representative_params = ray.get(self.cluster_manager.actors[0].get_model_parameters.remote())
+            representative_params = ray.get(
+                self.cluster_manager.actors[0].get_model_parameters.remote()
+            )
             self.model.set_parameters(representative_params)
             test_metrics = self.model.evaluate(test_features, test_labels)
-            self.logger.info(f"Representative Model Test Loss: {test_metrics['loss']:.4f}")
+            self.logger.info(
+                f"Representative Model Test Loss: {test_metrics['loss']:.4f}"
+            )
             self.logger.info(
                 f"Representative Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
             )
@@ -289,6 +297,32 @@ class DecentralizedLearningProcess(LearningProcess):
             self.training_monitor.emit_event(
                 EvaluationEvent(round_num=round_num, metrics=test_metrics)
             )
+
+            # Collect privacy metrics after each round
+            round_privacy_metrics = self.cluster_manager.collect_privacy_metrics()
+            if round_privacy_metrics["dp_enabled"]:
+                # Calculate per-round privacy increment
+                # Since clients report cumulative epsilon, we need to compute the increment
+                round_epsilon_increment = (
+                    round_privacy_metrics["epsilon"]
+                    - cumulative_privacy_spent["epsilon"]
+                )
+
+                # Update cumulative privacy spent (epsilon is additive in DP)
+                cumulative_privacy_spent["epsilon"] = round_privacy_metrics["epsilon"]
+                cumulative_privacy_spent["delta"] = max(
+                    cumulative_privacy_spent["delta"], round_privacy_metrics["delta"]
+                )
+
+                # Store per-round privacy metrics (using increment for this round)
+                per_round_privacy_metrics.append(
+                    {
+                        "round": round_num,
+                        "epsilon": round_epsilon_increment,
+                        "delta": round_privacy_metrics["delta"],
+                        "client_count": round_privacy_metrics["client_count"],
+                    }
+                )
 
             # Store metrics for this round
             round_metrics.append(
@@ -304,6 +338,29 @@ class DecentralizedLearningProcess(LearningProcess):
         # Final evaluation
         final_metrics = self.model.evaluate(test_features, test_labels)
         improvement = final_metrics["accuracy"] - initial_metrics["accuracy"]
+
+        # Use cumulative privacy metrics from round tracking
+        if per_round_privacy_metrics:
+            privacy_metrics = {
+                "dp_enabled": True,
+                "epsilon": cumulative_privacy_spent["epsilon"],
+                "delta": cumulative_privacy_spent["delta"],
+                "client_count": per_round_privacy_metrics[-1]["client_count"],
+                "per_round_privacy": per_round_privacy_metrics,
+            }
+        else:
+            privacy_metrics = self.cluster_manager.collect_privacy_metrics()
+
+        # Update representative model with aggregated privacy metrics for compatibility
+        if privacy_metrics["dp_enabled"] and hasattr(self.model, "privacy_spent"):
+            # Update privacy spent if model has this attribute (e.g., DPTorchModelWrapper)
+            self.model.privacy_spent = {
+                "epsilon": privacy_metrics["epsilon"],
+                "delta": privacy_metrics["delta"],
+            }
+            # Update privacy accounting if method exists
+            if hasattr(self.model, "_update_privacy_spent"):
+                self.model._update_privacy_spent()
 
         # Enhanced final logging
         cluster_summary = self.get_cluster_summary()
@@ -321,6 +378,7 @@ class DecentralizedLearningProcess(LearningProcess):
             "accuracy_improvement": improvement,
             "round_metrics": round_metrics,
             "topology": topology_info,
+            "privacy_metrics": privacy_metrics,
         }
 
         if cluster_summary:
@@ -328,23 +386,25 @@ class DecentralizedLearningProcess(LearningProcess):
 
         return results
 
-    def _calculate_average_parameters(self, node_params: Dict[int, Dict[str, Any]]) -> Dict[str, Any]:
+    def _calculate_average_parameters(
+        self, node_params: Dict[int, Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """
         Calculate the average parameters across all nodes for convergence analysis.
-        
+
         :param node_params: Dictionary mapping node indices to their parameters
         :return: Averaged parameters dictionary
         """
         if not node_params:
             return {}
-        
+
         # Get the first node's parameters to determine structure
         first_node_params = next(iter(node_params.values()))
         avg_params = {}
-        
+
         for param_name, param_value in first_node_params.items():
             # Calculate average for this parameter across all nodes
             param_values = [node_params[node_id][param_name] for node_id in node_params]
             avg_params[param_name] = np.mean(param_values, axis=0)
-        
+
         return avg_params
