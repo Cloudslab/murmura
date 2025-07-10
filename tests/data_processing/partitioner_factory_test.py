@@ -44,7 +44,7 @@ def test_invalid_strategy_through_config():
         OrchestrationConfig(num_actors=5, partition_strategy="invalid_strategy", feature_columns=["image"], label_column="label")
 
     assert "partition_strategy" in str(exc_info.value)
-    assert "Input should be 'dirichlet', 'iid', 'sensitive_groups', 'topology_correlated' or 'imbalanced_sensitive'" in str(exc_info.value)
+    assert "Input should be 'dirichlet' or 'iid'" in str(exc_info.value)
 
 
 def test_dirichlet_parameters_validation():

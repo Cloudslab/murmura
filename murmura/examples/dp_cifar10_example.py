@@ -54,13 +54,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--partition_strategy",
-        choices=[
-            "dirichlet",
-            "iid",
-            "sensitive_groups",
-            "topology_correlated",
-            "imbalanced_sensitive",
-        ],
+        choices=["dirichlet", "iid"],
         default="dirichlet",
         help="Data partitioning strategy",
     )

@@ -56,9 +56,6 @@ def main() -> None:
         choices=[
             "dirichlet",
             "iid",
-            "sensitive_groups",
-            "topology_correlated",
-            "imbalanced_sensitive",
         ],
         default="dirichlet",
         help="Data partitioning strategy",
