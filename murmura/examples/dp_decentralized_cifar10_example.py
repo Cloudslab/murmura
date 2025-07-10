@@ -43,8 +43,6 @@ def setup_logging(log_level: str = "INFO") -> None:
     )
 
 
-
-
 def main() -> None:
     """
     CIFAR-10 Decentralized Learning with Differential Privacy
@@ -256,9 +254,13 @@ def main() -> None:
             total_epochs = args.epochs * args.rounds  # Total epochs across all rounds
 
             logger.info(f"Privacy budget per round per client: {per_round_epsilon:.2f}")
-            logger.info(f"Total privacy budget per client: {total_epsilon_budget:.2f} (across {args.rounds} rounds)")
+            logger.info(
+                f"Total privacy budget per client: {total_epsilon_budget:.2f} (across {args.rounds} rounds)"
+            )
             logger.info(f"Total epochs across all rounds: {total_epochs}")
-            logger.info(f"NOTE: Opacus will receive total budget ({total_epsilon_budget:.2f}) for {total_epochs} epochs")
+            logger.info(
+                f"NOTE: Opacus will receive total budget ({total_epsilon_budget:.2f}) for {total_epochs} epochs"
+            )
 
             if args.dp_preset == "high_privacy":
                 dp_config = DPConfig.create_high_privacy()
@@ -341,7 +343,7 @@ def main() -> None:
         # Create data preprocessor for CIFAR-10
         preprocessor = create_image_preprocessor(
             grayscale=False,  # CIFAR-10 is RGB
-            normalize=True,   # Normalize pixel values to [0,1]
+            normalize=True,  # Normalize pixel values to [0,1]
             target_size=(32, 32),  # CIFAR-10 native size
         )
 
@@ -355,7 +357,7 @@ def main() -> None:
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
                 strategy_type=AggregationStrategyType(args.aggregation_strategy),
-                mixing_parameter=args.mixing_parameter,
+                params={"mixing_parameter": args.mixing_parameter},
             ),
             dataset_name="cifar10",
             ray_cluster=ray_cluster_config,
@@ -374,36 +376,28 @@ def main() -> None:
 
         # Verify topology compatibility
         logger.info("=== Verifying Topology Compatibility ===")
-        compatibility_manager = TopologyCompatibilityManager()
         
-        # Check if topology is compatible with decentralized learning
-        if not compatibility_manager.is_compatible(
-            config.topology.topology_type, "decentralized"
-        ):
+        # Import the strategy class for compatibility checking
+        from murmura.aggregation.strategies.gossip_avg import GossipAvg
+        
+        # Check compatibility of topology and strategy
+        if not TopologyCompatibilityManager.is_compatible(GossipAvg, config.topology.topology_type):
+            compatible_topologies = TopologyCompatibilityManager.get_compatible_topologies(GossipAvg)
             logger.error(
-                f"Topology {config.topology.topology_type} is not compatible with decentralized learning"
+                f"Strategy {config.aggregation.strategy_type} is not compatible with topology {config.topology.topology_type}"
+            )
+            logger.error(
+                f"Compatible topologies: {[t.value for t in compatible_topologies]}"
             )
             raise ValueError(
-                f"Topology {config.topology.topology_type} is not compatible with decentralized learning. "
-                f"Use one of: {', '.join(compatibility_manager.get_compatible_topologies('decentralized'))}"
-            )
-
-        # Check if aggregation strategy is compatible with decentralized learning
-        if not compatibility_manager.is_compatible(
-            config.aggregation.strategy_type, "decentralized"
-        ):
-            logger.error(
-                f"Aggregation strategy {config.aggregation.strategy_type} is not compatible with decentralized learning"
-            )
-            raise ValueError(
-                f"Aggregation strategy {config.aggregation.strategy_type} is not compatible with decentralized learning. "
-                f"Use one of: {', '.join(compatibility_manager.get_compatible_strategies('decentralized'))}"
+                f"Strategy {config.aggregation.strategy_type} is not compatible with topology {config.topology.topology_type}"
             )
 
         logger.info("=== Creating Data Partitions ===")
         partitioner = PartitionerFactory.create(config)
 
         logger.info("=== Creating CIFAR-10 Model ===")
+        model: Union[CIFAR10Model, ResNetCIFAR10Model]
         if args.model == "simple":
             model = CIFAR10Model()
         else:  # resnet
@@ -487,8 +481,12 @@ def main() -> None:
 
             if args.enable_dp and dp_config is not None:
                 logger.info("=== Differential Privacy Settings ===")
-                logger.info(f"Total privacy budget per client: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
-                logger.info(f"Per-round privacy budget: ε={per_round_epsilon}, δ={dp_config.target_delta}")
+                logger.info(
+                    f"Total privacy budget per client: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                )
+                logger.info(
+                    f"Per-round privacy budget: ε={per_round_epsilon}, δ={dp_config.target_delta}"
+                )
                 logger.info(f"Max gradient norm: {dp_config.max_grad_norm}")
                 logger.info(f"Client DP: {dp_config.enable_client_dp}")
                 logger.info(f"Central DP: {dp_config.enable_central_dp}")
@@ -497,7 +495,9 @@ def main() -> None:
 
                 # Note: Noise multiplier is auto-calculated by each client based on actual partition size
                 if dp_config.auto_tune_noise and dp_config.noise_multiplier is None:
-                    logger.info("Noise multiplier will be auto-calculated by each client based on actual partition size")
+                    logger.info(
+                        "Noise multiplier will be auto-calculated by each client based on actual partition size"
+                    )
             else:
                 logger.info("Differential Privacy: DISABLED")
 
@@ -522,8 +522,12 @@ def main() -> None:
                     f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
                 )
                 if dp_config is not None:
-                    logger.info(f"Per-round budget: ε={args.target_epsilon_per_round:.2f}")
-                    logger.info(f"Total budget per client: ε={dp_config.target_epsilon:.2f}")
+                    logger.info(
+                        f"Per-round budget: ε={args.target_epsilon_per_round:.2f}"
+                    )
+                    logger.info(
+                        f"Total budget per client: ε={dp_config.target_epsilon:.2f}"
+                    )
                     logger.info(f"Total epochs: {total_epochs}")
 
                     remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
@@ -533,6 +537,12 @@ def main() -> None:
                         logger.warning("Privacy budget exceeded!")
                     else:
                         logger.info("Privacy budget respected ✓")
+
+                    # Show budget utilization
+                    utilization = (
+                        privacy_spent["epsilon"] / dp_config.target_epsilon
+                    ) * 100
+                    logger.info(f"Privacy budget utilization: {utilization:.1f}%")
 
                 # Get privacy summary from accountant
                 if "privacy_accountant" in locals():

@@ -356,7 +356,7 @@ def main() -> None:
         dp_config = None
         if args.enable_dp:
             logger.info("=== Configuring Differential Privacy ===")
-            
+
             # Privacy budget allocation:
             # - Total epsilon budget: What each client spends across ALL rounds and epochs
             # - Per-round epsilon: For tracking purposes only
@@ -365,9 +365,13 @@ def main() -> None:
             total_epochs = args.epochs * args.rounds  # Total epochs across all rounds
 
             logger.info(f"Privacy budget per round per client: {per_round_epsilon:.2f}")
-            logger.info(f"Total privacy budget per client: {total_epsilon_budget:.2f} (across {args.rounds} rounds)")
+            logger.info(
+                f"Total privacy budget per client: {total_epsilon_budget:.2f} (across {args.rounds} rounds)"
+            )
             logger.info(f"Total epochs across all rounds: {total_epochs}")
-            logger.info(f"NOTE: Opacus will receive total budget ({total_epsilon_budget:.2f}) for {total_epochs} epochs")
+            logger.info(
+                f"NOTE: Opacus will receive total budget ({total_epsilon_budget:.2f}) for {total_epochs} epochs"
+            )
 
             if args.dp_preset == "high_privacy":
                 dp_config = DPConfig.create_high_privacy()
@@ -628,8 +632,12 @@ def main() -> None:
 
             if args.enable_dp and dp_config is not None:
                 logger.info("=== Differential Privacy Settings ===")
-                logger.info(f"Total privacy budget per client: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}")
-                logger.info(f"Per-round privacy budget: ε={per_round_epsilon}, δ={dp_config.target_delta}")
+                logger.info(
+                    f"Total privacy budget per client: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                )
+                logger.info(
+                    f"Per-round privacy budget: ε={per_round_epsilon}, δ={dp_config.target_delta}"
+                )
                 logger.info(f"Max gradient norm: {dp_config.max_grad_norm}")
                 logger.info(f"Client DP: {dp_config.enable_client_dp}")
                 logger.info(f"Central DP: {dp_config.enable_central_dp}")
@@ -638,7 +646,9 @@ def main() -> None:
 
                 # Note: Noise multiplier is auto-calculated by each client based on actual partition size
                 if dp_config.auto_tune_noise and dp_config.noise_multiplier is None:
-                    logger.info("Noise multiplier will be auto-calculated by each client based on actual partition size")
+                    logger.info(
+                        "Noise multiplier will be auto-calculated by each client based on actual partition size"
+                    )
             else:
                 logger.info("Differential Privacy: DISABLED")
 
@@ -684,10 +694,10 @@ def main() -> None:
             privacy_spent = None
             if args.enable_dp and dp_config is not None:
                 logger.info("=== Privacy Results ===")
-                
+
                 # Get privacy metrics from results
                 privacy_metrics = results.get("privacy_metrics", {})
-                
+
                 if privacy_metrics:
                     privacy_spent = privacy_metrics
                     logger.info(
@@ -696,9 +706,13 @@ def main() -> None:
                     logger.info(
                         f"Privacy budget: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
                     )
-                    
-                    logger.info(f"Per-round budget: ε={args.target_epsilon_per_round:.2f}")
-                    logger.info(f"Total budget per client: ε={dp_config.target_epsilon:.2f}")
+
+                    logger.info(
+                        f"Per-round budget: ε={args.target_epsilon_per_round:.2f}"
+                    )
+                    logger.info(
+                        f"Total budget per client: ε={dp_config.target_epsilon:.2f}"
+                    )
                     logger.info(f"Total epochs: {total_epochs}")
 
                     remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
@@ -708,9 +722,11 @@ def main() -> None:
                         logger.warning("Privacy budget exceeded!")
                     else:
                         logger.info("Privacy budget respected ✓")
-                        
+
                     # Show budget utilization
-                    utilization = (privacy_spent["epsilon"] / dp_config.target_epsilon) * 100
+                    utilization = (
+                        privacy_spent["epsilon"] / dp_config.target_epsilon
+                    ) * 100
                     logger.info(f"Privacy budget utilization: {utilization:.1f}%")
                 else:
                     logger.warning("No privacy metrics available in results")

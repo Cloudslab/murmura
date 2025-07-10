@@ -158,7 +158,7 @@ class FederatedLearningProcess(LearningProcess):
         )
 
         round_metrics = []
-        
+
         # Initialize cumulative privacy tracking
         cumulative_privacy_spent = {"epsilon": 0.0, "delta": 0.0}
         per_round_privacy_metrics = []
@@ -336,20 +336,27 @@ class FederatedLearningProcess(LearningProcess):
             if round_privacy_metrics["dp_enabled"]:
                 # Calculate per-round privacy increment
                 # Since clients report cumulative epsilon, we need to compute the increment
-                round_epsilon_increment = round_privacy_metrics["epsilon"] - cumulative_privacy_spent["epsilon"]
-                
+                round_epsilon_increment = (
+                    round_privacy_metrics["epsilon"]
+                    - cumulative_privacy_spent["epsilon"]
+                )
+
                 # Update cumulative privacy spent (epsilon is additive in DP)
                 cumulative_privacy_spent["epsilon"] = round_privacy_metrics["epsilon"]
-                cumulative_privacy_spent["delta"] = max(cumulative_privacy_spent["delta"], round_privacy_metrics["delta"])
-                
+                cumulative_privacy_spent["delta"] = max(
+                    cumulative_privacy_spent["delta"], round_privacy_metrics["delta"]
+                )
+
                 # Store per-round privacy metrics (using increment for this round)
-                per_round_privacy_metrics.append({
-                    "round": round_num,
-                    "epsilon": round_epsilon_increment,
-                    "delta": round_privacy_metrics["delta"],
-                    "client_count": round_privacy_metrics["client_count"]
-                })
-            
+                per_round_privacy_metrics.append(
+                    {
+                        "round": round_num,
+                        "epsilon": round_epsilon_increment,
+                        "delta": round_privacy_metrics["delta"],
+                        "client_count": round_privacy_metrics["client_count"],
+                    }
+                )
+
             # Store metrics for this round
             round_metrics.append(
                 {
@@ -372,20 +379,21 @@ class FederatedLearningProcess(LearningProcess):
                 "epsilon": cumulative_privacy_spent["epsilon"],
                 "delta": cumulative_privacy_spent["delta"],
                 "client_count": per_round_privacy_metrics[-1]["client_count"],
-                "per_round_privacy": per_round_privacy_metrics
+                "per_round_privacy": per_round_privacy_metrics,
             }
         else:
             privacy_metrics = self.cluster_manager.collect_privacy_metrics()
-        
+
         # Update global model with aggregated privacy metrics for compatibility
-        if privacy_metrics["dp_enabled"] and hasattr(self.model, "_update_privacy_spent"):
-            # Set privacy spent directly on the model
+        if privacy_metrics["dp_enabled"] and hasattr(self.model, "privacy_spent"):
+            # Update privacy spent if model has this attribute (e.g., DPTorchModelWrapper)
             self.model.privacy_spent = {
                 "epsilon": privacy_metrics["epsilon"],
                 "delta": privacy_metrics["delta"],
             }
-            # Update privacy accounting
-            self.model._update_privacy_spent()
+            # Update privacy accounting if method exists
+            if hasattr(self.model, "_update_privacy_spent"):
+                self.model._update_privacy_spent()
 
         # Enhanced final logging
         cluster_summary = self.get_cluster_summary()
