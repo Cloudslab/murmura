@@ -22,7 +22,7 @@ class MaliciousClientActor:
     Malicious client actor that implements the same interface as VirtualClientActor
     but with attack capabilities for model poisoning research.
     """
-    
+
     def __init__(self, client_id: str, attack_config: AttackConfig):
         self.client_id = client_id
         self.data_partition: Optional[List[int]] = None
@@ -45,10 +45,10 @@ class MaliciousClientActor:
         self.attack_config = attack_config
         self.is_malicious = True
         self.attack_instances: Dict[str, Any] = {}
-        
+
         # Set up logging for multi-node environment (FIRST!)
         self._setup_logging()
-        
+
         # Initialize attack instances (needs logger)
         self._initialize_attacks()
 
@@ -78,22 +78,22 @@ class MaliciousClientActor:
             formatter = logging.Formatter(
                 f"%(asctime)s - %(name)s - [Node:{current_node_id}] - [MALICIOUS:{self.client_id}] - %(levelname)s - %(message)s"
             )
-            
+
             handler = logging.StreamHandler()
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.INFO)
-    
+
     def _initialize_attacks(self):
         """Initialize attack instances based on configuration."""
         attack_dict = self.attack_config.model_dump()
-        
+
         # Initialize label flipping attack
         if self.attack_config.attack_type in ["label_flipping", "both"]:
             self.attack_instances["label_flipping"] = LabelFlippingAttack(
                 self.client_id, attack_dict
             )
-        
+
         # Initialize gradient manipulation attack
         if self.attack_config.attack_type in ["gradient_manipulation", "both"]:
             self.attack_instances["gradient_manipulation"] = GradientManipulationAttack(
@@ -112,7 +112,9 @@ class MaliciousClientActor:
         self.data_partition = data_partition
         self.metadata = metadata if metadata is not None else {}
 
-        message = f"MALICIOUS Client {self.client_id} received {len(data_partition)} samples"
+        message = (
+            f"MALICIOUS Client {self.client_id} received {len(data_partition)} samples"
+        )
         self.logger.debug(message)
         return message
 
@@ -276,7 +278,7 @@ class MaliciousClientActor:
         """Load the dataset if not already loaded."""
         if self.dataset_loaded:
             return
-            
+
         # Try lazy loading if dataset metadata is available
         if self.lazy_loading and self.dataset_metadata and self.mdataset is None:
             self._lazy_load_dataset()
@@ -340,10 +342,10 @@ class MaliciousClientActor:
 
             # Load dataset from HuggingFace (load all splits like VirtualClientActor does)
             self.mdataset = MDataset.load(
-                dataset_source, 
+                dataset_source,
                 dataset_name=dataset_name,
                 split=None,  # Load all splits
-                **clean_kwargs
+                **clean_kwargs,
             )
 
             # Apply partitions if available
@@ -353,16 +355,22 @@ class MaliciousClientActor:
                     if split_name in self.mdataset.available_splits:
                         try:
                             self.mdataset.add_partitions(split_name, partition_data)
-                            self.logger.debug(f"Restored partitions for split: {split_name}")
+                            self.logger.debug(
+                                f"Restored partitions for split: {split_name}"
+                            )
                         except Exception as e:
-                            self.logger.error(f"Failed to restore partitions for {split_name}: {e}")
+                            self.logger.error(
+                                f"Failed to restore partitions for {split_name}: {e}"
+                            )
                     else:
-                        self.logger.warning(f"Split {split_name} not found in loaded dataset")
+                        self.logger.warning(
+                            f"Split {split_name} not found in loaded dataset"
+                        )
 
             self.dataset_loaded = True
             self.lazy_loading = False
             self.logger.info("MALICIOUS Dataset loaded successfully via lazy loading")
-            
+
         except Exception as e:
             self.logger.error(f"Failed to lazy load dataset: {e}")
             raise
@@ -396,14 +404,14 @@ class MaliciousClientActor:
             # Get data from the dataset split using efficient select method (like VirtualClientActor)
             split_dataset = self.mdataset.get_split(self.split)
             partition_dataset = split_dataset.select(partition_to_use)
-            
+
             if self.feature_columns is None or len(self.feature_columns) == 0:
                 raise ValueError("Feature columns not set")
-            
+
             # Extract features and labels efficiently
             features = partition_dataset[self.feature_columns[0]]
             labels = partition_dataset[self.label_column]
-            
+
             return features, labels
         except Exception as e:
             self.logger.error(f"Failed to get partition data: {e}")
@@ -412,36 +420,48 @@ class MaliciousClientActor:
     def train_model(self, **kwargs) -> Dict[str, float]:
         """
         Train the model with potential poisoning attacks.
-        
+
         Args:
             **kwargs: Training parameters including current_round and total_rounds
-            
+
         Returns:
             Training metrics
         """
         # Extract round information from kwargs (provided by cluster manager)
-        current_round = kwargs.get('current_round', 1)
-        total_rounds = kwargs.get('total_rounds', 10)
-        
+        current_round = kwargs.get("current_round", 1)
+        total_rounds = kwargs.get("total_rounds", 10)
+
         # Remove round params from kwargs to avoid conflicts
-        clean_kwargs = {k: v for k, v in kwargs.items() if k not in ['current_round', 'total_rounds']}
-        
+        clean_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["current_round", "total_rounds"]
+        }
+
         if self.model is None:
             raise ValueError("Model is not set")
 
         # Check if attacks should be active
         if not self.attack_config.is_attack_active(current_round):
-            self.logger.info(f"Attacks inactive for round {current_round}, training normally")
+            self.logger.info(
+                f"Attacks inactive for round {current_round}, training normally"
+            )
             return self._train_normally(**clean_kwargs)
 
         # Calculate current attack intensity
-        attack_intensity = self.attack_config.get_attack_intensity(current_round, total_rounds)
-        
-        self.logger.info(f"Executing MALICIOUS training - Round {current_round}, Intensity: {attack_intensity:.3f}")
+        attack_intensity = self.attack_config.get_attack_intensity(
+            current_round, total_rounds
+        )
+
+        self.logger.info(
+            f"Executing MALICIOUS training - Round {current_round}, Intensity: {attack_intensity:.3f}"
+        )
 
         # If we have label flipping attack, poison the data during training
         if "label_flipping" in self.attack_instances:
-            return self._train_with_label_flipping(current_round, attack_intensity, **clean_kwargs)
+            return self._train_with_label_flipping(
+                current_round, attack_intensity, **clean_kwargs
+            )
         else:
             # Regular training, poisoning will happen in get_model_parameters
             return self._train_normally(**clean_kwargs)
@@ -492,34 +512,38 @@ class MaliciousClientActor:
             self.logger.error(f"Training failed: {e}")
             raise
 
-    def _train_with_label_flipping(self, current_round: int, attack_intensity: float, **kwargs) -> Dict[str, float]:
+    def _train_with_label_flipping(
+        self, current_round: int, attack_intensity: float, **kwargs
+    ) -> Dict[str, float]:
         """Train model with label flipping attack."""
         try:
             # Get original training data
             data_sampling_rate = kwargs.pop("data_sampling_rate", 1.0)
             features, labels = self._get_partition_data(data_sampling_rate)
-            
+
             # Apply label flipping attack
-            self.logger.info(f"Applying label flipping attack - Round {current_round}, Intensity: {attack_intensity:.3f}")
+            self.logger.info(
+                f"Applying label flipping attack - Round {current_round}, Intensity: {attack_intensity:.3f}"
+            )
             label_attack = self.attack_instances["label_flipping"]
             poisoned_features, poisoned_labels = label_attack.poison_data(
                 features, labels, current_round, attack_intensity
             )
-            
+
             # Ensure model is on correct device
             if self.model is not None and hasattr(self.model, "detect_and_set_device"):
                 self.model.detect_and_set_device()
-            
+
             # Train with poisoned data
             if self.model is not None:
                 result = self.model.train(poisoned_features, poisoned_labels, **kwargs)
             else:
                 raise ValueError("Model is not set")
-            
+
             self.logger.info(f"MALICIOUS training completed - Round {current_round}")
-            
+
             return result
-            
+
         except Exception as e:
             self.logger.error(f"Malicious training failed: {e}")
             raise
@@ -527,10 +551,10 @@ class MaliciousClientActor:
     def get_model_parameters(self, **kwargs) -> Dict[str, Any]:
         """
         Get model parameters with potential gradient manipulation attacks.
-        
+
         Args:
             **kwargs: Parameters including current_round and total_rounds
-            
+
         Returns:
             Model parameters (potentially poisoned)
         """
@@ -540,32 +564,45 @@ class MaliciousClientActor:
         try:
             # Get original parameters
             parameters = self.model.get_parameters()
-            
+
             # Check if round information is provided and apply gradient manipulation
-            if 'current_round' in kwargs and 'total_rounds' in kwargs:
-                current_round = kwargs['current_round']
-                total_rounds = kwargs['total_rounds']
-                
-                self.logger.debug(f"Round info provided - Round {current_round}/{total_rounds}, checking gradient manipulation...")
-                
+            if "current_round" in kwargs and "total_rounds" in kwargs:
+                current_round = kwargs["current_round"]
+                total_rounds = kwargs["total_rounds"]
+
+                self.logger.debug(
+                    f"Round info provided - Round {current_round}/{total_rounds}, checking gradient manipulation..."
+                )
+
                 # Apply gradient manipulation if active
-                if (self.attack_config.is_attack_active(current_round) and 
-                    "gradient_manipulation" in self.attack_instances):
-                    
-                    attack_intensity = self.attack_config.get_attack_intensity(current_round, total_rounds)
-                    
-                    self.logger.info(f"Applying gradient manipulation - Round {current_round}, Intensity: {attack_intensity:.3f}")
-                    
+                if (
+                    self.attack_config.is_attack_active(current_round)
+                    and "gradient_manipulation" in self.attack_instances
+                ):
+                    attack_intensity = self.attack_config.get_attack_intensity(
+                        current_round, total_rounds
+                    )
+
+                    self.logger.info(
+                        f"Applying gradient manipulation - Round {current_round}, Intensity: {attack_intensity:.3f}"
+                    )
+
                     grad_attack = self.attack_instances["gradient_manipulation"]
-                    parameters = grad_attack.poison_gradients(parameters, current_round, attack_intensity)
+                    parameters = grad_attack.poison_gradients(
+                        parameters, current_round, attack_intensity
+                    )
                 else:
-                    self.logger.debug(f"Gradient manipulation not active - attack_active: {self.attack_config.is_attack_active(current_round)}, has_grad_attack: {'gradient_manipulation' in self.attack_instances}")
+                    self.logger.debug(
+                        f"Gradient manipulation not active - attack_active: {self.attack_config.is_attack_active(current_round)}, has_grad_attack: {'gradient_manipulation' in self.attack_instances}"
+                    )
             else:
-                self.logger.debug("No round information provided - returning clean parameters")
-            
+                self.logger.debug(
+                    "No round information provided - returning clean parameters"
+                )
+
             self.logger.debug("Model parameters retrieved")
             return parameters
-            
+
         except Exception as e:
             self.logger.error(f"Failed to get model parameters: {e}")
             raise
@@ -617,12 +654,14 @@ class MaliciousClientActor:
             "is_malicious": True,
             "client_id": self.client_id,
             "attack_config": self.attack_config.model_dump(),
-            "attack_instances": {}
+            "attack_instances": {},
         }
-        
+
         for attack_type, attack_instance in self.attack_instances.items():
-            stats["attack_instances"][attack_type] = attack_instance.get_attack_statistics()
-        
+            stats["attack_instances"][attack_type] = (
+                attack_instance.get_attack_statistics()
+            )
+
         return stats
 
     def get_privacy_spent(self) -> Optional[Dict[str, Any]]:
@@ -643,9 +682,6 @@ class MaliciousClientActor:
             self.logger.error(f"Failed to get privacy metrics: {e}")
             return None
 
-    def get_node_info(self) -> Dict[str, Any]:
-        """Get node information for this actor."""
-        return self.node_info
 
     def get_device_info(self) -> Dict[str, Any]:
         """Get device information for this actor."""
