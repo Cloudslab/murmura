@@ -188,6 +188,8 @@ class DecentralizedLearningProcess(LearningProcess):
 
             # Training with subsampling support
             train_metrics = self.cluster_manager.train_models(
+                current_round=round_num,
+                total_rounds=self.config.rounds,
                 client_sampling_rate=self.config.client_sampling_rate,
                 data_sampling_rate=self.config.data_sampling_rate,
                 epochs=epochs,
@@ -218,7 +220,11 @@ class DecentralizedLearningProcess(LearningProcess):
             # Collect parameters for visualization
             node_params = {}
             for i, actor in enumerate(self.cluster_manager.actors):
-                params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
+                # Check if this actor index is malicious using cluster manager's tracking
+                if i in self.cluster_manager.malicious_client_indices:
+                    params = ray.get(actor.get_model_parameters.remote(current_round=round_num, total_rounds=rounds), timeout=1800)
+                else:
+                    params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 node_params[i] = params
 
             # Create parameter summaries for visualization
@@ -260,7 +266,11 @@ class DecentralizedLearningProcess(LearningProcess):
             # Perform topology-aware decentralized aggregation
             # In true decentralized learning, each node performs local aggregation with neighbors
             # No global model is maintained or distributed
-            self.cluster_manager.perform_decentralized_aggregation(weights=weights)
+            self.cluster_manager.perform_decentralized_aggregation(
+                current_round=round_num,
+                total_rounds=rounds,
+                weights=weights
+            )
 
             # Calculate parameter convergence across the network
             # Use average of all node parameters as reference for convergence calculation
@@ -281,9 +291,15 @@ class DecentralizedLearningProcess(LearningProcess):
             # 4. Evaluation
             # In decentralized learning, evaluate using a representative model from the network
             # Use the first node's model as representative for evaluation
-            representative_params = ray.get(
-                self.cluster_manager.actors[0].get_model_parameters.remote()
-            )
+            representative_actor = self.cluster_manager.actors[0]
+            if 0 in self.cluster_manager.malicious_client_indices:
+                representative_params = ray.get(
+                    representative_actor.get_model_parameters.remote(current_round=round_num, total_rounds=rounds)
+                )
+            else:
+                representative_params = ray.get(
+                    representative_actor.get_model_parameters.remote()
+                )
             self.model.set_parameters(representative_params)
             test_metrics = self.model.evaluate(test_features, test_labels)
             self.logger.info(

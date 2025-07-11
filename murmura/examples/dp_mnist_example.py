@@ -26,6 +26,9 @@ from murmura.privacy.privacy_accountant import PrivacyAccountant
 from murmura.model.pytorch_model import TorchModelWrapper
 from typing import Union
 
+# Import attack components
+from murmura.attacks.attack_config import AttackConfig
+
 
 def setup_logging(log_level: str = "INFO") -> None:
     """Set up logging configuration"""
@@ -186,6 +189,68 @@ def main() -> None:
         help="Enable privacy amplification by subsampling",
     )
 
+    # Attack configuration arguments
+    parser.add_argument(
+        "--malicious_clients_ratio",
+        type=float,
+        default=0.0,
+        help="Fraction of clients to make malicious (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--attack_type",
+        choices=["label_flipping", "gradient_manipulation", "both"],
+        default="label_flipping",
+        help="Type of poisoning attack to perform",
+    )
+    parser.add_argument(
+        "--attack_intensity_start",
+        type=float,
+        default=0.1,
+        help="Initial attack intensity (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--attack_intensity_end",
+        type=float,
+        default=1.0,
+        help="Final attack intensity (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--intensity_progression",
+        choices=["linear", "exponential", "step"],
+        default="linear",
+        help="How attack intensity increases over rounds",
+    )
+    parser.add_argument(
+        "--label_flip_target",
+        type=int,
+        default=None,
+        help="Target label for label flipping attacks",
+    )
+    parser.add_argument(
+        "--label_flip_source",
+        type=int,
+        default=None,
+        help="Source label for label flipping attacks",
+    )
+    parser.add_argument(
+        "--gradient_noise_scale",
+        type=float,
+        default=1.0,
+        help="Scale factor for gradient noise injection",
+    )
+    parser.add_argument(
+        "--gradient_sign_flip_prob",
+        type=float,
+        default=0.1,
+        help="Probability of flipping gradient signs",
+    )
+    parser.add_argument(
+        "--attack_start_round",
+        type=int,
+        default=1,
+        help="Round to start attacks",
+    )
+
     # Visualization arguments
     parser.add_argument(
         "--vis_dir",
@@ -295,6 +360,42 @@ def main() -> None:
         else:
             logger.info("Differential privacy is DISABLED")
 
+        # Create attack configuration if attacks are enabled
+        attack_config = None
+        if args.malicious_clients_ratio > 0.0:
+            logger.info("=== Configuring Model Poisoning Attacks ===")
+            attack_config = AttackConfig(
+                malicious_clients_ratio=args.malicious_clients_ratio,
+                attack_type=args.attack_type,
+                attack_intensity_start=args.attack_intensity_start,
+                attack_intensity_end=args.attack_intensity_end,
+                intensity_progression=args.intensity_progression,
+                label_flip_target=args.label_flip_target,
+                label_flip_source=args.label_flip_source,
+                gradient_noise_scale=args.gradient_noise_scale,
+                gradient_sign_flip_prob=args.gradient_sign_flip_prob,
+                attack_start_round=args.attack_start_round,
+                log_attack_details=True
+            )
+            
+            logger.info("Attack configuration created:")
+            logger.info(f"  - Malicious clients ratio: {args.malicious_clients_ratio}")
+            logger.info(f"  - Attack type: {args.attack_type}")
+            logger.info(f"  - Attack intensity: {args.attack_intensity_start} -> {args.attack_intensity_end}")
+            logger.info(f"  - Intensity progression: {args.intensity_progression}")
+            logger.info(f"  - Attack start round: {args.attack_start_round}")
+            
+            if args.attack_type in ["label_flipping", "both"]:
+                logger.info(f"  - Label flip target: {args.label_flip_target}")
+                logger.info(f"  - Label flip source: {args.label_flip_source}")
+            
+            if args.attack_type in ["gradient_manipulation", "both"]:
+                logger.info(f"  - Gradient noise scale: {args.gradient_noise_scale}")
+                logger.info(f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}")
+                
+        else:
+            logger.info("Model poisoning attacks are DISABLED")
+
         # Ray cluster configuration
         ray_cluster_config = RayClusterConfig(
             logging_level=args.log_level,
@@ -342,6 +443,7 @@ def main() -> None:
             client_sampling_rate=args.client_sampling_rate,
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
+            attack_config=attack_config,
         )
 
         logger.info("=== Creating Data Partitions ===")

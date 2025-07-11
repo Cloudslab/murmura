@@ -21,6 +21,7 @@ from murmura.network_management.topology_manager import TopologyManager
 from murmura.node.client_actor import VirtualClientActor
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.orchestration.topology_coordinator import TopologyCoordinator
+from murmura.attacks.malicious_client_actor import MaliciousClientActor
 
 
 class ClusterManager:
@@ -35,6 +36,14 @@ class ClusterManager:
         self.aggregation_strategy: Optional[AggregationStrategy] = None
         self.topology_coordinator: Optional[TopologyCoordinator] = None
         self.cluster_info: Dict[str, Any] = {}
+        
+        # Track malicious actors
+        self.malicious_client_indices: List[int] = []
+        if config.attack_config:
+            self.malicious_client_indices = config.get_malicious_client_indices()
+            logging.getLogger("murmura").info(
+                f"Malicious clients will be created at indices: {self.malicious_client_indices}"
+            )
 
         # Set up logging
         self._setup_logging()
@@ -306,12 +315,25 @@ class ClusterManager:
         self.actors = []
         for i in range(num_actors):
             try:
-                if resource_requirements:
-                    actor_ref = VirtualClientActor.options(  # type: ignore[attr-defined]
-                        **resource_requirements
-                    ).remote(f"client_{i}")
+                # Check if this client should be malicious
+                if i in self.malicious_client_indices:
+                    # Create malicious actor
+                    if resource_requirements:
+                        actor_ref = MaliciousClientActor.options(  # type: ignore[attr-defined]
+                            **resource_requirements
+                        ).remote(f"client_{i}", self.config.attack_config)
+                    else:
+                        actor_ref = MaliciousClientActor.remote(f"client_{i}", self.config.attack_config)  # type: ignore[attr-defined]
+                    logging.getLogger("murmura").info(f"Created MALICIOUS client {i}")
                 else:
-                    actor_ref = VirtualClientActor.remote(f"client_{i}")  # type: ignore[attr-defined]
+                    # Create benign actor
+                    if resource_requirements:
+                        actor_ref = VirtualClientActor.options(  # type: ignore[attr-defined]
+                            **resource_requirements
+                        ).remote(f"client_{i}")
+                    else:
+                        actor_ref = VirtualClientActor.remote(f"client_{i}")  # type: ignore[attr-defined]
+                
                 self.actors.append(actor_ref)
 
                 # Log actor creation with node information
@@ -1070,6 +1092,8 @@ class ClusterManager:
 
     def train_models(
         self,
+        current_round: int,
+        total_rounds: int,
         client_sampling_rate: float = 1.0,
         data_sampling_rate: float = 1.0,
         **kwargs,
@@ -1099,8 +1123,10 @@ class ClusterManager:
         else:
             sampled_actors = self.actors
 
-        # Add data sampling rate to kwargs
+        # Add data sampling rate and round info to kwargs
         kwargs["data_sampling_rate"] = data_sampling_rate
+        kwargs["current_round"] = current_round
+        kwargs["total_rounds"] = total_rounds
 
         batch_size = 50
         all_results = []
@@ -1229,7 +1255,7 @@ class ClusterManager:
         return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
     def perform_decentralized_aggregation(
-        self, weights: Optional[List[float]] = None
+        self, current_round: int, total_rounds: int, weights: Optional[List[float]] = None
     ) -> None:
         """
         Perform decentralized aggregation where each node aggregates with its neighbors.
@@ -1262,18 +1288,28 @@ class ClusterManager:
                 neighbor_params = []
                 neighbor_weights = []
 
-                # Include the node's own parameters
-                own_params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
+                # Include the node's own parameters (pass round info for malicious actors)
+                if hasattr(actor, '_is_malicious') or 'Malicious' in str(type(actor)):
+                    own_params = ray.get(actor.get_model_parameters.remote(current_round=current_round, total_rounds=total_rounds), timeout=1800)
+                else:
+                    own_params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 neighbor_params.append(own_params)
                 neighbor_weights.append(weights[node_idx] if weights else 1.0)
 
                 # Add neighbor parameters
                 for neighbor_idx in neighbors:
                     if neighbor_idx < len(self.actors):
-                        neighbor_param = ray.get(
-                            self.actors[neighbor_idx].get_model_parameters.remote(),
-                            timeout=1800,
-                        )
+                        neighbor_actor = self.actors[neighbor_idx]
+                        if hasattr(neighbor_actor, '_is_malicious') or 'Malicious' in str(type(neighbor_actor)):
+                            neighbor_param = ray.get(
+                                neighbor_actor.get_model_parameters.remote(current_round=current_round, total_rounds=total_rounds),
+                                timeout=1800,
+                            )
+                        else:
+                            neighbor_param = ray.get(
+                                neighbor_actor.get_model_parameters.remote(),
+                                timeout=1800,
+                            )
                         neighbor_params.append(neighbor_param)
                         neighbor_weights.append(
                             weights[neighbor_idx] if weights else 1.0

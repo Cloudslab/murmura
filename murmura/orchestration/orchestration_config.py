@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, model_validator
 from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.network_management.topology import TopologyConfig
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
+from murmura.attacks.attack_config import AttackConfig
 
 
 class OrchestrationConfig(BaseModel):
@@ -99,6 +100,12 @@ class OrchestrationConfig(BaseModel):
     enable_subsampling_amplification: bool = Field(
         default=False,
         description="Enable privacy amplification by subsampling in DP accounting",
+    )
+
+    # Attack configuration for model poisoning research
+    attack_config: Optional[AttackConfig] = Field(
+        default=None,
+        description="Configuration for model poisoning attacks (for research purposes)"
     )
 
     @model_validator(mode="after")
@@ -197,3 +204,23 @@ class OrchestrationConfig(BaseModel):
             "strict_pack": "STRICT_PACK",
         }
         return strategy_mapping[self.resources.placement_strategy]
+
+    def get_malicious_client_indices(self) -> List[int]:
+        """Get list of client indices that should be malicious."""
+        if self.attack_config is None or self.attack_config.malicious_clients_ratio <= 0:
+            return []
+        
+        num_malicious = int(self.num_actors * self.attack_config.malicious_clients_ratio)
+        
+        # Ensure at least 1 malicious client if ratio > 0
+        if num_malicious == 0 and self.attack_config.malicious_clients_ratio > 0:
+            num_malicious = 1
+        
+        # Ensure not more than total actors
+        num_malicious = min(num_malicious, self.num_actors)
+        
+        # Randomly select malicious clients
+        import random
+        malicious_indices = random.sample(range(self.num_actors), num_malicious)
+        
+        return sorted(malicious_indices)
