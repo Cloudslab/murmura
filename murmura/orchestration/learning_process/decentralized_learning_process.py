@@ -1,5 +1,5 @@
 from statistics import mean
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 import logging
 
 import numpy as np
@@ -21,14 +21,14 @@ class DecentralizedLearningProcess(LearningProcess):
     Implementation of a decentralized learning process with generic data handling and trust monitoring.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # Initialize trust monitors for each node
         self.trust_monitors: Dict[int, TrustMonitor] = {}
         self.trust_config: Optional[TrustMonitorConfig] = None
 
-    def _prepare_test_data(self, test_dataset, feature_columns, label_column):
+    def _prepare_test_data(self, test_dataset: Any, feature_columns: List[str], label_column: str) -> Tuple[Any, Any]:
         """
         Prepare test data with proper preprocessing - same as FederatedLearningProcess.
         """
@@ -106,6 +106,8 @@ class DecentralizedLearningProcess(LearningProcess):
             return
 
         # Get topology information
+        if self.cluster_manager is None:
+            return
         topology_info = self.cluster_manager.get_topology_information()
         adjacency_list = topology_info.get("adjacency_list", {})
 
@@ -140,13 +142,15 @@ class DecentralizedLearningProcess(LearningProcess):
         round_num: int,
         node_params: Dict[int, Dict[str, Any]],
         train_metrics: List[Dict[str, float]],
-        node_malicious_detections: Dict[int, set],
+        node_malicious_detections: Dict[str, List[str]],
     ) -> Dict[int, Dict[str, float]]:
         """Process trust monitoring for all honest nodes."""
         if not self.trust_monitors:
             return {}
 
         # Get topology information
+        if self.cluster_manager is None:
+            return {}
         topology_info = self.cluster_manager.get_topology_information()
         adjacency_list = topology_info.get("adjacency_list", {})
 
@@ -172,7 +176,7 @@ class DecentralizedLearningProcess(LearningProcess):
 
                     # Log neighbor characteristics for debugging
                     is_malicious = (
-                        neighbor_idx in self.cluster_manager.malicious_client_indices
+                        neighbor_idx in (self.cluster_manager.malicious_client_indices if self.cluster_manager else [])
                     )
                     self.logger.debug(
                         f"Node {node_idx}: Neighbor {neighbor_idx} is {'MALICIOUS' if is_malicious else 'honest'}"
@@ -204,9 +208,10 @@ class DecentralizedLearningProcess(LearningProcess):
                         f"Node {node_idx} detected suspicious neighbors: {suspicious_neighbors}"
                     )
                     # Track actual detections
-                    if node_idx not in node_malicious_detections:
-                        node_malicious_detections[node_idx] = set()
-                    node_malicious_detections[node_idx].update(suspicious_neighbors)
+                    node_id_str = f"node_{node_idx}"
+                    if node_id_str not in node_malicious_detections:
+                        node_malicious_detections[node_id_str] = []
+                    node_malicious_detections[node_id_str].extend(suspicious_neighbors)
             else:
                 self.logger.debug(f"No neighbor updates available for node {node_idx}")
 
@@ -279,7 +284,7 @@ class DecentralizedLearningProcess(LearningProcess):
         round_metrics = []
         trust_monitoring_results = []
         # Track actual malicious detections per node
-        node_malicious_detections = {}
+        node_malicious_detections: Dict[str, List[str]] = {}
 
         # Initialize cumulative privacy tracking
         cumulative_privacy_spent = {"epsilon": 0.0, "delta": 0.0}
@@ -600,8 +605,9 @@ class DecentralizedLearningProcess(LearningProcess):
                 summary = trust_monitor.get_trust_summary()
 
                 # Use actual detections from runtime instead of recalculating thresholds
-                if node_idx in node_malicious_detections:
-                    actual_detections = list(node_malicious_detections[node_idx])
+                node_id_str = f"node_{node_idx}"
+                if node_id_str in node_malicious_detections:
+                    actual_detections = list(node_malicious_detections[node_id_str])
                     summary["suspicious_neighbors"] = actual_detections
                     # Collect all suspicious neighbors globally
                     all_detected_suspicious.update(actual_detections)

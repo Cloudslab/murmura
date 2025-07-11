@@ -7,7 +7,7 @@ import numpy as np
 from typing import Dict, Any, List, Optional, Tuple, Callable
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from scipy.spatial.distance import cosine
+from scipy.spatial.distance import cosine  # type: ignore[import-untyped]
 
 from .trust_config import TrustMonitorConfig
 from .trust_events import TrustEvent, TrustAnomalyEvent, TrustScoreEvent
@@ -351,10 +351,10 @@ class TrustMonitor:
         current_cosine = cosine_similarities[-1]
         if len(cosine_similarities) > 1:
             historical_cosines = cosine_similarities[:-1]
-            mean_cosine = np.mean(historical_cosines)
-            std_cosine = np.std(historical_cosines) + 1e-8
+            mean_cosine = float(np.mean(historical_cosines))
+            std_cosine = float(np.std(historical_cosines)) + 1e-8
         else:
-            mean_cosine = current_cosine
+            mean_cosine = float(current_cosine)
             std_cosine = 0.1
         
         # Detect significant drops in cosine similarity
@@ -364,11 +364,11 @@ class TrustMonitor:
         # Configurable thresholds for cosine detection
         cosine_threshold = self.config.cosine_sensitivity
         is_anomaly = (current_cosine < cosine_threshold) or (cosine_drop > 0.25) or (z_score > 1.0)
-        confidence = min(1.0, max(
+        confidence = float(min(1.0, max(
             (cosine_threshold - current_cosine) / cosine_threshold if current_cosine < cosine_threshold else 0.0,
             cosine_drop / 0.5 if cosine_drop > 0.0 else 0.0,
             z_score / 2.0 if z_score > 0.0 else 0.0
-        ))
+        )))
         
         evidence = {
             "current_cosine": float(current_cosine),
@@ -378,7 +378,7 @@ class TrustMonitor:
             "threshold_violation": current_cosine < 0.75
         }
         
-        return is_anomaly, confidence, evidence
+        return bool(is_anomaly), confidence, evidence
 
     def _detect_magnitude_anomaly(
         self, neighbor_id: str, current_update: ParameterUpdate
@@ -400,8 +400,8 @@ class TrustMonitor:
         
         # Detect unusual magnitude patterns
         if len(l2_norms) > 1:
-            l2_deviation = np.std(l2_norms)
-            mag_deviation = np.std(magnitudes)
+            l2_deviation = float(np.std(l2_norms))
+            mag_deviation = float(np.std(magnitudes))
         else:
             l2_deviation = 0.1
             mag_deviation = 0.1
@@ -413,11 +413,11 @@ class TrustMonitor:
         variability_anomaly = l2_deviation > deviation_threshold or mag_deviation > deviation_threshold
         
         is_anomaly = l2_anomaly or mag_anomaly or variability_anomaly
-        confidence = min(1.0, max(
+        confidence = float(min(1.0, max(
             abs(1.0 - current_l2) if l2_anomaly else 0.0,
             abs(1.0 - current_mag) if mag_anomaly else 0.0,
             (l2_deviation + mag_deviation) / 2.0 if variability_anomaly else 0.0
-        ))
+        )))
         
         evidence = {
             "current_l2_ratio": float(current_l2),
@@ -429,7 +429,7 @@ class TrustMonitor:
             "variability_anomaly": variability_anomaly
         }
         
-        return is_anomaly, confidence, evidence
+        return bool(is_anomaly), confidence, evidence
 
     def _detect_distribution_anomaly(
         self, neighbor_id: str, current_update: ParameterUpdate

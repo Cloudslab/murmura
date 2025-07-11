@@ -332,9 +332,9 @@ class ClusterManager:
                             **resource_requirements
                         ).remote(f"client_{i}", self.config.attack_config)
                     else:
-                        actor_ref = MaliciousClientActor.remote(
+                        actor_ref = MaliciousClientActor.remote(  # type: ignore[attr-defined]
                             f"client_{i}", self.config.attack_config
-                        )  # type: ignore[attr-defined]
+                        )
                     logging.getLogger("murmura").info(f"Created MALICIOUS client {i}")
                 else:
                     # Create benign actor

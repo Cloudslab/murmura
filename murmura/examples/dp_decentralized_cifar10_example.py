@@ -783,7 +783,8 @@ def main() -> None:
                     )
                 if args.create_frames:
                     logger.info("Creating individual frames...")
-                    visualizer.render_training_frames()
+                    # Individual frames functionality not implemented yet
+                    logger.info("Individual frames creation not yet implemented")
                 if args.create_summary:
                     logger.info("Creating summary plot...")
                     visualizer.render_summary_plot(

@@ -181,14 +181,25 @@ def test_execute_training_rounds(federated_learning_process, mock_cluster_manage
     assert mock_cluster_manager.train_models.call_count == 2
 
     # Verify each training call had the correct parameters
-    expected_call = call(
+    expected_call_1 = call(
+        current_round=1,
+        total_rounds=2,
         client_sampling_rate=1.0,
         data_sampling_rate=1.0,
         epochs=1,
         batch_size=32,
         verbose=True,
     )
-    mock_cluster_manager.train_models.assert_has_calls([expected_call, expected_call])
+    expected_call_2 = call(
+        current_round=2,
+        total_rounds=2,
+        client_sampling_rate=1.0,
+        data_sampling_rate=1.0,
+        epochs=1,
+        batch_size=32,
+        verbose=True,
+    )
+    mock_cluster_manager.train_models.assert_has_calls([expected_call_1, expected_call_2])
 
 
 def test_execute_aggregation(federated_learning_process, mock_cluster_manager):
@@ -300,14 +311,19 @@ def test_different_learning_configurations(
     process.training_monitor = MagicMock()
     process.execute()
     assert mock_cluster_manager.train_models.call_count == rounds
-    expected_call = call(
-        client_sampling_rate=1.0,
-        data_sampling_rate=1.0,
-        epochs=epochs,
-        batch_size=batch_size,
-        verbose=True,
-    )
-    mock_cluster_manager.train_models.assert_has_calls([expected_call] * rounds)
+    # Generate expected calls with current_round and total_rounds parameters
+    expected_calls = []
+    for round_num in range(1, rounds + 1):
+        expected_calls.append(call(
+            current_round=round_num,
+            total_rounds=rounds,
+            client_sampling_rate=1.0,
+            data_sampling_rate=1.0,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=True,
+        ))
+    mock_cluster_manager.train_models.assert_has_calls(expected_calls)
 
 
 def test_event_emission_edge_cases(federated_learning_process):

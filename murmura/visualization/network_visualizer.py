@@ -608,12 +608,12 @@ class NetworkVisualizer(TrainingObserver):
             with open(event_csv_path, "w", newline="", encoding="utf-8") as f:
                 if self.event_log:
                     # Collect all possible field names from all events
-                    all_fieldnames: set[str] = set()
+                    event_fieldnames: set[str] = set()
                     for event in self.event_log:
-                        all_fieldnames.update(event.keys())
+                        event_fieldnames.update(event.keys())
 
                     # Sort fieldnames for consistent column order
-                    fieldnames = sorted(all_fieldnames)
+                    fieldnames = sorted(event_fieldnames)
 
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
@@ -675,11 +675,11 @@ class NetworkVisualizer(TrainingObserver):
             with open(comm_csv_path, "w", newline="", encoding="utf-8") as f:
                 if self.communication_log:
                     # Collect all unique fieldnames from all entries
-                    all_fieldnames = set()
+                    comm_fieldnames: set[str] = set()
                     for entry in self.communication_log:
-                        all_fieldnames.update(entry.keys())
+                        comm_fieldnames.update(entry.keys())
 
-                    writer = csv.DictWriter(f, fieldnames=sorted(list(all_fieldnames)))
+                    writer = csv.DictWriter(f, fieldnames=sorted(list(comm_fieldnames)))
                     writer.writeheader()
                     writer.writerows(self.communication_log)
             print(f"Communication log exported to {comm_csv_path}")
@@ -695,11 +695,11 @@ class NetworkVisualizer(TrainingObserver):
                         activity_csv_path, "w", newline="", encoding="utf-8"
                     ) as f:
                         # Get all possible fieldnames from all activities
-                        all_fieldnames = set()
+                        param_fieldnames: set[str] = set()
                         for activity in activities:
-                            all_fieldnames.update(activity.keys())
+                            param_fieldnames.update(activity.keys())
 
-                        writer = csv.DictWriter(f, fieldnames=sorted(all_fieldnames))
+                        writer = csv.DictWriter(f, fieldnames=sorted(param_fieldnames))
                         writer.writeheader()
                         writer.writerows(activities)
             print(f"Node activities exported for {len(self.node_activities)} nodes")
@@ -944,11 +944,11 @@ class NetworkVisualizer(TrainingObserver):
             )
             with open(detection_csv_path, "w", newline="", encoding="utf-8") as f:
                 # Get all possible field names from all detection events
-                all_fieldnames: set[str] = set()
+                detection_fieldnames: set[str] = set()
                 for event in self.attack_detection_events:
-                    all_fieldnames.update(event.keys())
+                    detection_fieldnames.update(event.keys())
 
-                fieldnames = sorted(all_fieldnames)
+                fieldnames = sorted(detection_fieldnames)
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(self.attack_detection_events)

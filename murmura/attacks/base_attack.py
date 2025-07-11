@@ -107,7 +107,7 @@ class BaseAttack(ABC):
         self,
         original_data: Union[np.ndarray, torch.Tensor, list],
         processed_data: Union[np.ndarray, torch.Tensor],
-    ) -> Union[np.ndarray, torch.Tensor, list]:
+    ) -> Union[np.ndarray, torch.Tensor, list[Any]]:
         """Maintain the original data type after processing."""
         if isinstance(original_data, torch.Tensor):
             if isinstance(processed_data, np.ndarray):
@@ -116,9 +116,11 @@ class BaseAttack(ABC):
         elif isinstance(original_data, list):
             # If original was a list, convert back to list
             if isinstance(processed_data, torch.Tensor):
-                return processed_data.cpu().numpy().tolist()
+                result = processed_data.cpu().numpy().tolist()
+                return result  # type: ignore[return-value]
             elif isinstance(processed_data, np.ndarray):
-                return processed_data.tolist()
+                result = processed_data.tolist()
+                return result  # type: ignore[return-value]
             return processed_data
         else:
             if isinstance(processed_data, torch.Tensor):
