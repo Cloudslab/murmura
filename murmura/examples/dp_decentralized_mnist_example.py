@@ -265,6 +265,29 @@ def main() -> None:
         default=True,
         help="Apply trust scores as weights during aggregation (default: True)",
     )
+    parser.add_argument(
+        "--enable_exponential_decay",
+        action="store_true",
+        help="Use exponential decay for repeated trust violations (more aggressive)",
+    )
+    parser.add_argument(
+        "--exponential_decay_base",
+        type=float,
+        default=0.8,
+        help="Base for exponential decay (lower = more aggressive, default: 0.8)",
+    )
+    parser.add_argument(
+        "--trust_scaling_factor",
+        type=float,
+        default=1.0,
+        help="Scaling factor for trust-to-weight conversion (lower = more aggressive, default: 1.0)",
+    )
+    parser.add_argument(
+        "--trust_weight_exponent",
+        type=float,
+        default=1.0,
+        help="Exponent for trust score scaling (higher = more aggressive, default: 1.0)",
+    )
 
     # Multi-node Ray cluster arguments
     parser.add_argument(
@@ -567,7 +590,11 @@ def main() -> None:
             logger.info("=== Trust monitoring ENABLED ===")
             trust_config = TrustMonitorConfig(
                 enable_trust_monitoring=True,
-                enable_trust_weighted_aggregation=args.enable_trust_weighted_aggregation
+                enable_trust_weighted_aggregation=args.enable_trust_weighted_aggregation,
+                enable_exponential_decay=args.enable_exponential_decay,
+                exponential_decay_base=args.exponential_decay_base,
+                trust_scaling_factor=args.trust_scaling_factor,
+                trust_weight_exponent=args.trust_weight_exponent,
             )
             if args.enable_trust_weighted_aggregation:
                 logger.info("=== Trust-weighted aggregation ENABLED ===")
