@@ -276,6 +276,12 @@ def main() -> None:
         action="store_true",
         help="Enable trust monitoring for malicious behavior detection",
     )
+    parser.add_argument(
+        "--enable_trust_weighted_aggregation",
+        action="store_true",
+        default=True,
+        help="Apply trust scores as weights during aggregation (default: True)",
+    )
 
     # Visualization arguments
     parser.add_argument(
@@ -436,7 +442,14 @@ def main() -> None:
         trust_config = None
         if args.enable_trust_monitoring:
             logger.info("=== Trust monitoring ENABLED ===")
-            trust_config = TrustMonitorConfig(enable_trust_monitoring=True)
+            trust_config = TrustMonitorConfig(
+                enable_trust_monitoring=True,
+                enable_trust_weighted_aggregation=args.enable_trust_weighted_aggregation
+            )
+            if args.enable_trust_weighted_aggregation:
+                logger.info("=== Trust-weighted aggregation ENABLED ===")
+            else:
+                logger.info("=== Trust-weighted aggregation DISABLED ===")
         else:
             logger.info("Trust monitoring is DISABLED")
 

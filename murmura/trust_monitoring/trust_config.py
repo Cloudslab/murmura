@@ -75,3 +75,16 @@ class TrustMonitorConfig(BaseModel):
         default=True,
         description="Export trust metrics for analysis"
     )
+    
+    # Trust-weighted aggregation settings
+    enable_trust_weighted_aggregation: bool = Field(
+        default=True,
+        description="Apply trust scores as weights during parameter aggregation"
+    )
+    
+    trust_weight_exponent: float = Field(
+        default=1.0,
+        ge=0.5,
+        le=3.0,
+        description="Exponent to apply to trust scores for weight calculation (higher = more aggressive)"
+    )

@@ -405,13 +405,24 @@ class DecentralizedLearningProcess(LearningProcess):
             client_data_sizes = [len(partition) for partition in partitions]
             weights = [float(size) for size in client_data_sizes]
 
-            # Perform topology-aware decentralized aggregation
+            # Perform topology-aware decentralized aggregation with optional trust weighting
             # In true decentralized learning, each node performs local aggregation with neighbors
             # No global model is maintained or distributed
+            # Trust scores are applied as additional weights to reduce malicious influence
+            trust_scores_for_aggregation = None
+            if (self.trust_config and 
+                self.trust_config.enable_trust_weighted_aggregation and 
+                trust_scores):
+                trust_scores_for_aggregation = trust_scores
+                self.logger.info(f"Round {round_num}: Enabling trust-weighted aggregation")
+            else:
+                self.logger.info(f"Round {round_num}: Using standard aggregation (trust weighting disabled)")
+                
             self.cluster_manager.perform_decentralized_aggregation(
                 current_round=round_num,
                 total_rounds=rounds,
-                weights=weights
+                weights=weights,
+                trust_scores=trust_scores_for_aggregation
             )
 
             # Calculate parameter convergence across the network

@@ -47,6 +47,7 @@ class ClusterManager:
 
         # Set up logging
         self._setup_logging()
+        self.logger = logging.getLogger("murmura")
 
         # Initialize Ray cluster
         self._initialize_ray_cluster()
@@ -1263,7 +1264,8 @@ class ClusterManager:
         return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
     def perform_decentralized_aggregation(
-        self, current_round: int, total_rounds: int, weights: Optional[List[float]] = None
+        self, current_round: int, total_rounds: int, weights: Optional[List[float]] = None,
+        trust_scores: Optional[Dict[int, Dict[str, float]]] = None
     ) -> None:
         """
         Perform decentralized aggregation where each node aggregates with its neighbors.
@@ -1272,6 +1274,12 @@ class ClusterManager:
 
         This leverages the existing topology coordinator but skips global combination.
         Works with any aggregation strategy (GossipAvg, future strategies).
+        
+        Args:
+            current_round: Current training round
+            total_rounds: Total number of training rounds
+            weights: Data size weights for each node
+            trust_scores: Trust scores per node for their neighbors (format: {node_idx: {neighbor_id: trust_score}})
         """
         if not self.aggregation_strategy:
             raise ValueError(
@@ -1285,6 +1293,13 @@ class ClusterManager:
         topology_info = self.get_topology_information()
         adjacency_list = topology_info.get("adjacency_list", {})
 
+        # Log trust weighting status
+        if trust_scores:
+            total_trust_monitors = len(trust_scores)
+            self.logger.info(f"Round {current_round}: Applying trust-weighted aggregation for {total_trust_monitors} honest nodes")
+        else:
+            self.logger.info(f"Round {current_round}: Using standard data-size weighted aggregation (no trust scores)")
+
         # Each node performs local aggregation with its neighbors
         # This is similar to what topology coordinator does, but we don't combine results globally
         update_tasks = []
@@ -1292,6 +1307,9 @@ class ClusterManager:
         for node_idx, actor in enumerate(self.actors):
             neighbors = adjacency_list.get(node_idx, [])
             if neighbors:
+                # Get trust scores for this specific node's view of its neighbors
+                node_trust_scores = trust_scores.get(node_idx, {}) if trust_scores else {}
+                
                 # Collect parameters from this node and its neighbors
                 neighbor_params = []
                 neighbor_weights = []
@@ -1302,9 +1320,10 @@ class ClusterManager:
                 else:
                     own_params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 neighbor_params.append(own_params)
+                # Own node always has full weight (trust score = 1.0)
                 neighbor_weights.append(weights[node_idx] if weights else 1.0)
 
-                # Add neighbor parameters
+                # Add neighbor parameters with trust-weighted aggregation
                 for neighbor_idx in neighbors:
                     if neighbor_idx < len(self.actors):
                         neighbor_actor = self.actors[neighbor_idx]
@@ -1319,9 +1338,32 @@ class ClusterManager:
                                 timeout=1800,
                             )
                         neighbor_params.append(neighbor_param)
-                        neighbor_weights.append(
-                            weights[neighbor_idx] if weights else 1.0
-                        )
+                        
+                        # Apply trust weighting: base_weight * trust_score
+                        base_weight = weights[neighbor_idx] if weights else 1.0
+                        neighbor_id = f"node_{neighbor_idx}"
+                        trust_weight = node_trust_scores.get(neighbor_id, 1.0)  # Default trust = 1.0
+                        final_weight = base_weight * trust_weight
+                        neighbor_weights.append(final_weight)
+                        
+                        # Log trust weighting for debugging
+                        if trust_scores and node_idx in trust_scores:
+                            self.logger.debug(f"Node {node_idx} -> Neighbor {neighbor_idx}: "
+                                            f"base_weight={base_weight:.3f}, trust={trust_weight:.3f}, "
+                                            f"final_weight={final_weight:.3f}")
+                
+                # Log aggregation summary for this node if trust scores are being used
+                if trust_scores and node_idx in trust_scores and len(neighbor_params) > 1:
+                    trust_weights_summary = []
+                    for i, weight in enumerate(neighbor_weights):
+                        if i == 0:  # Own node
+                            trust_weights_summary.append(f"self:{weight:.3f}")
+                        else:
+                            neighbor_idx = neighbors[i-1]
+                            neighbor_id = f"node_{neighbor_idx}"
+                            trust_weight = node_trust_scores.get(neighbor_id, 1.0)
+                            trust_weights_summary.append(f"{neighbor_idx}:{trust_weight:.3f}({weight:.3f})")
+                    self.logger.info(f"Node {node_idx} trust-weighted aggregation: {', '.join(trust_weights_summary)}")
 
                 # Perform local aggregation using the configured strategy
                 if len(neighbor_params) > 1:
