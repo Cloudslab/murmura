@@ -466,24 +466,28 @@ def main() -> None:
                 gradient_noise_scale=args.gradient_noise_scale,
                 gradient_sign_flip_prob=args.gradient_sign_flip_prob,
                 attack_start_round=args.attack_start_round,
-                log_attack_details=True
+                log_attack_details=True,
             )
-            
+
             logger.info("Attack configuration created:")
             logger.info(f"  - Malicious clients ratio: {args.malicious_clients_ratio}")
             logger.info(f"  - Attack type: {args.attack_type}")
-            logger.info(f"  - Attack intensity: {args.attack_intensity_start} -> {args.attack_intensity_end}")
+            logger.info(
+                f"  - Attack intensity: {args.attack_intensity_start} -> {args.attack_intensity_end}"
+            )
             logger.info(f"  - Intensity progression: {args.intensity_progression}")
             logger.info(f"  - Attack start round: {args.attack_start_round}")
-            
+
             if args.attack_type in ["label_flipping", "both"]:
                 logger.info(f"  - Label flip target: {args.label_flip_target}")
                 logger.info(f"  - Label flip source: {args.label_flip_source}")
-            
+
             if args.attack_type in ["gradient_manipulation", "both"]:
                 logger.info(f"  - Gradient noise scale: {args.gradient_noise_scale}")
-                logger.info(f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}")
-                
+                logger.info(
+                    f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}"
+                )
+
         else:
             logger.info("Model poisoning attacks are DISABLED")
 
@@ -771,21 +775,31 @@ def main() -> None:
             if args.enable_trust_monitoring:
                 logger.info("=== Trust Monitoring Results ===")
                 trust_results = results.get("trust_monitoring", {})
-                
+
                 if trust_results.get("enabled", False):
                     trust_summary = trust_results.get("final_summary", {})
-                    global_suspicious = trust_results.get("global_suspicious_detected", [])
-                    
-                    logger.info(f"Trust monitoring enabled for {len(trust_summary)} honest nodes")
-                    
+                    global_suspicious = trust_results.get(
+                        "global_suspicious_detected", []
+                    )
+
+                    logger.info(
+                        f"Trust monitoring enabled for {len(trust_summary)} honest nodes"
+                    )
+
                     # Show summary of suspicious behavior using relative detection
                     if global_suspicious:
-                        logger.warning(f"⚠️  Trust monitoring detected {len(global_suspicious)} suspicious neighbors: {global_suspicious}")
+                        logger.warning(
+                            f"⚠️  Trust monitoring detected {len(global_suspicious)} suspicious neighbors: {global_suspicious}"
+                        )
                         for node_idx, node_summary in trust_summary.items():
                             suspicious = node_summary.get("suspicious_neighbors", [])
                             if suspicious:
-                                relative_threshold = node_summary.get("relative_threshold", "N/A")
-                                logger.warning(f"  Node {node_idx} flagged: {suspicious} (threshold: {relative_threshold:.3f})")
+                                relative_threshold = node_summary.get(
+                                    "relative_threshold", "N/A"
+                                )
+                                logger.warning(
+                                    f"  Node {node_idx} flagged: {suspicious} (threshold: {relative_threshold:.3f})"
+                                )
                     else:
                         logger.info("✓ No malicious behavior detected")
                 else:
@@ -802,7 +816,7 @@ def main() -> None:
                         filename=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}"
                         + ("_dp" if args.enable_dp else "_no_dp")
                         + "_animation.mp4",
-                        fps=2
+                        fps=2,
                     )
                 if args.create_frames:
                     logger.info("Creating individual frames...")

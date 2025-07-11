@@ -270,13 +270,13 @@ class TrustMonitor:
 
         return similarities
 
-    def _detect_anomalies_cusum(
+    def _detect_anomalies_multi_metric(
         self, neighbor_id: str, current_update: ParameterUpdate
     ) -> Tuple[bool, float, Dict[str, Any]]:
-        """Detect anomalies using CUSUM algorithm on neighbor-relative metrics with training dynamics awareness."""
+        """Detect anomalies using multi-metric fusion for enhanced sensitivity and robustness."""
         history_length = len(self.update_history[neighbor_id])
         self.logger.info(
-            f"TRUST MONITOR {self.node_id}: CUSUM detection for {neighbor_id}: history length = {history_length}"
+            f"TRUST MONITOR {self.node_id}: Multi-metric detection for {neighbor_id}: history length = {history_length}"
         )
 
         # Need at least 1 historical update to compare against
@@ -286,178 +286,323 @@ class TrustMonitor:
             )
             return False, 0.0, {}
 
-        history = list(self.update_history[neighbor_id])
-
-        # Compute similarities with recent history
-        similarities = []
-        cosine_similarities = []
-        # Compare with up to 3 most recent historical updates (excluding current)
-        num_comparisons = min(3, history_length)
+        # Run independent detection streams
+        detectors = {
+            'cosine': self._detect_cosine_anomaly,
+            'magnitude': self._detect_magnitude_anomaly,
+            'distribution': self._detect_distribution_anomaly,
+            'dynamics': self._detect_dynamics_anomaly
+        }
+        
+        anomaly_signals = {}
+        for detector_name, detector_func in detectors.items():
+            try:
+                is_anomaly, confidence, evidence = detector_func(neighbor_id, current_update)
+                anomaly_signals[detector_name] = {
+                    'is_anomaly': is_anomaly,
+                    'confidence': confidence,
+                    'evidence': evidence
+                }
+                self.logger.info(
+                    f"TRUST MONITOR {self.node_id}: {detector_name} detector: anomaly={is_anomaly}, confidence={confidence:.3f}"
+                )
+            except Exception as e:
+                self.logger.warning(f"Detector {detector_name} failed: {e}")
+                anomaly_signals[detector_name] = {
+                    'is_anomaly': False,
+                    'confidence': 0.0,
+                    'evidence': {'error': str(e)}
+                }
+        
+        # Fusion logic: combine signals from multiple detectors
+        is_malicious, overall_confidence, fusion_evidence = self._fuse_detection_signals(anomaly_signals)
+        
+        # Combine all evidence
+        combined_evidence = {
+            'detection_method': 'multi_metric_fusion',
+            'individual_detectors': anomaly_signals,
+            'fusion_results': fusion_evidence,
+            'neighbor_id': neighbor_id,
+            'round': current_update.round_num
+        }
+        
         self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Computing similarities for {neighbor_id} with last {num_comparisons} historical updates"
+            f"TRUST MONITOR {self.node_id}: Multi-metric fusion for {neighbor_id}: "
+            f"malicious={is_malicious}, confidence={overall_confidence:.3f}"
         )
+        
+        return bool(is_malicious), float(overall_confidence), combined_evidence
 
-        # Use historical updates only (not including current)
-        comparison_history = history[-num_comparisons:]
-        for i, past_update in enumerate(comparison_history):
+    def _detect_cosine_anomaly(
+        self, neighbor_id: str, current_update: ParameterUpdate
+    ) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect anomalies in cosine similarity patterns."""
+        history = list(self.update_history[neighbor_id])
+        num_comparisons = min(3, len(history))
+        
+        cosine_similarities = []
+        for past_update in history[-num_comparisons:]:
             sim_metrics = self._compute_update_similarity(current_update, past_update)
-
-            # Enhanced weighting that considers training dynamics
-            # Cosine similarity is most important for gradient manipulation detection
-            # L2 and magnitude ratios can vary naturally during training
-            combined_sim = (
-                sim_metrics["cosine_similarity"]
-                * 0.6  # Increased weight for cosine similarity
-                + sim_metrics["l2_norm_ratio"] * 0.2  # Reduced weight for L2 norm
-                + sim_metrics["magnitude_ratio"] * 0.15  # Reduced weight for magnitude
-                + sim_metrics["std_ratio"] * 0.05  # Minimal weight for std ratio
-            )
-            similarities.append(combined_sim)
             cosine_similarities.append(sim_metrics["cosine_similarity"])
+        
+        if not cosine_similarities:
+            return False, 0.0, {"error": "No similarity data"}
+        
+        current_cosine = cosine_similarities[-1]
+        if len(cosine_similarities) > 1:
+            historical_cosines = cosine_similarities[:-1]
+            mean_cosine = np.mean(historical_cosines)
+            std_cosine = np.std(historical_cosines) + 1e-8
+        else:
+            mean_cosine = current_cosine
+            std_cosine = 0.1
+        
+        # Detect significant drops in cosine similarity
+        cosine_drop = mean_cosine - current_cosine
+        z_score = cosine_drop / std_cosine
+        
+        # Configurable thresholds for cosine detection
+        cosine_threshold = self.config.cosine_sensitivity
+        is_anomaly = (current_cosine < cosine_threshold) or (cosine_drop > 0.25) or (z_score > 1.0)
+        confidence = min(1.0, max(
+            (cosine_threshold - current_cosine) / cosine_threshold if current_cosine < cosine_threshold else 0.0,
+            cosine_drop / 0.5 if cosine_drop > 0.0 else 0.0,
+            z_score / 2.0 if z_score > 0.0 else 0.0
+        ))
+        
+        evidence = {
+            "current_cosine": float(current_cosine),
+            "mean_cosine": float(mean_cosine),
+            "cosine_drop": float(cosine_drop),
+            "z_score": float(z_score),
+            "threshold_violation": current_cosine < 0.75
+        }
+        
+        return is_anomaly, confidence, evidence
 
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}:   Similarity {i}: cosine={sim_metrics['cosine_similarity']:.6f}, l2_ratio={sim_metrics['l2_norm_ratio']:.6f}, mag_ratio={sim_metrics['magnitude_ratio']:.6f}, combined={combined_sim:.6f}"
-            )
+    def _detect_magnitude_anomaly(
+        self, neighbor_id: str, current_update: ParameterUpdate
+    ) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect anomalies in parameter magnitude patterns."""
+        history = list(self.update_history[neighbor_id])
+        num_comparisons = min(3, len(history))
+        
+        l2_norms = []
+        magnitudes = []
+        for past_update in history[-num_comparisons:]:
+            sim_metrics = self._compute_update_similarity(current_update, past_update)
+            l2_norms.append(sim_metrics["l2_norm_ratio"])
+            magnitudes.append(sim_metrics["magnitude_ratio"])
+        
+        # Add current values
+        current_l2 = l2_norms[-1] if l2_norms else 1.0
+        current_mag = magnitudes[-1] if magnitudes else 1.0
+        
+        # Detect unusual magnitude patterns
+        if len(l2_norms) > 1:
+            l2_deviation = np.std(l2_norms)
+            mag_deviation = np.std(magnitudes)
+        else:
+            l2_deviation = 0.1
+            mag_deviation = 0.1
+        
+        # Configurable thresholds for magnitude detection
+        deviation_threshold = self.config.magnitude_deviation_threshold
+        l2_anomaly = current_l2 < 0.5 or current_l2 > 2.0
+        mag_anomaly = current_mag < 0.5 or current_mag > 2.0
+        variability_anomaly = l2_deviation > deviation_threshold or mag_deviation > deviation_threshold
+        
+        is_anomaly = l2_anomaly or mag_anomaly or variability_anomaly
+        confidence = min(1.0, max(
+            abs(1.0 - current_l2) if l2_anomaly else 0.0,
+            abs(1.0 - current_mag) if mag_anomaly else 0.0,
+            (l2_deviation + mag_deviation) / 2.0 if variability_anomaly else 0.0
+        ))
+        
+        evidence = {
+            "current_l2_ratio": float(current_l2),
+            "current_magnitude_ratio": float(current_mag),
+            "l2_deviation": float(l2_deviation),
+            "magnitude_deviation": float(mag_deviation),
+            "l2_anomaly": l2_anomaly,
+            "magnitude_anomaly": mag_anomaly,
+            "variability_anomaly": variability_anomaly
+        }
+        
+        return is_anomaly, confidence, evidence
 
-        # Enhanced CUSUM detection with training dynamics consideration
-        if len(similarities) >= 1:
-            # For proper anomaly detection, we need to compare current with historical
-            # If we have multiple similarities, compare current (last) with historical (all but last)
-            if len(similarities) > 1:
-                historical_similarities = similarities[:-1]
-                historical_cosines = cosine_similarities[:-1]
-                mean_sim = np.mean(historical_similarities)
-                std_sim = np.std(historical_similarities) + 1e-8
-                mean_cosine = np.mean(historical_cosines)
-            else:
-                # Only one comparison, use it as both mean and current
-                mean_sim = similarities[0]
-                std_sim = 0.1  # Default std for single comparison
-                mean_cosine = cosine_similarities[0]
+    def _detect_distribution_anomaly(
+        self, neighbor_id: str, current_update: ParameterUpdate
+    ) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect anomalies in parameter distribution patterns."""
+        current_stats = current_update.parameter_stats
+        history = list(self.update_history[neighbor_id])
+        
+        if len(history) < 1:
+            return False, 0.0, {"error": "Insufficient history"}
+        
+        # Collect historical statistics
+        historical_means = []
+        historical_stds = []
+        for past_update in history[-3:]:  # Last 3 updates
+            historical_means.append(past_update.parameter_stats.get("global_mean", 0.0))
+            historical_stds.append(past_update.parameter_stats.get("global_std", 1.0))
+        
+        current_mean = current_stats.get("global_mean", 0.0)
+        current_std = current_stats.get("global_std", 1.0)
+        
+        # Detect distribution shifts
+        if len(historical_means) > 1:
+            mean_baseline = np.mean(historical_means)
+            std_baseline = np.mean(historical_stds)
+            
+            mean_shift = abs(current_mean - mean_baseline) / (abs(mean_baseline) + 1e-8)
+            std_shift = abs(current_std - std_baseline) / (std_baseline + 1e-8)
+        else:
+            mean_shift = 0.0
+            std_shift = 0.0
+        
+        # Configurable thresholds for distribution changes
+        shift_threshold = self.config.distribution_shift_threshold
+        mean_threshold = shift_threshold
+        std_threshold = shift_threshold
+        
+        mean_anomaly = mean_shift > mean_threshold
+        std_anomaly = std_shift > std_threshold
+        is_anomaly = mean_anomaly or std_anomaly
+        
+        confidence = min(1.0, max(
+            mean_shift / mean_threshold if mean_anomaly else 0.0,
+            std_shift / std_threshold if std_anomaly else 0.0
+        ))
+        
+        evidence = {
+            "current_mean": float(current_mean),
+            "current_std": float(current_std),
+            "mean_shift": float(mean_shift),
+            "std_shift": float(std_shift),
+            "mean_anomaly": mean_anomaly,
+            "std_anomaly": std_anomaly
+        }
+        
+        return is_anomaly, confidence, evidence
 
-            # Handle NaN values in similarity analysis
-            if np.isnan(mean_sim) or np.isnan(std_sim) or np.isnan(mean_cosine):
-                self.logger.warning(
-                    f"CUSUM analysis for {neighbor_id}: NaN values detected, skipping"
-                )
-                return (
-                    False,
-                    0.0,
-                    {"detection_method": "cusum_similarity", "error": "NaN values"},
-                )
+    def _detect_dynamics_anomaly(
+        self, neighbor_id: str, current_update: ParameterUpdate
+    ) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect anomalies in training dynamics (loss progression)."""
+        current_loss = current_update.reported_loss
+        if current_loss is None:
+            return False, 0.0, {"error": "No loss data available"}
+        
+        history = list(self.update_history[neighbor_id])
+        historical_losses = []
+        for past_update in history[-5:]:  # Look at last 5 rounds
+            if past_update.reported_loss is not None:
+                historical_losses.append(past_update.reported_loss)
+        
+        if len(historical_losses) < 2:
+            return False, 0.0, {"error": "Insufficient loss history"}
+        
+        # Analyze loss trends
+        loss_trend = np.polyfit(range(len(historical_losses)), historical_losses, 1)[0]
+        expected_loss = historical_losses[-1] + loss_trend
+        loss_surprise = abs(current_loss - expected_loss) / (abs(expected_loss) + 1e-8)
+        
+        # Detect unusual loss patterns
+        # 1. Loss increases when it should decrease (potential poisoning)
+        # 2. Loss decreases too rapidly (potential overfitting attack)
+        # 3. Loss becomes inconsistent with trend
+        
+        loss_increase_anomaly = (current_loss > expected_loss) and (loss_trend < 0)
+        rapid_decrease_anomaly = (current_loss < expected_loss * 0.5) and (loss_trend < 0)
+        trend_anomaly = loss_surprise > self.config.dynamics_surprise_threshold
+        
+        is_anomaly = loss_increase_anomaly or rapid_decrease_anomaly or trend_anomaly
+        confidence = min(1.0, loss_surprise) if is_anomaly else 0.0
+        
+        evidence = {
+            "current_loss": float(current_loss),
+            "expected_loss": float(expected_loss),
+            "loss_trend": float(loss_trend),
+            "loss_surprise": float(loss_surprise),
+            "loss_increase_anomaly": loss_increase_anomaly,
+            "rapid_decrease_anomaly": rapid_decrease_anomaly,
+            "trend_anomaly": trend_anomaly
+        }
+        
+        return is_anomaly, confidence, evidence
 
-            # Current values are always the last comparison
-            current_sim = similarities[-1]
-            current_cosine = cosine_similarities[-1]
+    def _fuse_detection_signals(
+        self, anomaly_signals: Dict[str, Dict[str, Any]]
+    ) -> Tuple[bool, float, Dict[str, Any]]:
+        """Fuse multiple detection signals using adaptive logic."""
+        # Count active detectors and their confidence levels
+        active_detectors = []
+        confidence_scores = []
+        
+        for detector_name, signal in anomaly_signals.items():
+            if signal['is_anomaly']:
+                active_detectors.append(detector_name)
+                confidence_scores.append(signal['confidence'])
+        
+        num_active = len(active_detectors)
+        max_confidence = max(confidence_scores) if confidence_scores else 0.0
+        avg_confidence = np.mean(confidence_scores) if confidence_scores else 0.0
+        
+        # Configurable fusion decision logic
+        min_detectors = self.config.min_detectors_for_early_warning
+        high_conf_threshold = self.config.high_confidence_threshold
+        is_malicious = (num_active >= min_detectors) or (num_active >= 1 and max_confidence > high_conf_threshold)
+        
+        # Overall confidence calculation
+        if num_active == 0:
+            overall_confidence = 0.0
+        elif num_active == 1:
+            overall_confidence = max_confidence * 0.7  # Single detector penalty
+        elif num_active == 2:
+            overall_confidence = avg_confidence * 0.9  # Two detector boost
+        else:  # 3+ detectors
+            overall_confidence = min(1.0, avg_confidence * 1.1)  # Multiple detector boost
+        
+        # Attack type inference based on active detectors
+        attack_indicators = []
+        if 'cosine' in active_detectors:
+            attack_indicators.append('gradient_manipulation')
+        if 'magnitude' in active_detectors:
+            attack_indicators.append('parameter_scaling')
+        if 'distribution' in active_detectors:
+            attack_indicators.append('distribution_shift')
+        if 'dynamics' in active_detectors:
+            attack_indicators.append('training_dynamics')
+        
+        fusion_evidence = {
+            "active_detectors": active_detectors,
+            "num_active_detectors": num_active,
+            "max_confidence": float(max_confidence),
+            "avg_confidence": float(avg_confidence),
+            "overall_confidence": float(overall_confidence),
+            "attack_indicators": attack_indicators,
+            "fusion_decision": is_malicious
+        }
+        
+        return is_malicious, overall_confidence, fusion_evidence
 
-            if np.isnan(current_sim) or np.isnan(current_cosine):
-                self.logger.warning(
-                    f"CUSUM analysis for {neighbor_id}: current similarity is NaN, skipping"
-                )
-                return (
-                    False,
-                    0.0,
-                    {
-                        "detection_method": "cusum_similarity",
-                        "error": "NaN current similarity",
-                    },
-                )
-
-            # Multi-criteria detection that balances sensitivity with false positive reduction
-            z_score = (mean_sim - current_sim) / std_sim  # Higher when current is lower
-            abs_z_score = abs(z_score)
-
-            # Gradient manipulation specific detection criteria
-            # 1. Low cosine similarity (< 0.7) indicates parameter manipulation
-            # 2. Consistent deviation from recent behavior (z_score > 1.2)
-            # 3. Combined similarity drop below threshold
-
-            cosine_threshold = (
-                0.7  # Cosine similarity threshold for gradient manipulation
-            )
-            z_threshold = 1.2  # Reduced from 1.5 for better sensitivity
-            combined_threshold = 0.6  # Combined similarity threshold
-
-            # Detection logic with multiple criteria
-            # Detect if cosine similarity dropped significantly
-            cosine_drop = mean_cosine - current_cosine
-            low_cosine_anomaly = (current_cosine < cosine_threshold) or (
-                cosine_drop > 0.3
-            )
-
-            # Statistical anomaly based on z-score
-            statistical_anomaly = abs_z_score > z_threshold
-
-            # Combined similarity drop
-            sim_drop = mean_sim - current_sim
-            combined_anomaly = (current_sim < combined_threshold) or (sim_drop > 0.2)
-
-            # Gradient manipulation is detected if any strong indicator is present
-            # More sensitive: detect if cosine similarity is very low OR there's a significant drop
-            is_anomaly = low_cosine_anomaly or (
-                statistical_anomaly and (combined_anomaly or current_cosine < 0.5)
-            )
-
-            # Calculate confidence score based on multiple factors
-            cosine_confidence = (
-                max(0.0, (cosine_threshold - current_cosine) / cosine_threshold)
-                if current_cosine < cosine_threshold
-                else 0.0
-            )
-            statistical_confidence = (
-                min(float(abs_z_score) / z_threshold, 2.0)
-                if abs_z_score > z_threshold
-                else 0.0
-            )
-            combined_confidence = (
-                max(0.0, (combined_threshold - current_sim) / combined_threshold)
-                if current_sim < combined_threshold
-                else 0.0
-            )
-
-            anomaly_score = float(
-                max(
-                    cosine_confidence,
-                    statistical_confidence * 0.7,
-                    combined_confidence * 0.5,
-                )
-            )
-
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: CUSUM analysis for {neighbor_id}:"
-            )
-            self.logger.info(
-                f"  mean_sim={mean_sim:.6f}, std_sim={std_sim:.6f}, current_sim={current_sim:.6f}"
-            )
-            self.logger.info(
-                f"  mean_cosine={mean_cosine:.6f}, current_cosine={current_cosine:.6f}"
-            )
-            self.logger.info(f"  z_score={z_score:.6f}, abs_z_score={abs_z_score:.6f}")
-            self.logger.info(
-                f"  low_cosine_anomaly={low_cosine_anomaly}, statistical_anomaly={statistical_anomaly}, combined_anomaly={combined_anomaly}"
-            )
-            self.logger.info(
-                f"  is_anomaly={is_anomaly}, anomaly_score={anomaly_score:.6f}"
-            )
-
-            evidence = {
-                "similarity_scores": similarities,
-                "cosine_similarities": cosine_similarities,
-                "mean_similarity": float(mean_sim),
-                "current_similarity": float(current_sim),
-                "mean_cosine": float(mean_cosine),
-                "current_cosine": float(current_cosine),
-                "z_score": float(z_score),
-                "abs_z_score": float(abs_z_score),
-                "low_cosine_anomaly": low_cosine_anomaly,
-                "statistical_anomaly": statistical_anomaly,
-                "combined_anomaly": combined_anomaly,
-                "detection_method": "cusum_gradient_manipulation",
-            }
-
-            return bool(is_anomaly), anomaly_score, evidence
-
-        return False, 0.0, {}
+    def _detect_anomalies_legacy_cusum(
+        self, neighbor_id: str, current_update: ParameterUpdate
+    ) -> Tuple[bool, float, Dict[str, Any]]:
+        """Legacy single-metric CUSUM detection for backward compatibility."""
+        # This is a simplified version of the original CUSUM method
+        # focusing on cosine similarity only
+        is_anomaly, confidence, evidence = self._detect_cosine_anomaly(neighbor_id, current_update)
+        
+        # Wrap in legacy format
+        legacy_evidence = {
+            "detection_method": "legacy_cusum_cosine",
+            "cosine_evidence": evidence
+        }
+        
+        return is_anomaly, confidence, legacy_evidence
 
     def _detect_consensus_violations(
         self, round_num: int, all_updates: Dict[str, ParameterUpdate]
@@ -720,16 +865,22 @@ class TrustMonitor:
         all_anomalies = {}
 
         self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Running CUSUM detection on {len(current_updates)} neighbors"
+            f"TRUST MONITOR {self.node_id}: Running multi-metric detection on {len(current_updates)} neighbors"
         )
 
-        # 1. CUSUM-based detection for each neighbor
+        # 1. Multi-metric or legacy detection for each neighbor
         for neighbor_id, update in current_updates.items():
-            is_anomaly, score, evidence = self._detect_anomalies_cusum(
-                neighbor_id, update
-            )
+            if self.config.enable_multi_metric_detection:
+                is_anomaly, score, evidence = self._detect_anomalies_multi_metric(
+                    neighbor_id, update
+                )
+            else:
+                # Fallback to legacy single-metric detection
+                is_anomaly, score, evidence = self._detect_anomalies_legacy_cusum(
+                    neighbor_id, update
+                )
             self.logger.info(
-                f"TRUST MONITOR {self.node_id}: CUSUM {neighbor_id} - anomaly={is_anomaly}, score={score:.3f}"
+                f"TRUST MONITOR {self.node_id}: Multi-metric {neighbor_id} - anomaly={is_anomaly}, score={score:.3f}"
             )
             if is_anomaly:
                 all_anomalies[neighbor_id] = (is_anomaly, score, evidence)

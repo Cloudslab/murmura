@@ -125,3 +125,52 @@ class TrustMonitorConfig(BaseModel):
         le=50.0,
         description="Steepness parameter for sigmoid normalization (higher = sharper transition)",
     )
+    
+    # Multi-metric detection settings
+    enable_multi_metric_detection: bool = Field(
+        default=True,
+        description="Use multi-metric fusion for enhanced detection sensitivity",
+    )
+    
+    min_detectors_for_early_warning: int = Field(
+        default=2,
+        ge=1,
+        le=4,
+        description="Minimum number of detectors required to trigger early detection",
+    )
+    
+    high_confidence_threshold: float = Field(
+        default=0.7,
+        ge=0.5,
+        le=0.95,
+        description="Confidence threshold for single-detector detection",
+    )
+    
+    # Individual detector sensitivity settings
+    cosine_sensitivity: float = Field(
+        default=0.75,
+        ge=0.5,
+        le=0.9,
+        description="Cosine similarity threshold for anomaly detection",
+    )
+    
+    magnitude_deviation_threshold: float = Field(
+        default=0.3,
+        ge=0.1,
+        le=0.5,
+        description="Threshold for magnitude deviation anomalies",
+    )
+    
+    distribution_shift_threshold: float = Field(
+        default=0.5,
+        ge=0.2,
+        le=0.8,
+        description="Threshold for parameter distribution shift detection",
+    )
+    
+    dynamics_surprise_threshold: float = Field(
+        default=0.3,
+        ge=0.1,
+        le=0.6,
+        description="Threshold for training dynamics surprise detection",
+    )

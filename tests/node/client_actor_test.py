@@ -299,10 +299,10 @@ def test_receive_data(client_actor):
     """Test receiving data partition"""
     data_partition = [0, 1, 2, 3, 4]
     metadata = {"partition_id": 0, "total_samples": 5}
-    
+
     result = ray.get(client_actor.receive_data.remote(data_partition, metadata))
     assert "test_client received 5 samples" in result
-    
+
     # Verify data was stored
     info = ray.get(client_actor.get_data_info.remote())
     assert info["data_size"] == 5
@@ -311,7 +311,7 @@ def test_receive_data(client_actor):
 def test_get_data_info_empty(client_actor):
     """Test getting data info when nothing is set"""
     info = ray.get(client_actor.get_data_info.remote())
-    
+
     assert info["client_id"] == "test_client"
     assert info["data_size"] == 0
     assert info["has_model"] is False
@@ -322,7 +322,7 @@ def test_get_data_info_empty(client_actor):
 def test_get_system_info(client_actor):
     """Test getting system information"""
     system_info = ray.get(client_actor.get_system_info.remote())
-    
+
     assert "client_id" in system_info
     assert "node_info" in system_info
     assert "has_model" in system_info
@@ -334,7 +334,7 @@ def test_get_system_info(client_actor):
 def test_health_check(client_actor):
     """Test health check functionality"""
     health_status = ray.get(client_actor.health_check.remote())
-    
+
     assert "status" in health_status
     assert "timestamp" in health_status
     assert "client_id" in health_status
@@ -344,7 +344,7 @@ def test_health_check(client_actor):
 def test_get_node_info_standalone():
     """Test standalone get_node_info function"""
     from murmura.node.client_actor import get_node_info
-    
+
     node_info = get_node_info()
     assert isinstance(node_info, dict)
     assert "node_id" in node_info
@@ -354,6 +354,6 @@ def test_get_node_info_standalone():
 def test_get_node_id_standalone():
     """Test standalone get_node_id function"""
     from murmura.node.client_actor import get_node_id
-    
+
     node_id = get_node_id()
     assert isinstance(node_id, str)

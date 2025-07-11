@@ -8,7 +8,7 @@ from .trust_events import TrustEvent, TrustAnomalyEvent, TrustScoreEvent
 
 __all__ = [
     "TrustMonitor",
-    "TrustMonitorConfig", 
+    "TrustMonitorConfig",
     "TrustEvent",
     "TrustAnomalyEvent",
     "TrustScoreEvent",

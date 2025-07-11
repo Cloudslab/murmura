@@ -1,6 +1,7 @@
 """
 Tests for data preprocessing functionality.
 """
+
 import io
 import pytest
 import numpy as np
@@ -30,9 +31,9 @@ class TestImageBytesPreprocessor:
     def image_bytes(self):
         """Create test image bytes."""
         # Create a simple test image
-        img = Image.new('RGB', (10, 10), color='red')
+        img = Image.new("RGB", (10, 10), color="red")
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG')
+        img.save(img_bytes, format="PNG")
         return img_bytes.getvalue()
 
     @pytest.fixture
@@ -51,12 +52,12 @@ class TestImageBytesPreprocessor:
     def test_init_custom_params(self):
         """Test initialization with custom parameters."""
         preprocessor = ImageBytesPreprocessor(
-            target_mode='L',
+            target_mode="L",
             normalize=False,
             normalization_factor=1.0,
-            target_size=(32, 32)
+            target_size=(32, 32),
         )
-        assert preprocessor.target_mode == 'L'
+        assert preprocessor.target_mode == "L"
         assert preprocessor.normalize is False
         assert preprocessor.normalization_factor == 1.0
         assert preprocessor.target_size == (32, 32)
@@ -100,7 +101,7 @@ class TestImageBytesPreprocessor:
         """Test basic preprocessing of image bytes."""
         data = [{"bytes": image_bytes}]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert len(result) == 1
         assert result[0].dtype == np.float32
@@ -111,16 +112,16 @@ class TestImageBytesPreprocessor:
         preprocessor = ImageBytesPreprocessor()
         data = [{"bytes": image_bytes}, {"image_bytes": image_bytes}]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert len(result) == 2
 
     def test_preprocess_with_mode_conversion(self, image_bytes):
         """Test preprocessing with mode conversion."""
-        preprocessor = ImageBytesPreprocessor(target_mode='L')
+        preprocessor = ImageBytesPreprocessor(target_mode="L")
         data = [{"bytes": image_bytes}]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert len(result[0].shape) == 2  # Grayscale should be 2D
 
@@ -129,7 +130,7 @@ class TestImageBytesPreprocessor:
         preprocessor = ImageBytesPreprocessor(normalize=False)
         data = [{"bytes": image_bytes}]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert np.any(result[0] > 1.0)  # Should have values > 1 if not normalized
 
@@ -138,7 +139,7 @@ class TestImageBytesPreprocessor:
         preprocessor = ImageBytesPreprocessor(target_size=(5, 5))
         data = [{"bytes": image_bytes}]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert result[0].shape[:2] == (5, 5)
 
@@ -167,7 +168,7 @@ class TestImagePreprocessor:
     @pytest.fixture
     def pil_image(self):
         """Create test PIL image."""
-        return Image.new('RGB', (10, 10), color='blue')
+        return Image.new("RGB", (10, 10), color="blue")
 
     @pytest.fixture
     def preprocessor(self):
@@ -187,17 +188,17 @@ class TestImagePreprocessor:
         """Test basic preprocessing of PIL images."""
         data = [pil_image]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert len(result) == 1
         assert result[0].dtype == np.float32
 
     def test_preprocess_with_mode_conversion(self, pil_image):
         """Test preprocessing with mode conversion."""
-        preprocessor = ImagePreprocessor(target_mode='L')
+        preprocessor = ImagePreprocessor(target_mode="L")
         data = [pil_image]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert len(result[0].shape) == 2  # Grayscale should be 2D
 
@@ -227,7 +228,7 @@ class TestDictPreprocessor:
         """Test preprocessing using primary key."""
         data = [{"data": [1, 2, 3], "other": [4, 5, 6]}]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         np.testing.assert_array_equal(result[0], np.array([1, 2, 3], dtype=np.float32))
 
@@ -235,7 +236,7 @@ class TestDictPreprocessor:
         """Test preprocessing without primary key."""
         data = [{"values": [1, 2, 3]}]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         np.testing.assert_array_equal(result[0], np.array([1, 2, 3], dtype=np.float32))
 
@@ -268,10 +269,12 @@ class TestNumericPreprocessor:
         """Test preprocessing numeric list."""
         data = [[1, 2, 3], [4, 5, 6]]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert result.dtype == np.float32
-        np.testing.assert_array_equal(result, np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32))
+        np.testing.assert_array_equal(
+            result, np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32)
+        )
 
 
 class TestTensorPreprocessor:
@@ -301,7 +304,7 @@ class TestTensorPreprocessor:
         """Test preprocessing numpy arrays."""
         data = [np.array([1, 2, 3]), np.array([4, 5, 6])]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         assert result.dtype == np.float32
 
@@ -309,10 +312,10 @@ class TestTensorPreprocessor:
         """Test preprocessing tensor-like objects."""
         mock_tensor = Mock()
         mock_tensor.numpy.return_value = np.array([1, 2, 3])
-        
+
         data = [mock_tensor]
         result = preprocessor.preprocess(data)
-        
+
         assert isinstance(result, np.ndarray)
         mock_tensor.numpy.assert_called_once()
 
@@ -352,10 +355,11 @@ class TestGenericDataPreprocessor:
 
     def test_preprocess_features_unsupported_type(self, preprocessor):
         """Test preprocessing unsupported data type."""
+
         # Create a custom object that no preprocessor can handle
         class UnsupportedType:
             pass
-        
+
         data = [UnsupportedType()]
         with pytest.raises(ValueError, match="Cannot preprocess data of type"):
             preprocessor.preprocess_features(data)
@@ -365,7 +369,7 @@ class TestGenericDataPreprocessor:
         initial_count = len(preprocessor.preprocessors)
         new_preprocessor = NumericPreprocessor()
         preprocessor.add_preprocessor(new_preprocessor)
-        
+
         assert len(preprocessor.preprocessors) == initial_count + 1
         assert preprocessor.preprocessors[-1] is new_preprocessor
 
@@ -374,33 +378,35 @@ class TestGenericDataPreprocessor:
         initial_count = len(preprocessor.preprocessors)
         new_preprocessor = NumericPreprocessor()
         preprocessor.add_preprocessor(new_preprocessor, priority=0)
-        
+
         assert len(preprocessor.preprocessors) == initial_count + 1
         assert preprocessor.preprocessors[0] is new_preprocessor
 
     def test_preprocess_image_from_dict_pil(self):
         """Test _preprocess_image_from_dict with PIL image."""
-        img = Image.new('RGB', (5, 5), color='red')
+        img = Image.new("RGB", (5, 5), color="red")
         result = GenericDataPreprocessor._preprocess_image_from_dict(img)
-        
+
         assert isinstance(result, np.ndarray)
         assert result.dtype == np.float32
         assert np.all(result >= 0.0) and np.all(result <= 1.0)
 
     def test_preprocess_image_from_dict_bytes(self):
         """Test _preprocess_image_from_dict with image bytes."""
-        img = Image.new('RGB', (5, 5), color='red')
+        img = Image.new("RGB", (5, 5), color="red")
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG')
-        
-        result = GenericDataPreprocessor._preprocess_image_from_dict(img_bytes.getvalue())
+        img.save(img_bytes, format="PNG")
+
+        result = GenericDataPreprocessor._preprocess_image_from_dict(
+            img_bytes.getvalue()
+        )
         assert isinstance(result, np.ndarray)
 
     def test_preprocess_image_from_dict_array(self):
         """Test _preprocess_image_from_dict with array."""
         data = [1, 2, 3]
         result = GenericDataPreprocessor._preprocess_image_from_dict(data)
-        
+
         assert isinstance(result, np.ndarray)
         np.testing.assert_array_equal(result, np.array([1, 2, 3], dtype=np.float32))
 
@@ -420,7 +426,7 @@ class TestFactoryFunctions:
         assert isinstance(preprocessor, GenericDataPreprocessor)
         # Check that target_mode is set to 'L' for grayscale
         image_byte_proc = preprocessor.preprocessors[1]
-        assert image_byte_proc.target_mode == 'L'
+        assert image_byte_proc.target_mode == "L"
 
     def test_create_text_preprocessor(self):
         """Test create_text_preprocessor."""
@@ -440,35 +446,35 @@ class TestHelperFunctions:
 
     def test_process_dict_image_pil(self):
         """Test _process_dict_image with PIL image."""
-        img = Image.new('RGB', (5, 5), color='red')
+        img = Image.new("RGB", (5, 5), color="red")
         result = _process_dict_image(img, None, True)
-        
+
         assert isinstance(result, np.ndarray)
         assert result.dtype == np.float32
 
     def test_process_dict_image_with_mode(self):
         """Test _process_dict_image with mode conversion."""
-        img = Image.new('RGB', (5, 5), color='red')
-        result = _process_dict_image(img, 'L', True)
-        
+        img = Image.new("RGB", (5, 5), color="red")
+        result = _process_dict_image(img, "L", True)
+
         assert isinstance(result, np.ndarray)
         assert len(result.shape) == 2  # Grayscale
 
     def test_process_image_bytes(self):
         """Test _process_image_bytes."""
-        img = Image.new('RGB', (10, 10), color='red')
+        img = Image.new("RGB", (10, 10), color="red")
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG')
-        
+        img.save(img_bytes, format="PNG")
+
         result = _process_image_bytes(img_bytes.getvalue(), None, True, None)
         assert isinstance(result, np.ndarray)
 
     def test_process_image_bytes_with_resize(self):
         """Test _process_image_bytes with resize."""
-        img = Image.new('RGB', (10, 10), color='red')
+        img = Image.new("RGB", (10, 10), color="red")
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG')
-        
+        img.save(img_bytes, format="PNG")
+
         result = _process_image_bytes(img_bytes.getvalue(), None, True, (5, 5))
         assert result.shape[:2] == (5, 5)
 

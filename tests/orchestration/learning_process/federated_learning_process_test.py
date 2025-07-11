@@ -90,7 +90,7 @@ def mock_cluster_manager(mock_topology_manager):
         "dp_enabled": False,
         "epsilon": 0.0,
         "delta": 0.0,
-        "client_count": 3
+        "client_count": 3,
     }
 
     return cluster_manager
@@ -181,7 +181,13 @@ def test_execute_training_rounds(federated_learning_process, mock_cluster_manage
     assert mock_cluster_manager.train_models.call_count == 2
 
     # Verify each training call had the correct parameters
-    expected_call = call(client_sampling_rate=1.0, data_sampling_rate=1.0, epochs=1, batch_size=32, verbose=True)
+    expected_call = call(
+        client_sampling_rate=1.0,
+        data_sampling_rate=1.0,
+        epochs=1,
+        batch_size=32,
+        verbose=True,
+    )
     mock_cluster_manager.train_models.assert_has_calls([expected_call, expected_call])
 
 
@@ -294,7 +300,13 @@ def test_different_learning_configurations(
     process.training_monitor = MagicMock()
     process.execute()
     assert mock_cluster_manager.train_models.call_count == rounds
-    expected_call = call(client_sampling_rate=1.0, data_sampling_rate=1.0, epochs=epochs, batch_size=batch_size, verbose=True)
+    expected_call = call(
+        client_sampling_rate=1.0,
+        data_sampling_rate=1.0,
+        epochs=epochs,
+        batch_size=batch_size,
+        verbose=True,
+    )
     mock_cluster_manager.train_models.assert_has_calls([expected_call] * rounds)
 
 

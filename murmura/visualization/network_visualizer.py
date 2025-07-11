@@ -80,8 +80,12 @@ class NetworkVisualizer(TrainingObserver):
         # Attack tracking data structures
         self.attack_events: List[Dict[str, Any]] = []  # All attack events
         self.malicious_nodes: set[int] = set()  # Track which nodes are malicious
-        self.attack_history: Dict[int, List[Dict[str, Any]]] = {}  # Per-node attack history
-        self.attack_intensity_history: Dict[int, List[float]] = {}  # Track intensity over time
+        self.attack_history: Dict[
+            int, List[Dict[str, Any]]
+        ] = {}  # Per-node attack history
+        self.attack_intensity_history: Dict[
+            int, List[float]
+        ] = {}  # Track intensity over time
         self.attack_detection_events: List[Dict[str, Any]] = []  # Detection events
 
     def set_topology(self, topology_manager: TopologyManager) -> None:
@@ -420,10 +424,10 @@ class NetworkVisualizer(TrainingObserver):
         # Handle attack events
         elif isinstance(event, (LabelFlippingEvent, GradientManipulationEvent)):
             self._handle_attack_event(event, frame, event_data, description)
-        
+
         elif isinstance(event, AttackSummaryEvent):
             self._handle_attack_summary(event, frame, event_data, description)
-        
+
         elif isinstance(event, AttackDetectionEvent):
             self._handle_attack_detection(event, frame, event_data, description)
 
@@ -435,29 +439,36 @@ class NetworkVisualizer(TrainingObserver):
         frame["parameter_history"] = {
             node: history.copy() for node, history in self.parameter_history.items()
         }
-        
+
         # Add attack data to all frames
         frame["attack_events"] = self.attack_events.copy()
         frame["malicious_nodes"] = list(self.malicious_nodes)
         frame["attack_intensity_history"] = {
-            node: history.copy() for node, history in self.attack_intensity_history.items()
+            node: history.copy()
+            for node, history in self.attack_intensity_history.items()
         }
 
         self.frames.append(frame)
         self.frame_descriptions.append(description)
         self.event_log.append(event_data)
 
-    def _handle_attack_event(self, event: AttackEvent, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+    def _handle_attack_event(
+        self,
+        event: AttackEvent,
+        frame: Dict[str, Any],
+        event_data: Dict[str, Any],
+        description: str,
+    ) -> None:
         """Handle label flipping and gradient manipulation attack events."""
         # Track malicious nodes
         self.malicious_nodes.update(event.malicious_clients)
-        
+
         # Record attack intensity for each malicious client
         for client_id in event.malicious_clients:
             if client_id not in self.attack_intensity_history:
                 self.attack_intensity_history[client_id] = []
             self.attack_intensity_history[client_id].append(event.attack_intensity)
-        
+
         # Create attack event record
         attack_record = {
             "timestamp": event.timestamp,
@@ -465,73 +476,97 @@ class NetworkVisualizer(TrainingObserver):
             "attack_type": event.attack_type,
             "malicious_clients": event.malicious_clients,
             "attack_intensity": event.attack_intensity,
-            "num_malicious_clients": event.num_malicious_clients
+            "num_malicious_clients": event.num_malicious_clients,
         }
-        
+
         # Add specific attack details
         if isinstance(event, LabelFlippingEvent):
-            attack_record.update({
-                "samples_poisoned": event.samples_poisoned,
-                "total_samples_poisoned": event.total_samples_poisoned,
-                "target_label": event.target_label,
-                "source_label": event.source_label
-            })
-            
+            attack_record.update(
+                {
+                    "samples_poisoned": event.samples_poisoned,
+                    "total_samples_poisoned": event.total_samples_poisoned,
+                    "target_label": event.target_label,
+                    "source_label": event.source_label,
+                }
+            )
+
         elif isinstance(event, GradientManipulationEvent):
-            attack_record.update({
-                "parameters_modified": event.parameters_modified,
-                "total_parameters_modified": event.total_parameters_modified,
-                "noise_scale": event.noise_scale,
-                "sign_flip_prob": event.sign_flip_prob
-            })
-        
+            attack_record.update(
+                {
+                    "parameters_modified": event.parameters_modified,
+                    "total_parameters_modified": event.total_parameters_modified,
+                    "noise_scale": event.noise_scale,
+                    "sign_flip_prob": event.sign_flip_prob,
+                }
+            )
+
         self.attack_events.append(attack_record)
-        
+
         # Update frame data
         frame["attack_active"] = True
         frame["current_attack"] = attack_record
         frame["malicious_nodes_current"] = event.malicious_clients
-        
-        # Update event data for CSV
-        event_data.update({
-            "attack_type": event.attack_type,
-            "malicious_clients": ",".join(map(str, event.malicious_clients)),
-            "attack_intensity": event.attack_intensity,
-            "num_malicious_clients": event.num_malicious_clients
-        })
-        
-        if isinstance(event, LabelFlippingEvent):
-            event_data.update({
-                "total_samples_poisoned": event.total_samples_poisoned,
-                "target_label": event.target_label,
-                "source_label": event.source_label
-            })
-        elif isinstance(event, GradientManipulationEvent):
-            event_data.update({
-                "total_parameters_modified": event.total_parameters_modified,
-                "noise_scale": event.noise_scale,
-                "sign_flip_prob": event.sign_flip_prob
-            })
 
-    def _handle_attack_summary(self, event: AttackSummaryEvent, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        # Update event data for CSV
+        event_data.update(
+            {
+                "attack_type": event.attack_type,
+                "malicious_clients": ",".join(map(str, event.malicious_clients)),
+                "attack_intensity": event.attack_intensity,
+                "num_malicious_clients": event.num_malicious_clients,
+            }
+        )
+
+        if isinstance(event, LabelFlippingEvent):
+            event_data.update(
+                {
+                    "total_samples_poisoned": event.total_samples_poisoned,
+                    "target_label": event.target_label,
+                    "source_label": event.source_label,
+                }
+            )
+        elif isinstance(event, GradientManipulationEvent):
+            event_data.update(
+                {
+                    "total_parameters_modified": event.total_parameters_modified,
+                    "noise_scale": event.noise_scale,
+                    "sign_flip_prob": event.sign_flip_prob,
+                }
+            )
+
+    def _handle_attack_summary(
+        self,
+        event: AttackSummaryEvent,
+        frame: Dict[str, Any],
+        event_data: Dict[str, Any],
+        description: str,
+    ) -> None:
         """Handle attack summary events."""
         attack_summary_record = {
             "timestamp": event.timestamp,
             "round_num": event.round_num,
             "attack_statistics": event.attack_statistics,
-            "global_attack_metrics": event.global_attack_metrics
+            "global_attack_metrics": event.global_attack_metrics,
         }
-        
-        self.attack_events.append(attack_summary_record)
-        
-        frame["attack_summary"] = attack_summary_record
-        
-        event_data.update({
-            "attack_statistics": str(event.attack_statistics),
-            "global_attack_metrics": str(event.global_attack_metrics)
-        })
 
-    def _handle_attack_detection(self, event: AttackDetectionEvent, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        self.attack_events.append(attack_summary_record)
+
+        frame["attack_summary"] = attack_summary_record
+
+        event_data.update(
+            {
+                "attack_statistics": str(event.attack_statistics),
+                "global_attack_metrics": str(event.global_attack_metrics),
+            }
+        )
+
+    def _handle_attack_detection(
+        self,
+        event: AttackDetectionEvent,
+        frame: Dict[str, Any],
+        event_data: Dict[str, Any],
+        description: str,
+    ) -> None:
         """Handle attack detection events."""
         detection_record = {
             "timestamp": event.timestamp,
@@ -539,19 +574,23 @@ class NetworkVisualizer(TrainingObserver):
             "suspected_malicious_clients": event.suspected_malicious_clients,
             "detection_metrics": event.detection_metrics,
             "detection_method": event.detection_method,
-            "confidence_scores": event.confidence_scores
+            "confidence_scores": event.confidence_scores,
         }
-        
+
         self.attack_detection_events.append(detection_record)
-        
+
         frame["attack_detection"] = detection_record
-        
-        event_data.update({
-            "suspected_malicious_clients": ",".join(map(str, event.suspected_malicious_clients)),
-            "detection_method": event.detection_method,
-            "detection_metrics": str(event.detection_metrics),
-            "confidence_scores": str(event.confidence_scores)
-        })
+
+        event_data.update(
+            {
+                "suspected_malicious_clients": ",".join(
+                    map(str, event.suspected_malicious_clients)
+                ),
+                "detection_method": event.detection_method,
+                "detection_metrics": str(event.detection_metrics),
+                "confidence_scores": str(event.confidence_scores),
+            }
+        )
 
     def export_to_csv(self, prefix: str = "training_data") -> None:
         """
@@ -861,13 +900,15 @@ class NetworkVisualizer(TrainingObserver):
 
         # 8. Export attack events
         if self.attack_events:
-            attack_csv_path = os.path.join(self.output_dir, f"{prefix}_attack_events.csv")
+            attack_csv_path = os.path.join(
+                self.output_dir, f"{prefix}_attack_events.csv"
+            )
             with open(attack_csv_path, "w", newline="", encoding="utf-8") as f:
                 # Get all possible field names from all attack events
                 all_fieldnames: set[str] = set()
                 for event in self.attack_events:
                     all_fieldnames.update(event.keys())
-                
+
                 fieldnames = sorted(all_fieldnames)
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
@@ -876,29 +917,37 @@ class NetworkVisualizer(TrainingObserver):
 
         # 9. Export attack intensity history
         if self.attack_intensity_history:
-            intensity_csv_path = os.path.join(self.output_dir, f"{prefix}_attack_intensity.csv")
+            intensity_csv_path = os.path.join(
+                self.output_dir, f"{prefix}_attack_intensity.csv"
+            )
             with open(intensity_csv_path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=["node_id", "round_num", "attack_intensity"])
+                writer = csv.DictWriter(
+                    f, fieldnames=["node_id", "round_num", "attack_intensity"]
+                )
                 writer.writeheader()
-                
+
                 for node_id, intensities in self.attack_intensity_history.items():
                     for round_num, intensity in enumerate(intensities, 1):
-                        writer.writerow({
-                            "node_id": node_id,
-                            "round_num": round_num,
-                            "attack_intensity": intensity
-                        })
+                        writer.writerow(
+                            {
+                                "node_id": node_id,
+                                "round_num": round_num,
+                                "attack_intensity": intensity,
+                            }
+                        )
             print(f"Attack intensity history exported to {intensity_csv_path}")
 
         # 10. Export attack detection events
         if self.attack_detection_events:
-            detection_csv_path = os.path.join(self.output_dir, f"{prefix}_attack_detection.csv")
+            detection_csv_path = os.path.join(
+                self.output_dir, f"{prefix}_attack_detection.csv"
+            )
             with open(detection_csv_path, "w", newline="", encoding="utf-8") as f:
                 # Get all possible field names from all detection events
                 all_fieldnames: set[str] = set()
                 for event in self.attack_detection_events:
                     all_fieldnames.update(event.keys())
-                
+
                 fieldnames = sorted(all_fieldnames)
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
@@ -907,21 +956,31 @@ class NetworkVisualizer(TrainingObserver):
 
         # 11. Export malicious nodes summary
         if self.malicious_nodes:
-            malicious_csv_path = os.path.join(self.output_dir, f"{prefix}_malicious_nodes.csv")
+            malicious_csv_path = os.path.join(
+                self.output_dir, f"{prefix}_malicious_nodes.csv"
+            )
             with open(malicious_csv_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=["node_id", "is_malicious"])
                 writer.writeheader()
-                
+
                 # Write all nodes with their malicious status
-                all_nodes = set(range(len(self.node_identifiers))) if self.node_identifiers else self.malicious_nodes
+                all_nodes = (
+                    set(range(len(self.node_identifiers)))
+                    if self.node_identifiers
+                    else self.malicious_nodes
+                )
                 for node_id in all_nodes:
-                    writer.writerow({
-                        "node_id": node_id,
-                        "is_malicious": node_id in self.malicious_nodes
-                    })
+                    writer.writerow(
+                        {
+                            "node_id": node_id,
+                            "is_malicious": node_id in self.malicious_nodes,
+                        }
+                    )
             print(f"Malicious nodes summary exported to {malicious_csv_path}")
 
-        print(f"All training data (including attack data) exported to {self.output_dir}")
+        print(
+            f"All training data (including attack data) exported to {self.output_dir}"
+        )
 
     def render_training_animation(
         self, filename: str = "training_animation.mp4", fps: int = 1

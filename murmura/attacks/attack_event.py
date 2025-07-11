@@ -15,7 +15,7 @@ class AttackEvent(TrainingEvent):
         attack_type: str,
         malicious_clients: List[int],
         attack_intensity: float,
-        attack_config: Dict[str, Any]
+        attack_config: Dict[str, Any],
     ):
         """
         Args:
@@ -44,7 +44,7 @@ class LabelFlippingEvent(AttackEvent):
         attack_config: Dict[str, Any],
         samples_poisoned: Dict[int, int],  # client_id -> num_samples_poisoned
         target_label: Optional[int] = None,
-        source_label: Optional[int] = None
+        source_label: Optional[int] = None,
     ):
         """
         Args:
@@ -56,7 +56,13 @@ class LabelFlippingEvent(AttackEvent):
             target_label (Optional[int]): Target label for flipping.
             source_label (Optional[int]): Source label for flipping.
         """
-        super().__init__(round_num, "label_flipping", malicious_clients, attack_intensity, attack_config)
+        super().__init__(
+            round_num,
+            "label_flipping",
+            malicious_clients,
+            attack_intensity,
+            attack_config,
+        )
         self.samples_poisoned = samples_poisoned
         self.target_label = target_label
         self.source_label = source_label
@@ -72,9 +78,11 @@ class GradientManipulationEvent(AttackEvent):
         malicious_clients: List[int],
         attack_intensity: float,
         attack_config: Dict[str, Any],
-        parameters_modified: Dict[int, List[str]],  # client_id -> list of parameter names
+        parameters_modified: Dict[
+            int, List[str]
+        ],  # client_id -> list of parameter names
         noise_scale: float,
-        sign_flip_prob: float
+        sign_flip_prob: float,
     ):
         """
         Args:
@@ -86,11 +94,19 @@ class GradientManipulationEvent(AttackEvent):
             noise_scale (float): Scale factor for gradient noise.
             sign_flip_prob (float): Probability of flipping gradient signs.
         """
-        super().__init__(round_num, "gradient_manipulation", malicious_clients, attack_intensity, attack_config)
+        super().__init__(
+            round_num,
+            "gradient_manipulation",
+            malicious_clients,
+            attack_intensity,
+            attack_config,
+        )
         self.parameters_modified = parameters_modified
         self.noise_scale = noise_scale
         self.sign_flip_prob = sign_flip_prob
-        self.total_parameters_modified = sum(len(params) for params in parameters_modified.values())
+        self.total_parameters_modified = sum(
+            len(params) for params in parameters_modified.values()
+        )
 
 
 class AttackSummaryEvent(TrainingEvent):
@@ -100,7 +116,7 @@ class AttackSummaryEvent(TrainingEvent):
         self,
         round_num: int,
         attack_statistics: Dict[str, Any],
-        global_attack_metrics: Dict[str, Any]
+        global_attack_metrics: Dict[str, Any],
     ):
         """
         Args:
@@ -122,7 +138,7 @@ class AttackDetectionEvent(TrainingEvent):
         suspected_malicious_clients: List[int],
         detection_metrics: Dict[str, Any],
         detection_method: str,
-        confidence_scores: Dict[int, float]  # client_id -> confidence score
+        confidence_scores: Dict[int, float],  # client_id -> confidence score
     ):
         """
         Args:

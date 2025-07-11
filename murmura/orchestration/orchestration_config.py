@@ -106,13 +106,13 @@ class OrchestrationConfig(BaseModel):
     # Attack configuration for model poisoning research
     attack_config: Optional[AttackConfig] = Field(
         default=None,
-        description="Configuration for model poisoning attacks (for research purposes)"
+        description="Configuration for model poisoning attacks (for research purposes)",
     )
 
     # Trust monitoring configuration for malicious behavior detection
     trust_monitoring: Optional[TrustMonitorConfig] = Field(
         default=None,
-        description="Configuration for trust monitoring in decentralized learning"
+        description="Configuration for trust monitoring in decentralized learning",
     )
 
     @model_validator(mode="after")
@@ -214,20 +214,26 @@ class OrchestrationConfig(BaseModel):
 
     def get_malicious_client_indices(self) -> List[int]:
         """Get list of client indices that should be malicious."""
-        if self.attack_config is None or self.attack_config.malicious_clients_ratio <= 0:
+        if (
+            self.attack_config is None
+            or self.attack_config.malicious_clients_ratio <= 0
+        ):
             return []
-        
-        num_malicious = int(self.num_actors * self.attack_config.malicious_clients_ratio)
-        
+
+        num_malicious = int(
+            self.num_actors * self.attack_config.malicious_clients_ratio
+        )
+
         # Ensure at least 1 malicious client if ratio > 0
         if num_malicious == 0 and self.attack_config.malicious_clients_ratio > 0:
             num_malicious = 1
-        
+
         # Ensure not more than total actors
         num_malicious = min(num_malicious, self.num_actors)
-        
+
         # Randomly select malicious clients
         import random
+
         malicious_indices = random.sample(range(self.num_actors), num_malicious)
-        
+
         return sorted(malicious_indices)

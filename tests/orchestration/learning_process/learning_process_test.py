@@ -55,6 +55,7 @@ def test_initialization(learning_process, mock_dataset, mock_model):
     """Test proper initialization of learning process"""
     # Config is now converted to OrchestrationConfig object
     from murmura.orchestration.orchestration_config import OrchestrationConfig
+
     assert isinstance(learning_process.config, OrchestrationConfig)
     assert learning_process.config.num_actors == 10  # Default value
     assert learning_process.config.feature_columns == ["image"]  # Default value
@@ -78,20 +79,17 @@ def test_initialize(mock_cluster_manager_class, learning_process, mock_dataset):
     # Setup mocks
     mock_cluster_manager = MagicMock()
     mock_cluster_manager_class.return_value = mock_cluster_manager
-    
+
     # Mock the required methods and return values
     mock_cluster_manager.get_cluster_stats.return_value = {
-        "cluster_info": {
-            "total_nodes": 1,
-            "is_multinode": False
-        }
+        "cluster_info": {"total_nodes": 1, "is_multinode": False}
     }
     mock_cluster_manager.validate_actor_dataset_state.return_value = {
         "valid_actors": 3,
         "invalid_actors": 0,
         "total_actors": 3,
         "errors": [],
-        "actor_details": []
+        "actor_details": [],
     }
 
     mock_topology_config = TopologyConfig(topology_type=TopologyType.STAR)
@@ -111,6 +109,7 @@ def test_initialize(mock_cluster_manager_class, learning_process, mock_dataset):
     mock_cluster_manager_class.assert_called_once()
     created_config = mock_cluster_manager_class.call_args[0][0]
     from murmura.orchestration.orchestration_config import OrchestrationConfig
+
     assert isinstance(created_config, OrchestrationConfig)
 
     # Verify aggregation strategy was set

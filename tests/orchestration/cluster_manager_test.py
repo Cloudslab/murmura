@@ -21,10 +21,7 @@ def ray_init():
 @pytest.fixture
 def cluster_manager(ray_init):
     """Create a basic cluster manager"""
-    config = OrchestrationConfig(
-        feature_columns=["image"],
-        label_column="label"
-    )
+    config = OrchestrationConfig(feature_columns=["image"], label_column="label")
     return ClusterManager(config=config)
 
 
@@ -143,7 +140,7 @@ def test_aggregate_model_parameters_without_coordinator(cluster_manager):
 def test_get_cluster_stats(cluster_manager):
     """Test getting cluster statistics"""
     stats = cluster_manager.get_cluster_stats()
-    
+
     assert "cluster_info" in stats
     assert "num_actors" in stats
     assert "placement_strategy" in stats
@@ -156,7 +153,7 @@ def test_set_aggregation_strategy(cluster_manager):
     """Test setting aggregation strategy"""
     aggregation_config = AggregationConfig(strategy_type=AggregationStrategyType.FEDAVG)
     cluster_manager.set_aggregation_strategy(aggregation_config)
-    
+
     assert cluster_manager.aggregation_strategy is not None
     assert cluster_manager.aggregation_strategy.__class__.__name__ == "FedAvg"
 
@@ -166,12 +163,13 @@ def test_get_compatible_strategies_with_topology(cluster_manager):
     num_actors = 3
     topology = TopologyConfig(topology_type=TopologyType.STAR)
     cluster_manager.create_actors(num_actors, topology)
-    
+
     strategies = cluster_manager.get_compatible_strategies()
-    
+
     assert isinstance(strategies, list)
     assert len(strategies) > 0
     assert "fedavg" in strategies
+
 
 def test_shutdown():
     """Test cluster shutdown functionality"""

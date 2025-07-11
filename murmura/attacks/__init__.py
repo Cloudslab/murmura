@@ -9,8 +9,4 @@ from .attack_config import AttackConfig
 from .label_flipping import LabelFlippingAttack
 from .gradient_manipulation import GradientManipulationAttack
 
-__all__ = [
-    "AttackConfig",
-    "LabelFlippingAttack", 
-    "GradientManipulationAttack"
-]
+__all__ = ["AttackConfig", "LabelFlippingAttack", "GradientManipulationAttack"]
