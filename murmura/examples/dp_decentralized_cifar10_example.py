@@ -33,6 +33,9 @@ from typing import Union
 # Import attack components
 from murmura.attacks.attack_config import AttackConfig
 
+# Import trust monitoring components
+from murmura.trust_monitoring.trust_config import TrustMonitorConfig
+
 
 def setup_logging(log_level: str = "INFO") -> None:
     """Set up logging configuration"""
@@ -267,12 +270,29 @@ def main() -> None:
         help="Round to start attacks",
     )
 
+    # Trust monitoring arguments
+    parser.add_argument(
+        "--enable_trust_monitoring",
+        action="store_true",
+        help="Enable trust monitoring for malicious behavior detection",
+    )
+
     # Visualization arguments
     parser.add_argument(
         "--vis_dir",
         type=str,
         default="./visualizations_decentralized_cifar10",
         help="Directory to save visualizations",
+    )
+    parser.add_argument(
+        "--create_animation",
+        action="store_true",
+        help="Create animation of the training process",
+    )
+    parser.add_argument(
+        "--create_frames",
+        action="store_true",
+        help="Create individual frames of the training process",
     )
     parser.add_argument(
         "--create_summary",
@@ -412,6 +432,14 @@ def main() -> None:
         else:
             logger.info("Model poisoning attacks are DISABLED")
 
+        # Create trust monitoring configuration if enabled
+        trust_config = None
+        if args.enable_trust_monitoring:
+            logger.info("=== Trust monitoring ENABLED ===")
+            trust_config = TrustMonitorConfig(enable_trust_monitoring=True)
+        else:
+            logger.info("Trust monitoring is DISABLED")
+
         # Ray cluster configuration
         ray_cluster_config = RayClusterConfig(
             logging_level=args.log_level,
@@ -468,6 +496,7 @@ def main() -> None:
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
             attack_config=attack_config,
+            trust_monitoring=trust_config,
         )
 
         # Verify topology compatibility
@@ -535,7 +564,7 @@ def main() -> None:
 
         # Set up visualization if requested
         visualizer = None
-        if args.create_summary:
+        if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
             if args.experiment_name:
                 vis_dir = os.path.join(args.vis_dir, args.experiment_name)
@@ -647,14 +676,53 @@ def main() -> None:
                         f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
                     )
 
-            # Create visualization if requested
-            if visualizer and args.create_summary:
-                logger.info("=== Generating Visualization ===")
-                visualizer.render_summary_plot(
-                    filename=f"decentralized_cifar10_{args.model}_{args.topology}_{args.aggregation_strategy}"
-                    + ("_dp" if args.enable_dp else "_no_dp")
-                    + "_summary.png"
-                )
+            # Display trust monitoring results if enabled
+            if args.enable_trust_monitoring:
+                logger.info("=== Trust Monitoring Results ===")
+                trust_results = results.get("trust_monitoring", {})
+                
+                if trust_results.get("enabled", False):
+                    trust_summary = trust_results.get("final_summary", {})
+                    global_suspicious = trust_results.get("global_suspicious_detected", [])
+                    
+                    logger.info(f"Trust monitoring enabled for {len(trust_summary)} honest nodes")
+                    
+                    # Show summary of suspicious behavior using relative detection
+                    if global_suspicious:
+                        logger.warning(f"⚠️  Trust monitoring detected {len(global_suspicious)} suspicious neighbors: {global_suspicious}")
+                        for node_idx, node_summary in trust_summary.items():
+                            suspicious = node_summary.get("suspicious_neighbors", [])
+                            if suspicious:
+                                relative_threshold = node_summary.get("relative_threshold", "N/A")
+                                logger.warning(f"  Node {node_idx} flagged: {suspicious} (threshold: {relative_threshold:.3f})")
+                    else:
+                        logger.info("✓ No malicious behavior detected")
+                else:
+                    logger.info("Trust monitoring was not active during training")
+
+            # Generate visualizations if requested
+            if visualizer and (
+                args.create_animation or args.create_frames or args.create_summary
+            ):
+                logger.info("=== Generating Visualizations ===")
+                if args.create_animation:
+                    logger.info("Creating animation...")
+                    visualizer.render_training_animation(
+                        filename=f"dp_decentralized_cifar10_{args.topology}_{args.aggregation_strategy}"
+                        + ("_dp" if args.enable_dp else "_no_dp")
+                        + "_animation.mp4",
+                        fps=2
+                    )
+                if args.create_frames:
+                    logger.info("Creating individual frames...")
+                    visualizer.render_training_frames()
+                if args.create_summary:
+                    logger.info("Creating summary plot...")
+                    visualizer.render_summary_plot(
+                        filename=f"decentralized_cifar10_{args.model}_{args.topology}_{args.aggregation_strategy}"
+                        + ("_dp" if args.enable_dp else "_no_dp")
+                        + "_summary.png"
+                    )
 
             # Save model
             logger.info("=== Saving Model ===")

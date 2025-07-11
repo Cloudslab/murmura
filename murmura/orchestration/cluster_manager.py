@@ -76,6 +76,14 @@ class ClusterManager:
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(formatter)
             logger.addHandler(console_handler)
+            
+            # Add file handler for Ray actors
+            try:
+                file_handler = logging.FileHandler("dp_decentralized_mnist.log")
+                file_handler.setFormatter(formatter)
+                logger.addHandler(file_handler)
+            except Exception as e:
+                logging.getLogger("murmura").warning(f"Could not add file handler: {e}")
 
     def _initialize_ray_cluster(self) -> None:
         """Initialize Ray cluster with multi-node support"""

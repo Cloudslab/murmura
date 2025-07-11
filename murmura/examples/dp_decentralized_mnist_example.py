@@ -30,6 +30,9 @@ from murmura.privacy.privacy_accountant import PrivacyAccountant
 # Import attack components
 from murmura.attacks.attack_config import AttackConfig
 
+# Import trust monitoring components
+from murmura.trust_monitoring.trust_config import TrustMonitorConfig
+
 
 def create_mnist_preprocessor():
     """
@@ -56,6 +59,11 @@ def create_mnist_preprocessor():
 
 def setup_logging(log_level: str = "INFO") -> None:
     """Set up logging configuration"""
+    import os
+    
+    # Force Ray to use our log file
+    os.environ["RAY_DEDUP_LOGS"] = "0"
+    
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -63,6 +71,7 @@ def setup_logging(log_level: str = "INFO") -> None:
             logging.StreamHandler(),
             logging.FileHandler("dp_decentralized_mnist.log"),
         ],
+        force=True,
     )
 
 
@@ -242,6 +251,13 @@ def main() -> None:
         type=int,
         default=1,
         help="Round to start attacks",
+    )
+
+    # Trust monitoring arguments
+    parser.add_argument(
+        "--enable_trust_monitoring",
+        action="store_true",
+        help="Enable trust monitoring for malicious behavior detection",
     )
 
     # Multi-node Ray cluster arguments
@@ -539,6 +555,14 @@ def main() -> None:
         else:
             logger.info("Model poisoning attacks are DISABLED")
 
+        # Create trust monitoring configuration if enabled
+        trust_config = None
+        if args.enable_trust_monitoring:
+            logger.info("=== Trust monitoring ENABLED ===")
+            trust_config = TrustMonitorConfig(enable_trust_monitoring=True)
+        else:
+            logger.info("Trust monitoring is DISABLED")
+
         config = OrchestrationConfig(
             num_actors=args.num_actors,
             partition_strategy=args.partition_strategy,
@@ -569,6 +593,7 @@ def main() -> None:
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
             attack_config=attack_config,
+            trust_monitoring=trust_config,
         )
 
         logger.info("=== Loading MNIST Dataset ===")
@@ -833,6 +858,30 @@ def main() -> None:
                     logger.info(
                         f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
                     )
+
+            # Display trust monitoring results if enabled
+            if args.enable_trust_monitoring:
+                logger.info("=== Trust Monitoring Results ===")
+                trust_results = results.get("trust_monitoring", {})
+                
+                if trust_results.get("enabled", False):
+                    trust_summary = trust_results.get("final_summary", {})
+                    global_suspicious = trust_results.get("global_suspicious_detected", [])
+                    
+                    logger.info(f"Trust monitoring enabled for {len(trust_summary)} honest nodes")
+                    
+                    # Show summary of suspicious behavior using relative detection
+                    if global_suspicious:
+                        logger.warning(f"⚠️  Trust monitoring detected {len(global_suspicious)} suspicious neighbors: {global_suspicious}")
+                        for node_idx, node_summary in trust_summary.items():
+                            suspicious = node_summary.get("suspicious_neighbors", [])
+                            if suspicious:
+                                relative_threshold = node_summary.get("relative_threshold", "N/A")
+                                logger.warning(f"  Node {node_idx} flagged: {suspicious} (threshold: {relative_threshold:.3f})")
+                    else:
+                        logger.info("✓ No malicious behavior detected")
+                else:
+                    logger.info("Trust monitoring was not active during training")
 
             # Generate visualizations_phase1 if requested
             if visualizer and (

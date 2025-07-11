@@ -1,5 +1,6 @@
 from statistics import mean
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
+import logging
 
 import numpy as np
 import ray
@@ -12,12 +13,20 @@ from murmura.visualization.training_event import (
     ParameterTransferEvent,
     LocalTrainingEvent,
 )
+from murmura.trust_monitoring import TrustMonitor, TrustMonitorConfig
 
 
 class DecentralizedLearningProcess(LearningProcess):
     """
-    Implementation of a decentralized learning process with generic data handling.
+    Implementation of a decentralized learning process with generic data handling and trust monitoring.
     """
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Initialize trust monitors for each node
+        self.trust_monitors: Dict[int, TrustMonitor] = {}
+        self.trust_config: Optional[TrustMonitorConfig] = None
 
     def _prepare_test_data(self, test_dataset, feature_columns, label_column):
         """
@@ -81,6 +90,105 @@ class DecentralizedLearningProcess(LearningProcess):
 
         return features, labels
 
+    def _initialize_trust_monitoring(self) -> None:
+        """Initialize trust monitors for honest nodes based on topology."""
+        if not hasattr(self.config, 'trust_monitoring') or not self.config.trust_monitoring:
+            self.logger.info("Trust monitoring not enabled")
+            return
+            
+        self.trust_config = self.config.trust_monitoring
+        
+        if not self.trust_config.enable_trust_monitoring:
+            self.logger.info("Trust monitoring disabled in configuration")
+            return
+            
+        # Get topology information
+        topology_info = self.cluster_manager.get_topology_information()
+        adjacency_list = topology_info.get("adjacency_list", {})
+        
+        # Initialize trust monitors only for honest nodes
+        for node_idx in range(len(self.cluster_manager.actors)):
+            # Skip malicious nodes - they don't need trust monitors
+            if node_idx in self.cluster_manager.malicious_client_indices:
+                continue
+                
+            # Create trust monitor for this honest node
+            node_id = f"node_{node_idx}"
+            trust_monitor = TrustMonitor(node_id, self.trust_config)
+            
+            # Register event callback to forward trust events to training monitor
+            trust_monitor.add_event_callback(lambda event: self.training_monitor.emit_event(event))
+            
+            self.trust_monitors[node_idx] = trust_monitor
+            
+            neighbors = adjacency_list.get(node_idx, [])
+            self.logger.info(f"Initialized trust monitor for honest node {node_idx} with {len(neighbors)} neighbors")
+        
+        self.logger.info(f"Trust monitoring initialized for {len(self.trust_monitors)} honest nodes")
+
+    def _process_trust_monitoring(self, round_num: int, node_params: Dict[int, Dict[str, Any]], 
+                                 train_metrics: List[Dict[str, float]], 
+                                 node_malicious_detections: Dict[int, set]) -> Dict[int, Dict[str, float]]:
+        """Process trust monitoring for all honest nodes."""
+        if not self.trust_monitors:
+            return {}
+            
+        # Get topology information
+        topology_info = self.cluster_manager.get_topology_information()
+        adjacency_list = topology_info.get("adjacency_list", {})
+        
+        # Collect trust scores for each honest node
+        all_trust_scores = {}
+        
+        for node_idx, trust_monitor in self.trust_monitors.items():
+            neighbors = adjacency_list.get(node_idx, [])
+            
+            # Collect neighbor parameters and losses
+            neighbor_updates = {}
+            neighbor_losses = {}
+            
+            for neighbor_idx in neighbors:
+                if neighbor_idx in node_params:
+                    neighbor_updates[f"node_{neighbor_idx}"] = node_params[neighbor_idx]
+                    
+                    # Find corresponding training metrics
+                    if neighbor_idx < len(train_metrics):
+                        neighbor_losses[f"node_{neighbor_idx}"] = train_metrics[neighbor_idx].get("loss", 0.0)
+                        
+                    # Log neighbor characteristics for debugging
+                    is_malicious = neighbor_idx in self.cluster_manager.malicious_client_indices
+                    self.logger.debug(f"Node {node_idx}: Neighbor {neighbor_idx} is {'MALICIOUS' if is_malicious else 'honest'}")
+            
+            if neighbor_updates:
+                self.logger.info(f"Node {node_idx}: Processing {len(neighbor_updates)} neighbor updates: {list(neighbor_updates.keys())}")
+                
+                # Enable debug logging for this specific trust monitor
+                trust_monitor.logger.setLevel(logging.DEBUG)
+                
+                # Process trust monitoring for this node
+                trust_scores = trust_monitor.process_parameter_updates(
+                    round_num=round_num,
+                    neighbor_updates=neighbor_updates,
+                    neighbor_losses=neighbor_losses
+                )
+                all_trust_scores[node_idx] = trust_scores
+                self.logger.info(f"Node {node_idx}: Trust scores: {trust_scores}")
+                
+                # Get the actual detections from the trust monitor itself
+                trust_summary = trust_monitor.get_trust_summary()
+                suspicious_neighbors = trust_summary.get("suspicious_neighbors", [])
+                
+                if suspicious_neighbors:
+                    self.logger.warning(f"Node {node_idx} detected suspicious neighbors: {suspicious_neighbors}")
+                    # Track actual detections
+                    if node_idx not in node_malicious_detections:
+                        node_malicious_detections[node_idx] = set()
+                    node_malicious_detections[node_idx].update(suspicious_neighbors)
+            else:
+                self.logger.debug(f"No neighbor updates available for node {node_idx}")
+        
+        return all_trust_scores
+
     def execute(self) -> Dict[str, Any]:
         """
         Execute the decentralized learning process with generic data handling.
@@ -142,7 +250,13 @@ class DecentralizedLearningProcess(LearningProcess):
         topology_type = topology_info.get("type", "unknown")
         adjacency_list = topology_info.get("adjacency_list", {})
 
+        # Initialize trust monitoring for decentralized learning
+        self._initialize_trust_monitoring()
+
         round_metrics = []
+        trust_monitoring_results = []
+        # Track actual malicious detections per node
+        node_malicious_detections = {}
 
         # Initialize cumulative privacy tracking
         cumulative_privacy_spent = {"epsilon": 0.0, "delta": 0.0}
@@ -223,12 +337,40 @@ class DecentralizedLearningProcess(LearningProcess):
                 # Check if this actor index is malicious using cluster manager's tracking
                 if i in self.cluster_manager.malicious_client_indices:
                     params = ray.get(actor.get_model_parameters.remote(current_round=round_num, total_rounds=rounds), timeout=1800)
+                    self.logger.debug(f"Round {round_num}: Collected parameters from MALICIOUS node {i}")
                 else:
                     params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
+                    self.logger.debug(f"Round {round_num}: Collected parameters from honest node {i}")
                 node_params[i] = params
+                
+                # Log parameter statistics for debugging
+                if params:
+                    param_count = sum(p.numel() if hasattr(p, 'numel') else np.prod(np.array(p).shape) 
+                                     for p in params.values())
+                    self.logger.debug(f"  Node {i}: {len(params)} layers, {param_count} total parameters")
 
             # Create parameter summaries for visualization
             param_summaries = self._create_parameter_summaries(node_params)
+
+            # Process trust monitoring for malicious behavior detection
+            self.logger.info(f"Round {round_num}: Processing trust monitoring for {len(self.trust_monitors)} monitors")
+            
+            # Log malicious clients for debugging
+            if self.cluster_manager.malicious_client_indices:
+                self.logger.info(f"Round {round_num}: Known malicious clients: {list(self.cluster_manager.malicious_client_indices)}")
+            
+            trust_scores = self._process_trust_monitoring(round_num, node_params, train_metrics, node_malicious_detections)
+            self.logger.info(f"Round {round_num}: Trust monitoring returned {len(trust_scores)} results")
+            if trust_scores:
+                trust_monitoring_results.append({
+                    "round": round_num,
+                    "trust_scores": trust_scores
+                })
+                
+                # Log trust scores summary for this round
+                self.logger.info(f"Round {round_num}: Trust scores summary:")
+                for node_idx, scores in trust_scores.items():
+                    self.logger.info(f"  Node {node_idx}: {scores}")
 
             # For each node, emit parameter transfer events
             for node, neighbors in adjacency_list.items():
@@ -387,6 +529,35 @@ class DecentralizedLearningProcess(LearningProcess):
         self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
         self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")
 
+        # Collect final trust monitoring summary based on actual detections
+        trust_summary = {}
+        all_detected_suspicious = set()
+        
+        if self.trust_monitors:
+            for node_idx, trust_monitor in self.trust_monitors.items():
+                summary = trust_monitor.get_trust_summary()
+                
+                # Use actual detections from runtime instead of recalculating thresholds
+                if node_idx in node_malicious_detections:
+                    actual_detections = list(node_malicious_detections[node_idx])
+                    summary["suspicious_neighbors"] = actual_detections
+                    # Collect all suspicious neighbors globally
+                    all_detected_suspicious.update(actual_detections)
+                
+                trust_summary[node_idx] = summary
+        
+        # Convert sets to lists for JSON serialization
+        node_detections_for_logging = {
+            node_idx: list(detections) for node_idx, detections in node_malicious_detections.items()
+        }
+        
+        # Update global detection status
+        if all_detected_suspicious:
+            self.logger.info(f"Trust monitoring detected {len(all_detected_suspicious)} suspicious neighbors across all nodes: {list(all_detected_suspicious)}")
+            self.logger.info(f"Node-wise detections: {node_detections_for_logging}")
+        else:
+            self.logger.info("Trust monitoring: No malicious behavior detected by any node")
+
         # Return results_phase1
         results = {
             "initial_metrics": initial_metrics,
@@ -395,6 +566,13 @@ class DecentralizedLearningProcess(LearningProcess):
             "round_metrics": round_metrics,
             "topology": topology_info,
             "privacy_metrics": privacy_metrics,
+            "trust_monitoring": {
+                "enabled": bool(self.trust_monitors),
+                "results": trust_monitoring_results,
+                "final_summary": trust_summary,
+                "global_suspicious_detected": list(all_detected_suspicious) if self.trust_monitors else [],
+                "node_detections": node_detections_for_logging if self.trust_monitors else {}
+            }
         }
 
         if cluster_summary:

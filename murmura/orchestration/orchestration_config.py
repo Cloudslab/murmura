@@ -5,6 +5,7 @@ from murmura.aggregation.aggregation_config import AggregationConfig
 from murmura.network_management.topology import TopologyConfig
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 from murmura.attacks.attack_config import AttackConfig
+from murmura.trust_monitoring.trust_config import TrustMonitorConfig
 
 
 class OrchestrationConfig(BaseModel):
@@ -106,6 +107,12 @@ class OrchestrationConfig(BaseModel):
     attack_config: Optional[AttackConfig] = Field(
         default=None,
         description="Configuration for model poisoning attacks (for research purposes)"
+    )
+
+    # Trust monitoring configuration for malicious behavior detection
+    trust_monitoring: Optional[TrustMonitorConfig] = Field(
+        default=None,
+        description="Configuration for trust monitoring in decentralized learning"
     )
 
     @model_validator(mode="after")
