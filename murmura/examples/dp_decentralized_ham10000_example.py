@@ -820,8 +820,10 @@ def main() -> None:
                         for node_idx, node_summary in trust_summary.items():
                             suspicious = node_summary.get("suspicious_neighbors", [])
                             if suspicious:
-                                relative_threshold = node_summary.get("relative_threshold", "N/A")
-                                logger.warning(f"  Node {node_idx} flagged: {suspicious} (threshold: {relative_threshold:.3f})")
+                                detection_method = node_summary.get("detection_method", "unknown")
+                                trust_stats = node_summary.get("trust_statistics", {})
+                                min_trust = trust_stats.get("min_trust", "N/A")
+                                logger.warning(f"  Node {node_idx} flagged: {suspicious} (method: {detection_method}, min_trust: {min_trust:.3f})")
                     else:
                         logger.info("✓ No malicious behavior detected")
                 else:

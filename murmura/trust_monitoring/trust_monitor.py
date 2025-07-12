@@ -565,23 +565,11 @@ class TrustMonitor:
                 is_anomaly, anomaly_score, evidence = anomalies[neighbor_id]
 
                 if is_anomaly:
-                    # Decay trust score
+                    # Decay trust score using polynomial decay method
                     old_score = self.trust_scores[neighbor_id]
-
-                    if self.config.enable_exponential_decay:
-                        # Exponential decay based on accumulated violations
-                        violation_count = self.anomaly_counts.get(neighbor_id, 0)
-                        decay = self.config.exponential_decay_base ** (
-                            violation_count + 1
-                        )
-                        self.trust_scores[neighbor_id] *= decay
-                    else:
-                        # Original linear decay
-                        decay = self.config.trust_decay_factor ** (
-                            1 + anomaly_score * 0.1
-                        )
-                        self.trust_scores[neighbor_id] *= decay
-
+                    self.trust_scores[neighbor_id] = self._calculate_trust_decay(
+                        neighbor_id, anomaly_score
+                    )
                     score_changes[neighbor_id] = (
                         self.trust_scores[neighbor_id] - old_score
                     )
@@ -780,93 +768,172 @@ class TrustMonitor:
         for neighbor_id, score in self.trust_scores.items():
             self.logger.info(f"  {neighbor_id}: {score:.6f}")
 
-        # Use relative thresholding as primary detection method
-        suspicious_neighbors = []
-        relative_threshold = (
-            self.config.suspicion_threshold
-        )  # Fallback to absolute threshold
+        # Use trust-only ranking-based detection (no thresholds)
+        suspicious_neighbors = self._detect_suspicious_neighbors_by_ranking()
 
-        if len(self.trust_scores) > 1:
-            scores = list(self.trust_scores.values())
-            relative_threshold = self._calculate_continuous_relative_threshold(scores)
-
-            suspicious_neighbors = [
-                neighbor_id
-                for neighbor_id, score in self.trust_scores.items()
-                if score < relative_threshold
-            ]
-
-            if suspicious_neighbors:
-                self.logger.warning(
-                    f"TRUST MONITOR {self.node_id}: Round {round_num}: Suspicious neighbors (continuous threshold {relative_threshold:.3f}): "
-                    f"{[(n, f'{self.trust_scores[n]:.3f}') for n in suspicious_neighbors]}"
-                )
-            else:
-                self.logger.info(
-                    f"TRUST MONITOR {self.node_id}: No suspicious neighbors using continuous threshold"
-                )
+        if suspicious_neighbors:
+            trust_scores_str = [(n, f'{self.trust_scores[n]:.3f}') for n in suspicious_neighbors]
+            self.logger.warning(
+                f"TRUST MONITOR {self.node_id}: Round {round_num}: Suspicious neighbors (trust-based ranking): "
+                f"{trust_scores_str}"
+            )
         else:
-            # Single neighbor case - use absolute threshold
-            suspicious_neighbors = [
-                neighbor_id
-                for neighbor_id, score in self.trust_scores.items()
-                if score < self.config.suspicion_threshold
-            ]
-
-            if suspicious_neighbors:
-                self.logger.warning(
-                    f"TRUST MONITOR {self.node_id}: Round {round_num}: Suspicious neighbors (single neighbor, absolute threshold): "
-                    f"{[(n, f'{self.trust_scores[n]:.3f}') for n in suspicious_neighbors]}"
-                )
-            else:
-                self.logger.info(
-                    f"TRUST MONITOR {self.node_id}: No suspicious neighbors detected (single neighbor case)"
-                )
+            self.logger.info(
+                f"TRUST MONITOR {self.node_id}: No suspicious neighbors detected using trust-based ranking"
+            )
 
         return self.trust_scores.copy()
 
-    def _calculate_continuous_relative_threshold(self, scores: List[float]) -> float:
-        """Calculate relative threshold using continuous linkage based on IQR."""
-        if len(scores) < 2:
-            return self.config.suspicion_threshold
-
-        median_score = np.median(scores)
-        q1, q3 = np.percentile(scores, [25, 75])
-        iqr = q3 - q1
-
-        # If no meaningful variation, fall back to absolute threshold
-        if iqr <= 0.01:
-            return self.config.suspicion_threshold
-
-        # Continuous scaling factor based on IQR
-        # Higher IQR -> more aggressive detection (closer to median-based)
-        # Lower IQR -> more conservative detection (closer to q1-based)
-        # Scale factor ranges from 0 to 1 over IQR range 0.01 to 0.2
-        iqr_factor = min(max((iqr - 0.01) / (0.2 - 0.01), 0.0), 1.0)
-
-        # Two threshold approaches:
-        # 1. Median-based (for bimodal distributions): median - 0.5 * iqr
-        # 2. Q1-based (for smaller variations): q1 - 0.8 * iqr
-        median_based_threshold = median_score - 0.5 * iqr
-        q1_based_threshold = q1 - 0.8 * iqr
-
-        # Smooth interpolation between the two approaches
-        relative_threshold = (
-            1 - iqr_factor
-        ) * q1_based_threshold + iqr_factor * median_based_threshold
-
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Continuous threshold calculation:"
+    def _detect_suspicious_neighbors_by_ranking(self) -> List[str]:
+        """
+        Detect suspicious neighbors using trust-based ranking without thresholds.
+        
+        Uses a combination of gap detection and adaptive percentile-based detection
+        for dataset-agnostic malicious node identification.
+        """
+        if len(self.trust_scores) < 2:
+            # Single neighbor - use conservative absolute threshold as fallback
+            suspicious = [
+                neighbor_id for neighbor_id, score in self.trust_scores.items()
+                if score < 0.5  # Very conservative threshold for single neighbor
+            ]
+            if suspicious:
+                self.logger.info(
+                    f"TRUST MONITOR {self.node_id}: Single neighbor detection: "
+                    f"flagged {suspicious[0]} with trust score {self.trust_scores[suspicious[0]]:.3f}"
+                )
+            return suspicious
+        
+        # Sort neighbors by trust score (lowest first = most suspicious)
+        sorted_neighbors = sorted(
+            self.trust_scores.items(), 
+            key=lambda x: x[1]
         )
+        
+        neighbor_count = len(sorted_neighbors)
+        trust_values = [score for _, score in sorted_neighbors]
+        
+        # Strategy 1: Gap-based detection (most precise)
+        gap_detected = self._detect_by_trust_gap(sorted_neighbors, trust_values)
+        if gap_detected:
+            self.logger.info(
+                f"TRUST MONITOR {self.node_id}: Gap-based detection: "
+                f"found {len(gap_detected)} suspicious neighbors with significant trust gap"
+            )
+            return gap_detected
+        
+        # Strategy 2: Adaptive percentile-based detection
+        percentile_detected = self._detect_by_adaptive_percentile(sorted_neighbors, neighbor_count)
+        if percentile_detected:
+            self.logger.info(
+                f"TRUST MONITOR {self.node_id}: Percentile-based detection: "
+                f"flagged bottom {len(percentile_detected)} neighbors"
+            )
+            return percentile_detected
+        
+        # No suspicious neighbors detected
         self.logger.info(
-            f"  Q1={q1:.6f}, Q3={q3:.6f}, IQR={iqr:.6f}, Median={median_score:.6f}"
+            f"TRUST MONITOR {self.node_id}: No suspicious patterns detected in trust scores"
         )
-        self.logger.info(f"  IQR factor={iqr_factor:.6f} (IQR {iqr:.6f} -> factor)")
-        self.logger.info(f"  Median-based threshold={median_based_threshold:.6f}")
-        self.logger.info(f"  Q1-based threshold={q1_based_threshold:.6f}")
-        self.logger.info(f"  Final continuous threshold={relative_threshold:.6f}")
+        return []
+    
+    def _detect_by_trust_gap(self, sorted_neighbors: List[Tuple[str, float]], trust_values: List[float]) -> List[str]:
+        """Detect suspicious neighbors based on significant gaps in trust score distribution."""
+        if len(trust_values) < 3:  # Need at least 3 neighbors for gap detection
+            return []
+        
+        # Find the largest gap in trust scores
+        max_gap = 0.0
+        gap_index = -1
+        
+        for i in range(len(trust_values) - 1):
+            gap = trust_values[i + 1] - trust_values[i]
+            if gap > max_gap:
+                max_gap = gap
+                gap_index = i
+        
+        # Only flag if gap is significant (>= 0.15) and creates clear separation
+        if max_gap >= 0.15:
+            # Flag all neighbors below the gap
+            suspicious = [neighbor_id for neighbor_id, score in sorted_neighbors[:gap_index + 1]]
+            
+            # Additional validation: ensure we're not flagging too many neighbors
+            # Don't flag more than 50% of neighbors to avoid over-detection
+            max_flaggable = max(1, len(sorted_neighbors) // 2)
+            if len(suspicious) > max_flaggable:
+                # Only flag the most suspicious ones
+                suspicious = suspicious[:max_flaggable]
+            
+            return suspicious
+        
+        return []
+    
+    def _detect_by_adaptive_percentile(self, sorted_neighbors: List[Tuple[str, float]], neighbor_count: int) -> List[str]:
+        """Detect suspicious neighbors using adaptive percentile thresholds."""
+        
+        # Adaptive percentile based on network topology (neighbor count)
+        if neighbor_count >= 9:      # Complete topology (or nearly complete)
+            target_percentile = 15   # Bottom 15% (≈1-2 nodes out of 9+)
+        elif neighbor_count >= 4:    # Ring topology or similar
+            target_percentile = 25   # Bottom 25% (≈1 node out of 4-8)
+        else:                        # Line topology (2-3 neighbors)
+            target_percentile = 33   # Bottom 33% (≈1 node out of 2-3)
+        
+        # Calculate how many neighbors to flag
+        neighbors_to_flag = max(1, int(neighbor_count * target_percentile / 100))
+        
+        # But don't flag neighbors with very high trust scores (> 0.8)
+        # This prevents false positives when all neighbors are actually honest
+        candidates = [
+            (neighbor_id, score) for neighbor_id, score in sorted_neighbors[:neighbors_to_flag]
+            if score < 0.8  # Only flag if trust score is meaningfully low
+        ]
+        
+        return [neighbor_id for neighbor_id, _ in candidates]
 
-        return float(relative_threshold)
+
+    def _calculate_trust_decay(self, neighbor_id: str, anomaly_score: float) -> float:
+        """Calculate trust decay using polynomial, exponential, or linear method."""
+        current_score = self.trust_scores[neighbor_id]
+        violation_count = self.anomaly_counts.get(neighbor_id, 0)
+
+        if self.config.enable_polynomial_decay:
+            # Polynomial decay: more intuitive for trust-weighted aggregation
+            # Decay factor gets stronger with more violations
+            
+            # Base decay factor scaled by violation count and anomaly severity
+            base_factor = self.config.polynomial_decay_base_factor
+            
+            # Calculate violation severity (1 + violation_count)^power
+            violation_severity = (1 + violation_count) ** self.config.polynomial_decay_power
+            
+            # Scale by anomaly score (higher anomaly score = more decay)
+            anomaly_multiplier = 1.0 + (anomaly_score * 0.5)  # Scale anomaly impact
+            
+            # Combined decay factor - gets smaller (more aggressive) with more violations
+            decay_factor = base_factor / (violation_severity * anomaly_multiplier)
+            
+            # Ensure minimum reasonable decay
+            decay_factor = max(decay_factor, 0.1)
+            
+            new_score = current_score * decay_factor
+            
+            self.logger.debug(
+                f"Polynomial decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
+                f"(violations: {violation_count}, anomaly: {anomaly_score:.3f}, "
+                f"severity: {violation_severity:.3f}, decay: {decay_factor:.6f})"
+            )
+            
+            return max(0.0, new_score)
+            
+        elif self.config.enable_exponential_decay:
+            # Legacy exponential decay
+            decay = self.config.exponential_decay_base ** (violation_count + 1)
+            return current_score * decay
+        else:
+            # Legacy linear decay
+            decay = self.config.trust_decay_factor ** (1 + anomaly_score * 0.1)
+            return current_score * decay
 
     def _calculate_trust_recovery(self, neighbor_id: str) -> float:
         """Calculate trust recovery using polynomial or linear method."""
@@ -896,34 +963,28 @@ class TrustMonitor:
             return min(1.0, current_score * self.config.trust_recovery_factor)
 
     def get_trust_summary(self) -> Dict[str, Any]:
-        """Get comprehensive trust monitoring summary using relative thresholds."""
-        # Calculate relative threshold for suspicious neighbors
-        suspicious_neighbors = []
-        relative_threshold = self.config.suspicion_threshold
-
-        if len(self.trust_scores) > 1:
+        """Get comprehensive trust monitoring summary using trust-only ranking detection."""
+        # Use the new trust-only detection approach
+        suspicious_neighbors = self._detect_suspicious_neighbors_by_ranking()
+        
+        # Calculate trust score statistics for reporting
+        trust_stats = {}
+        if self.trust_scores:
             scores = list(self.trust_scores.values())
-            relative_threshold = self._calculate_continuous_relative_threshold(scores)
-
-            suspicious_neighbors = [
-                neighbor_id
-                for neighbor_id, score in self.trust_scores.items()
-                if score < relative_threshold
-            ]
-        else:
-            # Single neighbor case - use absolute threshold
-            suspicious_neighbors = [
-                neighbor_id
-                for neighbor_id, score in self.trust_scores.items()
-                if score < self.config.suspicion_threshold
-            ]
+            trust_stats = {
+                "min_trust": min(scores),
+                "max_trust": max(scores),
+                "avg_trust": sum(scores) / len(scores),
+                "trust_variance": np.var(scores) if len(scores) > 1 else 0.0
+            }
 
         return {
             "node_id": self.node_id,
             "trust_scores": self.trust_scores.copy(),
             "anomaly_counts": dict(self.anomaly_counts),
             "suspicious_neighbors": suspicious_neighbors,
-            "relative_threshold": float(relative_threshold),
+            "trust_statistics": trust_stats,
+            "detection_method": "trust_ranking",
             "monitoring_enabled": self.config.enable_trust_monitoring,
             "total_neighbors": len(self.trust_scores),
         }

@@ -94,10 +94,30 @@ class TrustMonitorConfig(BaseModel):
         description="Exponent to apply to trust scores for weight calculation (higher = more aggressive)",
     )
 
-    # Aggressive trust penalty options
+    # Polynomial trust decay options
+    enable_polynomial_decay: bool = Field(
+        default=True,
+        description="Use polynomial decay for trust score reduction when anomalies detected",
+    )
+
+    polynomial_decay_power: float = Field(
+        default=2.0,
+        ge=1.0,
+        le=4.0,
+        description="Power for polynomial decay (higher = more aggressive decay for repeated violations)",
+    )
+
+    polynomial_decay_base_factor: float = Field(
+        default=0.95,
+        ge=0.7,
+        le=0.99,
+        description="Base factor for polynomial decay scaling",
+    )
+
+    # Legacy decay options (kept for compatibility)
     enable_exponential_decay: bool = Field(
         default=False,
-        description="Use exponential decay instead of linear for repeated violations",
+        description="Use exponential decay instead of polynomial for repeated violations",
     )
 
     exponential_decay_base: float = Field(

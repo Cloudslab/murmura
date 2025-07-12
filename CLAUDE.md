@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Requirements
+
+- **Python Version**: >= 3.11 (enforced in pyproject.toml and CI/CD)
+- **License**: GPL-3.0-only
+- **Build System**: Poetry (poetry-core)
+- **Git LFS**: Required for large files (run `git lfs install`)
+
 ## Essential Commands
 
 ### Setup and Development
@@ -44,6 +51,9 @@ pytest -v
 
 # Run tests matching a pattern
 pytest -k "test_pattern"
+
+# Run comprehensive CUSUM trust detection evaluation
+./test_cusum_detection.sh
 ```
 
 ### Code Quality
@@ -206,3 +216,52 @@ config = OrchestrationConfig(
     # ... other config
 )
 ```
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for automated testing and deployment:
+
+1. **Main CI Pipeline** (`ci.yml`):
+   - Runs on all PRs and pushes
+   - Formats code with `ruff format`
+   - Lints with `ruff check`
+   - Type checks with `mypy`
+   - Runs tests with coverage reporting
+   
+2. **Coverage Reporting** (`coverage.yml`):
+   - Posts coverage reports on pull requests
+   - Coverage thresholds:
+     - Green: >= 90%
+     - Orange: >= 70%
+     - Red: < 70%
+
+3. **Website Deployment** (`landing-page-deploy.yml`):
+   - Deploys project documentation website
+
+### Additional Development Notes
+
+1. **Dependency Management**:
+   - `poetry.lock` is not tracked in git
+   - Always run `poetry lock` when updating dependencies
+   - Use `poetry install` to ensure consistent environments
+
+2. **MyPy Configuration**:
+   - The following modules have import checking disabled:
+     - `torch.*`, `ray.*`, `datasets.*`, `matplotlib.*`, `networkx.*`
+   - This is configured in `pyproject.toml`
+
+3. **Test Configuration**:
+   - Integration tests marked with `integration` marker
+   - DeprecationWarning filtered out in pytest
+   - Coverage uses relative file paths
+
+4. **Example Scripts**:
+   - All examples support command-line arguments
+   - Trust monitoring can be enabled via CLI flags
+   - Network topology can be specified
+   - Support creating animations of training process
+
+5. **Trust Detection Evaluation**:
+   - `test_cusum_detection.sh` provides comprehensive evaluation
+   - Tests across multiple datasets and topologies
+   - Creates detailed reports in `cusum_detection_results/`
