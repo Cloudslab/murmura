@@ -21,6 +21,7 @@ from murmura.network_management.topology_manager import TopologyManager
 from murmura.node.client_actor import VirtualClientActor
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.orchestration.topology_coordinator import TopologyCoordinator
+from murmura.attacks.malicious_client_actor import MaliciousClientActor
 
 
 class ClusterManager:
@@ -36,8 +37,17 @@ class ClusterManager:
         self.topology_coordinator: Optional[TopologyCoordinator] = None
         self.cluster_info: Dict[str, Any] = {}
 
+        # Track malicious actors
+        self.malicious_client_indices: List[int] = []
+        if config.attack_config:
+            self.malicious_client_indices = config.get_malicious_client_indices()
+            logging.getLogger("murmura").info(
+                f"Malicious clients will be created at indices: {self.malicious_client_indices}"
+            )
+
         # Set up logging
         self._setup_logging()
+        self.logger = logging.getLogger("murmura")
 
         # Initialize Ray cluster
         self._initialize_ray_cluster()
@@ -67,6 +77,14 @@ class ClusterManager:
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(formatter)
             logger.addHandler(console_handler)
+
+            # Add file handler for Ray actors
+            try:
+                file_handler = logging.FileHandler("dp_decentralized_mnist.log")
+                file_handler.setFormatter(formatter)
+                logger.addHandler(file_handler)
+            except Exception as e:
+                logging.getLogger("murmura").warning(f"Could not add file handler: {e}")
 
     def _initialize_ray_cluster(self) -> None:
         """Initialize Ray cluster with multi-node support"""
@@ -306,12 +324,27 @@ class ClusterManager:
         self.actors = []
         for i in range(num_actors):
             try:
-                if resource_requirements:
-                    actor_ref = VirtualClientActor.options(  # type: ignore[attr-defined]
-                        **resource_requirements
-                    ).remote(f"client_{i}")
+                # Check if this client should be malicious
+                if i in self.malicious_client_indices:
+                    # Create malicious actor
+                    if resource_requirements:
+                        actor_ref = MaliciousClientActor.options(  # type: ignore[attr-defined]
+                            **resource_requirements
+                        ).remote(f"client_{i}", self.config.attack_config)
+                    else:
+                        actor_ref = MaliciousClientActor.remote(
+                            f"client_{i}", self.config.attack_config
+                        )  # type: ignore[attr-defined]
+                    logging.getLogger("murmura").info(f"Created MALICIOUS client {i}")
                 else:
-                    actor_ref = VirtualClientActor.remote(f"client_{i}")  # type: ignore[attr-defined]
+                    # Create benign actor
+                    if resource_requirements:
+                        actor_ref = VirtualClientActor.options(  # type: ignore[attr-defined]
+                            **resource_requirements
+                        ).remote(f"client_{i}")
+                    else:
+                        actor_ref = VirtualClientActor.remote(f"client_{i}")  # type: ignore[attr-defined]
+
                 self.actors.append(actor_ref)
 
                 # Log actor creation with node information
@@ -1070,6 +1103,8 @@ class ClusterManager:
 
     def train_models(
         self,
+        current_round: int,
+        total_rounds: int,
         client_sampling_rate: float = 1.0,
         data_sampling_rate: float = 1.0,
         **kwargs,
@@ -1099,8 +1134,10 @@ class ClusterManager:
         else:
             sampled_actors = self.actors
 
-        # Add data sampling rate to kwargs
+        # Add data sampling rate and round info to kwargs
         kwargs["data_sampling_rate"] = data_sampling_rate
+        kwargs["current_round"] = current_round
+        kwargs["total_rounds"] = total_rounds
 
         batch_size = 50
         all_results = []
@@ -1229,7 +1266,11 @@ class ClusterManager:
         return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
     def perform_decentralized_aggregation(
-        self, weights: Optional[List[float]] = None
+        self,
+        current_round: int,
+        total_rounds: int,
+        weights: Optional[List[float]] = None,
+        trust_scores: Optional[Dict[int, Dict[str, float]]] = None,
     ) -> None:
         """
         Perform decentralized aggregation where each node aggregates with its neighbors.
@@ -1238,6 +1279,12 @@ class ClusterManager:
 
         This leverages the existing topology coordinator but skips global combination.
         Works with any aggregation strategy (GossipAvg, future strategies).
+
+        Args:
+            current_round: Current training round
+            total_rounds: Total number of training rounds
+            weights: Data size weights for each node
+            trust_scores: Trust scores per node for their neighbors (format: {node_idx: {neighbor_id: trust_score}})
         """
         if not self.aggregation_strategy:
             raise ValueError(
@@ -1251,6 +1298,17 @@ class ClusterManager:
         topology_info = self.get_topology_information()
         adjacency_list = topology_info.get("adjacency_list", {})
 
+        # Log trust weighting status
+        if trust_scores:
+            total_trust_monitors = len(trust_scores)
+            self.logger.info(
+                f"Round {current_round}: Applying trust-weighted aggregation for {total_trust_monitors} honest nodes"
+            )
+        else:
+            self.logger.info(
+                f"Round {current_round}: Using standard data-size weighted aggregation (no trust scores)"
+            )
+
         # Each node performs local aggregation with its neighbors
         # This is similar to what topology coordinator does, but we don't combine results globally
         update_tasks = []
@@ -1258,26 +1316,135 @@ class ClusterManager:
         for node_idx, actor in enumerate(self.actors):
             neighbors = adjacency_list.get(node_idx, [])
             if neighbors:
+                # Get trust scores for this specific node's view of its neighbors
+                node_trust_scores = (
+                    trust_scores.get(node_idx, {}) if trust_scores else {}
+                )
+
                 # Collect parameters from this node and its neighbors
                 neighbor_params = []
                 neighbor_weights = []
 
-                # Include the node's own parameters
-                own_params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
+                # Include the node's own parameters (pass round info for malicious actors)
+                if hasattr(actor, "_is_malicious") or "Malicious" in str(type(actor)):
+                    own_params = ray.get(
+                        actor.get_model_parameters.remote(
+                            current_round=current_round, total_rounds=total_rounds
+                        ),
+                        timeout=1800,
+                    )
+                else:
+                    own_params = ray.get(
+                        actor.get_model_parameters.remote(), timeout=1800
+                    )
                 neighbor_params.append(own_params)
+                # Own node always has full weight (trust score = 1.0)
                 neighbor_weights.append(weights[node_idx] if weights else 1.0)
 
-                # Add neighbor parameters
+                # Add neighbor parameters with trust-weighted aggregation
                 for neighbor_idx in neighbors:
                     if neighbor_idx < len(self.actors):
-                        neighbor_param = ray.get(
-                            self.actors[neighbor_idx].get_model_parameters.remote(),
-                            timeout=1800,
-                        )
+                        neighbor_actor = self.actors[neighbor_idx]
+                        if hasattr(
+                            neighbor_actor, "_is_malicious"
+                        ) or "Malicious" in str(type(neighbor_actor)):
+                            neighbor_param = ray.get(
+                                neighbor_actor.get_model_parameters.remote(
+                                    current_round=current_round,
+                                    total_rounds=total_rounds,
+                                ),
+                                timeout=1800,
+                            )
+                        else:
+                            neighbor_param = ray.get(
+                                neighbor_actor.get_model_parameters.remote(),
+                                timeout=1800,
+                            )
                         neighbor_params.append(neighbor_param)
-                        neighbor_weights.append(
-                            weights[neighbor_idx] if weights else 1.0
-                        )
+
+                        # Apply trust weighting: base_weight * trust_score with optional scaling and exponent
+                        base_weight = weights[neighbor_idx] if weights else 1.0
+                        neighbor_id = f"node_{neighbor_idx}"
+                        raw_trust_score = node_trust_scores.get(
+                            neighbor_id, 1.0
+                        )  # Default trust = 1.0
+
+                        # Apply trust scaling and exponent from config
+                        # This allows for more aggressive penalties than just using raw trust scores
+                        if neighbor_id in node_trust_scores:
+                            # Get trust config from the first actor's trust monitor config
+                            # In practice, all nodes should have the same trust config
+                            trust_config = getattr(
+                                self.config, "trust_monitoring", None
+                            )
+                            if trust_config:
+                                scaling_factor = trust_config.trust_scaling_factor
+                                exponent = trust_config.trust_weight_exponent
+
+                                # Apply scaling and exponent: (trust_score * scaling_factor) ^ exponent
+                                scaled_trust = (
+                                    raw_trust_score * scaling_factor
+                                ) ** exponent
+
+                                # Apply normalization method to ensure weights stay in reasonable bounds
+                                method = trust_config.weight_normalization_method
+                                if method == "sigmoid":
+                                    # Sigmoid: 1 / (1 + exp(-k * (x - 0.5))) maps any real value to (0,1) smoothly
+                                    import math
+
+                                    k = trust_config.sigmoid_steepness
+                                    trust_weight = 1.0 / (
+                                        1.0 + math.exp(-k * (scaled_trust - 0.5))
+                                    )
+                                elif method == "tanh":
+                                    # Tanh: (tanh(x - 0.5) + 1) / 2 maps to (0,1) with smooth transitions
+                                    import math
+
+                                    trust_weight = (
+                                        math.tanh(scaled_trust - 0.5) + 1.0
+                                    ) / 2.0
+                                elif method == "soft":
+                                    # Soft normalization: x / (1 + x) maps [0,∞) to [0,1)
+                                    trust_weight = scaled_trust / (1.0 + scaled_trust)
+                                else:  # "minmax" or fallback
+                                    # Min-max clamping (original approach)
+                                    trust_weight = max(0.0, min(1.0, scaled_trust))
+                            else:
+                                trust_weight = raw_trust_score
+                        else:
+                            trust_weight = raw_trust_score
+
+                        final_weight = base_weight * trust_weight
+                        neighbor_weights.append(final_weight)
+
+                        # Log trust weighting for debugging
+                        if trust_scores and node_idx in trust_scores:
+                            self.logger.debug(
+                                f"Node {node_idx} -> Neighbor {neighbor_idx}: "
+                                f"base_weight={base_weight:.3f}, trust={trust_weight:.3f}, "
+                                f"final_weight={final_weight:.3f}"
+                            )
+
+                # Log aggregation summary for this node if trust scores are being used
+                if (
+                    trust_scores
+                    and node_idx in trust_scores
+                    and len(neighbor_params) > 1
+                ):
+                    trust_weights_summary = []
+                    for i, weight in enumerate(neighbor_weights):
+                        if i == 0:  # Own node
+                            trust_weights_summary.append(f"self:{weight:.3f}")
+                        else:
+                            neighbor_idx = neighbors[i - 1]
+                            neighbor_id = f"node_{neighbor_idx}"
+                            trust_weight = node_trust_scores.get(neighbor_id, 1.0)
+                            trust_weights_summary.append(
+                                f"{neighbor_idx}:{trust_weight:.3f}({weight:.3f})"
+                            )
+                    self.logger.info(
+                        f"Node {node_idx} trust-weighted aggregation: {', '.join(trust_weights_summary)}"
+                    )
 
                 # Perform local aggregation using the configured strategy
                 if len(neighbor_params) > 1:
