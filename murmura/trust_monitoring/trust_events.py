@@ -2,7 +2,7 @@
 Trust monitoring events for visualization and logging.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from murmura.visualization.training_event import TrainingEvent
 
 

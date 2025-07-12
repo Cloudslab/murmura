@@ -326,14 +326,14 @@ class TrustMonitor:
             if len(similarities) > 1:
                 historical_similarities = similarities[:-1]
                 historical_cosines = cosine_similarities[:-1]
-                mean_sim = np.mean(historical_similarities)
-                std_sim = np.std(historical_similarities) + 1e-8
-                mean_cosine = np.mean(historical_cosines)
+                mean_sim = float(np.mean(historical_similarities))
+                std_sim = float(np.std(historical_similarities)) + 1e-8
+                mean_cosine = float(np.mean(historical_cosines))
             else:
                 # Only one comparison, use it as both mean and current
-                mean_sim = similarities[0]
+                mean_sim = float(similarities[0])
                 std_sim = 0.1  # Default std for single comparison
-                mean_cosine = cosine_similarities[0]
+                mean_cosine = float(cosine_similarities[0])
 
             # Handle NaN values in similarity analysis
             if np.isnan(mean_sim) or np.isnan(std_sim) or np.isnan(mean_cosine):
