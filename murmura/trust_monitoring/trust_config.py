@@ -94,24 +94,38 @@ class TrustMonitorConfig(BaseModel):
         description="Exponent to apply to trust scores for weight calculation (higher = more aggressive)",
     )
 
-    # Polynomial trust decay options
-    enable_polynomial_decay: bool = Field(
+    # Escalating penalty trust decay options (formerly "polynomial decay")
+    enable_escalating_penalty_decay: bool = Field(
         default=True,
-        description="Use polynomial decay for trust score reduction when anomalies detected",
+        description="Use escalating penalty decay where punishment increases with repeated violations",
     )
 
-    polynomial_decay_power: float = Field(
+    escalating_penalty_power: float = Field(
         default=2.0,
         ge=1.0,
         le=4.0,
-        description="Power for polynomial decay (higher = more aggressive decay for repeated violations)",
+        description="Power for escalating penalty (higher = more aggressive penalty for repeated violations)",
     )
 
-    polynomial_decay_base_factor: float = Field(
+    escalating_penalty_base_factor: float = Field(
         default=0.95,
         ge=0.7,
         le=0.99,
-        description="Base factor for polynomial decay scaling",
+        description="Base factor for escalating penalty decay scaling",
+    )
+
+    # Backward compatibility aliases (deprecated - use escalating_penalty_* instead)
+    enable_polynomial_decay: bool = Field(
+        default=None,
+        description="DEPRECATED: Use enable_escalating_penalty_decay instead",
+    )
+    polynomial_decay_power: float = Field(
+        default=None,
+        description="DEPRECATED: Use escalating_penalty_power instead",
+    )
+    polynomial_decay_base_factor: float = Field(
+        default=None,
+        description="DEPRECATED: Use escalating_penalty_base_factor instead",
     )
 
     # Legacy decay options (kept for compatibility)

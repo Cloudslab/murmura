@@ -25,9 +25,14 @@ class PartitionerFactory:
                 alpha=config.alpha,
                 partition_by="label",
                 min_partition_size=config.min_partition_size,
+                seed=config.data_partitioning_seed,
             )
         elif config.partition_strategy == "iid":
-            return IIDPartitioner(num_partitions=config.num_actors, shuffle=True)
+            return IIDPartitioner(
+                num_partitions=config.num_actors, 
+                shuffle=True,
+                seed=config.data_partitioning_seed,
+            )
         else:
             raise ValueError(
                 f"Unsupported partition strategy {config.partition_strategy}"

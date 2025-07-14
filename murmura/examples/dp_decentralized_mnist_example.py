@@ -103,6 +103,12 @@ def main() -> None:
         help="Minimum samples per partition",
     )
     parser.add_argument(
+        "--data_partitioning_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible data partitioning",
+    )
+    parser.add_argument(
         "--split", type=str, default="train", help="Dataset split to use"
     )
     parser.add_argument(
@@ -274,7 +280,7 @@ def main() -> None:
     parser.add_argument(
         "--enable_exponential_decay",
         action="store_true",
-        help="Use exponential decay for repeated trust violations (more aggressive)",
+        help="Use exponential decay for repeated trust violations (less aggressive than polynomial)",
     )
     parser.add_argument(
         "--exponential_decay_base",
@@ -616,6 +622,7 @@ def main() -> None:
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
+            data_partitioning_seed=args.data_partitioning_seed,
             split=args.split,
             topology=TopologyConfig(
                 topology_type=topology_type,

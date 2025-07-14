@@ -102,6 +102,12 @@ def main() -> None:
         help="Minimum samples per partition",
     )
     parser.add_argument(
+        "--data_partitioning_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible data partitioning",
+    )
+    parser.add_argument(
         "--split", type=str, default="train", help="Dataset split to use"
     )
     parser.add_argument(
@@ -580,6 +586,7 @@ def main() -> None:
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
+            data_partitioning_seed=args.data_partitioning_seed,
             split=args.split,
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(

@@ -36,14 +36,15 @@ COMMON_BASE_PARAMS="
     --epochs 1
     --create_animation
     --malicious_node_seed 42
+    --data_partitioning_seed 42
 "
 
-# Trust monitoring parameters (using new state-based weighting)
+# Trust monitoring parameters (using new state-based weighting with less aggressive decay)
 TRUST_PARAMS="
     --enable_trust_monitoring
     --enable_trust_weighted_aggregation
     --enable_exponential_decay
-    --exponential_decay_base 0.6
+    --exponential_decay_base 0.75
 "
 
 # Gradient manipulation specific parameters
@@ -417,9 +418,10 @@ echo "   # Compare trust vs baseline accuracy:"
 echo "   grep 'Final Test Accuracy' *_trust.txt | sort"
 echo "   grep 'Final Test Accuracy' *_baseline.txt | sort"
 echo ""
-echo "   # Verify seed consistency (same malicious nodes):"
+echo "   # Verify seed consistency (same malicious nodes and data partitions):"
 echo "   grep 'Malicious clients will be created' *_baseline.txt | cut -d: -f2 | sort | uniq"
 echo "   grep 'Malicious clients will be created' *_trust.txt | cut -d: -f2 | sort | uniq"
+echo "   # Both baseline and trust experiments use same seeds (malicious=42, data_partitioning=42)"
 echo ""
 echo "   # Detection performance across node counts:"
 echo "   grep 'Trust monitoring detected.*suspicious neighbors' *.txt | sort"

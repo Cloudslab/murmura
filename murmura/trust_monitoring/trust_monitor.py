@@ -1251,15 +1251,31 @@ class TrustMonitor:
         current_score = self.trust_scores[neighbor_id]
         violation_count = self.anomaly_counts.get(neighbor_id, 0)
 
-        if self.config.enable_polynomial_decay:
-            # Polynomial decay: more intuitive for trust-weighted aggregation
-            # Decay factor gets stronger with more violations
+        # Priority: Explicitly enabled methods take precedence over defaults
+        if self.config.enable_exponential_decay:
+            # Exponential decay - less aggressive than polynomial
+            decay = self.config.exponential_decay_base ** (violation_count + 1)
+            new_score = current_score * decay
+            
+            self.logger.debug(
+                f"Exponential decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
+                f"(violations: {violation_count}, base: {self.config.exponential_decay_base}, decay: {decay:.6f})"
+            )
+            
+            return max(0.0, new_score)
+            
+        elif self.config.enable_escalating_penalty_decay or self.config.enable_polynomial_decay:
+            # Escalating penalty decay: punishment increases with repeated violations
             
             # Base decay factor scaled by violation count and anomaly severity
-            base_factor = self.config.polynomial_decay_base_factor
+            # Support backward compatibility with old polynomial_decay parameters
+            base_factor = (self.config.escalating_penalty_base_factor or 
+                          self.config.polynomial_decay_base_factor or 0.95)
             
             # Calculate violation severity (1 + violation_count)^power
-            violation_severity = (1 + violation_count) ** self.config.polynomial_decay_power
+            penalty_power = (self.config.escalating_penalty_power or 
+                           self.config.polynomial_decay_power or 2.0)
+            violation_severity = (1 + violation_count) ** penalty_power
             
             # Scale by anomaly score (higher anomaly score = more decay)
             anomaly_multiplier = 1.0 + (anomaly_score * 0.5)  # Scale anomaly impact
@@ -1272,22 +1288,26 @@ class TrustMonitor:
             
             new_score = current_score * decay_factor
             
+            decay_method = "Escalating penalty" if self.config.enable_escalating_penalty_decay else "Polynomial"
             self.logger.debug(
-                f"Polynomial decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
+                f"{decay_method} decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
                 f"(violations: {violation_count}, anomaly: {anomaly_score:.3f}, "
-                f"severity: {violation_severity:.3f}, decay: {decay_factor:.6f})"
+                f"power: {penalty_power}, decay: {decay_factor:.6f})"
             )
             
             return max(0.0, new_score)
             
-        elif self.config.enable_exponential_decay:
-            # Legacy exponential decay
-            decay = self.config.exponential_decay_base ** (violation_count + 1)
-            return current_score * decay
         else:
-            # Legacy linear decay
+            # Fallback: Linear decay
             decay = self.config.trust_decay_factor ** (1 + anomaly_score * 0.1)
-            return current_score * decay
+            new_score = current_score * decay
+            
+            self.logger.debug(
+                f"Linear decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
+                f"(decay_factor: {self.config.trust_decay_factor}, decay: {decay:.6f})"
+            )
+            
+            return max(0.0, new_score)
 
     def _calculate_trust_recovery(self, neighbor_id: str) -> float:
         """Calculate trust recovery using polynomial or linear method."""

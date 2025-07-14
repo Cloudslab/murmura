@@ -36,6 +36,10 @@ class OrchestrationConfig(BaseModel):
         gt=0,
         description="Minimum samples per partition (only for dirichlet strategy)",
     )
+    data_partitioning_seed: int = Field(
+        default=42,
+        description="Seed for reproducible data partitioning across experiments",
+    )
     split: str = Field(default="train", description="Dataset split")
 
     # Generic column configuration - NO DEFAULTS, must be specified by user
