@@ -59,6 +59,98 @@ LABEL_FLIP_PARAMS="
     --label_flip_target 1
 "
 
+# Function to extract trust score evolution from experiment logs
+extract_trust_evolution() {
+    local log_file=$1
+    local base_name=$(basename "$log_file" .txt)
+    local trust_file="${base_name}_trust_evolution.txt"
+    
+    echo "   📈 Extracting trust score evolution to: $trust_file"
+    
+    # Use Python for more reliable parsing
+    python3 << EOF
+import re
+import sys
+
+log_file = "$log_file"
+trust_file = "$trust_file"
+
+# Write header
+with open(trust_file, 'w') as f:
+    f.write("# Trust Score Evolution for $base_name\n")
+    f.write("# Format: Round,Node,Neighbor,Trust_Score\n")
+    f.write("# Generated at: $(date)\n")
+    f.write("\n")
+
+current_round = None
+trust_entries = []
+
+try:
+    with open(log_file, 'r') as f:
+        for line in f:
+            # Check for round markers
+            round_match = re.search(r'Round (\d+): Processing trust monitoring', line)
+            if round_match:
+                current_round = round_match.group(1)
+                continue
+            
+            # Check for trust score lines
+            trust_match = re.search(r'Node (\d+): Trust scores: ({.*})', line)
+            if trust_match and current_round:
+                node_num = trust_match.group(1)
+                trust_dict_str = trust_match.group(2)
+                
+                # Parse the trust dictionary
+                try:
+                    # Clean up the string and evaluate as dict
+                    trust_dict_str = trust_dict_str.replace("'", '"')
+                    import json
+                    trust_dict = json.loads(trust_dict_str)
+                    
+                    # Extract trust scores
+                    for neighbor_node, trust_score in trust_dict.items():
+                        # Remove 'node_' prefix if present
+                        neighbor_id = neighbor_node.replace('node_', '')
+                        trust_entries.append((int(current_round), int(node_num), int(neighbor_id), float(trust_score)))
+                except:
+                    # Fallback parsing for malformed JSON
+                    import ast
+                    try:
+                        trust_dict = ast.literal_eval(trust_dict_str)
+                        for neighbor_node, trust_score in trust_dict.items():
+                            neighbor_id = neighbor_node.replace('node_', '')
+                            trust_entries.append((int(current_round), int(node_num), int(neighbor_id), float(trust_score)))
+                    except:
+                        continue
+
+    # Remove duplicates and sort entries by round, node, neighbor
+    trust_entries = list(set(trust_entries))
+    trust_entries.sort(key=lambda x: (x[0], x[1], x[2]))
+    
+    # Write entries to file
+    with open(trust_file, 'a') as f:
+        for round_num, node, neighbor, score in trust_entries:
+            f.write(f"{round_num},{node},{neighbor},{score}\n")
+    
+    print(f"   📊 Extracted {len(trust_entries)} trust score entries")
+    
+    if trust_entries:
+        print("   📝 Sample entries:")
+        for i, (round_num, node, neighbor, score) in enumerate(trust_entries[:4]):
+            print(f"      {round_num},{node},{neighbor},{score}")
+    
+except Exception as e:
+    print(f"   ⚠️  Error extracting trust scores: {e}")
+    
+EOF
+    
+    # Check if extraction was successful
+    if [ ! -f "$trust_file" ] || [ ! -s "$trust_file" ]; then
+        echo "   ⚠️  No trust scores found in log file"
+        rm -f "$trust_file"
+    fi
+}
+
 # Function to run experiment
 run_experiment() {
     local dataset=$1
@@ -144,8 +236,14 @@ run_experiment() {
             echo "   🔍 Trust monitoring: DISABLED (baseline)"
         fi
         
-        echo "   🎯 Final accuracy: $(grep "Final Test Accuracy" $output_file | tail -1 || echo "Not found")"
-        echo "   📊 Accuracy improvement: $(grep "Accuracy Improvement" $output_file | tail -1 || echo "Not found")"
+        echo "   🎯 Final accuracy: $(grep "Final Test Accuracy.*Honest Nodes" $output_file | tail -1 || grep "Final Test Accuracy" $output_file | tail -1 || echo "Not found")"
+        echo "   📊 Accuracy improvement: $(grep "Accuracy Improvement.*Honest Nodes" $output_file | tail -1 || grep "Accuracy Improvement" $output_file | tail -1 || echo "Not found")"
+        
+        # Extract trust score evolution for trust-enabled experiments
+        if [ "$trust_enabled" = "true" ]; then
+            extract_trust_evolution $output_file
+        fi
+        
         echo "   ✅ Completed: $(date)"
     elif [ $exit_code -eq 124 ]; then
         echo "⏰ TIMEOUT: $dataset with $topology topology (n=$node_count, trust=$trust_enabled)"
@@ -282,9 +380,9 @@ for file in *.txt; do
                 detection_round="N/A"
             fi
             
-            # Accuracy results  
-            final_acc=$(grep "Final Test Accuracy" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
-            acc_improvement=$(grep "Accuracy Improvement" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || echo "N/A")
+            # Accuracy results (prefer honest nodes metrics, fallback to old format)
+            final_acc=$(grep "Final Test Accuracy.*Honest Nodes" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || grep "Final Test Accuracy" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
+            acc_improvement=$(grep "Accuracy Improvement.*Honest Nodes" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || grep "Accuracy Improvement" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || echo "N/A")
             
             echo "   🎯 Actual malicious: [$actual_malicious]"
             echo "   🔍 Detected malicious: [$detected_malicious]"
@@ -311,6 +409,7 @@ echo ""
 echo "💾 All results saved in: $(pwd)"
 echo "📈 Summary CSV file: $csv_file"
 echo "🎬 Animation files (*.mp4) generated for successful experiments"
+echo "📊 Trust evolution files (*_trust_evolution.txt) extracted for trust experiments"
 echo ""
 echo "🔍 Quick Analysis Commands:"
 echo ""
@@ -318,13 +417,17 @@ echo "   # Compare trust vs baseline accuracy:"
 echo "   grep 'Final Test Accuracy' *_trust.txt | sort"
 echo "   grep 'Final Test Accuracy' *_baseline.txt | sort"
 echo ""
+echo "   # Verify seed consistency (same malicious nodes):"
+echo "   grep 'Malicious clients will be created' *_baseline.txt | cut -d: -f2 | sort | uniq"
+echo "   grep 'Malicious clients will be created' *_trust.txt | cut -d: -f2 | sort | uniq"
+echo ""
 echo "   # Detection performance across node counts:"
 echo "   grep 'Trust monitoring detected.*suspicious neighbors' *.txt | sort"
 echo ""
+echo "   # Trust evolution analysis:"
+echo "   echo \"Trust evolution files:\"; ls -la *_trust_evolution.txt 2>/dev/null || echo \"None found\""
+echo ""
 echo "   # Scalability analysis:"
 echo "   for n in 10 20 30 50; do echo \"Node count \$n:\"; grep \"Final Test Accuracy\" *n\$n*.txt; done"
-echo ""
-echo "📊 For detailed analysis, run:"
-echo "   python ../analyze_enhanced_results.py $OUTPUT_DIR"
 echo ""
 echo "=========================================="

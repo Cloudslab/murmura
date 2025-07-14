@@ -476,25 +476,71 @@ class DecentralizedLearningProcess(LearningProcess):
             )
 
             # 4. Evaluation
-            # In decentralized learning, evaluate using a representative model from the network
-            # Use the first node's model as representative for evaluation
-            representative_actor = self.cluster_manager.actors[0]
-            if 0 in self.cluster_manager.malicious_client_indices:
-                representative_params = ray.get(
-                    representative_actor.get_model_parameters.remote(current_round=round_num, total_rounds=rounds)
+            # In decentralized learning, evaluate by averaging across all honest nodes
+            # This gives a better representation of network performance than a single node
+            honest_node_indices = [
+                idx for idx in range(len(self.cluster_manager.actors))
+                if idx not in self.cluster_manager.malicious_client_indices
+            ]
+            
+            if not honest_node_indices:
+                self.logger.warning("No honest nodes available for evaluation!")
+                # Fallback to first node if somehow no honest nodes exist
+                honest_node_indices = [0]
+            
+            honest_accuracies = []
+            honest_losses = []
+            
+            self.logger.info(
+                f"Evaluating {len(honest_node_indices)} honest nodes "
+                f"(excluding malicious nodes: {self.cluster_manager.malicious_client_indices})"
+            )
+            
+            # Evaluate each honest node's model
+            for node_idx in honest_node_indices:
+                try:
+                    node_actor = self.cluster_manager.actors[node_idx]
+                    node_params = ray.get(node_actor.get_model_parameters.remote())
+                    
+                    # Set model parameters and evaluate
+                    self.model.set_parameters(node_params)
+                    node_metrics = self.model.evaluate(test_features, test_labels)
+                    
+                    honest_accuracies.append(node_metrics['accuracy'])
+                    honest_losses.append(node_metrics['loss'])
+                    
+                    self.logger.debug(
+                        f"Node {node_idx} - Loss: {node_metrics['loss']:.4f}, "
+                        f"Accuracy: {node_metrics['accuracy'] * 100:.2f}%"
+                    )
+                    
+                except Exception as e:
+                    self.logger.warning(f"Failed to evaluate node {node_idx}: {e}")
+            
+            # Calculate average metrics across honest nodes
+            if honest_accuracies:
+                avg_accuracy = sum(honest_accuracies) / len(honest_accuracies)
+                avg_loss = sum(honest_losses) / len(honest_losses)
+                
+                # Create aggregated test metrics
+                test_metrics = {
+                    'accuracy': avg_accuracy,
+                    'loss': avg_loss
+                }
+                
+                self.logger.info(
+                    f"Average Test Loss (Honest Nodes): {avg_loss:.4f}"
+                )
+                self.logger.info(
+                    f"Average Test Accuracy (Honest Nodes): {avg_accuracy * 100:.2f}%"
+                )
+                self.logger.info(
+                    f"Accuracy Range: {min(honest_accuracies) * 100:.2f}% - {max(honest_accuracies) * 100:.2f}%"
                 )
             else:
-                representative_params = ray.get(
-                    representative_actor.get_model_parameters.remote()
-                )
-            self.model.set_parameters(representative_params)
-            test_metrics = self.model.evaluate(test_features, test_labels)
-            self.logger.info(
-                f"Representative Model Test Loss: {test_metrics['loss']:.4f}"
-            )
-            self.logger.info(
-                f"Representative Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
-            )
+                # Fallback if no honest nodes could be evaluated
+                self.logger.error("No honest nodes could be evaluated!")
+                test_metrics = {'accuracy': 0.0, 'loss': float('inf')}
 
             # Emit evaluation event
             self.training_monitor.emit_event(
@@ -538,9 +584,62 @@ class DecentralizedLearningProcess(LearningProcess):
                 }
             )
 
-        # Final evaluation
-        final_metrics = self.model.evaluate(test_features, test_labels)
-        improvement = final_metrics["accuracy"] - initial_metrics["accuracy"]
+        # Final evaluation - average across honest nodes only
+        self.logger.info("=== Final Evaluation Across Honest Nodes ===")
+        honest_node_indices = [
+            idx for idx in range(len(self.cluster_manager.actors))
+            if idx not in self.cluster_manager.malicious_client_indices
+        ]
+        
+        if not honest_node_indices:
+            self.logger.warning("No honest nodes available for final evaluation!")
+            honest_node_indices = [0]
+        
+        final_honest_accuracies = []
+        final_honest_losses = []
+        
+        # Evaluate each honest node's final model
+        for node_idx in honest_node_indices:
+            try:
+                node_actor = self.cluster_manager.actors[node_idx]
+                node_params = ray.get(node_actor.get_model_parameters.remote())
+                
+                # Set model parameters and evaluate
+                self.model.set_parameters(node_params)
+                node_metrics = self.model.evaluate(test_features, test_labels)
+                
+                final_honest_accuracies.append(node_metrics['accuracy'])
+                final_honest_losses.append(node_metrics['loss'])
+                
+                self.logger.debug(
+                    f"Final Node {node_idx} - Loss: {node_metrics['loss']:.4f}, "
+                    f"Accuracy: {node_metrics['accuracy'] * 100:.2f}%"
+                )
+                
+            except Exception as e:
+                self.logger.warning(f"Failed to evaluate final node {node_idx}: {e}")
+        
+        # Calculate final average metrics across honest nodes
+        if final_honest_accuracies:
+            final_avg_accuracy = sum(final_honest_accuracies) / len(final_honest_accuracies)
+            final_avg_loss = sum(final_honest_losses) / len(final_honest_losses)
+            
+            final_metrics = {
+                'accuracy': final_avg_accuracy,
+                'loss': final_avg_loss
+            }
+            
+            improvement = final_metrics["accuracy"] - initial_metrics["accuracy"]
+            
+            self.logger.info(
+                f"Final evaluation across {len(final_honest_accuracies)} honest nodes "
+                f"(excluding malicious: {self.cluster_manager.malicious_client_indices})"
+            )
+        else:
+            # Fallback if no honest nodes could be evaluated
+            self.logger.error("No honest nodes could be evaluated for final metrics!")
+            final_metrics = {'accuracy': 0.0, 'loss': float('inf')}
+            improvement = final_metrics["accuracy"] - initial_metrics["accuracy"]
 
         # Use cumulative privacy metrics from round tracking
         if per_round_privacy_metrics:
@@ -571,8 +670,16 @@ class DecentralizedLearningProcess(LearningProcess):
         self.logger.info(
             f"Cluster type: {cluster_summary.get('cluster_type', 'unknown')}"
         )
-        self.logger.info(f"Final Test Accuracy: {final_metrics['accuracy'] * 100:.2f}%")
-        self.logger.info(f"Accuracy Improvement: {improvement * 100:.2f}%")
+        self.logger.info(f"Final Test Accuracy (Honest Nodes Average): {final_metrics['accuracy'] * 100:.2f}%")
+        self.logger.info(f"Accuracy Improvement (Honest Nodes): {improvement * 100:.2f}%")
+        
+        # Also log accuracy variance if we have multiple honest nodes
+        if len(final_honest_accuracies) > 1:
+            accuracy_std = (sum((acc - final_metrics['accuracy'])**2 for acc in final_honest_accuracies) / len(final_honest_accuracies))**0.5
+            self.logger.info(
+                f"Accuracy Range (Honest Nodes): {min(final_honest_accuracies) * 100:.2f}% - {max(final_honest_accuracies) * 100:.2f}% "
+                f"(std: {accuracy_std * 100:.2f}%)"
+            )
 
         # Collect final trust monitoring summary based on actual detections
         trust_summary = {}
