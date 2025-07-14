@@ -40,6 +40,10 @@ class OrchestrationConfig(BaseModel):
         default=42,
         description="Seed for reproducible data partitioning across experiments",
     )
+    model_seed: int = Field(
+        default=42,
+        description="Seed for reproducible model initialization across experiments",
+    )
     split: str = Field(default="train", description="Dataset split")
 
     # Generic column configuration - NO DEFAULTS, must be specified by user

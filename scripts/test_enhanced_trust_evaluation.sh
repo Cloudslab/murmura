@@ -37,6 +37,7 @@ COMMON_BASE_PARAMS="
     --create_animation
     --malicious_node_seed 42
     --data_partitioning_seed 42
+    --model_seed 42
 "
 
 # Trust monitoring parameters (using new state-based weighting with less aggressive decay)

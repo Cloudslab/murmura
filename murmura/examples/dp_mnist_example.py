@@ -1,6 +1,7 @@
 import argparse
 import os
 import logging
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -71,6 +72,18 @@ def main() -> None:
         type=int,
         default=500,
         help="Minimum samples per partition",
+    )
+    parser.add_argument(
+        "--data_partitioning_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible data partitioning across experiments",
+    )
+    parser.add_argument(
+        "--model_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible model initialization",
     )
     parser.add_argument(
         "--split", type=str, default="train", help="Dataset split to use"
@@ -425,6 +438,8 @@ def main() -> None:
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
+            data_partitioning_seed=args.data_partitioning_seed,
+            model_seed=args.model_seed,
             split=args.split,
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
@@ -450,6 +465,12 @@ def main() -> None:
         partitioner = PartitionerFactory.create(config)
 
         logger.info("=== Creating MNIST Model ===")
+        # Set random seeds for reproducible model initialization
+        torch.manual_seed(config.model_seed)
+        torch.cuda.manual_seed_all(config.model_seed)
+        np.random.seed(config.model_seed)
+        logger.info(f"Set model initialization seeds to {config.model_seed}")
+        
         model = MNISTModel(
             use_dp_compatible_norm=True
         )  # Use GroupNorm for DP compatibility

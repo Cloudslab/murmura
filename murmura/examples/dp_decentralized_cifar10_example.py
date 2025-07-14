@@ -1,6 +1,7 @@
 import argparse
 import os
 import logging
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -81,6 +82,12 @@ def main() -> None:
         type=int,
         default=42,
         help="Seed for reproducible data partitioning",
+    )
+    parser.add_argument(
+        "--model_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible model initialization",
     )
     parser.add_argument(
         "--split", type=str, default="train", help="Dataset split to use"
@@ -545,6 +552,7 @@ def main() -> None:
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
             data_partitioning_seed=args.data_partitioning_seed,
+            model_seed=args.model_seed,
             split=args.split,
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
@@ -595,6 +603,12 @@ def main() -> None:
         partitioner = PartitionerFactory.create(config)
 
         logger.info("=== Creating CIFAR-10 Model ===")
+        # Set random seeds for reproducible model initialization
+        torch.manual_seed(config.model_seed)
+        torch.cuda.manual_seed_all(config.model_seed)
+        np.random.seed(config.model_seed)
+        logger.info(f"Set model initialization seeds to {config.model_seed}")
+        
         model: Union[CIFAR10Model, ResNetCIFAR10Model]
         if args.model == "simple":
             model = CIFAR10Model()
