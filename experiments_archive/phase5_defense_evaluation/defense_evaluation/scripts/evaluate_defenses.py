@@ -6,13 +6,12 @@ This script evaluates the effectiveness of proposed defense mechanisms against
 topology-based privacy attacks using existing experimental data from phase1_baseline_analysis.
 """
 
-import os
 import sys
 import pandas as pd
 import numpy as np
 import json
 import logging
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 from pathlib import Path
 import argparse
 from datetime import datetime
@@ -23,12 +22,12 @@ import seaborn as sns
 sys.path.append('/Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura')
 
 from defense_mechanisms import (
-    DefenseConfig, StructuralNoiseInjection, DynamicTopologyReconfiguration,
+    StructuralNoiseInjection, DynamicTopologyReconfiguration,
     TopologyAwareDifferentialPrivacy, DefenseEvaluator, create_defense_config
 )
 from murmura.attacks.topology_attacks import (
     CommunicationPatternAttack, ParameterMagnitudeAttack, TopologyStructureAttack,
-    AttackEvaluator, run_topology_attacks
+    AttackEvaluator
 )
 
 
@@ -563,7 +562,7 @@ def main():
             filter_criteria=filter_criteria if filter_criteria else None
         )
         
-        print(f"\nDefense Evaluation Complete!")
+        print("\nDefense Evaluation Complete!")
         print(f"Results saved to: {args.output_dir}")
         print(f"Total experiments evaluated: {results['summary_stats']['successful_evaluations']}")
         print(f"Failed evaluations: {results['summary_stats']['failed_evaluations']}")

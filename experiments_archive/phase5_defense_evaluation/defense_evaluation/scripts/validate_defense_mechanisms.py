@@ -4,13 +4,10 @@ Validation script to ensure all defense mechanisms work correctly
 and produce authentic results without hardcoded values.
 """
 
-import os
 import sys
 import pandas as pd
 import numpy as np
-import json
 from pathlib import Path
-from typing import Dict, List, Any
 import logging
 
 # Add murmura to path
@@ -18,7 +15,7 @@ sys.path.append('/Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura')
 
 from defense_mechanisms import (
     DefenseConfig, StructuralNoiseInjection, DynamicTopologyReconfiguration,
-    TopologyAwareDifferentialPrivacy, DefenseEvaluator
+    TopologyAwareDifferentialPrivacy
 )
 from murmura.attacks.topology_attacks import (
     CommunicationPatternAttack, ParameterMagnitudeAttack, TopologyStructureAttack
@@ -236,7 +233,7 @@ def validate_dynamic_topology_reconfiguration():
     defended_high_round = defense.apply_defense(high_round_data)
     
     # Should potentially trigger reconfiguration due to high round number
-    logger.info(f"  ✓ High round reconfiguration test completed")
+    logger.info("  ✓ High round reconfiguration test completed")
     
     logger.info("  ✓ Dynamic topology reconfiguration validation PASSED")
 

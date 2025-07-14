@@ -43,6 +43,16 @@ Murmura is a sophisticated federated learning framework that supports both centr
 - 🤖 **PyTorch Model Integration**  
   Easy integration with existing PyTorch models and automatic DP adaptation
 
+### Trust Monitoring (EdgeDrift)
+- 🛡️ **Adaptive Trust Monitoring**  
+  CUSUM-based detection for gradient manipulation and label flipping attacks
+
+- 📊 **Trust-Weighted Aggregation**  
+  Dynamic trust scoring with polynomial decay and consensus-based validation
+
+- 🔍 **Multi-Layer Detection**  
+  Parameter-space, loss-space, and consensus-based anomaly detection
+
 ### Monitoring & Visualization
 - 📈 **Real-Time Training Visualization**  
   Network topology visualization, training progress tracking, and metrics export
@@ -86,10 +96,26 @@ results = process.run()
 
 Explore complete examples in the `murmura/examples/` directory:
 
-- **`mnist_example.py`** - Basic federated learning with MNIST
-- **`dp_mnist_example.py`** - Differential privacy-enabled federated learning
-- **`decentralized_mnist_example.py`** - Fully decentralized learning without central server
-- **`skin_lesion_example.py`** - Medical imaging federated learning
+- **`dp_mnist_example.py`** - Basic federated learning with MNIST and DP
+- **`dp_decentralized_mnist_example.py`** - Decentralized learning with trust monitoring
+- **`dp_cifar10_example.py`** - Federated learning with CIFAR-10
+- **`dp_ham10000_example.py`** - Medical imaging federated learning
+
+### Trust Monitoring Experiments
+
+Use the enhanced evaluation scripts in the `scripts/` directory:
+
+- **`test_enhanced_trust_evaluation.sh`** - Comprehensive trust monitoring evaluation
+- **`analyze_enhanced_results.py`** - Analysis and visualization of results
+
+```bash
+# Run trust monitoring experiments
+cd scripts/
+./test_enhanced_trust_evaluation.sh
+
+# Analyze results
+python analyze_enhanced_results.py enhanced_trust_results_TIMESTAMP --create-plots
+```
 
 ## 🏗️ Architecture
 

@@ -11,7 +11,6 @@ experiments_archive/scripts/figure_generation/generate_paper_figures.py
 
 import json
 import numpy as np
-from pathlib import Path
 
 def get_baseline_attack_success_rates():
     """
@@ -137,9 +136,9 @@ def calculate_fair_comparison():
     dp_avg_reduction = np.mean([data['attack_reduction_percentage'] for data in dp_effectiveness.values()])
     
     print(f"\n   Strong DP Average Reduction: {dp_avg_reduction:5.1f}%")
-    print(f"   (Communication: 11.8%, Parameter: 18.8%, Topology: 17.2%)")
+    print("   (Communication: 11.8%, Parameter: 18.8%, Topology: 17.2%)")
     
-    print(f"\n   Our Defense Mechanisms:")
+    print("\n   Our Defense Mechanisms:")
     
     for defense in defense_mechanisms:
         defense_data = our_results[defense]
@@ -208,7 +207,7 @@ def create_honest_assessment():
             print(f"     Result: ❌ DP outperforms us by {abs(difference):5.1f}% points")
     
     # Overall assessment
-    print(f"\n2. OVERALL ASSESSMENT:")
+    print("\n2. OVERALL ASSESSMENT:")
     
     dp_avg = np.mean([dp_effectiveness[attack]['attack_reduction_percentage'] for attack in attack_types])
     our_avg = np.mean([best_performance[attack]['reduction'] for attack in attack_types])
@@ -218,9 +217,9 @@ def create_honest_assessment():
     print(f"     Overall Difference:    {our_avg - dp_avg:+5.1f}% points")
     
     if our_avg > dp_avg:
-        print(f"     ✅ Our defenses outperform DP overall")
+        print("     ✅ Our defenses outperform DP overall")
     else:
-        print(f"     ❌ DP outperforms our defenses overall")
+        print("     ❌ DP outperforms our defenses overall")
     
     return best_performance, dp_effectiveness
 

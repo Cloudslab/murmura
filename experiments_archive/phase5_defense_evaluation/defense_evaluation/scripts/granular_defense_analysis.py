@@ -17,10 +17,8 @@ Answers specific questions about:
 """
 
 import json
-import pandas as pd
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Any
 import matplotlib.pyplot as plt
 import seaborn as sns
 

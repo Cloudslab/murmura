@@ -126,6 +126,36 @@ class DecentralizedLearningProcess(LearningProcess):
         
         self.logger.info(f"Trust monitoring initialized for {len(self.trust_monitors)} honest nodes")
 
+    def _setup_local_validation_for_trust_monitors(self, model_template) -> None:
+        """Set up local validation data for trust monitors to enable loss spoofing detection."""
+        if not self.trust_monitors:
+            return
+            
+        self.logger.info("Setting up local validation data for trust monitors")
+        
+        # Set up validation data for each trust monitor
+        validation_ratio = self.trust_config.local_validation_split_ratio if self.trust_config else 0.1
+        
+        for node_idx, trust_monitor in self.trust_monitors.items():
+            try:
+                # Get validation data from the corresponding actor
+                actor = self.cluster_manager.actors[node_idx]
+                validation_data = ray.get(actor.create_validation_split.remote(validation_ratio))
+                
+                # Set up the trust monitor with validation data and model template
+                trust_monitor.set_local_validation_data(validation_data, model_template)
+                
+                self.logger.info(
+                    f"Local validation configured for node {node_idx} trust monitor "
+                    f"({validation_ratio:.1%} split)"
+                )
+                
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to setup local validation for node {node_idx}: {e}. "
+                    f"Trust monitor will skip loss spoofing detection."
+                )
+
     def _process_trust_monitoring(self, round_num: int, node_params: Dict[int, Dict[str, Any]], 
                                  train_metrics: List[Dict[str, float]], 
                                  node_malicious_detections: Dict[int, set]) -> Dict[int, Dict[str, float]]:
@@ -252,6 +282,10 @@ class DecentralizedLearningProcess(LearningProcess):
 
         # Initialize trust monitoring for decentralized learning
         self._initialize_trust_monitoring()
+        
+        # Set up local validation data for trust monitors (if enabled)
+        if self.trust_monitors and self.trust_config and self.trust_config.enable_loss_spoofing_detection:
+            self._setup_local_validation_for_trust_monitors(self.model)
 
         round_metrics = []
         trust_monitoring_results = []

@@ -628,6 +628,39 @@ class VirtualClientActor:
                 f"Dataset preprocessing failed on node {self.node_info['node_id']}: {e}"
             )
 
+    def create_validation_split(self, validation_ratio: float = 0.1) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Create a small validation split from the client's training data for trust monitoring.
+        
+        Args:
+            validation_ratio: Fraction of training data to use for validation
+            
+        Returns:
+            Tuple of (validation_features, validation_labels)
+        """
+        if self.data_partition is None or len(self.data_partition) == 0:
+            raise ValueError("No data partition available for validation split")
+            
+        # Get full training data
+        features, labels = self._get_partition_data(data_sampling_rate=1.0)
+        
+        # Create validation split
+        total_samples = len(features)
+        val_samples = max(1, int(total_samples * validation_ratio))
+        
+        # Use numpy random seed for reproducible splits
+        np.random.seed(42)
+        val_indices = np.random.choice(total_samples, val_samples, replace=False)
+        
+        val_features = features[val_indices]
+        val_labels = labels[val_indices]
+        
+        self.logger.debug(
+            f"Created validation split: {val_samples}/{total_samples} samples ({validation_ratio:.1%})"
+        )
+        
+        return val_features, val_labels
+
     def _get_partition_data(
         self, data_sampling_rate: float = 1.0
     ) -> Tuple[np.ndarray, np.ndarray]:

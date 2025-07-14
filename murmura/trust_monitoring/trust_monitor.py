@@ -4,6 +4,7 @@ Trust monitoring implementation for detecting malicious behavior in decentralize
 
 import logging
 import numpy as np
+import copy
 from typing import Dict, Any, List, Optional, Tuple, Callable
 from collections import defaultdict, deque
 from dataclasses import dataclass
@@ -54,6 +55,17 @@ class TrustMonitor:
         # Event callbacks
         self.event_callbacks: List[Callable] = []
 
+        # Loss spoofing detection infrastructure
+        self.loss_history: Dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=config.history_window_size)
+        )
+        self.loss_ratio_history: Dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=config.baseline_calibration_rounds + 2)
+        )
+        self.distribution_baselines: Dict[str, float] = {}
+        self.local_validation_data: Optional[Any] = None
+        self.local_model_template: Optional[Any] = None
+
         # Logging
         self.logger = logging.getLogger(f"murmura.trust_monitor.{node_id}")
 
@@ -68,6 +80,117 @@ class TrustMonitor:
                 callback(event)
             except Exception as e:
                 self.logger.error(f"Error in trust event callback: {e}")
+
+    def set_local_validation_data(self, validation_data: Any, model_template: Any) -> None:
+        """Set local validation data and model template for loss spoofing detection."""
+        if self.config.enable_loss_spoofing_detection:
+            self.local_validation_data = validation_data
+            self.local_model_template = model_template
+            self.logger.info(
+                f"TRUST MONITOR {self.node_id}: Local validation data configured for loss spoofing detection"
+            )
+
+    def _compute_local_validation_loss(self, neighbor_id: str, neighbor_params: Dict[str, Any]) -> Optional[float]:
+        """Validate neighbor's model parameters on local validation data."""
+        if not self.config.enable_loss_spoofing_detection:
+            return None
+            
+        if self.local_validation_data is None or self.local_model_template is None:
+            self.logger.warning(
+                f"TRUST MONITOR {self.node_id}: Local validation not configured, skipping spoofing detection"
+            )
+            return None
+        
+        try:
+            # Create a copy of the local model template
+            validation_model = copy.deepcopy(self.local_model_template)
+            
+            # Load neighbor's parameters
+            if hasattr(validation_model, 'load_state_dict'):
+                # Convert parameters to proper format if needed
+                state_dict = {}
+                for name, param in neighbor_params.items():
+                    if hasattr(param, 'cpu'):
+                        state_dict[name] = param.cpu()
+                    else:
+                        state_dict[name] = param
+                validation_model.load_state_dict(state_dict)
+            else:
+                self.logger.warning(
+                    f"TRUST MONITOR {self.node_id}: Model template doesn't support load_state_dict, trying direct assignment"
+                )
+                for name, param in neighbor_params.items():
+                    if hasattr(validation_model, name):
+                        setattr(validation_model, name, param)
+            
+            # Set model to evaluation mode
+            if hasattr(validation_model, 'eval'):
+                validation_model.eval()
+            
+            # Compute validation loss using the model's evaluate method
+            val_features, val_labels = self.local_validation_data
+            
+            if hasattr(validation_model, 'evaluate'):
+                # Use the model's built-in evaluate method
+                result = validation_model.evaluate(val_features, val_labels)
+                validation_loss = result.get('loss', result.get('val_loss', 0.0))
+            else:
+                # Fallback: manual loss computation
+                validation_loss = self._compute_manual_validation_loss(validation_model, val_features, val_labels)
+            
+            self.logger.debug(
+                f"TRUST MONITOR {self.node_id}: Local validation loss for {neighbor_id}: {validation_loss:.6f}"
+            )
+            
+            return float(validation_loss)
+            
+        except Exception as e:
+            self.logger.warning(
+                f"TRUST MONITOR {self.node_id}: Failed to compute local validation loss for {neighbor_id}: {e}"
+            )
+            return None
+
+    def _compute_manual_validation_loss(self, model, features, labels) -> float:
+        """Manually compute validation loss when model doesn't have evaluate method."""
+        try:
+            import torch
+            import torch.nn.functional as F
+            
+            # Convert to tensors if needed
+            if not isinstance(features, torch.Tensor):
+                features = torch.tensor(features, dtype=torch.float32)
+            if not isinstance(labels, torch.Tensor):
+                labels = torch.tensor(labels, dtype=torch.long)
+            
+            # Set device if model has one
+            if hasattr(model, 'device'):
+                features = features.to(model.device)
+                labels = labels.to(model.device)
+            
+            # Forward pass
+            with torch.no_grad():
+                if hasattr(model, 'forward'):
+                    outputs = model.forward(features)
+                elif callable(model):
+                    outputs = model(features)
+                else:
+                    raise ValueError("Model is not callable and has no forward method")
+                
+                # Compute loss
+                if hasattr(model, 'criterion') and model.criterion:
+                    loss = model.criterion(outputs, labels)
+                else:
+                    # Default to cross-entropy loss
+                    loss = F.cross_entropy(outputs, labels)
+                
+                return float(loss.item())
+                
+        except Exception as e:
+            self.logger.warning(
+                f"TRUST MONITOR {self.node_id}: Manual loss computation failed: {e}"
+            )
+            # Return a safe default
+            return 1.0
 
     def _compute_parameter_stats(self, parameters: Dict[str, Any]) -> Dict[str, float]:
         """Compute statistical fingerprint of parameter update."""
@@ -459,6 +582,190 @@ class TrustMonitor:
 
         return False, 0.0, {}
 
+    def _detect_loss_spoofing(
+        self, 
+        neighbor_id: str, 
+        reported_loss: Optional[float], 
+        neighbor_params: Dict[str, Any],
+        round_num: int
+    ) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect loss spoofing attacks using local validation with distribution-aware calibration."""
+        
+        if not self.config.enable_loss_spoofing_detection or reported_loss is None:
+            return False, 0.0, {"detection_method": "loss_spoofing", "status": "disabled_or_no_loss"}
+        
+        # Compute local validation loss
+        local_validation_loss = self._compute_local_validation_loss(neighbor_id, neighbor_params)
+        
+        if local_validation_loss is None:
+            return False, 0.0, {"detection_method": "loss_spoofing", "status": "validation_failed"}
+        
+        # Add loss to history
+        self.loss_history[neighbor_id].append((round_num, reported_loss))
+        
+        # Compute distribution adjustment baseline
+        baseline_adjustment = self._compute_distribution_adjustment(neighbor_id, round_num, 
+                                                                   reported_loss, local_validation_loss)
+        
+        # Apply baseline correction for non-IID distributions
+        adjusted_expected_loss = local_validation_loss * baseline_adjustment
+        
+        # Compute loss ratio (reported / expected)
+        loss_ratio = reported_loss / max(adjusted_expected_loss, 0.001)
+        
+        # Detection logic for spoofing
+        spoofing_score = 0.0
+        is_spoofing = False
+        detection_details = {}
+        
+        # Check for suspiciously low reported loss (most common spoofing)
+        if loss_ratio < self.config.min_loss_ratio_threshold:
+            spoofing_score = max(spoofing_score, 
+                                (self.config.min_loss_ratio_threshold - loss_ratio) / self.config.min_loss_ratio_threshold)
+            is_spoofing = True
+            detection_details["low_loss_spoofing"] = True
+        
+        # Check for suspiciously high reported loss (less common but possible)
+        elif loss_ratio > self.config.loss_ratio_tolerance:
+            spoofing_score = max(spoofing_score,
+                                min(1.0, (loss_ratio - self.config.loss_ratio_tolerance) / self.config.loss_ratio_tolerance))
+            is_spoofing = True
+            detection_details["high_loss_spoofing"] = True
+        
+        # Apply overall spoofing threshold
+        if spoofing_score > self.config.spoofing_detection_threshold:
+            is_spoofing = True
+        else:
+            is_spoofing = False
+            
+        self.logger.info(
+            f"TRUST MONITOR {self.node_id}: Loss spoofing analysis for {neighbor_id}:"
+        )
+        self.logger.info(
+            f"  reported_loss={reported_loss:.6f}, local_validation_loss={local_validation_loss:.6f}"
+        )
+        self.logger.info(
+            f"  baseline_adjustment={baseline_adjustment:.6f}, adjusted_expected={adjusted_expected_loss:.6f}"
+        )
+        self.logger.info(
+            f"  loss_ratio={loss_ratio:.6f}, spoofing_score={spoofing_score:.6f}"
+        )
+        self.logger.info(
+            f"  is_spoofing={is_spoofing}, detection_details={detection_details}"
+        )
+        
+        evidence = {
+            "reported_loss": float(reported_loss),
+            "local_validation_loss": float(local_validation_loss),
+            "baseline_adjustment": float(baseline_adjustment),
+            "adjusted_expected_loss": float(adjusted_expected_loss),
+            "loss_ratio": float(loss_ratio),
+            "spoofing_score": float(spoofing_score),
+            "detection_method": "loss_spoofing",
+            **detection_details
+        }
+        
+        return bool(is_spoofing), spoofing_score, evidence
+
+    def _compute_distribution_adjustment(
+        self, 
+        neighbor_id: str, 
+        round_num: int, 
+        reported_loss: float, 
+        local_validation_loss: float
+    ) -> float:
+        """Compute baseline adjustment factor for non-IID distributions."""
+        
+        current_ratio = reported_loss / max(local_validation_loss, 0.001)
+        
+        # During calibration phase, collect baseline ratios
+        if round_num <= self.config.baseline_calibration_rounds:
+            self.loss_ratio_history[neighbor_id].append(current_ratio)
+            # Return neutral adjustment during calibration
+            return 1.0
+        
+        # After calibration, use historical ratios to establish baseline
+        historical_ratios = list(self.loss_ratio_history[neighbor_id])
+        
+        if len(historical_ratios) >= 2:
+            # Use median of historical ratios as distribution baseline
+            baseline = float(np.median(historical_ratios))
+            self.distribution_baselines[neighbor_id] = baseline
+            return baseline
+        else:
+            # Fallback to stored baseline or neutral
+            return self.distribution_baselines.get(neighbor_id, 1.0)
+
+    def _compute_loss_pattern_anomalies(
+        self, 
+        neighbor_id: str, 
+        current_loss: float, 
+        round_num: int
+    ) -> Dict[str, float]:
+        """Detect data poisoning through loss trajectory analysis (enhanced from self-reported losses)."""
+        
+        if current_loss is None:
+            return {"loss_anomaly_score": 0.0}
+        
+        if len(self.loss_history[neighbor_id]) < 3:
+            return {"loss_anomaly_score": 0.0}
+        
+        # Extract loss values for analysis  
+        losses = [loss for _, loss in self.loss_history[neighbor_id]]
+        
+        # 1. Loss Stagnation Detection
+        recent_losses = losses[-3:]  # Last 3 rounds
+        loss_variance = float(np.var(recent_losses))
+        stagnation_score = 1.0 if loss_variance < 0.001 else 0.0
+        
+        # 2. Abnormal Loss Progression
+        if len(losses) >= 5:
+            # Check if loss is consistently increasing (bad sign)
+            loss_trend = float(np.polyfit(range(len(losses)), losses, 1)[0])
+            increasing_loss_score = max(0.0, loss_trend * 10)  # Normalize
+        else:
+            increasing_loss_score = 0.0
+        
+        # 3. Loss Outlier Detection
+        if len(losses) >= 5:
+            loss_mean = float(np.mean(losses[:-1]))  # Exclude current
+            loss_std = float(np.std(losses[:-1])) + 1e-8
+            z_score = abs((current_loss - loss_mean) / loss_std)
+            outlier_score = min(1.0, max(0.0, (z_score - 2.0) / 2.0))
+        else:
+            outlier_score = 0.0
+        
+        # 4. Loss vs Neighbor Consensus
+        neighbor_losses = []
+        for nid, history in self.loss_history.items():
+            if nid != neighbor_id and len(history) > 0:
+                neighbor_losses.append(history[-1][1])  # Most recent loss
+        
+        if len(neighbor_losses) >= 2:
+            neighbor_mean = float(np.mean(neighbor_losses))
+            neighbor_std = float(np.std(neighbor_losses)) + 1e-8
+            consensus_z = abs((current_loss - neighbor_mean) / neighbor_std)
+            consensus_score = min(1.0, max(0.0, (consensus_z - 1.5) / 1.5))
+        else:
+            consensus_score = 0.0
+        
+        # Combined loss anomaly score
+        loss_anomaly_score = max(
+            stagnation_score * 0.3,
+            increasing_loss_score * 0.4,
+            outlier_score * 0.2,
+            consensus_score * 0.5
+        )
+        
+        return {
+            "loss_anomaly_score": float(loss_anomaly_score),
+            "loss_stagnation": float(stagnation_score),
+            "loss_trend_anomaly": float(increasing_loss_score),
+            "loss_outlier": float(outlier_score),
+            "loss_consensus_anomaly": float(consensus_score),
+            "current_loss": float(current_loss)
+        }
+
     def _detect_consensus_violations(
         self, round_num: int, all_updates: Dict[str, ParameterUpdate]
     ) -> Dict[str, Tuple[bool, float, Dict[str, Any]]]:
@@ -653,31 +960,12 @@ class TrustMonitor:
             f"TRUST MONITOR {self.node_id}: Processing {len(neighbor_updates)} neighbors: {list(neighbor_updates.keys())}"
         )
 
-        # Log detailed parameter information for each neighbor
-        for neighbor_id, parameters in neighbor_updates.items():
-            if parameters:
-                param_sizes = {
-                    name: np.array(param).size for name, param in parameters.items()
-                }
-                total_params = sum(param_sizes.values())
-                self.logger.info(
-                    f"TRUST MONITOR {self.node_id}: Neighbor {neighbor_id} - {len(parameters)} layers, {total_params} total parameters"
-                )
-
-                # Log a sample of parameter values for debugging
-                sample_layer = next(iter(parameters.keys()))
-                sample_param = parameters[sample_layer]
-                if hasattr(sample_param, "cpu"):
-                    sample_values = sample_param.cpu().numpy().flatten()[:5]
-                else:
-                    sample_values = np.array(sample_param).flatten()[:5]
-                self.logger.info(
-                    f"TRUST MONITOR {self.node_id}: Neighbor {neighbor_id} sample values from {sample_layer}: {sample_values}"
-                )
-            else:
-                self.logger.warning(
-                    f"TRUST MONITOR {self.node_id}: Neighbor {neighbor_id} has EMPTY parameters!"
-                )
+        # Log summary of parameter information
+        total_neighbors = len(neighbor_updates)
+        valid_neighbors = sum(1 for params in neighbor_updates.values() if params)
+        self.logger.debug(
+            f"TRUST MONITOR {self.node_id}: Processing {valid_neighbors}/{total_neighbors} valid neighbors"
+        )
 
         # Initialize trust scores for new neighbors
         for neighbor_id in neighbor_updates.keys():
@@ -707,7 +995,7 @@ class TrustMonitor:
         # Detect anomalies using multiple methods
         all_anomalies = {}
 
-        self.logger.info(
+        self.logger.debug(
             f"TRUST MONITOR {self.node_id}: Running CUSUM detection on {len(current_updates)} neighbors"
         )
 
@@ -716,15 +1004,63 @@ class TrustMonitor:
             is_anomaly, score, evidence = self._detect_anomalies_cusum(
                 neighbor_id, update
             )
-            self.logger.info(
+            self.logger.debug(
                 f"TRUST MONITOR {self.node_id}: CUSUM {neighbor_id} - anomaly={is_anomaly}, score={score:.3f}"
             )
             if is_anomaly:
                 all_anomalies[neighbor_id] = (is_anomaly, score, evidence)
 
+        # 2. Loss spoofing detection for each neighbor
+        if self.config.enable_loss_spoofing_detection:
+            self.logger.debug(
+                f"TRUST MONITOR {self.node_id}: Running loss spoofing detection on {len(current_updates)} neighbors"
+            )
+            for neighbor_id, update in current_updates.items():
+                is_spoofing, spoofing_score, spoofing_evidence = self._detect_loss_spoofing(
+                    neighbor_id, update.reported_loss, update.parameters, round_num
+                )
+                self.logger.debug(
+                    f"TRUST MONITOR {self.node_id}: Loss spoofing {neighbor_id} - spoofing={is_spoofing}, score={spoofing_score:.3f}"
+                )
+                if is_spoofing:
+                    # Combine with existing anomaly or create new one
+                    if neighbor_id in all_anomalies:
+                        existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
+                        combined_score = max(existing_score, spoofing_score)
+                        combined_evidence = {**existing_evidence, **spoofing_evidence}
+                        all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
+                    else:
+                        all_anomalies[neighbor_id] = (is_spoofing, spoofing_score, spoofing_evidence)
+
+        # 3. Loss pattern anomaly detection for each neighbor  
+        self.logger.info(
+            f"TRUST MONITOR {self.node_id}: Running loss pattern detection on {len(current_updates)} neighbors"
+        )
+        for neighbor_id, update in current_updates.items():
+            if update.reported_loss is not None:
+                loss_pattern_metrics = self._compute_loss_pattern_anomalies(
+                    neighbor_id, update.reported_loss, round_num
+                )
+                loss_anomaly_score = loss_pattern_metrics["loss_anomaly_score"]
+                
+                self.logger.info(
+                    f"TRUST MONITOR {self.node_id}: Loss pattern {neighbor_id} - anomaly_score={loss_anomaly_score:.3f}"
+                )
+                
+                # Consider loss pattern anomaly if score > 0.4
+                if loss_anomaly_score > 0.4:
+                    # Combine with existing anomaly or create new one
+                    if neighbor_id in all_anomalies:
+                        existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
+                        combined_score = max(existing_score, loss_anomaly_score)
+                        combined_evidence = {**existing_evidence, **loss_pattern_metrics}
+                        all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
+                    else:
+                        all_anomalies[neighbor_id] = (True, loss_anomaly_score, loss_pattern_metrics)
+
         self.logger.info(f"TRUST MONITOR {self.node_id}: Running consensus detection")
 
-        # 2. Consensus-based detection
+        # 4. Consensus-based detection
         consensus_violations = self._detect_consensus_violations(
             round_num, current_updates
         )

@@ -10,13 +10,12 @@ import time
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Set, Tuple
+from typing import Dict, List, Any, Optional
 import networkx as nx
 from murmura.attacks.topology_attacks import (
     CommunicationPatternAttack,
     ParameterMagnitudeAttack,
-    TopologyStructureAttack,
-    AttackEvaluator
+    TopologyStructureAttack
 )
 
 
@@ -463,7 +462,7 @@ def run_experiments_with_realistic_scenarios(
 ) -> None:
     """Run attacks with realistic partial knowledge scenarios."""
     
-    print(f"Starting realistic partial knowledge analysis...")
+    print("Starting realistic partial knowledge analysis...")
     print(f"Minimum nodes required: {min_nodes}")
     
     # Create output directory

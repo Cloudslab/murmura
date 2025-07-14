@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Run realistic scenarios on ALL experiments with >5 nodes in phase 1."""
 
-import os
 from pathlib import Path
 from rerun_attacks_realistic_partial_knowledge import run_experiments_with_realistic_scenarios
 
