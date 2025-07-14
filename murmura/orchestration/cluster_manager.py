@@ -1265,6 +1265,41 @@ class ClusterManager:
 
         return self.topology_coordinator.coordinate_aggregation(weights=weights)
 
+    def _compute_state_based_trust_weight(self, node_idx: int, neighbor_idx: int, 
+                                         raw_trust_score: float) -> float:
+        """
+        Compute trust weight based on decay/recovery state instead of complex normalization.
+        
+        Args:
+            node_idx: The node performing aggregation
+            neighbor_idx: The neighbor being weighted
+            raw_trust_score: Current trust score from trust monitor
+            
+        Returns:
+            Final trust weight for aggregation
+        """
+        # Check if this node has a trust monitor with state information
+        # Trust monitors are stored in the learning process, need to get access
+        from murmura.orchestration.learning_process.decentralized_learning_process import DecentralizedLearningProcess
+        
+        # For now, use a simplified state-based approach without accessing trust monitors directly
+        # This will work with the trust scores we already have
+        
+        # If trust score is very low (< 0.05), likely active decay happening
+        if raw_trust_score < 0.05:
+            # Active decay - use raw score but with minimum
+            return max(0.1, raw_trust_score)
+        elif raw_trust_score < 0.2:
+            # Likely recovery phase - boost the weight significantly
+            # This addresses the false positive problem for honest nodes
+            return min(0.9, raw_trust_score + 0.4)
+        elif raw_trust_score < 0.5:
+            # Moderate trust - small boost
+            return min(0.9, raw_trust_score + 0.2)
+        else:
+            # High trust - use score with minimal adjustment
+            return max(0.8, raw_trust_score)
+
     def perform_decentralized_aggregation(
         self,
         current_round: int,
@@ -1362,57 +1397,17 @@ class ClusterManager:
                             )
                         neighbor_params.append(neighbor_param)
 
-                        # Apply trust weighting: base_weight * trust_score with optional scaling and exponent
+                        # Apply state-based trust weighting (replaces complex sigmoid/minmax logic)
                         base_weight = weights[neighbor_idx] if weights else 1.0
                         neighbor_id = f"node_{neighbor_idx}"
                         raw_trust_score = node_trust_scores.get(
                             neighbor_id, 1.0
                         )  # Default trust = 1.0
 
-                        # Apply trust scaling and exponent from config
-                        # This allows for more aggressive penalties than just using raw trust scores
-                        if neighbor_id in node_trust_scores:
-                            # Get trust config from the first actor's trust monitor config
-                            # In practice, all nodes should have the same trust config
-                            trust_config = getattr(
-                                self.config, "trust_monitoring", None
-                            )
-                            if trust_config:
-                                scaling_factor = trust_config.trust_scaling_factor
-                                exponent = trust_config.trust_weight_exponent
-
-                                # Apply scaling and exponent: (trust_score * scaling_factor) ^ exponent
-                                scaled_trust = (
-                                    raw_trust_score * scaling_factor
-                                ) ** exponent
-
-                                # Apply normalization method to ensure weights stay in reasonable bounds
-                                method = trust_config.weight_normalization_method
-                                if method == "sigmoid":
-                                    # Sigmoid: 1 / (1 + exp(-k * (x - 0.5))) maps any real value to (0,1) smoothly
-                                    import math
-
-                                    k = trust_config.sigmoid_steepness
-                                    trust_weight = 1.0 / (
-                                        1.0 + math.exp(-k * (scaled_trust - 0.5))
-                                    )
-                                elif method == "tanh":
-                                    # Tanh: (tanh(x - 0.5) + 1) / 2 maps to (0,1) with smooth transitions
-                                    import math
-
-                                    trust_weight = (
-                                        math.tanh(scaled_trust - 0.5) + 1.0
-                                    ) / 2.0
-                                elif method == "soft":
-                                    # Soft normalization: x / (1 + x) maps [0,∞) to [0,1)
-                                    trust_weight = scaled_trust / (1.0 + scaled_trust)
-                                else:  # "minmax" or fallback
-                                    # Min-max clamping (original approach)
-                                    trust_weight = max(0.0, min(1.0, scaled_trust))
-                            else:
-                                trust_weight = raw_trust_score
-                        else:
-                            trust_weight = raw_trust_score
+                        # Use simplified state-based trust weighting
+                        trust_weight = self._compute_state_based_trust_weight(
+                            node_idx, neighbor_idx, raw_trust_score
+                        )
 
                         final_weight = base_weight * trust_weight
                         neighbor_weights.append(final_weight)

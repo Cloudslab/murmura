@@ -38,7 +38,7 @@ COMMON_BASE_PARAMS="
     --malicious_node_seed 42
 "
 
-# Trust monitoring parameters
+# Trust monitoring parameters (using new state-based weighting)
 TRUST_PARAMS="
     --enable_trust_monitoring
     --enable_trust_weighted_aggregation

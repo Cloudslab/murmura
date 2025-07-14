@@ -51,6 +51,10 @@ class TrustMonitor:
         # Detection state
         self.anomaly_counts: Dict[str, int] = defaultdict(int)
         self.consensus_history: deque = deque(maxlen=config.history_window_size)
+        
+        # Trust action tracking for state-based weighting
+        self.last_trust_actions: Dict[str, str] = {}  # {neighbor_id: "decay"/"recovery"/"stable"}
+        self.rounds_since_decay: Dict[str, int] = {}  # {neighbor_id: rounds_since_last_decay}
 
         # Event callbacks
         self.event_callbacks: List[Callable] = []
@@ -881,6 +885,10 @@ class TrustMonitor:
                         self.trust_scores[neighbor_id] - old_score
                     )
 
+                    # Track trust action for state-based weighting
+                    self.last_trust_actions[neighbor_id] = "decay"
+                    self.rounds_since_decay[neighbor_id] = 0
+
                     # Increment anomaly count
                     self.anomaly_counts[neighbor_id] += 1
 
@@ -914,6 +922,11 @@ class TrustMonitor:
                     score_changes[neighbor_id] = (
                         self.trust_scores[neighbor_id] - old_score
                     )
+                    
+                    # Track trust action for state-based weighting
+                    self.last_trust_actions[neighbor_id] = "recovery"
+                    if neighbor_id in self.rounds_since_decay:
+                        self.rounds_since_decay[neighbor_id] += 1
             else:
                 # No anomaly detected, slight recovery
                 old_score = self.trust_scores[neighbor_id]
@@ -921,6 +934,11 @@ class TrustMonitor:
                     neighbor_id
                 )
                 score_changes[neighbor_id] = self.trust_scores[neighbor_id] - old_score
+                
+                # Track trust action for state-based weighting
+                self.last_trust_actions[neighbor_id] = "recovery"
+                if neighbor_id in self.rounds_since_decay:
+                    self.rounds_since_decay[neighbor_id] += 1
 
         # Emit trust score event
         if score_changes:
@@ -1297,6 +1315,14 @@ class TrustMonitor:
         else:
             # Linear recovery (original method)
             return min(1.0, current_score * self.config.trust_recovery_factor)
+
+    def get_last_trust_action(self, neighbor_id: str) -> str:
+        """Get the last trust action (decay/recovery/stable) for a neighbor."""
+        return self.last_trust_actions.get(neighbor_id, "unknown")
+    
+    def get_rounds_since_last_decay(self, neighbor_id: str) -> int:
+        """Get the number of rounds since the last decay action for a neighbor."""
+        return self.rounds_since_decay.get(neighbor_id, 999)  # Large number for "never decayed"
 
     def get_trust_summary(self) -> Dict[str, Any]:
         """Get comprehensive trust monitoring summary using trust-only ranking detection."""
