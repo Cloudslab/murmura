@@ -1,0 +1,585 @@
+2025-07-14 06:16:10,801 - murmura.dp_decentralized_mnist_example - INFO - Using CUDA device for training
+2025-07-14 06:16:10,801 - murmura.dp_decentralized_mnist_example - INFO - Differential privacy is DISABLED
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO - === Configuring Model Poisoning Attacks ===
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO - Attack configuration created:
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Malicious clients ratio: 0.3
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Attack type: gradient_manipulation
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Attack intensity: 0.2 -> 1.0
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Intensity progression: linear
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Attack start round: 2
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Malicious node seed: 42
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Gradient noise scale: 1.0
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO -   - Gradient sign flip prob: 0.1
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO - Trust monitoring is DISABLED
+2025-07-14 06:16:10,802 - murmura.dp_decentralized_mnist_example - INFO - === Loading MNIST Dataset ===
+2025-07-14 06:16:14,983 - murmura.dataset - INFO - Converting dataset to multi-node compatible format...
+2025-07-14 06:16:15,308 - murmura.dataset - INFO - Dataset conversion completed
+2025-07-14 06:16:17,720 - murmura.dataset - INFO - Converting dataset to multi-node compatible format...
+2025-07-14 06:16:17,761 - murmura.dataset - INFO - Dataset conversion completed
+2025-07-14 06:16:17,763 - murmura.dp_decentralized_mnist_example - INFO - === Creating Data Partitions ===
+2025-07-14 06:16:17,763 - murmura.dp_decentralized_mnist_example - INFO - === Creating MNIST Model ===
+2025-07-14 06:16:17,768 - murmura.dp_decentralized_mnist_example - INFO - Using automatic data type detection
+2025-07-14 06:16:17,769 - murmura.dp_decentralized_mnist_example - INFO - Creating regular model wrapper
+2025-07-14 06:16:18,974 - murmura.dp_decentralized_mnist_example - INFO - === Setting Up Decentralized Learning Process ===
+2025-07-14 06:16:18,975 - murmura.dp_decentralized_mnist_example - INFO - === Setting Up Visualization ===
+2025-07-14 06:16:18,975 - murmura.dp_decentralized_mnist_example - INFO - Registered visualizer with learning process
+2025-07-14 06:16:18,975 - murmura.learning_process.DecentralizedLearningProcess - INFO - === Initializing Learning Process ===
+2025-07-14 06:16:18,975 - murmura - INFO - Malicious clients will be created at indices: [0, 1, 4]
+2025-07-14 06:16:19,002	INFO worker.py:1660 -- Connecting to existing Ray cluster at address: 10.0.4.103:6379...
+2025-07-14 06:16:19,015	INFO worker.py:1852 -- Connected to Ray cluster.
+2025-07-14 06:16:19,032 - murmura - INFO - Ray cluster initialized successfully
+2025-07-14 06:16:19,032 - murmura - INFO - Ray cluster initialized successfully
+2025-07-14 06:16:19,034 - murmura - INFO - Ray cluster info: 5 nodes
+2025-07-14 06:16:19,034 - murmura - INFO - Ray cluster info: 5 nodes
+2025-07-14 06:16:19,034 - murmura - INFO - Total CPUs: 80.0
+2025-07-14 06:16:19,034 - murmura - INFO - Total CPUs: 80.0
+2025-07-14 06:16:19,034 - murmura - INFO - Total GPUs: 5.0
+2025-07-14 06:16:19,034 - murmura - INFO - Total GPUs: 5.0
+2025-07-14 06:16:19,034 - murmura - INFO - Is multi-node cluster: True
+2025-07-14 06:16:19,034 - murmura - INFO - Is multi-node cluster: True
+2025-07-14 06:16:19,034 - murmura.learning_process.DecentralizedLearningProcess - INFO - Setting up aggregation strategy...
+2025-07-14 06:16:19,034 - murmura.learning_process.DecentralizedLearningProcess - INFO - Setting up aggregation strategy...
+2025-07-14 06:16:19,034 - murmura.learning_process.DecentralizedLearningProcess - INFO - Creating 10 virtual clients with ring topology...
+2025-07-14 06:16:19,034 - murmura.learning_process.DecentralizedLearningProcess - INFO - Creating 10 virtual clients with ring topology...
+2025-07-14 06:16:19,034 - murmura.learning_process.DecentralizedLearningProcess - INFO - Cluster stats: 5 nodes, Multi-node: True
+2025-07-14 06:16:19,034 - murmura.learning_process.DecentralizedLearningProcess - INFO - Cluster stats: 5 nodes, Multi-node: True
+2025-07-14 06:16:19,034 - murmura - INFO - GPU allocation: 0.50 GPUs per actor (median 1.0 GPUs/node, max 2 actors/node, distribution: 2+0 across 5 nodes)
+2025-07-14 06:16:19,034 - murmura - INFO - GPU allocation: 0.50 GPUs per actor (median 1.0 GPUs/node, max 2 actors/node, distribution: 2+0 across 5 nodes)
+2025-07-14 06:16:19,035 - murmura - INFO - Resource allocation per actor: {'num_cpus': 1.0, 'num_gpus': 0.5}
+2025-07-14 06:16:19,035 - murmura - INFO - Resource allocation per actor: {'num_cpus': 1.0, 'num_gpus': 0.5}
+2025-07-14 06:16:19,035 - murmura - INFO - Actors per node: 2
+2025-07-14 06:16:19,035 - murmura - INFO - Actors per node: 2
+2025-07-14 06:16:19,035 - murmura - INFO - Creating 10 virtual clients across 5 nodes
+2025-07-14 06:16:19,035 - murmura - INFO - Creating 10 virtual clients across 5 nodes
+2025-07-14 06:16:19,112 - murmura - INFO - Created MALICIOUS client 0
+2025-07-14 06:16:19,112 - murmura - INFO - Created MALICIOUS client 0
+2025-07-14 06:16:19,112 - murmura - INFO - Created actors 1/10
+2025-07-14 06:16:19,112 - murmura - INFO - Created actors 1/10
+2025-07-14 06:16:19,113 - murmura - INFO - Created MALICIOUS client 1
+2025-07-14 06:16:19,113 - murmura - INFO - Created MALICIOUS client 1
+2025-07-14 06:16:19,188 - murmura - INFO - Created MALICIOUS client 4
+2025-07-14 06:16:19,188 - murmura - INFO - Created MALICIOUS client 4
+2025-07-14 06:16:19,191 - murmura - INFO - Created actors 10/10
+2025-07-14 06:16:19,191 - murmura - INFO - Created actors 10/10
+2025-07-14 06:16:19,194 - murmura - INFO - Applying topology for 10 actors with 3600s timeout
+2025-07-14 06:16:19,194 - murmura - INFO - Applying topology for 10 actors with 3600s timeout
+[36m(VirtualClientActor pid=23662, ip=10.0.4.122)[0m 2025-07-14 06:16:22,181 - murmura.actor.client_3 - [Node:07628be6] - [Actor:client_3] - INFO - Actor client_3 initialized on node 07628be6 with device: cuda
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:22,167 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - MALICIOUS Actor client_1 initialized on node 4cf318ad with device: cuda and attacks: ['gradient_manipulation']
+2025-07-14 06:16:22,368 - murmura - INFO - Successfully created 10 actors across cluster
+2025-07-14 06:16:22,368 - murmura - INFO - Successfully created 10 actors across cluster
+2025-07-14 06:16:22,369 - murmura.learning_process.DecentralizedLearningProcess - INFO - Partitioning dataset...
+2025-07-14 06:16:22,369 - murmura.learning_process.DecentralizedLearningProcess - INFO - Partitioning dataset...
+2025-07-14 06:16:22,407 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing data partitions...
+2025-07-14 06:16:22,407 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing data partitions...
+2025-07-14 06:16:22,415 - murmura - INFO - Distributed data to actors 1-10
+2025-07-14 06:16:22,415 - murmura - INFO - Distributed data to actors 1-10
+2025-07-14 06:16:22,415 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing dataset...
+2025-07-14 06:16:22,415 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing dataset...
+2025-07-14 06:16:22,415 - murmura.learning_process.DecentralizedLearningProcess - INFO - Using feature columns: ['image'], label column: label
+2025-07-14 06:16:22,415 - murmura.learning_process.DecentralizedLearningProcess - INFO - Using feature columns: ['image'], label column: label
+2025-07-14 06:16:22,415 - murmura - INFO - Dataset analysis - Samples: 70000, Large: True, Multi-node: True, HF: True, Using lazy: True
+2025-07-14 06:16:22,415 - murmura - INFO - Dataset analysis - Samples: 70000, Large: True, Multi-node: True, HF: True, Using lazy: True
+2025-07-14 06:16:22,416 - murmura - INFO - Using lazy distribution for large dataset
+2025-07-14 06:16:22,416 - murmura - INFO - Using lazy distribution for large dataset
+2025-07-14 06:16:22,416 - murmura - INFO - Using lazy dataset distribution (metadata only)
+2025-07-14 06:16:22,416 - murmura - INFO - Using lazy dataset distribution (metadata only)
+2025-07-14 06:16:22,416 - murmura - INFO - Distributing lazy metadata to 10 actors
+2025-07-14 06:16:22,416 - murmura - INFO - Distributing lazy metadata to 10 actors
+2025-07-14 06:16:22,416 - murmura - INFO - Dataset: ylecun/mnist
+2025-07-14 06:16:22,416 - murmura - INFO - Dataset: ylecun/mnist
+2025-07-14 06:16:22,416 - murmura - INFO - Splits: ['train', 'test']
+2025-07-14 06:16:22,416 - murmura - INFO - Splits: ['train', 'test']
+2025-07-14 06:16:22,416 - murmura - INFO - Partitions: 1 splits partitioned
+2025-07-14 06:16:22,416 - murmura - INFO - Partitions: 1 splits partitioned
+2025-07-14 06:16:22,416 - murmura - INFO - Feature columns: ['image']
+2025-07-14 06:16:22,416 - murmura - INFO - Feature columns: ['image']
+2025-07-14 06:16:22,416 - murmura - INFO - Label column: label
+2025-07-14 06:16:22,416 - murmura - INFO - Label column: label
+2025-07-14 06:16:22,494 - murmura - INFO - Successfully distributed metadata to 5/5 actors
+2025-07-14 06:16:22,494 - murmura - INFO - Successfully distributed metadata to 5/5 actors
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m 2025-07-14 06:16:22,449 - murmura.actor.client_2 - [Node:07628be6] - [Actor:client_2] - INFO - Set dataset metadata for lazy loading
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m 2025-07-14 06:16:22,449 - murmura.actor.client_2 - [Node:07628be6] - [Actor:client_2] - INFO - Dataset: ylecun/mnist
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m 2025-07-14 06:16:22,449 - murmura.actor.client_2 - [Node:07628be6] - [Actor:client_2] - INFO - Splits: ['train', 'test']
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m 2025-07-14 06:16:22,449 - murmura.actor.client_2 - [Node:07628be6] - [Actor:client_2] - INFO - Features: ['image'], Label: label
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:16:22,493 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - MALICIOUS Set dataset metadata for lazy loading
+2025-07-14 06:16:22,578 - murmura - INFO - Successfully distributed metadata to 10/10 actors
+2025-07-14 06:16:22,578 - murmura - INFO - Successfully distributed metadata to 10/10 actors
+2025-07-14 06:16:22,578 - murmura - INFO - Successfully distributed metadata to all 10 actors
+2025-07-14 06:16:22,578 - murmura - INFO - Successfully distributed metadata to all 10 actors
+2025-07-14 06:16:22,578 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing model...
+2025-07-14 06:16:22,578 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing model...
+2025-07-14 06:16:22,578 - murmura - INFO - Distributing model to client actors...
+2025-07-14 06:16:22,578 - murmura - INFO - Distributing model to client actors...
+2025-07-14 06:16:23,003 - murmura - INFO - Distributed model to actors 1-10
+2025-07-14 06:16:23,003 - murmura - INFO - Distributed model to actors 1-10
+2025-07-14 06:16:23,004 - murmura.learning_process.DecentralizedLearningProcess - INFO - Validating actor dataset distribution...
+2025-07-14 06:16:23,004 - murmura.learning_process.DecentralizedLearningProcess - INFO - Validating actor dataset distribution...
+2025-07-14 06:16:23,004 - murmura - INFO - Validating actor dataset state across cluster...
+2025-07-14 06:16:23,004 - murmura - INFO - Validating actor dataset state across cluster...
+2025-07-14 06:16:23,007 - murmura - INFO - Actor validation complete:
+2025-07-14 06:16:23,007 - murmura - INFO - Actor validation complete:
+2025-07-14 06:16:23,008 - murmura - INFO -   Valid actors: 10/10
+2025-07-14 06:16:23,008 - murmura - INFO -   Valid actors: 10/10
+2025-07-14 06:16:23,008 - murmura - INFO -   Invalid actors: 0
+2025-07-14 06:16:23,008 - murmura - INFO -   Invalid actors: 0
+2025-07-14 06:16:23,008 - murmura - INFO -   Unreachable actors: 0
+2025-07-14 06:16:23,008 - murmura - INFO -   Unreachable actors: 0
+2025-07-14 06:16:23,008 - murmura.learning_process.DecentralizedLearningProcess - INFO - All 10 actors successfully configured for training
+2025-07-14 06:16:23,008 - murmura.learning_process.DecentralizedLearningProcess - INFO - All 10 actors successfully configured for training
+2025-07-14 06:16:23,008 - murmura.learning_process.DecentralizedLearningProcess - INFO - Learning process initialized successfully.
+2025-07-14 06:16:23,008 - murmura.learning_process.DecentralizedLearningProcess - INFO - Learning process initialized successfully.
+2025-07-14 06:16:23,009 - murmura.dp_decentralized_mnist_example - INFO - === Enhanced Cluster Summary ===
+2025-07-14 06:16:23,009 - murmura.dp_decentralized_mnist_example - INFO - === Enhanced Cluster Summary ===
+2025-07-14 06:16:23,009 - murmura.dp_decentralized_mnist_example - INFO - Cluster type: multi-node
+2025-07-14 06:16:23,009 - murmura.dp_decentralized_mnist_example - INFO - Cluster type: multi-node
+2025-07-14 06:16:23,009 - murmura.dp_decentralized_mnist_example - INFO - Total nodes: 5
+2025-07-14 06:16:23,009 - murmura.dp_decentralized_mnist_example - INFO - Total nodes: 5
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Total actors: 10
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Total actors: 10
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Topology: ring
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Topology: ring
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Placement strategy: spread
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Placement strategy: spread
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Has placement group: False
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Has placement group: False
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - === MNIST DP Decentralized Learning Setup ===
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - === MNIST DP Decentralized Learning Setup ===
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Dataset: MNIST
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Dataset: MNIST
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Clients: 10
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Clients: 10
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Partitioning: dirichlet (α=0.5)
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Partitioning: dirichlet (α=0.5)
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Aggregation strategy: AggregationStrategyType.GOSSIP_AVG
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Aggregation strategy: AggregationStrategyType.GOSSIP_AVG
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Topology: TopologyType.RING
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Topology: TopologyType.RING
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Rounds: 10
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Rounds: 10
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Local epochs: 1
+2025-07-14 06:16:23,010 - murmura.dp_decentralized_mnist_example - INFO - Local epochs: 1
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Batch size: 64
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Batch size: 64
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Learning rate: 0.01
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Learning rate: 0.01
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Device: cuda
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Device: cuda
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Test split: test
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Test split: test
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Resource monitoring: False
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Resource monitoring: False
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Health check interval: 5 rounds
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Health check interval: 5 rounds
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Differential Privacy: DISABLED
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - Differential Privacy: DISABLED
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - === Starting MNIST DP Decentralized Learning ===
+2025-07-14 06:16:23,011 - murmura.dp_decentralized_mnist_example - INFO - === Starting MNIST DP Decentralized Learning ===
+2025-07-14 06:16:23,011 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 0 - status: starting_decentralized, rounds: 10
+2025-07-14 06:16:23,011 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 0 - status: starting_decentralized, rounds: 10
+2025-07-14 06:16:23,011 - murmura.learning_process.DecentralizedLearningProcess - INFO - Using feature columns: ['image'], label column: label
+2025-07-14 06:16:23,011 - murmura.learning_process.DecentralizedLearningProcess - INFO - Using feature columns: ['image'], label column: label
+2025-07-14 06:16:23,011 - murmura.learning_process.DecentralizedLearningProcess - INFO - Preparing test data for evaluation...
+2025-07-14 06:16:23,011 - murmura.learning_process.DecentralizedLearningProcess - INFO - Preparing test data for evaluation...
+2025-07-14 06:16:24,068 - murmura.learning_process.DecentralizedLearningProcess - INFO - Prepared test data - Features shape: (10000, 28, 28), Labels shape: (10000,)
+2025-07-14 06:16:24,068 - murmura.learning_process.DecentralizedLearningProcess - INFO - Prepared test data - Features shape: (10000, 28, 28), Labels shape: (10000,)
+2025-07-14 06:16:25,110 - murmura.learning_process.DecentralizedLearningProcess - INFO - Initial Test Accuracy: 9.49%
+2025-07-14 06:16:25,110 - murmura.learning_process.DecentralizedLearningProcess - INFO - Initial Test Accuracy: 9.49%
+2025-07-14 06:16:25,110 - murmura.learning_process.DecentralizedLearningProcess - INFO - Trust monitoring not enabled
+2025-07-14 06:16:25,110 - murmura.learning_process.DecentralizedLearningProcess - INFO - Trust monitoring not enabled
+2025-07-14 06:16:25,111 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 1/10 ---
+2025-07-14 06:16:25,111 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 1/10 ---
+2025-07-14 06:16:25,111 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:16:25,111 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:25,112 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Attacks inactive for round 1, training normally
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:25,113 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - MALICIOUS Lazy loading dataset from metadata...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:25,113 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Loading dataset: ylecun/mnist
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:25,113 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Source: DatasetSource.HUGGING_FACE
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:25,113 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=23634, ip=10.0.4.120)[0m 2025-07-14 06:16:25,115 - murmura.actor.client_6 - [Node:490d8382] - [Actor:client_6] - INFO - Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=23634, ip=10.0.4.120)[0m 2025-07-14 06:16:25,115 - murmura.actor.client_6 - [Node:490d8382] - [Actor:client_6] - INFO - Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=23647, ip=10.0.4.118)[0m 2025-07-14 06:16:28,910 - murmura.actor.client_8 - [Node:76fedf6a] - [Actor:client_8] - INFO - Successfully loaded all splits at once
+[36m(VirtualClientActor pid=23647, ip=10.0.4.118)[0m 2025-07-14 06:16:28,910 - murmura.actor.client_8 - [Node:76fedf6a] - [Actor:client_8] - INFO - Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=23647, ip=10.0.4.118)[0m 2025-07-14 06:16:28,910 - murmura.actor.client_8 - [Node:76fedf6a] - [Actor:client_8] - INFO - Feature columns: ['image']
+[36m(VirtualClientActor pid=23647, ip=10.0.4.118)[0m 2025-07-14 06:16:28,910 - murmura.actor.client_8 - [Node:76fedf6a] - [Actor:client_8] - INFO - Label column: label
+[36m(VirtualClientActor pid=23647, ip=10.0.4.118)[0m 2025-07-14 06:16:28,911 - murmura.actor.client_8 - [Node:76fedf6a] - [Actor:client_8] - INFO - Lazy loading completed successfully
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m 2025-07-14 06:16:22,301 - murmura.actor.client_2 - [Node:07628be6] - [Actor:client_2] - INFO - Actor client_2 initialized on node 07628be6 with device: cuda[32m [repeated 6x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:16:22,260 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - MALICIOUS Actor client_4 initialized on node 2a2ee7b4 with device: cuda and attacks: ['gradient_manipulation'][32m [repeated 2x across cluster][0m
+[36m(VirtualClientActor pid=23646, ip=10.0.4.118)[0m 2025-07-14 06:16:22,577 - murmura.actor.client_9 - [Node:76fedf6a] - [Actor:client_9] - INFO - Set dataset metadata for lazy loading[32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=23646, ip=10.0.4.118)[0m 2025-07-14 06:16:22,577 - murmura.actor.client_9 - [Node:76fedf6a] - [Actor:client_9] - INFO - Dataset: ylecun/mnist[32m [repeated 9x across cluster][0m
+[36m(VirtualClientActor pid=23646, ip=10.0.4.118)[0m 2025-07-14 06:16:22,577 - murmura.actor.client_9 - [Node:76fedf6a] - [Actor:client_9] - INFO - Splits: ['train', 'test'][32m [repeated 9x across cluster][0m
+[36m(VirtualClientActor pid=23646, ip=10.0.4.118)[0m 2025-07-14 06:16:22,577 - murmura.actor.client_9 - [Node:76fedf6a] - [Actor:client_9] - INFO - Features: ['image'], Label: label[32m [repeated 9x across cluster][0m
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:16:22,425 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - MALICIOUS Set dataset metadata for lazy loading[32m [repeated 2x across cluster][0m
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:16:28,978 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - MALICIOUS Dataset loaded successfully via lazy loading
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:16:25,114 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - Attacks inactive for round 1, training normally[32m [repeated 2x across cluster][0m
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:16:25,114 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - MALICIOUS Lazy loading dataset from metadata...[32m [repeated 2x across cluster][0m
+[36m(VirtualClientActor pid=23622, ip=10.0.4.114)[0m 2025-07-14 06:16:25,115 - murmura.actor.client_5 - [Node:2a2ee7b4] - [Actor:client_5] - INFO - Loading dataset: ylecun/mnist[32m [repeated 9x across cluster][0m
+[36m(VirtualClientActor pid=23622, ip=10.0.4.114)[0m 2025-07-14 06:16:25,115 - murmura.actor.client_5 - [Node:2a2ee7b4] - [Actor:client_5] - INFO - Source: DatasetSource.HUGGING_FACE[32m [repeated 9x across cluster][0m
+[36m(VirtualClientActor pid=23633, ip=10.0.4.120)[0m 2025-07-14 06:16:30,131 - murmura.actor.client_7 - [Node:490d8382] - [Actor:client_7] - INFO - Available splits: ['train', 'test'][32m [repeated 16x across cluster][0m
+[36m(VirtualClientActor pid=23622, ip=10.0.4.114)[0m 2025-07-14 06:16:25,114 - murmura.actor.client_5 - [Node:2a2ee7b4] - [Actor:client_5] - INFO - Dataset not loaded, triggering lazy loading...[32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=23622, ip=10.0.4.114)[0m 2025-07-14 06:16:25,114 - murmura.actor.client_5 - [Node:2a2ee7b4] - [Actor:client_5] - INFO - Lazy loading dataset from metadata...[32m [repeated 6x across cluster][0m
+2025-07-14 06:16:33,495 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 1 - avg_train_loss: 0.6475, avg_train_accuracy: 0.7887, active_clients: 10, topology: ring
+2025-07-14 06:16:33,495 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 1 - avg_train_loss: 0.6475, avg_train_accuracy: 0.7887, active_clients: 10, topology: ring
+2025-07-14 06:16:33,495 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:16:33,495 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:16:33,658 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:33,658 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:33,658 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:33,658 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:33,658 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Trust monitoring returned 0 results
+2025-07-14 06:16:33,658 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Trust monitoring returned 0 results
+2025-07-14 06:16:33,659 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:33,659 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 1: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:33,659 - murmura - INFO - Round 1: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:33,659 - murmura - INFO - Round 1: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:34,064 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:34,064 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:37,871 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 1.6067
+2025-07-14 06:16:37,871 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 1.6067
+2025-07-14 06:16:37,871 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 65.02%
+2025-07-14 06:16:37,871 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 65.02%
+2025-07-14 06:16:37,871 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 49.94% - 81.98%
+2025-07-14 06:16:37,871 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 49.94% - 81.98%
+2025-07-14 06:16:37,874 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 2/10 ---
+2025-07-14 06:16:37,874 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 2/10 ---
+2025-07-14 06:16:37,874 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:16:37,874 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:37,876 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Executing MALICIOUS training - Round 2, Intensity: 0.200
+[36m(VirtualClientActor pid=23633, ip=10.0.4.120)[0m 2025-07-14 06:16:30,131 - murmura.actor.client_7 - [Node:490d8382] - [Actor:client_7] - INFO - Successfully loaded all splits at once[32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=23633, ip=10.0.4.120)[0m 2025-07-14 06:16:30,131 - murmura.actor.client_7 - [Node:490d8382] - [Actor:client_7] - INFO - Dataset lazy loaded successfully![32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=23633, ip=10.0.4.120)[0m 2025-07-14 06:16:30,131 - murmura.actor.client_7 - [Node:490d8382] - [Actor:client_7] - INFO - Feature columns: ['image'][32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=23633, ip=10.0.4.120)[0m 2025-07-14 06:16:30,131 - murmura.actor.client_7 - [Node:490d8382] - [Actor:client_7] - INFO - Label column: label[32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=23633, ip=10.0.4.120)[0m 2025-07-14 06:16:30,131 - murmura.actor.client_7 - [Node:490d8382] - [Actor:client_7] - INFO - Lazy loading completed successfully[32m [repeated 6x across cluster][0m
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:16:29,801 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - MALICIOUS Dataset loaded successfully via lazy loading[32m [repeated 2x across cluster][0m
+2025-07-14 06:16:40,015 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 2 - avg_train_loss: 0.1833, avg_train_accuracy: 0.9471, active_clients: 10, topology: ring
+2025-07-14 06:16:40,015 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 2 - avg_train_loss: 0.1833, avg_train_accuracy: 0.9471, active_clients: 10, topology: ring
+2025-07-14 06:16:40,015 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:16:40,015 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:40,051 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Applying gradient manipulation - Round 2, Intensity: 0.200
+2025-07-14 06:16:40,210 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:40,210 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:40,210 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:40,210 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:40,210 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Trust monitoring returned 0 results
+2025-07-14 06:16:40,210 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Trust monitoring returned 0 results
+2025-07-14 06:16:40,211 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:40,211 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 2: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:40,211 - murmura - INFO - Round 2: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:40,211 - murmura - INFO - Round 2: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:40,605 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:40,605 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:44,132 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 1.0019
+2025-07-14 06:16:44,132 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 1.0019
+2025-07-14 06:16:44,132 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 78.32%
+2025-07-14 06:16:44,132 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 78.32%
+2025-07-14 06:16:44,132 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 59.96% - 91.03%
+2025-07-14 06:16:44,132 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 59.96% - 91.03%
+2025-07-14 06:16:44,135 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 3/10 ---
+2025-07-14 06:16:44,135 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 3/10 ---
+2025-07-14 06:16:44,135 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:16:44,135 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:44,137 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Executing MALICIOUS training - Round 3, Intensity: 0.300[32m [repeated 3x across cluster][0m
+2025-07-14 06:16:46,088 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 3 - avg_train_loss: 0.1138, avg_train_accuracy: 0.9659, active_clients: 10, topology: ring
+2025-07-14 06:16:46,088 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 3 - avg_train_loss: 0.1138, avg_train_accuracy: 0.9659, active_clients: 10, topology: ring
+2025-07-14 06:16:46,088 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:16:46,088 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:16:46,093 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - Applying gradient manipulation - Round 3, Intensity: 0.300[32m [repeated 3x across cluster][0m
+2025-07-14 06:16:46,283 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:46,283 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:46,283 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:46,283 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:46,283 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Trust monitoring returned 0 results
+2025-07-14 06:16:46,283 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Trust monitoring returned 0 results
+2025-07-14 06:16:46,284 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:46,284 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 3: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:46,284 - murmura - INFO - Round 3: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:46,284 - murmura - INFO - Round 3: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:46,680 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:46,680 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:50,416 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.7575
+2025-07-14 06:16:50,416 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.7575
+2025-07-14 06:16:50,416 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 83.99%
+2025-07-14 06:16:50,416 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 83.99%
+2025-07-14 06:16:50,416 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 62.67% - 94.94%
+2025-07-14 06:16:50,416 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 62.67% - 94.94%
+2025-07-14 06:16:50,419 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 4/10 ---
+2025-07-14 06:16:50,419 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 4/10 ---
+2025-07-14 06:16:50,419 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:16:50,419 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:16:50,421 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - Executing MALICIOUS training - Round 4, Intensity: 0.400[32m [repeated 3x across cluster][0m
+2025-07-14 06:16:52,493 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 4 - avg_train_loss: 0.0831, avg_train_accuracy: 0.9745, active_clients: 10, topology: ring
+2025-07-14 06:16:52,493 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 4 - avg_train_loss: 0.0831, avg_train_accuracy: 0.9745, active_clients: 10, topology: ring
+2025-07-14 06:16:52,493 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:16:52,493 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:16:52,530 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Applying gradient manipulation - Round 4, Intensity: 0.400[32m [repeated 3x across cluster][0m
+2025-07-14 06:16:52,689 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:52,689 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:52,689 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:52,689 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:52,689 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Trust monitoring returned 0 results
+2025-07-14 06:16:52,689 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Trust monitoring returned 0 results
+2025-07-14 06:16:52,690 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:52,690 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 4: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:52,690 - murmura - INFO - Round 4: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:52,690 - murmura - INFO - Round 4: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:53,084 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:53,084 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:56,805 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.6595
+2025-07-14 06:16:56,805 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.6595
+2025-07-14 06:16:56,805 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 86.88%
+2025-07-14 06:16:56,805 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 86.88%
+2025-07-14 06:16:56,806 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 69.42% - 96.36%
+2025-07-14 06:16:56,806 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 69.42% - 96.36%
+2025-07-14 06:16:56,809 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 5/10 ---
+2025-07-14 06:16:56,809 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 5/10 ---
+2025-07-14 06:16:56,812 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:16:56,812 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:16:56,814 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - Executing MALICIOUS training - Round 5, Intensity: 0.500[32m [repeated 3x across cluster][0m
+2025-07-14 06:16:58,827 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 5 - avg_train_loss: 0.0693, avg_train_accuracy: 0.9792, active_clients: 10, topology: ring
+2025-07-14 06:16:58,827 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 5 - avg_train_loss: 0.0693, avg_train_accuracy: 0.9792, active_clients: 10, topology: ring
+2025-07-14 06:16:58,828 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:16:58,828 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:16:58,833 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - Applying gradient manipulation - Round 5, Intensity: 0.500[32m [repeated 3x across cluster][0m
+2025-07-14 06:16:59,025 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:59,025 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Processing trust monitoring for 0 monitors
+2025-07-14 06:16:59,025 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:59,025 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Known malicious clients: [0, 1, 4]
+2025-07-14 06:16:59,025 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Trust monitoring returned 0 results
+2025-07-14 06:16:59,025 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Trust monitoring returned 0 results
+2025-07-14 06:16:59,026 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:59,026 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 5: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:16:59,026 - murmura - INFO - Round 5: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:59,026 - murmura - INFO - Round 5: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:16:59,424 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:16:59,424 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:02,968 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.5851
+2025-07-14 06:17:02,968 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.5851
+2025-07-14 06:17:02,968 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 87.42%
+2025-07-14 06:17:02,968 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 87.42%
+2025-07-14 06:17:02,968 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 74.02% - 95.07%
+2025-07-14 06:17:02,968 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 74.02% - 95.07%
+2025-07-14 06:17:02,972 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 6/10 ---
+2025-07-14 06:17:02,972 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 6/10 ---
+2025-07-14 06:17:02,972 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:17:02,972 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:17:02,973 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Executing MALICIOUS training - Round 6, Intensity: 0.600[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:05,032 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 6 - avg_train_loss: 0.0582, avg_train_accuracy: 0.9825, active_clients: 10, topology: ring
+2025-07-14 06:17:05,032 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 6 - avg_train_loss: 0.0582, avg_train_accuracy: 0.9825, active_clients: 10, topology: ring
+2025-07-14 06:17:05,032 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:17:05,032 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:17:05,038 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - Applying gradient manipulation - Round 6, Intensity: 0.600[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:05,229 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:05,229 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:05,230 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:05,230 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:05,230 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Trust monitoring returned 0 results
+2025-07-14 06:17:05,230 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Trust monitoring returned 0 results
+2025-07-14 06:17:05,230 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:05,230 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 6: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:05,231 - murmura - INFO - Round 6: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:05,231 - murmura - INFO - Round 6: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:05,623 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:05,623 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:09,329 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4720
+2025-07-14 06:17:09,329 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4720
+2025-07-14 06:17:09,330 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 89.58%
+2025-07-14 06:17:09,330 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 89.58%
+2025-07-14 06:17:09,330 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 77.53% - 97.00%
+2025-07-14 06:17:09,330 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 77.53% - 97.00%
+2025-07-14 06:17:09,333 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 7/10 ---
+2025-07-14 06:17:09,333 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 7/10 ---
+2025-07-14 06:17:09,333 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:17:09,333 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:17:09,335 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Executing MALICIOUS training - Round 7, Intensity: 0.700[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:11,411 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 7 - avg_train_loss: 0.0504, avg_train_accuracy: 0.9836, active_clients: 10, topology: ring
+2025-07-14 06:17:11,411 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 7 - avg_train_loss: 0.0504, avg_train_accuracy: 0.9836, active_clients: 10, topology: ring
+2025-07-14 06:17:11,411 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:17:11,411 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:17:11,448 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Applying gradient manipulation - Round 7, Intensity: 0.700[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:11,607 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:11,607 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:11,607 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:11,607 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:11,607 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Trust monitoring returned 0 results
+2025-07-14 06:17:11,607 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Trust monitoring returned 0 results
+2025-07-14 06:17:11,608 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:11,608 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 7: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:11,608 - murmura - INFO - Round 7: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:11,608 - murmura - INFO - Round 7: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:11,994 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:11,994 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:15,500 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.5818
+2025-07-14 06:17:15,500 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.5818
+2025-07-14 06:17:15,500 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 88.24%
+2025-07-14 06:17:15,500 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 88.24%
+2025-07-14 06:17:15,500 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 74.26% - 96.56%
+2025-07-14 06:17:15,500 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 74.26% - 96.56%
+2025-07-14 06:17:15,504 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 8/10 ---
+2025-07-14 06:17:15,504 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 8/10 ---
+2025-07-14 06:17:15,504 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:17:15,504 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:17:15,506 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - Executing MALICIOUS training - Round 8, Intensity: 0.800[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:17,453 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 8 - avg_train_loss: 0.0468, avg_train_accuracy: 0.9857, active_clients: 10, topology: ring
+2025-07-14 06:17:17,453 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 8 - avg_train_loss: 0.0468, avg_train_accuracy: 0.9857, active_clients: 10, topology: ring
+2025-07-14 06:17:17,454 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:17:17,454 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:17:17,459 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - Applying gradient manipulation - Round 8, Intensity: 0.800[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:17,651 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:17,651 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:17,652 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:17,652 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:17,652 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Trust monitoring returned 0 results
+2025-07-14 06:17:17,652 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Trust monitoring returned 0 results
+2025-07-14 06:17:17,652 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:17,652 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 8: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:17,653 - murmura - INFO - Round 8: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:17,653 - murmura - INFO - Round 8: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:18,035 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:18,035 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:21,778 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4215
+2025-07-14 06:17:21,778 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4215
+2025-07-14 06:17:21,778 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 91.10%
+2025-07-14 06:17:21,778 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 91.10%
+2025-07-14 06:17:21,778 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 80.32% - 97.31%
+2025-07-14 06:17:21,778 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 80.32% - 97.31%
+2025-07-14 06:17:21,781 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 9/10 ---
+2025-07-14 06:17:21,781 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 9/10 ---
+2025-07-14 06:17:21,781 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:17:21,781 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:17:21,783 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Executing MALICIOUS training - Round 9, Intensity: 0.900[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:23,850 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 9 - avg_train_loss: 0.0456, avg_train_accuracy: 0.9851, active_clients: 10, topology: ring
+2025-07-14 06:17:23,850 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 9 - avg_train_loss: 0.0456, avg_train_accuracy: 0.9851, active_clients: 10, topology: ring
+2025-07-14 06:17:23,850 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:17:23,850 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:17:23,856 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - Applying gradient manipulation - Round 9, Intensity: 0.900[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:24,052 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:24,052 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:24,053 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:24,053 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:24,053 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Trust monitoring returned 0 results
+2025-07-14 06:17:24,053 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Trust monitoring returned 0 results
+2025-07-14 06:17:24,053 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:24,053 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 9: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:24,054 - murmura - INFO - Round 9: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:24,054 - murmura - INFO - Round 9: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:24,440 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:24,440 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:28,163 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4486
+2025-07-14 06:17:28,163 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4486
+2025-07-14 06:17:28,163 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 91.16%
+2025-07-14 06:17:28,163 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 91.16%
+2025-07-14 06:17:28,163 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 80.19% - 97.35%
+2025-07-14 06:17:28,163 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 80.19% - 97.35%
+2025-07-14 06:17:28,166 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 10/10 ---
+2025-07-14 06:17:28,166 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 10/10 ---
+2025-07-14 06:17:28,169 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+2025-07-14 06:17:28,169 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 1 epochs...
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:17:28,171 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - Executing MALICIOUS training - Round 10, Intensity: 1.000[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:30,235 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 10 - avg_train_loss: 0.0362, avg_train_accuracy: 0.9887, active_clients: 10, topology: ring
+2025-07-14 06:17:30,235 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 10 - avg_train_loss: 0.0362, avg_train_accuracy: 0.9887, active_clients: 10, topology: ring
+2025-07-14 06:17:30,236 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+2025-07-14 06:17:30,236 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+[36m(MaliciousClientActor pid=48360)[0m 2025-07-14 06:17:30,274 - murmura.malicious_actor.client_1 - [Node:4cf318ad] - [MALICIOUS:client_1] - INFO - Applying gradient manipulation - Round 10, Intensity: 1.000[32m [repeated 3x across cluster][0m
+2025-07-14 06:17:30,432 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:30,432 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Processing trust monitoring for 0 monitors
+2025-07-14 06:17:30,432 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:30,432 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Known malicious clients: [0, 1, 4]
+2025-07-14 06:17:30,432 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Trust monitoring returned 0 results
+2025-07-14 06:17:30,432 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Trust monitoring returned 0 results
+2025-07-14 06:17:30,433 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:30,433 - murmura.learning_process.DecentralizedLearningProcess - INFO - Round 10: Using standard aggregation (trust weighting disabled)
+2025-07-14 06:17:30,433 - murmura - INFO - Round 10: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:30,433 - murmura - INFO - Round 10: Using standard data-size weighted aggregation (no trust scores)
+2025-07-14 06:17:30,819 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:30,819 - murmura.learning_process.DecentralizedLearningProcess - INFO - Evaluating 7 honest nodes (excluding malicious nodes: [0, 1, 4])
+2025-07-14 06:17:34,541 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4287
+2025-07-14 06:17:34,541 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Loss (Honest Nodes): 0.4287
+2025-07-14 06:17:34,542 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 90.61%
+2025-07-14 06:17:34,542 - murmura.learning_process.DecentralizedLearningProcess - INFO - Average Test Accuracy (Honest Nodes): 90.61%
+2025-07-14 06:17:34,542 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 77.41% - 97.65%
+2025-07-14 06:17:34,542 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range: 77.41% - 97.65%
+2025-07-14 06:17:34,545 - murmura.learning_process.DecentralizedLearningProcess - INFO - === Final Evaluation Across Honest Nodes ===
+2025-07-14 06:17:34,545 - murmura.learning_process.DecentralizedLearningProcess - INFO - === Final Evaluation Across Honest Nodes ===
+2025-07-14 06:17:38,051 - murmura.learning_process.DecentralizedLearningProcess - INFO - Final evaluation across 7 honest nodes (excluding malicious: [0, 1, 4])
+2025-07-14 06:17:38,051 - murmura.learning_process.DecentralizedLearningProcess - INFO - Final evaluation across 7 honest nodes (excluding malicious: [0, 1, 4])
+2025-07-14 06:17:38,055 - murmura.learning_process.DecentralizedLearningProcess - INFO - === Final Model Evaluation ===
+2025-07-14 06:17:38,055 - murmura.learning_process.DecentralizedLearningProcess - INFO - === Final Model Evaluation ===
+2025-07-14 06:17:38,055 - murmura.learning_process.DecentralizedLearningProcess - INFO - Cluster type: multi-node
+2025-07-14 06:17:38,055 - murmura.learning_process.DecentralizedLearningProcess - INFO - Cluster type: multi-node
+2025-07-14 06:17:38,055 - murmura.learning_process.DecentralizedLearningProcess - INFO - Final Test Accuracy (Honest Nodes Average): 90.61%
+2025-07-14 06:17:38,055 - murmura.learning_process.DecentralizedLearningProcess - INFO - Final Test Accuracy (Honest Nodes Average): 90.61%
+2025-07-14 06:17:38,056 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Improvement (Honest Nodes): 81.12%
+2025-07-14 06:17:38,056 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Improvement (Honest Nodes): 81.12%
+2025-07-14 06:17:38,056 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range (Honest Nodes): 77.41% - 97.65% (std: 8.12%)
+2025-07-14 06:17:38,056 - murmura.learning_process.DecentralizedLearningProcess - INFO - Accuracy Range (Honest Nodes): 77.41% - 97.65% (std: 8.12%)
+2025-07-14 06:17:38,056 - murmura.learning_process.DecentralizedLearningProcess - INFO - Trust monitoring: No malicious behavior detected by any node
+2025-07-14 06:17:38,056 - murmura.learning_process.DecentralizedLearningProcess - INFO - Trust monitoring: No malicious behavior detected by any node
+2025-07-14 06:17:38,059 - murmura.dp_decentralized_mnist_example - INFO - === Training Results ===
+2025-07-14 06:17:38,059 - murmura.dp_decentralized_mnist_example - INFO - === Training Results ===
+2025-07-14 06:17:38,059 - murmura.dp_decentralized_mnist_example - INFO - Initial accuracy: 0.0949
+2025-07-14 06:17:38,059 - murmura.dp_decentralized_mnist_example - INFO - Initial accuracy: 0.0949
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - Final accuracy: 0.9061
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - Final accuracy: 0.9061
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - Accuracy improvement: 0.8112
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - Accuracy improvement: 0.8112
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - === Generating Visualizations ===
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - === Generating Visualizations ===
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - Creating animation...
+2025-07-14 06:17:38,060 - murmura.dp_decentralized_mnist_example - INFO - Creating animation...
+2025-07-14 06:17:38,110 - matplotlib.animation - INFO - Animation.save using <class 'matplotlib.animation.FFMpegWriter'>
+2025-07-14 06:17:38,111 - matplotlib.animation - INFO - MovieWriter._run: running command: ffmpeg -f rawvideo -vcodec rawvideo -s 1600x1000 -pix_fmt rgba -framerate 2 -loglevel error -i pipe: -vcodec h264 -pix_fmt yuv420p -b 5000k -metadata 'artist=Murmura Framework' -y ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/dp_decentralized_mnist_ring_gossip_avg_animation.mp4
+2025-07-14 06:19:09,159 - murmura.dp_decentralized_mnist_example - INFO - === Saving Final Model ===
+2025-07-14 06:19:09,159 - murmura.dp_decentralized_mnist_example - INFO - === Saving Final Model ===
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Model saved to 'dp_mnist_decentralized_model.pt'
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Model saved to 'dp_mnist_decentralized_model.pt'
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - === MNIST DP Decentralized Training Results ===
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - === MNIST DP Decentralized Training Results ===
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Cluster type: multi-node
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Cluster type: multi-node
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Total physical nodes: 5
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Total physical nodes: 5
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Total virtual actors: 10
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Total virtual actors: 10
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Topology used: ring
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Topology used: ring
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Training completed with 10 rounds of 1 epochs each
+2025-07-14 06:19:09,168 - murmura.dp_decentralized_mnist_example - INFO - Training completed with 10 rounds of 1 epochs each
+2025-07-14 06:19:09,169 - murmura.dp_decentralized_mnist_example - INFO - Network adjacency: 10 connections
+2025-07-14 06:19:09,169 - murmura.dp_decentralized_mnist_example - INFO - Network adjacency: 10 connections
+2025-07-14 06:19:09,169 - murmura.dp_decentralized_mnist_example - INFO - === Shutting Down Enhanced System ===
+2025-07-14 06:19:09,169 - murmura.dp_decentralized_mnist_example - INFO - === Shutting Down Enhanced System ===
+2025-07-14 06:19:09,169 - murmura.learning_process.DecentralizedLearningProcess - INFO - Shutting down learning process...
+2025-07-14 06:19:09,169 - murmura.learning_process.DecentralizedLearningProcess - INFO - Shutting down learning process...
+2025-07-14 06:19:09,169 - murmura - INFO - Cleaning up 10 actors
+2025-07-14 06:19:09,169 - murmura - INFO - Cleaning up 10 actors
+2025-07-14 06:19:09,171 - murmura - INFO - Cluster manager shutdown complete
+2025-07-14 06:19:09,171 - murmura - INFO - Cluster manager shutdown complete
+2025-07-14 06:19:09,171 - murmura.learning_process.DecentralizedLearningProcess - INFO - Learning process shut down successfully.
+2025-07-14 06:19:09,171 - murmura.learning_process.DecentralizedLearningProcess - INFO - Learning process shut down successfully.
+[36m(VirtualClientActor pid=23646, ip=10.0.4.118)[0m Epoch [1/1], Loss: 0.9984, Accuracy: 69.66
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.6809, Accuracy: 82.14[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.4328, Accuracy: 87.60[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.2610, Accuracy: 92.05[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.2279, Accuracy: 93.68[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23646, ip=10.0.4.118)[0m Epoch [1/1], Loss: 0.0494, Accuracy: 98.62[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.1294, Accuracy: 95.50[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.1607, Accuracy: 95.50[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.1383, Accuracy: 95.55[32m [repeated 10x across cluster][0m
+[36m(VirtualClientActor pid=23661, ip=10.0.4.122)[0m Epoch [1/1], Loss: 0.1118, Accuracy: 96.93[32m [repeated 10x across cluster][0m
+Event log exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_events.csv
+Metrics history exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_metrics.csv
+Parameter history exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_parameters.csv
+Communication log exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_communications.csv
+Node activities exported for 10 nodes
+Parameter updates exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_parameter_updates.csv
+Topology exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_topology.csv
+Network structure exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_network_structure.csv
+Adjacency matrix exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_adjacency_matrix.csv
+Node attributes exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_node_attributes.csv
+Edge weights exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_edge_weights.csv
+Geographic information exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_geographic_info.csv
+Organizational hierarchy exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/training_data_organizational_hierarchy.csv
+All training data (including attack data) exported to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp
+Animation saved to ./visualizations_phase1/dp_decentralized_mnist_ring_gossip_avg_no_dp/dp_decentralized_mnist_ring_gossip_avg_animation.mp4
+[36m(MaliciousClientActor pid=48359)[0m 2025-07-14 06:17:28,170 - murmura.malicious_actor.client_0 - [Node:4cf318ad] - [MALICIOUS:client_0] - INFO - Executing MALICIOUS training - Round 10, Intensity: 1.000[32m [repeated 2x across cluster][0m
+[36m(MaliciousClientActor pid=23623, ip=10.0.4.114)[0m 2025-07-14 06:17:30,330 - murmura.malicious_actor.client_4 - [Node:2a2ee7b4] - [MALICIOUS:client_4] - INFO - Applying gradient manipulation - Round 10, Intensity: 1.000[32m [repeated 2x across cluster][0m
+[36m(VirtualClientActor pid=23647, ip=10.0.4.118)[0m Epoch [1/1], Loss: 0.0253, Accuracy: 99.20[32m [repeated 9x across cluster][0m
