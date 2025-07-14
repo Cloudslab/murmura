@@ -208,6 +208,8 @@ class FederatedLearningProcess(LearningProcess):
 
             # UPDATED: Training with config parameters and client/data subsampling
             train_metrics = self.cluster_manager.train_models(
+                current_round=round_num,
+                total_rounds=self.config.rounds,
                 client_sampling_rate=self.config.client_sampling_rate,
                 data_sampling_rate=self.config.data_sampling_rate,
                 epochs=epochs,

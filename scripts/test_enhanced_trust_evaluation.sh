@@ -9,7 +9,7 @@ set -e  # Exit on any error
 echo "=========================================="
 echo "Enhanced Trust Monitoring Evaluation"
 echo "=========================================="
-echo "Testing: MNIST, CIFAR-10"
+echo "Testing: Eurosat, CIFAR-10"
 echo "Node counts: 10, 20, 30, 50"
 echo "Topologies: ring, complete, line"
 echo "Attacks: Gradient manipulation + Label flipping (30% malicious)"
@@ -193,8 +193,8 @@ run_experiment() {
     fi
     
     # Run the experiment (without timeout for macOS compatibility)
-    if [ "$dataset" = "mnist" ]; then
-        python ../../murmura/examples/dp_decentralized_mnist_example.py \
+    if [ "$dataset" = "eurosat" ]; then
+        python ../../murmura/examples/dp_decentralized_eurosat_example.py \
             --topology $topology \
             $EXPERIMENT_PARAMS \
             > $output_file 2>&1
@@ -238,6 +238,7 @@ run_experiment() {
             echo "   🔍 Trust monitoring: DISABLED (baseline)"
         fi
         
+        echo "   🚀 Initial accuracy: $(grep "Initial Test Accuracy.*Honest Nodes" $output_file | tail -1 || grep "Initial Test Accuracy" $output_file | tail -1 || echo "Not found")"
         echo "   🎯 Final accuracy: $(grep "Final Test Accuracy.*Honest Nodes" $output_file | tail -1 || grep "Final Test Accuracy" $output_file | tail -1 || echo "Not found")"
         echo "   📊 Accuracy improvement: $(grep "Accuracy Improvement.*Honest Nodes" $output_file | tail -1 || grep "Accuracy Improvement" $output_file | tail -1 || echo "Not found")"
         
@@ -263,7 +264,7 @@ run_scalability_experiments() {
     echo "🚀 SCALABILITY EXPERIMENTS"
     echo "=========================="
     
-    datasets=("mnist" "cifar10")
+    datasets=("cifar10" "eurosat")
     topologies=("ring" "complete")  # Skip line topology for scalability (too slow)
     attack_types=("gradient" "label_flip")
     trust_settings=("true" "false")
@@ -289,7 +290,7 @@ run_baseline_experiments() {
     echo "Running focused experiments to compare trust vs baseline performance"
     
     # Focused set for detailed comparison
-    datasets=("mnist" "cifar10")
+    datasets=("cifar10" "eurosat")
     topologies=("complete")  # Complete topology for best trust performance
     attack_types=("gradient" "label_flip")
     node_counts=(10 30)  # Small and medium scale
@@ -330,7 +331,7 @@ echo "==============================="
 
 # Create CSV summary file
 csv_file="experiment_summary.csv"
-echo "Dataset,Topology,Attack,Nodes,Trust,Actual_Malicious,Detected_Malicious,Detection_Count,Detection_Round,Final_Accuracy,Accuracy_Improvement,Status" > $csv_file
+echo "Dataset,Topology,Attack,Nodes,Trust,Actual_Malicious,Detected_Malicious,Detection_Count,Detection_Round,Initial_Accuracy,Final_Accuracy,Accuracy_Improvement,Status" > $csv_file
 
 for file in *.txt; do
     if [ -f "$file" ]; then
@@ -383,22 +384,24 @@ for file in *.txt; do
             fi
             
             # Accuracy results (prefer honest nodes metrics, fallback to old format)
+            initial_acc=$(grep "Initial Test Accuracy.*Honest Nodes" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || grep "Initial Test Accuracy" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
             final_acc=$(grep "Final Test Accuracy.*Honest Nodes" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || grep "Final Test Accuracy" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
             acc_improvement=$(grep "Accuracy Improvement.*Honest Nodes" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || grep "Accuracy Improvement" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || echo "N/A")
             
             echo "   🎯 Actual malicious: [$actual_malicious]"
             echo "   🔍 Detected malicious: [$detected_malicious]"
             echo "   📍 Detection: $detection_count malicious nodes in round $detection_round"
+            echo "   🚀 Initial Accuracy: $initial_acc"
             echo "   🎯 Final Accuracy: $final_acc"
             echo "   📈 Accuracy Improvement: $acc_improvement"
             echo "   📄 File: $file"
             
             # Add to CSV
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$actual_malicious,$detected_malicious,$detection_count,$detection_round,$final_acc,$acc_improvement,$status" >> $csv_file
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$actual_malicious,$detected_malicious,$detection_count,$detection_round,$initial_acc,$final_acc,$acc_improvement,$status" >> $csv_file
         else
             status="FAILED"
             echo "   ❌ FAILED - Check $file for details"
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,N/A,N/A,$status" >> $csv_file
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,N/A,N/A,N/A,$status" >> $csv_file
         fi
     fi
 done

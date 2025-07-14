@@ -4,6 +4,12 @@ from murmura.models.ham10000_models import (
     HAM10000ModelComplex,
     SimpleHAM10000Model,
 )
+from murmura.models.eurosat_models import (
+    EuroSATModel,
+    EuroSATModelComplex,
+    EuroSATModelLite,
+)
+from murmura.models.cifar10_models import CIFAR10Model, ResNetCIFAR10Model, SimpleCIFAR10Model
 
 __all__ = [
     "MNISTModel",
@@ -11,4 +17,10 @@ __all__ = [
     "HAM10000Model",
     "HAM10000ModelComplex",
     "SimpleHAM10000Model",
+    "EuroSATModel",
+    "EuroSATModelComplex",
+    "EuroSATModelLite",
+    "ResNetCIFAR10Model",
+    "SimpleCIFAR10Model",
+    "CIFAR10Model"
 ]

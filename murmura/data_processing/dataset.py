@@ -225,6 +225,7 @@ class MDataset:
         split: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ):
+        logger = logging.getLogger("murmura.dataset")
         try:
             if split is None:
                 raise ValueError("split is not specified")
