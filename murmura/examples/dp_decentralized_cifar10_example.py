@@ -269,6 +269,12 @@ def main() -> None:
         default=1,
         help="Round to start attacks",
     )
+    parser.add_argument(
+        "--malicious_node_seed",
+        type=int,
+        default=None,
+        help="Seed for reproducible malicious node selection (None = random)",
+    )
 
     # Trust monitoring arguments
     parser.add_argument(
@@ -440,6 +446,7 @@ def main() -> None:
                 gradient_noise_scale=args.gradient_noise_scale,
                 gradient_sign_flip_prob=args.gradient_sign_flip_prob,
                 attack_start_round=args.attack_start_round,
+                malicious_node_seed=args.malicious_node_seed,
                 log_attack_details=True,
             )
 
@@ -451,6 +458,7 @@ def main() -> None:
             )
             logger.info(f"  - Intensity progression: {args.intensity_progression}")
             logger.info(f"  - Attack start round: {args.attack_start_round}")
+            logger.info(f"  - Malicious node seed: {args.malicious_node_seed}")
 
             if args.attack_type in ["label_flipping", "both"]:
                 logger.info(f"  - Label flip target: {args.label_flip_target}")

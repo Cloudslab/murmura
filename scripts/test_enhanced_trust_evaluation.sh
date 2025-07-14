@@ -35,6 +35,7 @@ COMMON_BASE_PARAMS="
     --rounds 10
     --epochs 1
     --create_animation
+    --malicious_node_seed 42
 "
 
 # Trust monitoring parameters
@@ -116,15 +117,36 @@ run_experiment() {
         
         # Extract key metrics
         echo "📊 Results Summary:"
+        
+        # Extract actual malicious node indices
+        local malicious_indices=$(grep "Malicious clients will be created at indices:" $output_file | grep -o "\[.*\]" || echo "Not found")
+        echo "   🎯 Actual malicious nodes: $malicious_indices"
+        
         if [ "$trust_enabled" = "true" ]; then
-            echo "   Malicious nodes detected: $(grep -o "Trust monitoring detected [0-9]* suspicious neighbors" $output_file | head -1 || echo "None found")"
-            echo "   Detection round: $(grep -B 50 "detected suspicious neighbors" $output_file | grep "Round [0-9]" | head -1 | grep -o "Round [0-9]*" || echo "Not detected")"
+            # Extract all unique detected suspicious neighbors across all rounds
+            local all_detections=$(grep -o "detected suspicious neighbors: \['node_[0-9]*'\]" $output_file | grep -o "node_[0-9]*" | sed 's/node_//' | sort -n | uniq)
+            if [ -n "$all_detections" ]; then
+                local detected_array="[$(echo $all_detections | tr ' ' ',')]"
+                echo "   🔍 Detected suspicious nodes: $detected_array"
+                
+                # Count total detections
+                local detection_count=$(echo $all_detections | wc -w | tr -d ' ')
+                echo "   📈 Total unique detections: $detection_count"
+            else
+                echo "   🔍 Detected suspicious nodes: None"
+                echo "   📈 Total unique detections: 0"
+            fi
+            
+            # First detection round
+            local first_detection=$(grep -B 50 "detected suspicious neighbors" $output_file | grep "Round [0-9]" | head -1 | grep -o "Round [0-9]*" || echo "Not detected")
+            echo "   ⏱️  First detection: $first_detection"
         else
-            echo "   Trust monitoring: DISABLED (baseline)"
+            echo "   🔍 Trust monitoring: DISABLED (baseline)"
         fi
-        echo "   Final accuracy: $(grep "Final Test Accuracy" $output_file | tail -1 || echo "Not found")"
-        echo "   Accuracy improvement: $(grep "Accuracy Improvement" $output_file | tail -1 || echo "Not found")"
-        echo "   Completed: $(date)"
+        
+        echo "   🎯 Final accuracy: $(grep "Final Test Accuracy" $output_file | tail -1 || echo "Not found")"
+        echo "   📊 Accuracy improvement: $(grep "Accuracy Improvement" $output_file | tail -1 || echo "Not found")"
+        echo "   ✅ Completed: $(date)"
     elif [ $exit_code -eq 124 ]; then
         echo "⏰ TIMEOUT: $dataset with $topology topology (n=$node_count, trust=$trust_enabled)"
         echo "   Experiment exceeded 30 minutes time limit"
@@ -208,7 +230,7 @@ echo "==============================="
 
 # Create CSV summary file
 csv_file="experiment_summary.csv"
-echo "Dataset,Topology,Attack,Nodes,Trust,Detection_Count,Detection_Round,Final_Accuracy,Accuracy_Improvement,Status" > $csv_file
+echo "Dataset,Topology,Attack,Nodes,Trust,Actual_Malicious,Detected_Malicious,Detection_Count,Detection_Round,Final_Accuracy,Accuracy_Improvement,Status" > $csv_file
 
 for file in *.txt; do
     if [ -f "$file" ]; then
@@ -239,12 +261,24 @@ for file in *.txt; do
         if grep -q "SUCCESS" $file || grep -q "Final Test Accuracy" $file; then
             status="SUCCESS"
             
+            # Extract actual malicious node indices (same for baseline and trust experiments)
+            actual_malicious=$(grep "Malicious clients will be created at indices:" $file | grep -o "\[.*\]" | tr -d '[]' | tr -d ' ' || echo "N/A")
+            
             # Detection results
             if [ "$trust_enabled" = "true" ]; then
-                detected=$(grep -o "Trust monitoring detected [0-9]* suspicious neighbors" $file | head -1 | grep -o "[0-9]*" || echo "0")
+                # Extract all unique detected suspicious neighbors
+                detected_nodes=$(grep -o "detected suspicious neighbors: \['node_[0-9]*'\]" $file | grep -o "node_[0-9]*" | sed 's/node_//' | sort -n | uniq)
+                if [ -n "$detected_nodes" ]; then
+                    detected_malicious=$(echo "$detected_nodes" | tr '\n' ',' | sed 's/,$//')
+                    detection_count=$(echo $detected_nodes | wc -w | tr -d ' ')
+                else
+                    detected_malicious="None"
+                    detection_count="0"
+                fi
                 detection_round=$(grep -B 50 "detected suspicious neighbors" $file | grep "Round [0-9]" | head -1 | grep -o "[0-9]*" || echo "N/A")
             else
-                detected="N/A"
+                detected_malicious="N/A"
+                detection_count="N/A"
                 detection_round="N/A"
             fi
             
@@ -252,17 +286,19 @@ for file in *.txt; do
             final_acc=$(grep "Final Test Accuracy" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
             acc_improvement=$(grep "Accuracy Improvement" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || echo "N/A")
             
-            echo "   📍 Detection: $detected malicious nodes in round $detection_round"
+            echo "   🎯 Actual malicious: [$actual_malicious]"
+            echo "   🔍 Detected malicious: [$detected_malicious]"
+            echo "   📍 Detection: $detection_count malicious nodes in round $detection_round"
             echo "   🎯 Final Accuracy: $final_acc"
             echo "   📈 Accuracy Improvement: $acc_improvement"
             echo "   📄 File: $file"
             
             # Add to CSV
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$detected,$detection_round,$final_acc,$acc_improvement,$status" >> $csv_file
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$actual_malicious,$detected_malicious,$detection_count,$detection_round,$final_acc,$acc_improvement,$status" >> $csv_file
         else
             status="FAILED"
             echo "   ❌ FAILED - Check $file for details"
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,$status" >> $csv_file
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,N/A,N/A,$status" >> $csv_file
         fi
     fi
 done

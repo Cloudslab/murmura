@@ -226,8 +226,16 @@ class OrchestrationConfig(BaseModel):
         # Ensure not more than total actors
         num_malicious = min(num_malicious, self.num_actors)
         
-        # Randomly select malicious clients
+        # Select malicious clients with optional seed for reproducibility
         import random
-        malicious_indices = random.sample(range(self.num_actors), num_malicious)
+        
+        # Use seed if provided for reproducible malicious node selection
+        if self.attack_config.malicious_node_seed is not None:
+            # Create a new Random instance to avoid affecting global random state
+            rng = random.Random(self.attack_config.malicious_node_seed)
+            malicious_indices = rng.sample(range(self.num_actors), num_malicious)
+        else:
+            # Use global random state (existing behavior)
+            malicious_indices = random.sample(range(self.num_actors), num_malicious)
         
         return sorted(malicious_indices)

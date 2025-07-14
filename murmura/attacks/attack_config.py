@@ -85,6 +85,12 @@ class AttackConfig(BaseModel):
         description="Round to start attacks (allows for baseline establishment)"
     )
     
+    # Reproducibility
+    malicious_node_seed: Optional[int] = Field(
+        default=None,
+        description="Seed for reproducible malicious node selection (None = random)"
+    )
+    
     @model_validator(mode="after")
     def validate_attack_config(self) -> "AttackConfig":
         """Validate attack configuration parameters."""
