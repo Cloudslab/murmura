@@ -13,6 +13,8 @@ echo "Testing: Eurosat, CIFAR-10"
 echo "Node counts: 10, 20, 30, 50"
 echo "Topologies: ring, complete, line"
 echo "Attacks: Gradient manipulation + Label flipping (30% malicious)"
+echo "Training: 50 rounds, 3 epochs (extended for convergence)"
+echo "Min partition: 100 samples (scaled for 50 nodes)"
 echo "Baselines: With and without trust monitoring"
 echo "=========================================="
 
@@ -32,20 +34,19 @@ COMMON_BASE_PARAMS="
     --attack_intensity_end 1.0
     --intensity_progression linear
     --attack_start_round 2
-    --rounds 10
-    --epochs 1
+    --rounds 50
+    --epochs 3
+    --min_partition_size 100
     --create_animation
     --malicious_node_seed 42
     --data_partitioning_seed 42
     --model_seed 42
 "
 
-# Trust monitoring parameters (using new state-based weighting with less aggressive decay)
+# Trust monitoring parameters (using aggressive polynomial decay)
 TRUST_PARAMS="
     --enable_trust_monitoring
     --enable_trust_weighted_aggregation
-    --enable_exponential_decay
-    --exponential_decay_base 0.75
 "
 
 # Gradient manipulation specific parameters
