@@ -5,13 +5,27 @@ Trust monitoring implementation for detecting malicious behavior in decentralize
 import logging
 import numpy as np
 import copy
-from typing import Dict, Any, List, Optional, Tuple, Callable
+import time
+import psutil
+import threading
+from typing import Dict, Any, List, Optional, Tuple, Callable, ContextManager
 from collections import defaultdict, deque
 from dataclasses import dataclass
+from contextlib import contextmanager, nullcontext
 from scipy.spatial.distance import cosine
 
 from .trust_config import TrustMonitorConfig
 from .trust_events import TrustEvent, TrustAnomalyEvent, TrustScoreEvent
+
+
+@dataclass
+class TrustMonitorResourceMetrics:
+    """Resource metrics specifically for trust monitor operations."""
+    operation_name: str
+    cpu_percent: float
+    memory_mb: float
+    processing_time_ms: float
+    timestamp: float
 
 
 @dataclass
@@ -73,6 +87,20 @@ class TrustMonitor:
         # Logging
         self.logger = logging.getLogger(f"murmura.trust_monitor.{node_id}")
 
+        # Resource monitoring
+        self.resource_monitoring_enabled = config.enable_trust_resource_monitoring
+        self.resource_metrics: List[TrustMonitorResourceMetrics] = []
+        self.max_resource_history = config.max_trust_resource_history
+        
+        # Initialize process monitoring if enabled
+        if self.resource_monitoring_enabled:
+            try:
+                self.current_process = psutil.Process()
+                self.logger.info(f"Trust monitor resource monitoring enabled for {node_id}")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize resource monitoring: {e}")
+                self.resource_monitoring_enabled = False
+
     def add_event_callback(self, callback: Callable) -> None:
         """Add callback for trust events."""
         self.event_callbacks.append(callback)
@@ -84,6 +112,106 @@ class TrustMonitor:
                 callback(event)
             except Exception as e:
                 self.logger.error(f"Error in trust event callback: {e}")
+
+    @contextmanager
+    def _measure_trust_resource_usage(self, operation_name: str):
+        """Context manager to measure resource usage for specific trust monitor operations."""
+        if not self.resource_monitoring_enabled:
+            yield
+            return
+            
+        start_time = time.perf_counter()
+        start_memory = 0.0
+        
+        try:
+            memory_info = self.current_process.memory_info()
+            start_memory = memory_info.rss / 1024 / 1024  # Convert to MB
+        except Exception:
+            start_memory = 0.0
+            
+        try:
+            yield
+        finally:
+            end_time = time.perf_counter()
+            processing_time_ms = (end_time - start_time) * 1000
+            
+            try:
+                memory_info = self.current_process.memory_info()
+                end_memory = memory_info.rss / 1024 / 1024  # Convert to MB
+                cpu_percent = self.current_process.cpu_percent()
+            except Exception:
+                end_memory = start_memory
+                cpu_percent = 0.0
+                
+            # Record the resource usage
+            metrics = TrustMonitorResourceMetrics(
+                operation_name=operation_name,
+                cpu_percent=cpu_percent,
+                memory_mb=end_memory,
+                processing_time_ms=processing_time_ms,
+                timestamp=time.time()
+            )
+            
+            self.resource_metrics.append(metrics)
+            
+            # Maintain history limit
+            if len(self.resource_metrics) > self.max_resource_history:
+                self.resource_metrics = self.resource_metrics[-self.max_resource_history:]
+                
+    def get_trust_resource_summary(self) -> Dict[str, Any]:
+        """Get resource usage summary for this trust monitor."""
+        if not self.resource_monitoring_enabled or not self.resource_metrics:
+            return {"status": "no_resource_data", "node_id": self.node_id}
+            
+        # Group metrics by operation
+        operation_metrics = defaultdict(list)
+        for metric in self.resource_metrics:
+            operation_metrics[metric.operation_name].append(metric)
+            
+        summary = {
+            "node_id": self.node_id,
+            "total_measurements": len(self.resource_metrics),
+            "operations": {}
+        }
+        
+        # Overall statistics
+        all_cpu = [m.cpu_percent for m in self.resource_metrics]
+        all_memory = [m.memory_mb for m in self.resource_metrics]
+        all_time = [m.processing_time_ms for m in self.resource_metrics]
+        
+        summary["overall"] = {
+            "cpu_stats": {
+                "avg_percent": np.mean(all_cpu) if all_cpu else 0.0,
+                "max_percent": np.max(all_cpu) if all_cpu else 0.0,
+                "min_percent": np.min(all_cpu) if all_cpu else 0.0
+            },
+            "memory_stats": {
+                "avg_mb": np.mean(all_memory) if all_memory else 0.0,
+                "max_mb": np.max(all_memory) if all_memory else 0.0,
+                "peak_memory_mb": np.max(all_memory) if all_memory else 0.0
+            },
+            "timing_stats": {
+                "total_time_ms": np.sum(all_time) if all_time else 0.0,
+                "avg_time_ms": np.mean(all_time) if all_time else 0.0,
+                "max_time_ms": np.max(all_time) if all_time else 0.0
+            }
+        }
+        
+        # Per-operation statistics
+        for op_name, metrics in operation_metrics.items():
+            op_cpu = [m.cpu_percent for m in metrics]
+            op_memory = [m.memory_mb for m in metrics]
+            op_time = [m.processing_time_ms for m in metrics]
+            
+            summary["operations"][op_name] = {
+                "count": len(metrics),
+                "cpu_avg": np.mean(op_cpu) if op_cpu else 0.0,
+                "memory_peak": np.max(op_memory) if op_memory else 0.0,
+                "time_total": np.sum(op_time) if op_time else 0.0,
+                "time_avg": np.mean(op_time) if op_time else 0.0
+            }
+            
+        return summary
 
     def set_local_validation_data(self, validation_data: Any, model_template: Any) -> None:
         """Set local validation data and model template for loss spoofing detection."""

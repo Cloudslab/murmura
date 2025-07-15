@@ -293,6 +293,11 @@ def main() -> None:
         default=1.0,
         help="Exponent for trust score scaling (higher = more aggressive, default: 1.0)",
     )
+    parser.add_argument(
+        "--enable_trust_resource_monitoring",
+        action="store_true",
+        help="Enable resource monitoring specifically for trust monitor operations",
+    )
 
     # Visualization arguments
     parser.add_argument(
@@ -324,6 +329,17 @@ def main() -> None:
         type=str,
         default=None,
         help="Custom experiment name for visualization directory (overrides default naming)",
+    )
+    parser.add_argument(
+        "--monitor_resources",
+        action="store_true",
+        help="Monitor and log resource usage during training",
+    )
+    parser.add_argument(
+        "--health_check_interval",
+        type=int,
+        default=5,
+        help="Interval for health checks in rounds",
     )
 
     # Logging and monitoring
@@ -518,6 +534,7 @@ def main() -> None:
                 trust_decay_rate=args.trust_decay_rate,
                 min_trust_score=args.min_trust_score,
                 trust_weight_exponent=args.trust_weight_exponent,
+                enable_trust_resource_monitoring=args.enable_trust_resource_monitoring,
             )
 
             logger.info("Trust monitoring configuration created:")
@@ -585,8 +602,8 @@ def main() -> None:
             batch_size=args.batch_size,
             learning_rate=args.lr,
             test_split=args.test_split,
-            monitor_resources=False,
-            health_check_interval=5,
+            monitor_resources=args.monitor_resources,
+            health_check_interval=args.health_check_interval,
             client_sampling_rate=args.client_sampling_rate,
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,

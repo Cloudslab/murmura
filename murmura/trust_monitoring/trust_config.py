@@ -200,3 +200,23 @@ class TrustMonitorConfig(BaseModel):
         le=0.7,
         description="Minimum acceptable ratio between reported and validated loss (detects deflated reports)",
     )
+
+    # Trust monitor resource monitoring
+    enable_trust_resource_monitoring: bool = Field(
+        default=False,
+        description="Enable resource usage tracking specifically for trust monitor operations",
+    )
+
+    trust_resource_sampling_interval: float = Field(
+        default=0.1,
+        ge=0.01,
+        le=1.0,
+        description="Sampling interval for trust monitor resource monitoring (seconds)",
+    )
+
+    max_trust_resource_history: int = Field(
+        default=1000,
+        ge=100,
+        le=10000,
+        description="Maximum number of resource measurements to keep in memory per trust monitor",
+    )

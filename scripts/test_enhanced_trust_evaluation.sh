@@ -15,6 +15,7 @@ echo "Topologies: ring, complete, line"
 echo "Attacks: Gradient manipulation + Label flipping (30% malicious)"
 echo "Training: 50 rounds, 3 epochs (extended for convergence)"
 echo "Min partition: 100 samples (scaled for 50 nodes)"
+echo "Resource monitoring: Enabled (CPU/Memory + Trust monitor overhead)"
 echo "Baselines: With and without trust monitoring"
 echo "=========================================="
 
@@ -37,6 +38,8 @@ COMMON_BASE_PARAMS="
     --rounds 50
     --epochs 3
     --min_partition_size 100
+    --monitor_resources
+    --health_check_interval 10
     --create_animation
     --malicious_node_seed 42
     --data_partitioning_seed 42
@@ -47,6 +50,7 @@ COMMON_BASE_PARAMS="
 TRUST_PARAMS="
     --enable_trust_monitoring
     --enable_trust_weighted_aggregation
+    --enable_trust_resource_monitoring
 "
 
 # Gradient manipulation specific parameters
@@ -243,6 +247,54 @@ run_experiment() {
         echo "   🎯 Final accuracy: $(grep "Final Test Accuracy.*Honest Nodes" $output_file | tail -1 || grep "Final Test Accuracy" $output_file | tail -1 || echo "Not found")"
         echo "   📊 Accuracy improvement: $(grep "Accuracy Improvement.*Honest Nodes" $output_file | tail -1 || grep "Accuracy Improvement" $output_file | tail -1 || echo "Not found")"
         
+        # Extract resource usage metrics
+        echo "   💾 Resource usage:"
+        echo "      $(grep "resource usage:" $output_file | tail -1 || echo "      Resource monitoring data not found")"
+        
+        # Extract trust monitor resource usage
+        if [ "$trust_enabled" = "true" ]; then
+            echo "   🧠 Trust monitor resources:"
+            local trust_resource_found=false
+            
+            # Look for the new trust resource monitoring output
+            if grep -q "Trust Monitor Resource Usage Summary" $output_file; then
+                trust_resource_found=true
+                echo "      Individual node summaries found in logs"
+                
+                # Check for aggregate summary (preferred)
+                if grep -q "Aggregate Trust Monitor Resource Usage" $output_file; then
+                    echo "      📊 Aggregate across all honest nodes:"
+                    
+                    local avg_cpu=$(grep "Average CPU usage across.*honest nodes:" $output_file | grep -o '[0-9]*\.[0-9]*%' || echo "N/A")
+                    local avg_memory=$(grep "Average memory usage across.*honest nodes:" $output_file | grep -o '[0-9]*\.[0-9]*MB' || echo "N/A") 
+                    local total_processing=$(grep "Total processing time across all honest nodes:" $output_file | grep -o '[0-9]*\.[0-9]*ms' || echo "N/A")
+                    local total_operations=$(grep "Total trust operations across all honest nodes:" $output_file | grep -o '[0-9]* operations' || echo "N/A")
+                    
+                    echo "        Average CPU: $avg_cpu"
+                    echo "        Average Memory: $avg_memory"
+                    echo "        Total Processing: $total_processing"
+                    echo "        Total Operations: $total_operations"
+                else
+                    echo "      📊 First node sample (individual):"
+                    
+                    # Extract first node's usage as sample
+                    local cpu_usage=$(grep -A 10 "trust monitor resource usage:" $output_file | grep "CPU:" | head -1 | grep -o '[0-9]*\.[0-9]*% avg' || echo "N/A")
+                    local memory_usage=$(grep -A 10 "trust monitor resource usage:" $output_file | grep "Memory:" | head -1 | grep -o '[0-9]*\.[0-9]*MB avg' || echo "N/A")
+                    local processing_time=$(grep -A 10 "trust monitor resource usage:" $output_file | grep "Processing:" | head -1 | grep -o '[0-9]*\.[0-9]*ms total' || echo "N/A")
+                    local measurements=$(grep -A 10 "trust monitor resource usage:" $output_file | grep "Measurements:" | head -1 | grep -o '[0-9]* operations' || echo "N/A")
+                    
+                    echo "        CPU: $cpu_usage"
+                    echo "        Memory: $memory_usage"
+                    echo "        Processing: $processing_time"
+                    echo "        Operations tracked: $measurements"
+                fi
+            fi
+            
+            if [ "$trust_resource_found" = "false" ]; then
+                echo "      No trust resource monitoring data found (may be disabled)"
+            fi
+        fi
+        
         # Extract trust score evolution for trust-enabled experiments
         if [ "$trust_enabled" = "true" ]; then
             extract_trust_evolution $output_file
@@ -332,7 +384,7 @@ echo "==============================="
 
 # Create CSV summary file
 csv_file="experiment_summary.csv"
-echo "Dataset,Topology,Attack,Nodes,Trust,Actual_Malicious,Detected_Malicious,Detection_Count,Detection_Round,Initial_Accuracy,Final_Accuracy,Accuracy_Improvement,Status" > $csv_file
+echo "Dataset,Topology,Attack,Nodes,Trust,Actual_Malicious,Detected_Malicious,Detection_Count,Detection_Round,Initial_Accuracy,Final_Accuracy,Accuracy_Improvement,Trust_CPU_Avg_Pct,Trust_Memory_Avg_MB,Trust_Processing_Total_MS,Trust_Operations_Total,Status" > $csv_file
 
 for file in *.txt; do
     if [ -f "$file" ]; then
@@ -397,12 +449,26 @@ for file in *.txt; do
             echo "   📈 Accuracy Improvement: $acc_improvement"
             echo "   📄 File: $file"
             
+            # Extract trust resource metrics for trust-enabled experiments
+            trust_cpu_avg="N/A"
+            trust_memory_avg="N/A" 
+            trust_processing_total="N/A"
+            trust_operations="N/A"
+            
+            if [ "$trust_enabled" = "true" ]; then
+                # Try to extract aggregate values first (preferred), fallback to individual node values
+                trust_cpu_avg=$(grep "Average CPU usage across.*honest nodes:" $file | grep -o '[0-9]*\.[0-9]*' || grep -A 10 "trust monitor resource usage:" $file | grep "CPU:" | head -1 | grep -o '[0-9]*\.[0-9]*' || echo "N/A")
+                trust_memory_avg=$(grep "Average memory usage across.*honest nodes:" $file | grep -o '[0-9]*\.[0-9]*' || grep -A 10 "trust monitor resource usage:" $file | grep "Memory:" | head -1 | grep -o '[0-9]*\.[0-9]*' || echo "N/A")
+                trust_processing_total=$(grep "Total processing time across all honest nodes:" $file | grep -o '[0-9]*\.[0-9]*' || grep -A 10 "trust monitor resource usage:" $file | grep "Processing:" | head -1 | grep -o '[0-9]*\.[0-9]*' || echo "N/A")
+                trust_operations=$(grep "Total trust operations across all honest nodes:" $file | grep -o '[0-9]*' || grep -A 10 "trust monitor resource usage:" $file | grep "Measurements:" | head -1 | grep -o '[0-9]*' || echo "N/A")
+            fi
+            
             # Add to CSV
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$actual_malicious,$detected_malicious,$detection_count,$detection_round,$initial_acc,$final_acc,$acc_improvement,$status" >> $csv_file
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$actual_malicious,$detected_malicious,$detection_count,$detection_round,$initial_acc,$final_acc,$acc_improvement,$trust_cpu_avg,$trust_memory_avg,$trust_processing_total,$trust_operations,$status" >> $csv_file
         else
             status="FAILED"
             echo "   ❌ FAILED - Check $file for details"
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,N/A,N/A,N/A,$status" >> $csv_file
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,$status" >> $csv_file
         fi
     fi
 done
@@ -436,5 +502,14 @@ echo "   echo \"Trust evolution files:\"; ls -la *_trust_evolution.txt 2>/dev/nu
 echo ""
 echo "   # Scalability analysis:"
 echo "   for n in 10 20 30 50; do echo \"Node count \$n:\"; grep \"Final Test Accuracy\" *n\$n*.txt; done"
+echo ""
+echo "   # Resource usage comparison (trust vs baseline):"
+echo "   echo \"Trust-enabled resource usage:\"; grep \"resource usage:\" *_trust.txt | head -5"
+echo "   echo \"Baseline resource usage:\"; grep \"resource usage:\" *_baseline.txt | head -5"
+echo ""
+echo "   # Trust monitor overhead analysis:"
+echo "   echo \"Trust resource monitoring summaries:\"; grep -A 15 \"Trust Monitor Resource Usage Summary\" *_trust.txt 2>/dev/null | head -20 || echo \"No trust resource data found\""
+echo "   echo \"Trust monitoring CPU usage:\"; grep \"CPU:.*avg\" *_trust.txt 2>/dev/null || echo \"No trust CPU data found\""
+echo "   echo \"Trust monitoring memory usage:\"; grep \"Memory:.*avg\" *_trust.txt 2>/dev/null || echo \"No trust memory data found\""
 echo ""
 echo "=========================================="

@@ -143,7 +143,8 @@ class DecentralizedLearningProcess(LearningProcess):
                 validation_data = ray.get(actor.create_validation_split.remote(validation_ratio))
                 
                 # Set up the trust monitor with validation data and model template
-                trust_monitor.set_local_validation_data(validation_data, model_template)
+                with trust_monitor._measure_trust_resource_usage("set_validation_data"):
+                    trust_monitor.set_local_validation_data(validation_data, model_template)
                 
                 self.logger.info(
                     f"Local validation configured for node {node_idx} trust monitor "
@@ -196,16 +197,18 @@ class DecentralizedLearningProcess(LearningProcess):
                 trust_monitor.logger.setLevel(logging.DEBUG)
                 
                 # Process trust monitoring for this node
-                trust_scores = trust_monitor.process_parameter_updates(
-                    round_num=round_num,
-                    neighbor_updates=neighbor_updates,
-                    neighbor_losses=neighbor_losses
-                )
+                with trust_monitor._measure_trust_resource_usage("process_parameter_updates"):
+                    trust_scores = trust_monitor.process_parameter_updates(
+                        round_num=round_num,
+                        neighbor_updates=neighbor_updates,
+                        neighbor_losses=neighbor_losses
+                    )
                 all_trust_scores[node_idx] = trust_scores
                 self.logger.info(f"Node {node_idx}: Trust scores: {trust_scores}")
                 
                 # Get the actual detections from the trust monitor itself
-                trust_summary = trust_monitor.get_trust_summary()
+                with trust_monitor._measure_trust_resource_usage("get_trust_summary"):
+                    trust_summary = trust_monitor.get_trust_summary()
                 suspicious_neighbors = trust_summary.get("suspicious_neighbors", [])
                 
                 if suspicious_neighbors:
@@ -687,7 +690,8 @@ class DecentralizedLearningProcess(LearningProcess):
         
         if self.trust_monitors:
             for node_idx, trust_monitor in self.trust_monitors.items():
-                summary = trust_monitor.get_trust_summary()
+                with trust_monitor._measure_trust_resource_usage("get_trust_summary_final"):
+                    summary = trust_monitor.get_trust_summary()
                 
                 # Use actual detections from runtime instead of recalculating thresholds
                 if node_idx in node_malicious_detections:
@@ -710,6 +714,61 @@ class DecentralizedLearningProcess(LearningProcess):
         else:
             self.logger.info("Trust monitoring: No malicious behavior detected by any node")
 
+        # Collect trust resource monitoring results
+        trust_resource_summary = {}
+        if self.trust_monitors and self.trust_config and self.trust_config.enable_trust_resource_monitoring:
+            self.logger.info("=== Trust Monitor Resource Usage Summary ===")
+            
+            # Collect individual node data and calculate aggregates
+            all_cpu_avg = []
+            all_memory_avg = []
+            all_processing_total = []
+            all_operations = []
+            
+            for node_idx, trust_monitor in self.trust_monitors.items():
+                summary = trust_monitor.get_trust_resource_summary()
+                trust_resource_summary[f"node_{node_idx}"] = summary
+                
+                if summary.get("status") != "no_resource_data":
+                    overall = summary.get("overall", {})
+                    cpu_stats = overall.get("cpu_stats", {})
+                    memory_stats = overall.get("memory_stats", {})
+                    timing_stats = overall.get("timing_stats", {})
+                    
+                    # Collect for aggregation
+                    all_cpu_avg.append(cpu_stats.get('avg_percent', 0))
+                    all_memory_avg.append(memory_stats.get('avg_mb', 0))
+                    all_processing_total.append(timing_stats.get('total_time_ms', 0))
+                    all_operations.append(summary.get('total_measurements', 0))
+                    
+                    self.logger.info(f"Node {node_idx} trust monitor resource usage:")
+                    self.logger.info(f"  CPU: {cpu_stats.get('avg_percent', 0):.2f}% avg, {cpu_stats.get('max_percent', 0):.2f}% max")
+                    self.logger.info(f"  Memory: {memory_stats.get('avg_mb', 0):.2f}MB avg, {memory_stats.get('peak_memory_mb', 0):.2f}MB peak")
+                    self.logger.info(f"  Processing: {timing_stats.get('total_time_ms', 0):.2f}ms total, {timing_stats.get('avg_time_ms', 0):.2f}ms avg")
+                    self.logger.info(f"  Measurements: {summary.get('total_measurements', 0)} operations tracked")
+            
+            # Log aggregate statistics across all honest nodes
+            if all_cpu_avg:
+                avg_cpu = sum(all_cpu_avg) / len(all_cpu_avg)
+                avg_memory = sum(all_memory_avg) / len(all_memory_avg)
+                total_processing = sum(all_processing_total)
+                total_operations = sum(all_operations)
+                
+                self.logger.info("=== Aggregate Trust Monitor Resource Usage (All Honest Nodes) ===")
+                self.logger.info(f"Average CPU usage across {len(all_cpu_avg)} honest nodes: {avg_cpu:.2f}%")
+                self.logger.info(f"Average memory usage across {len(all_memory_avg)} honest nodes: {avg_memory:.2f}MB")
+                self.logger.info(f"Total processing time across all honest nodes: {total_processing:.2f}ms")
+                self.logger.info(f"Total trust operations across all honest nodes: {total_operations} operations")
+                
+                # Store aggregate data for CSV extraction
+                trust_resource_summary["aggregate"] = {
+                    "avg_cpu_percent": avg_cpu,
+                    "avg_memory_mb": avg_memory,
+                    "total_processing_ms": total_processing,
+                    "total_operations": total_operations,
+                    "node_count": len(all_cpu_avg)
+                }
+
         # Return results_phase1
         results = {
             "initial_metrics": initial_metrics,
@@ -723,7 +782,8 @@ class DecentralizedLearningProcess(LearningProcess):
                 "results": trust_monitoring_results,
                 "final_summary": trust_summary,
                 "global_suspicious_detected": list(all_detected_suspicious) if self.trust_monitors else [],
-                "node_detections": node_detections_for_logging if self.trust_monitors else {}
+                "node_detections": node_detections_for_logging if self.trust_monitors else {},
+                "resource_monitoring": trust_resource_summary if trust_resource_summary else {}
             }
         }
 
