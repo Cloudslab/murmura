@@ -11,12 +11,12 @@ echo "Enhanced Trust Monitoring Evaluation"
 echo "=========================================="
 echo "Testing: Eurosat, CIFAR-10"
 echo "Node counts: 10, 20, 30, 50"
-echo "Topologies: ring, complete, line"
+echo "Topologies: ring, complete"
 echo "Attacks: Gradient manipulation + Label flipping (30% malicious)"
 echo "Training: 50 rounds, 3 epochs (extended for convergence)"
 echo "Min partition: 100 samples (scaled for 50 nodes)"
 echo "Resource monitoring: Enabled (CPU/Memory + Trust monitor overhead)"
-echo "Baselines: With and without trust monitoring"
+echo "Comparisons: Trust-weighted vs baseline gossip averaging"
 echo "=========================================="
 
 # Create output directory with timestamp
@@ -314,11 +314,11 @@ run_experiment() {
 # Function to run scalability experiments
 run_scalability_experiments() {
     echo ""
-    echo "🚀 SCALABILITY EXPERIMENTS"
-    echo "=========================="
+    echo "🚀 TRUST vs BASELINE EXPERIMENTS"
+    echo "================================="
     
     datasets=("cifar10" "eurosat")
-    topologies=("ring" "complete")  # Skip line topology for scalability (too slow)
+    topologies=("complete" "ring")  # Test dense vs sparse connectivity
     attack_types=("gradient" "label_flip")
     trust_settings=("true" "false")
     
@@ -335,43 +335,14 @@ run_scalability_experiments() {
     done
 }
 
-# Function to run baseline comparison experiments 
-run_baseline_experiments() {
-    echo ""
-    echo "📊 BASELINE COMPARISON EXPERIMENTS"
-    echo "=================================="
-    echo "Running focused experiments to compare trust vs baseline performance"
-    
-    # Focused set for detailed comparison
-    datasets=("cifar10" "eurosat")
-    topologies=("complete")  # Complete topology for best trust performance
-    attack_types=("gradient" "label_flip")
-    node_counts=(10 30)  # Small and medium scale
-    trust_settings=("true" "false")
-    
-    for dataset in "${datasets[@]}"; do
-        for topology in "${topologies[@]}"; do
-            for attack_type in "${attack_types[@]}"; do
-                for node_count in "${node_counts[@]}"; do
-                    for trust_enabled in "${trust_settings[@]}"; do
-                        run_experiment $dataset $topology $attack_type $node_count $trust_enabled
-                    done
-                done
-            done
-        done
-    done
-}
 
 # Main execution
 echo "Starting experiments at: $(date)"
 echo "Output directory: $(pwd)"
 echo ""
 
-# Run scalability experiments
+# Run trust vs baseline experiments across topologies and node counts
 run_scalability_experiments
-
-# Run focused baseline experiments
-run_baseline_experiments
 
 echo "=========================================="
 echo "All experiments completed at: $(date)"
