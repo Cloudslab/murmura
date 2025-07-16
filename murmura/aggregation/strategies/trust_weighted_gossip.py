@@ -76,7 +76,15 @@ class TrustWeightedGossip(AggregationStrategy):
         total_trust = sum(neighbor_trust_scores.values())
         if total_trust <= 0:
             # All neighbors have zero trust, return own parameters
+            print(f"TRUST_WEIGHTED_GOSSIP: All neighbors have zero trust, using only own parameters")
             return own_params.copy()
+
+        # Log trust-weighted aggregation details
+        print(f"TRUST_WEIGHTED_GOSSIP: Aggregating with mixing_parameter={self.mixing_parameter:.3f}")
+        print(f"TRUST_WEIGHTED_GOSSIP: Trust scores: {neighbor_trust_scores}")
+        neighbor_weights = {i: score / total_trust for i, score in neighbor_trust_scores.items()}
+        print(f"TRUST_WEIGHTED_GOSSIP: Normalized neighbor weights: {neighbor_weights}")
+        print(f"TRUST_WEIGHTED_GOSSIP: Own weight: {self.mixing_parameter:.3f}, Total neighbor weight: {1-self.mixing_parameter:.3f}")
 
         aggregated_params = {}
 

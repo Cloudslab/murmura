@@ -66,6 +66,12 @@ class GossipAvg(AggregationStrategy):
         own_params = parameters_list[0]  # First parameter set is always own node
         neighbor_params_list = parameters_list[1:]  # Rest are neighbors
         neighbor_weights_list = weights[1:] if len(weights) > 1 else []
+
+        # Log gossip averaging aggregation details
+        print(f"GOSSIP_AVG: Aggregating with mixing_parameter={self.mixing_parameter:.3f}")
+        print(f"GOSSIP_AVG: Base weights: {weights}")
+        print(f"GOSSIP_AVG: Neighbor weights: {neighbor_weights_list}")
+        print(f"GOSSIP_AVG: Own weight: {self.mixing_parameter:.3f}, Total neighbor weight: {1-self.mixing_parameter:.3f}")
         
         aggregated_params = {}
 

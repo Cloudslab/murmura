@@ -217,35 +217,59 @@ run_experiment() {
         # Extract key metrics
         echo "📊 Results Summary:"
         
-        # Extract actual malicious node indices
-        local malicious_indices=$(grep "Malicious clients will be created at indices:" $output_file | grep -o "\[.*\]" || echo "Not found")
+        # Extract actual malicious node indices - improved parsing
+        local malicious_indices=$(grep "Malicious clients will be created at indices:" $output_file | grep -o "\[.*\]" | head -1 || echo "Not found")
         echo "   🎯 Actual malicious nodes: $malicious_indices"
         
         if [ "$trust_enabled" = "true" ]; then
-            # Extract all unique detected suspicious neighbors across all rounds
-            local all_detections=$(grep -o "detected suspicious neighbors: \['node_[0-9]*'\]" $output_file | grep -o "node_[0-9]*" | sed 's/node_//' | sort -n | uniq)
-            if [ -n "$all_detections" ]; then
-                local detected_array="[$(echo $all_detections | tr ' ' ',')]"
-                echo "   🔍 Detected suspicious nodes: $detected_array"
-                
-                # Count total detections
-                local detection_count=$(echo $all_detections | wc -w | tr -d ' ')
-                echo "   📈 Total unique detections: $detection_count"
+            # Extract detected suspicious neighbors - updated for new log format
+            # Look for: "Trust monitoring detected X suspicious neighbors across all nodes: ['node_1', 'node_0']"
+            local detected_line=$(grep "Trust monitoring detected.*suspicious neighbors across all nodes:" $output_file | tail -1)
+            if [ -n "$detected_line" ]; then
+                # Extract the node list from the line like: ['node_1', 'node_0', 'node_7']
+                local all_detections=$(echo "$detected_line" | grep -o "\['[^']*'[^]]*\]" | sed "s/'node_/'/g" | sed "s/'//g" | sed 's/\[//' | sed 's/\]//' | tr ',' '\n' | sed 's/^ *//' | sort -n | uniq)
+                if [ -n "$all_detections" ]; then
+                    local detected_array="[$(echo $all_detections | tr ' ' ',')]"
+                    echo "   🔍 Detected suspicious nodes: $detected_array"
+                    
+                    # Count total detections
+                    local detection_count=$(echo $all_detections | wc -w | tr -d ' ')
+                    echo "   📈 Total unique detections: $detection_count"
+                else
+                    echo "   🔍 Detected suspicious nodes: None"
+                    echo "   📈 Total unique detections: 0"
+                fi
             else
                 echo "   🔍 Detected suspicious nodes: None"
                 echo "   📈 Total unique detections: 0"
             fi
             
-            # First detection round
-            local first_detection=$(grep -B 50 "detected suspicious neighbors" $output_file | grep "Round [0-9]" | head -1 | grep -o "Round [0-9]*" || echo "Not detected")
-            echo "   ⏱️  First detection: $first_detection"
+            # First detection round - look for the global detection message
+            local first_detection=$(grep -B 10 "Trust monitoring detected.*suspicious neighbors across all nodes:" $output_file | grep "Round [0-9]" | tail -1 | grep -o "[0-9]*" || echo "Not detected")
+            echo "   ⏱️  First detection: Round $first_detection"
         else
             echo "   🔍 Trust monitoring: DISABLED (baseline)"
         fi
         
-        echo "   🚀 Initial accuracy: $(grep "Initial Test Accuracy.*Honest Nodes" $output_file | tail -1 || grep "Initial Test Accuracy" $output_file | tail -1 || echo "Not found")"
-        echo "   🎯 Final accuracy: $(grep "Final Test Accuracy.*Honest Nodes" $output_file | tail -1 || grep "Final Test Accuracy" $output_file | tail -1 || echo "Not found")"
-        echo "   📊 Accuracy improvement: $(grep "Accuracy Improvement.*Honest Nodes" $output_file | tail -1 || grep "Accuracy Improvement" $output_file | tail -1 || echo "Not found")"
+        # Fixed accuracy parsing - initial accuracy doesn't have "Honest Nodes" suffix
+        local initial_acc=$(grep "Initial Test Accuracy:" $output_file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "Not found")
+        local final_acc=$(grep "Final Test Accuracy.*Honest Nodes" $output_file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || grep "Final Test Accuracy:" $output_file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "Not found")
+        local acc_improvement=$(grep "Accuracy Improvement.*Honest Nodes" $output_file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || grep "Accuracy Improvement:" $output_file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || echo "Not found")
+        
+        echo "   🚀 Initial accuracy: $initial_acc"
+        echo "   🎯 Final accuracy: $final_acc"
+        echo "   📊 Accuracy improvement: $acc_improvement"
+        
+        # Extract aggregation strategy information
+        echo "   🔄 Aggregation details:"
+        local aggregation_strategy=$(grep "AGGREGATION_DEBUG.*Round 1:" $output_file | head -1 | grep -o "strategy=[A-Za-z]*" | sed 's/strategy=//' || echo "Unknown")
+        local mixing_param=$(grep "AGGREGATION_DEBUG.*Round 1:" $output_file | head -1 | grep -o "mixing=[0-9.]*" | sed 's/mixing=//' || echo "Unknown")
+        echo "      Strategy: $aggregation_strategy (mixing: $mixing_param)"
+        
+        # Count aggregation debug messages to verify consistency
+        local trust_agg_count=$(grep -c "TRUST-WEIGHTED aggregation" $output_file || echo "0")
+        local baseline_agg_count=$(grep -c "BASELINE aggregation" $output_file || echo "0")
+        echo "      Trust-weighted calls: $trust_agg_count, Baseline calls: $baseline_agg_count"
         
         # Extract resource usage metrics
         echo "   💾 Resource usage:"
@@ -355,7 +379,7 @@ echo "==============================="
 
 # Create CSV summary file
 csv_file="experiment_summary.csv"
-echo "Dataset,Topology,Attack,Nodes,Trust,Actual_Malicious,Detected_Malicious,Detection_Count,Detection_Round,Initial_Accuracy,Final_Accuracy,Accuracy_Improvement,Trust_CPU_Avg_Pct,Trust_Memory_Avg_MB,Trust_Processing_Total_MS,Trust_Operations_Total,Status" > $csv_file
+echo "Dataset,Topology,Attack,Nodes,Trust,Actual_Malicious,Detected_Malicious,Detection_Count,Detection_Round,Initial_Accuracy,Final_Accuracy,Accuracy_Improvement,Aggregation_Strategy,Mixing_Parameter,Trust_Weighted_Calls,Baseline_Calls,Trust_CPU_Avg_Pct,Trust_Memory_Avg_MB,Trust_Processing_Total_MS,Trust_Operations_Total,Status" > $csv_file
 
 for file in *.txt; do
     if [ -f "$file" ]; then
@@ -387,30 +411,44 @@ for file in *.txt; do
             status="SUCCESS"
             
             # Extract actual malicious node indices (same for baseline and trust experiments)
-            actual_malicious=$(grep "Malicious clients will be created at indices:" $file | grep -o "\[.*\]" | tr -d '[]' | tr -d ' ' || echo "N/A")
+            actual_malicious=$(grep "Malicious clients will be created at indices:" $file | grep -o "\[.*\]" | head -1 | tr -d '[]' | tr -d ' ' || echo "N/A")
             
-            # Detection results
+            # Detection results - updated for new log format
             if [ "$trust_enabled" = "true" ]; then
-                # Extract all unique detected suspicious neighbors
-                detected_nodes=$(grep -o "detected suspicious neighbors: \['node_[0-9]*'\]" $file | grep -o "node_[0-9]*" | sed 's/node_//' | sort -n | uniq)
-                if [ -n "$detected_nodes" ]; then
-                    detected_malicious=$(echo "$detected_nodes" | tr '\n' ',' | sed 's/,$//')
-                    detection_count=$(echo $detected_nodes | wc -w | tr -d ' ')
+                # Extract detected suspicious neighbors from the global detection message
+                detected_line=$(grep "Trust monitoring detected.*suspicious neighbors across all nodes:" $file | tail -1)
+                if [ -n "$detected_line" ]; then
+                    # Extract node numbers from the format: ['node_1', 'node_0', 'node_7']
+                    detected_nodes=$(echo "$detected_line" | grep -o "\['[^']*'[^]]*\]" | sed "s/'node_/'/g" | sed "s/'//g" | sed 's/\[//' | sed 's/\]//' | tr ',' '\n' | sed 's/^ *//' | sort -n | uniq)
+                    if [ -n "$detected_nodes" ]; then
+                        detected_malicious=$(echo "$detected_nodes" | tr '\n' ',' | sed 's/,$//')
+                        detection_count=$(echo $detected_nodes | wc -w | tr -d ' ')
+                    else
+                        detected_malicious="None"
+                        detection_count="0"
+                    fi
                 else
                     detected_malicious="None"
                     detection_count="0"
                 fi
-                detection_round=$(grep -B 50 "detected suspicious neighbors" $file | grep "Round [0-9]" | head -1 | grep -o "[0-9]*" || echo "N/A")
+                # First detection round from global detection message
+                detection_round=$(grep -B 10 "Trust monitoring detected.*suspicious neighbors across all nodes:" $file | grep "Round [0-9]" | tail -1 | grep -o "[0-9]*" || echo "N/A")
             else
                 detected_malicious="N/A"
                 detection_count="N/A"
                 detection_round="N/A"
             fi
             
-            # Accuracy results (prefer honest nodes metrics, fallback to old format)
-            initial_acc=$(grep "Initial Test Accuracy.*Honest Nodes" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || grep "Initial Test Accuracy" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
-            final_acc=$(grep "Final Test Accuracy.*Honest Nodes" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || grep "Final Test Accuracy" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
-            acc_improvement=$(grep "Accuracy Improvement.*Honest Nodes" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || grep "Accuracy Improvement" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || echo "N/A")
+            # Accuracy results - fixed initial accuracy parsing (no "Honest Nodes" suffix)
+            initial_acc=$(grep "Initial Test Accuracy:" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
+            final_acc=$(grep "Final Test Accuracy.*Honest Nodes" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || grep "Final Test Accuracy:" $file | tail -1 | grep -o "[0-9]*\.[0-9]*%" || echo "N/A")
+            acc_improvement=$(grep "Accuracy Improvement.*Honest Nodes" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || grep "Accuracy Improvement:" $file | tail -1 | grep -o "[-]*[0-9]*\.[0-9]*%" || echo "N/A")
+            
+            # Extract aggregation strategy information for CSV
+            aggregation_strategy=$(grep "AGGREGATION_DEBUG.*Round 1:" $file | head -1 | grep -o "strategy=[A-Za-z]*" | sed 's/strategy=//' || echo "Unknown")
+            mixing_parameter=$(grep "AGGREGATION_DEBUG.*Round 1:" $file | head -1 | grep -o "mixing=[0-9.]*" | sed 's/mixing=//' || echo "N/A")
+            trust_weighted_calls=$(grep -c "TRUST-WEIGHTED aggregation" $file || echo "0")
+            baseline_calls=$(grep -c "BASELINE aggregation" $file || echo "0")
             
             echo "   🎯 Actual malicious: [$actual_malicious]"
             echo "   🔍 Detected malicious: [$detected_malicious]"
@@ -418,6 +456,8 @@ for file in *.txt; do
             echo "   🚀 Initial Accuracy: $initial_acc"
             echo "   🎯 Final Accuracy: $final_acc"
             echo "   📈 Accuracy Improvement: $acc_improvement"
+            echo "   🔄 Strategy: $aggregation_strategy (mixing: $mixing_parameter)"
+            echo "   📊 Aggregation calls: Trust=$trust_weighted_calls, Baseline=$baseline_calls"
             echo "   📄 File: $file"
             
             # Extract trust resource metrics for trust-enabled experiments
@@ -434,12 +474,12 @@ for file in *.txt; do
                 trust_operations=$(grep "Total trust operations across all honest nodes:" $file | grep -o '[0-9]*' || grep -A 10 "trust monitor resource usage:" $file | grep "Measurements:" | head -1 | grep -o '[0-9]*' || echo "N/A")
             fi
             
-            # Add to CSV
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$actual_malicious,$detected_malicious,$detection_count,$detection_round,$initial_acc,$final_acc,$acc_improvement,$trust_cpu_avg,$trust_memory_avg,$trust_processing_total,$trust_operations,$status" >> $csv_file
+            # Add to CSV with new aggregation strategy fields
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,$actual_malicious,$detected_malicious,$detection_count,$detection_round,$initial_acc,$final_acc,$acc_improvement,$aggregation_strategy,$mixing_parameter,$trust_weighted_calls,$baseline_calls,$trust_cpu_avg,$trust_memory_avg,$trust_processing_total,$trust_operations,$status" >> $csv_file
         else
             status="FAILED"
             echo "   ❌ FAILED - Check $file for details"
-            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,$status" >> $csv_file
+            echo "$dataset,$topology,$attack,$node_count,$trust_enabled,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,$status" >> $csv_file
         fi
     fi
 done
@@ -466,7 +506,16 @@ echo "   grep 'Malicious clients will be created' *_trust.txt | cut -d: -f2 | so
 echo "   # Both baseline and trust experiments use same seeds (malicious=42, data_partitioning=42)"
 echo ""
 echo "   # Detection performance across node counts:"
-echo "   grep 'Trust monitoring detected.*suspicious neighbors' *.txt | sort"
+echo "   grep 'Trust monitoring detected.*suspicious neighbors across all nodes' *.txt | sort"
+echo ""
+echo "   # Aggregation strategy verification:"
+echo "   echo \"Trust-weighted strategy usage:\"; grep 'AGGREGATION_DEBUG.*TRUST-WEIGHTED' *_trust.txt | wc -l"
+echo "   echo \"Baseline strategy usage:\"; grep 'AGGREGATION_DEBUG.*BASELINE' *_baseline.txt | wc -l"
+echo "   echo \"Mixing parameters used:\"; grep 'AGGREGATION_DEBUG.*Round 1:' *.txt | grep -o 'mixing=[0-9.]*'"
+echo ""
+echo "   # Trust score analysis (trust-weighted experiments only):"
+echo "   echo \"Trust score evolution samples:\"; grep 'TRUST_WEIGHTED_GOSSIP: Trust scores:' *_trust.txt | head -5"
+echo "   echo \"Zero trust instances:\"; grep 'All neighbors have zero trust' *_trust.txt | wc -l"
 echo ""
 echo "   # Trust evolution analysis:"
 echo "   echo \"Trust evolution files:\"; ls -la *_trust_evolution.txt 2>/dev/null || echo \"None found\""
@@ -482,5 +531,10 @@ echo "   # Trust monitor overhead analysis:"
 echo "   echo \"Trust resource monitoring summaries:\"; grep -A 15 \"Trust Monitor Resource Usage Summary\" *_trust.txt 2>/dev/null | head -20 || echo \"No trust resource data found\""
 echo "   echo \"Trust monitoring CPU usage:\"; grep \"CPU:.*avg\" *_trust.txt 2>/dev/null || echo \"No trust CPU data found\""
 echo "   echo \"Trust monitoring memory usage:\"; grep \"Memory:.*avg\" *_trust.txt 2>/dev/null || echo \"No trust memory data found\""
+echo ""
+echo "   # Aggregation debugging (new logs):"
+echo "   echo \"Aggregation strategy breakdown by experiment:\"; grep 'AGGREGATION_DEBUG.*Round 1:' *.txt | cut -d: -f1,4 | sort"
+echo "   echo \"Sample trust weight distributions:\"; grep 'Normalized neighbor weights:' *_trust.txt | head -3"
+echo "   echo \"Sample baseline weight distributions:\"; grep 'Base weights:' *_baseline.txt | head -3"
 echo ""
 echo "=========================================="

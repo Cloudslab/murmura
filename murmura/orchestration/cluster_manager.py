@@ -1426,6 +1426,16 @@ class ClusterManager:
                         for i, neighbor_idx in enumerate(neighbor_params_dict.keys()):
                             trust_scores_for_strategy[i] = neighbor_trust_scores[neighbor_idx]
                         
+                        # Enhanced logging for trust-weighted aggregation context
+                        mixing_param = getattr(self.aggregation_strategy, 'mixing_parameter', 'unknown')
+                        self.logger.info(
+                            f"AGGREGATION_DEBUG Node {node_idx} Round {current_round}: TRUST-WEIGHTED aggregation with "
+                            f"strategy={self.aggregation_strategy.__class__.__name__}(mixing={mixing_param}) "
+                            f"neighbors={list(neighbor_params_dict.keys())} "
+                            f"raw_trust_scores={neighbor_trust_scores} "
+                            f"strategy_trust_scores={trust_scores_for_strategy}"
+                        )
+                        
                         aggregated_params = self.aggregation_strategy.aggregate(
                             neighbor_params, 
                             weights=None,  # Not used in trust-weighted
@@ -1450,13 +1460,22 @@ class ClusterManager:
                         # Use baseline aggregation strategy (GossipAvg with equal weights)
                         neighbor_weights = [1.0] * len(neighbor_params)  # Equal weights for baseline
                         
+                        # Enhanced logging for baseline aggregation context
+                        mixing_param = getattr(self.aggregation_strategy, 'mixing_parameter', 'unknown')
+                        self.logger.info(
+                            f"AGGREGATION_DEBUG Node {node_idx} Round {current_round}: BASELINE aggregation with "
+                            f"strategy={self.aggregation_strategy.__class__.__name__}(mixing={mixing_param}) "
+                            f"neighbors={list(neighbor_params_dict.keys())} "
+                            f"neighbor_weights={neighbor_weights}"
+                        )
+                        
                         aggregated_params = self.aggregation_strategy.aggregate(
                             neighbor_params, neighbor_weights
                         )
                         
                         mixing_parameter = getattr(self.aggregation_strategy, 'mixing_parameter', 0.5)
-                        self.logger.debug(
-                            f"Node {node_idx} baseline aggregation (mixing={mixing_parameter:.1f}): self + {len(neighbor_params_dict)} neighbors"
+                        self.logger.info(
+                            f"AGGREGATION_DEBUG Node {node_idx} baseline aggregation completed (mixing={mixing_parameter:.1f}): self + {len(neighbor_params_dict)} neighbors"
                         )
                     
                     # Schedule asynchronous update of the node's model

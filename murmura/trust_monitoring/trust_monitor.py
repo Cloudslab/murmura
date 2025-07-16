@@ -238,7 +238,12 @@ class TrustMonitor:
             validation_model = copy.deepcopy(self.local_model_template)
             
             # Load neighbor's parameters
-            if hasattr(validation_model, 'load_state_dict'):
+            # Try to get the underlying PyTorch model if this is a wrapper
+            target_model = validation_model
+            if hasattr(validation_model, 'model') and hasattr(validation_model.model, 'load_state_dict'):
+                target_model = validation_model.model
+            
+            if hasattr(target_model, 'load_state_dict'):
                 # Convert parameters to proper format if needed
                 state_dict = {}
                 for name, param in neighbor_params.items():
@@ -246,17 +251,20 @@ class TrustMonitor:
                         state_dict[name] = param.cpu()
                     else:
                         state_dict[name] = param
-                validation_model.load_state_dict(state_dict)
+                target_model.load_state_dict(state_dict)
             else:
                 self.logger.warning(
                     f"TRUST MONITOR {self.node_id}: Model template doesn't support load_state_dict, trying direct assignment"
                 )
+                # Try direct assignment on the underlying model
                 for name, param in neighbor_params.items():
-                    if hasattr(validation_model, name):
-                        setattr(validation_model, name, param)
+                    if hasattr(target_model, name):
+                        setattr(target_model, name, param)
             
             # Set model to evaluation mode
-            if hasattr(validation_model, 'eval'):
+            if hasattr(target_model, 'eval'):
+                target_model.eval()
+            elif hasattr(validation_model, 'eval'):
                 validation_model.eval()
             
             # Compute validation loss using the model's evaluate method
@@ -457,16 +465,16 @@ class TrustMonitor:
         similarities["magnitude_ratio"] = magnitude_ratio
         similarities["std_ratio"] = std_ratio
 
-        self.logger.info(
+        self.logger.debug(
             f"TRUST MONITOR {self.node_id}: Similarity between {update1.neighbor_id} and {update2.neighbor_id}:"
         )
-        self.logger.info(
+        self.logger.debug(
             f"TRUST MONITOR {self.node_id}:   L2 norms: {stats1['global_l2_norm']:.6f} vs {stats2['global_l2_norm']:.6f}, ratio: {l2_norm_ratio:.6f}"
         )
-        self.logger.info(
+        self.logger.debug(
             f"TRUST MONITOR {self.node_id}:   Magnitudes: {stats1['global_magnitude']:.6f} vs {stats2['global_magnitude']:.6f}, ratio: {magnitude_ratio:.6f}"
         )
-        self.logger.info(
+        self.logger.debug(
             f"TRUST MONITOR {self.node_id}:   Std devs: {stats1['global_std']:.6f} vs {stats2['global_std']:.6f}, ratio: {std_ratio:.6f}"
         )
 
@@ -510,12 +518,12 @@ class TrustMonitor:
                     cosine_sim = 0.0
 
                 similarities["cosine_similarity"] = float(cosine_sim)
-                self.logger.info(
+                self.logger.debug(
                     f"TRUST MONITOR {self.node_id}:   Cosine similarity: {cosine_sim:.6f}"
                 )
             else:
                 similarities["cosine_similarity"] = 0.0
-                self.logger.info(
+                self.logger.debug(
                     f"TRUST MONITOR {self.node_id}:   Cosine similarity: 0.0 (no common parameters)"
                 )
 
