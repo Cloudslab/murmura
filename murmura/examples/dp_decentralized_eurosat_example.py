@@ -98,7 +98,7 @@ def main() -> None:
     parser.add_argument(
         "--aggregation_strategy",
         type=str,
-        choices=["gossip_avg"],
+        choices=["gossip_avg", "trust_weighted_gossip"],
         default="gossip_avg",
         help="Aggregation strategy to use",
     )

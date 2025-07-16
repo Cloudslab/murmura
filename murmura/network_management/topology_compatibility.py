@@ -3,6 +3,7 @@ from typing import Dict, Type, Set, List
 from murmura.aggregation.strategies.fed_avg import FedAvg
 from murmura.aggregation.strategies.gossip_avg import GossipAvg
 from murmura.aggregation.strategies.trimmed_mean import TrimmedMean
+from murmura.aggregation.strategies.trust_weighted_gossip import TrustWeightedGossip
 from murmura.aggregation.strategy_interface import AggregationStrategy
 from murmura.network_management.topology import TopologyType
 
@@ -16,6 +17,13 @@ class TopologyCompatibilityManager:
         FedAvg: {TopologyType.STAR, TopologyType.COMPLETE},
         TrimmedMean: {TopologyType.STAR, TopologyType.COMPLETE},
         GossipAvg: {
+            TopologyType.RING,
+            TopologyType.COMPLETE,
+            TopologyType.STAR,
+            TopologyType.LINE,
+            TopologyType.CUSTOM,
+        },
+        TrustWeightedGossip: {
             TopologyType.RING,
             TopologyType.COMPLETE,
             TopologyType.STAR,

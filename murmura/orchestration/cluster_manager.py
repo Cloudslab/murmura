@@ -1285,20 +1285,25 @@ class ClusterManager:
         # For now, use a simplified state-based approach without accessing trust monitors directly
         # This will work with the trust scores we already have
         
+        # TODO: Comment out boost logic for mixing parameter testing
         # If trust score is very low (< 0.05), likely active decay happening
-        if raw_trust_score < 0.05:
-            # Active decay - use raw score but with minimum
-            return max(0.1, raw_trust_score)
-        elif raw_trust_score < 0.2:
-            # Likely recovery phase - boost the weight significantly
-            # This addresses the false positive problem for honest nodes
-            return min(0.9, raw_trust_score + 0.4)
-        elif raw_trust_score < 0.5:
-            # Moderate trust - small boost
-            return min(0.9, raw_trust_score + 0.2)
-        else:
-            # High trust - use score with minimal adjustment
-            return max(0.8, raw_trust_score)
+        # if raw_trust_score < 0.05:
+        #     # Active decay - use raw score but with minimum
+        #     return max(0.1, raw_trust_score)
+        # elif raw_trust_score < 0.2:
+        #     # Likely recovery phase - boost the weight significantly
+        #     # This addresses the false positive problem for honest nodes
+        #     return min(0.9, raw_trust_score + 0.4)
+        # elif raw_trust_score < 0.5:
+        #     # Moderate trust - small boost
+        #     return min(0.9, raw_trust_score + 0.2)
+        # else:
+        #     # High trust - use score with minimal adjustment
+        #     return max(0.8, raw_trust_score)
+        
+        # Use trust score directly for mixing parameter approach
+        return max(0.001, raw_trust_score)
+
 
     def perform_decentralized_aggregation(
         self,
@@ -1356,11 +1361,7 @@ class ClusterManager:
                     trust_scores.get(node_idx, {}) if trust_scores else {}
                 )
 
-                # Collect parameters from this node and its neighbors
-                neighbor_params = []
-                neighbor_weights = []
-
-                # Include the node's own parameters (pass round info for malicious actors)
+                # Get the node's own parameters
                 if hasattr(actor, "_is_malicious") or "Malicious" in str(type(actor)):
                     own_params = ray.get(
                         actor.get_model_parameters.remote(
@@ -1372,11 +1373,11 @@ class ClusterManager:
                     own_params = ray.get(
                         actor.get_model_parameters.remote(), timeout=1800
                     )
-                neighbor_params.append(own_params)
-                # Own node always has full weight (trust score = 1.0)
-                neighbor_weights.append(weights[node_idx] if weights else 1.0)
 
-                # Add neighbor parameters with trust-weighted aggregation
+                # Collect neighbor parameters and compute aggregation
+                neighbor_params_dict = {}
+                neighbor_trust_scores = {}
+                
                 for neighbor_idx in neighbors:
                     if neighbor_idx < len(self.actors):
                         neighbor_actor = self.actors[neighbor_idx]
@@ -1395,69 +1396,76 @@ class ClusterManager:
                                 neighbor_actor.get_model_parameters.remote(),
                                 timeout=1800,
                             )
-                        neighbor_params.append(neighbor_param)
-
-                        # Apply state-based trust weighting (replaces complex sigmoid/minmax logic)
-                        base_weight = weights[neighbor_idx] if weights else 1.0
+                        
+                        neighbor_params_dict[neighbor_idx] = neighbor_param
+                        
+                        # Get trust score for this neighbor
                         neighbor_id = f"node_{neighbor_idx}"
-                        raw_trust_score = node_trust_scores.get(
-                            neighbor_id, 1.0
-                        )  # Default trust = 1.0
-
-                        # Use simplified state-based trust weighting
+                        raw_trust_score = node_trust_scores.get(neighbor_id, 1.0)
                         trust_weight = self._compute_state_based_trust_weight(
                             node_idx, neighbor_idx, raw_trust_score
                         )
-
-                        final_weight = base_weight * trust_weight
-                        neighbor_weights.append(final_weight)
+                        neighbor_trust_scores[neighbor_idx] = trust_weight
 
                         # Log trust weighting for debugging
                         if trust_scores and node_idx in trust_scores:
                             self.logger.debug(
                                 f"Node {node_idx} -> Neighbor {neighbor_idx}: "
-                                f"base_weight={base_weight:.3f}, trust={trust_weight:.3f}, "
-                                f"final_weight={final_weight:.3f}"
+                                f"raw_trust={raw_trust_score:.3f}, final_trust={trust_weight:.3f}"
                             )
 
-                # Log aggregation summary for this node if trust scores are being used
-                if (
-                    trust_scores
-                    and node_idx in trust_scores
-                    and len(neighbor_params) > 1
-                ):
-                    trust_weights_summary = []
-                    for i, weight in enumerate(neighbor_weights):
-                        if i == 0:  # Own node
-                            trust_weights_summary.append(f"self:{weight:.3f}")
-                        else:
-                            neighbor_idx = neighbors[i - 1]
-                            neighbor_id = f"node_{neighbor_idx}"
-                            trust_weight = node_trust_scores.get(neighbor_id, 1.0)
-                            trust_weights_summary.append(
-                                f"{neighbor_idx}:{trust_weight:.3f}({weight:.3f})"
-                            )
-                    self.logger.info(
-                        f"Node {node_idx} trust-weighted aggregation: {', '.join(trust_weights_summary)}"
-                    )
-
-                # Perform local aggregation using the configured strategy
-                if len(neighbor_params) > 1:
-                    # Normalize weights for this local aggregation
-                    total_weight = sum(neighbor_weights)
-                    normalized_weights = (
-                        [w / total_weight for w in neighbor_weights]
-                        if total_weight > 0
-                        else neighbor_weights
-                    )
-
-                    aggregated_params = self.aggregation_strategy.aggregate(
-                        neighbor_params, normalized_weights
-                    )
+                # Apply aggregation using the configured strategy
+                if neighbor_params_dict:
+                    neighbor_params = [own_params] + list(neighbor_params_dict.values())
+                    
+                    # Check if this is trust-weighted aggregation
+                    if trust_scores and node_idx in trust_scores:
+                        # Use trust-weighted aggregation strategy
+                        # Convert neighbor trust scores to the format expected by the strategy
+                        trust_scores_for_strategy = {}
+                        for i, neighbor_idx in enumerate(neighbor_params_dict.keys()):
+                            trust_scores_for_strategy[i] = neighbor_trust_scores[neighbor_idx]
+                        
+                        aggregated_params = self.aggregation_strategy.aggregate(
+                            neighbor_params, 
+                            weights=None,  # Not used in trust-weighted
+                            trust_scores=trust_scores_for_strategy
+                        )
+                        
+                        # Log trust aggregation summary
+                        mixing_parameter = getattr(self.aggregation_strategy, 'mixing_parameter', 0.5)
+                        trust_weights_summary = []
+                        total_trust = sum(neighbor_trust_scores.values()) if neighbor_trust_scores else 0
+                        trust_weights_summary.append(f"self:{mixing_parameter:.3f}")
+                        
+                        for neighbor_idx, trust_score in neighbor_trust_scores.items():
+                            normalized_trust = trust_score / total_trust if total_trust > 0 else 0
+                            neighbor_weight = (1 - mixing_parameter) * normalized_trust
+                            trust_weights_summary.append(f"{neighbor_idx}:{trust_score:.3f}({neighbor_weight:.3f})")
+                        
+                        self.logger.info(
+                            f"Node {node_idx} trust-weighted aggregation: {', '.join(trust_weights_summary)}"
+                        )
+                    else:
+                        # Use baseline aggregation strategy (GossipAvg with equal weights)
+                        neighbor_weights = [1.0] * len(neighbor_params)  # Equal weights for baseline
+                        
+                        aggregated_params = self.aggregation_strategy.aggregate(
+                            neighbor_params, neighbor_weights
+                        )
+                        
+                        mixing_parameter = getattr(self.aggregation_strategy, 'mixing_parameter', 0.5)
+                        self.logger.debug(
+                            f"Node {node_idx} baseline aggregation (mixing={mixing_parameter:.1f}): self + {len(neighbor_params_dict)} neighbors"
+                        )
+                    
                     # Schedule asynchronous update of the node's model
                     update_tasks.append(
                         actor.set_model_parameters.remote(aggregated_params)
                     )
+                else:
+                    # No neighbors, no update needed
+                    self.logger.debug(f"Node {node_idx} has no neighbors, skipping aggregation")
 
         # Wait for all updates to complete
         if update_tasks:

@@ -22,5 +22,5 @@ __all__ = [
     "EuroSATModelLite",
     "ResNetCIFAR10Model",
     "SimpleCIFAR10Model",
-    "CIFAR10Model"
+    "CIFAR10Model",
 ]

@@ -12,6 +12,7 @@ class AggregationStrategyType(str, Enum):
     FEDAVG = "fedavg"
     TRIMMED_MEAN = "trimmed_mean"
     GOSSIP_AVG = "gossip_avg"
+    TRUST_WEIGHTED_GOSSIP = "trust_weighted_gossip"
 
 
 class AggregationConfig(BaseModel):
@@ -45,6 +46,11 @@ class AggregationConfig(BaseModel):
                 raise ValueError("trim_ratio must be in [0, 0.5)")
             self.params["trim_ratio"] = trim_ratio
         elif self.strategy_type == AggregationStrategyType.GOSSIP_AVG:
+            mixing_parameter = self.params.get("mixing_parameter", 0.5)
+            if mixing_parameter < 0 or mixing_parameter > 1:
+                raise ValueError("mixing_parameter must be in [0, 1]")
+            self.params["mixing_parameter"] = mixing_parameter
+        elif self.strategy_type == AggregationStrategyType.TRUST_WEIGHTED_GOSSIP:
             mixing_parameter = self.params.get("mixing_parameter", 0.5)
             if mixing_parameter < 0 or mixing_parameter > 1:
                 raise ValueError("mixing_parameter must be in [0, 1]")

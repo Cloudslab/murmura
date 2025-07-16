@@ -13,7 +13,7 @@ echo "Testing: Eurosat, CIFAR-10"
 echo "Node counts: 10, 20, 30, 50"
 echo "Topologies: ring, complete"
 echo "Attacks: Gradient manipulation + Label flipping (30% malicious)"
-echo "Training: 50 rounds, 3 epochs (extended for convergence)"
+echo "Training: 10 rounds, 2 epochs (faster evaluation)"
 echo "Min partition: 100 samples (scaled for 50 nodes)"
 echo "Resource monitoring: Enabled (CPU/Memory + Trust monitor overhead)"
 echo "Comparisons: Trust-weighted vs baseline gossip averaging"
@@ -35,8 +35,8 @@ COMMON_BASE_PARAMS="
     --attack_intensity_end 1.0
     --intensity_progression linear
     --attack_start_round 2
-    --rounds 50
-    --epochs 3
+    --rounds 10
+    --epochs 2
     --min_partition_size 100
     --monitor_resources
     --health_check_interval 10
@@ -190,11 +190,11 @@ run_experiment() {
         ATTACK_PARAMS="$LABEL_FLIP_PARAMS"
     fi
     
-    # Select trust parameters
+    # Select trust parameters and aggregation strategy
     if [ "$trust_enabled" = "true" ]; then
-        EXPERIMENT_PARAMS="$COMMON_BASE_PARAMS $TRUST_PARAMS $ATTACK_PARAMS --num_actors $node_count"
+        EXPERIMENT_PARAMS="$COMMON_BASE_PARAMS $TRUST_PARAMS $ATTACK_PARAMS --num_actors $node_count --aggregation_strategy trust_weighted_gossip"
     else
-        EXPERIMENT_PARAMS="$COMMON_BASE_PARAMS $ATTACK_PARAMS --num_actors $node_count"
+        EXPERIMENT_PARAMS="$COMMON_BASE_PARAMS $ATTACK_PARAMS --num_actors $node_count --aggregation_strategy gossip_avg"
     fi
     
     # Run the experiment (without timeout for macOS compatibility)
