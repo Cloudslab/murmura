@@ -10,7 +10,7 @@ echo "=========================================="
 echo "Enhanced Trust Monitoring Evaluation"
 echo "=========================================="
 echo "Testing: Eurosat, CIFAR-10"
-echo "Node counts: 10, 20, 30, 50"
+echo "Node counts: 20, 30, 50"
 echo "Topologies: ring, complete"
 echo "Attacks: Gradient manipulation + Label flipping (30% malicious)"
 echo "Training: 10 rounds, 2 epochs (faster evaluation)"
@@ -26,7 +26,7 @@ mkdir -p $OUTPUT_DIR
 cd $OUTPUT_DIR
 
 # Node count configurations
-NODE_COUNTS=(10 20 30 50)
+NODE_COUNTS=(20 30 50)
 
 # Common parameters for all experiments  
 COMMON_BASE_PARAMS="
@@ -521,7 +521,7 @@ echo "   # Trust evolution analysis:"
 echo "   echo \"Trust evolution files:\"; ls -la *_trust_evolution.txt 2>/dev/null || echo \"None found\""
 echo ""
 echo "   # Scalability analysis:"
-echo "   for n in 10 20 30 50; do echo \"Node count \$n:\"; grep \"Final Test Accuracy\" *n\$n*.txt; done"
+echo "   for n in 20 30 50; do echo \"Node count \$n:\"; grep \"Final Test Accuracy\" *n\$n*.txt; done"
 echo ""
 echo "   # Resource usage comparison (trust vs baseline):"
 echo "   echo \"Trust-enabled resource usage:\"; grep \"resource usage:\" *_trust.txt | head -5"
