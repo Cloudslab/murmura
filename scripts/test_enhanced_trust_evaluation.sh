@@ -199,14 +199,16 @@ run_experiment() {
     
     # Run the experiment (without timeout for macOS compatibility)
     if [ "$dataset" = "eurosat" ]; then
-        python ../../murmura/examples/dp_decentralized_eurosat_example.py \
+        PYTHONUNBUFFERED=1 python ../../murmura/examples/dp_decentralized_eurosat_example.py \
             --topology $topology \
             $EXPERIMENT_PARAMS \
+            --log_level INFO \
             > $output_file 2>&1
     elif [ "$dataset" = "cifar10" ]; then
-        python ../../murmura/examples/dp_decentralized_cifar10_example.py \
+        PYTHONUNBUFFERED=1 python ../../murmura/examples/dp_decentralized_cifar10_example.py \
             --topology $topology \
             $EXPERIMENT_PARAMS \
+            --log_level INFO \
             > $output_file 2>&1
     fi
     
