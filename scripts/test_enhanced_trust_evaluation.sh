@@ -41,9 +41,10 @@ COMMON_BASE_PARAMS="
     --monitor_resources
     --health_check_interval 10
     --create_animation
-    --malicious_node 42
-    --data_partitioning_seed 42
-    --model_seed 42
+    --malicious_node 123
+    --data_partitioning_seed 13
+    --model_seed 17
+    --log_level INFO
 "
 
 # Trust monitoring parameters (using aggressive polynomial decay)
@@ -523,7 +524,7 @@ echo "   # Trust evolution analysis:"
 echo "   echo \"Trust evolution files:\"; ls -la *_trust_evolution.txt 2>/dev/null || echo \"None found\""
 echo ""
 echo "   # Scalability analysis:"
-echo "   for n in 20 30 50; do echo \"Node count \$n:\"; grep \"Final Test Accuracy\" *n\$n*.txt; done"
+echo "   for n in 10; do echo \"Node count \$n:\"; grep \"Final Test Accuracy\" *n\$n*.txt; done"
 echo ""
 echo "   # Resource usage comparison (trust vs baseline):"
 echo "   echo \"Trust-enabled resource usage:\"; grep \"resource usage:\" *_trust.txt | head -5"
