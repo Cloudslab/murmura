@@ -4,9 +4,7 @@ Analysis of why dynamic topology reconfiguration only works for star topology
 and fails for ring, line, and complete topologies.
 """
 
-import numpy as np
 import random
-from typing import Dict, List
 
 def analyze_topology_reconfiguration_constraints():
     """Analyze why reconfiguration works differently across topologies."""
@@ -194,37 +192,37 @@ def is_valid_topology(topology, topology_type):
 def analyze_reconfiguration_constraints(topology_name, original_topology):
     """Analyze why reconfiguration succeeds or fails for each topology type."""
     
-    print(f"     Constraint Analysis:")
+    print("     Constraint Analysis:")
     
     if topology_name == 'Star':
-        print(f"       ✅ Why it works:")
-        print(f"          - Central node can connect to any subset of nodes")
-        print(f"          - Leaf nodes can be rearranged arbitrarily")
-        print(f"          - Many valid configurations possible")
-        print(f"          - Our random spanning tree often creates star-like structures")
+        print("       ✅ Why it works:")
+        print("          - Central node can connect to any subset of nodes")
+        print("          - Leaf nodes can be rearranged arbitrarily")
+        print("          - Many valid configurations possible")
+        print("          - Our random spanning tree often creates star-like structures")
         
     elif topology_name == 'Ring':
-        print(f"       ❌ Why it fails:")
-        print(f"          - Each node must have exactly 2 connections")
-        print(f"          - Our algorithm creates spanning tree (n-1 edges) + additional edges")
-        print(f"          - Spanning tree gives some nodes degree 1, others degree 3+")
-        print(f"          - Additional edges make some nodes degree 4+")
-        print(f"          - Result violates ring constraint (degree = 2)")
+        print("       ❌ Why it fails:")
+        print("          - Each node must have exactly 2 connections")
+        print("          - Our algorithm creates spanning tree (n-1 edges) + additional edges")
+        print("          - Spanning tree gives some nodes degree 1, others degree 3+")
+        print("          - Additional edges make some nodes degree 4+")
+        print("          - Result violates ring constraint (degree = 2)")
         
     elif topology_name == 'Line':
-        print(f"       ❌ Why it fails:")
-        print(f"          - Requires exactly 2 end nodes (degree 1) and n-2 middle nodes (degree 2)")
-        print(f"          - Our spanning tree creates random tree structure")
-        print(f"          - Tree structure rarely matches linear constraint")
-        print(f"          - Additional edges further violate linear structure")
+        print("       ❌ Why it fails:")
+        print("          - Requires exactly 2 end nodes (degree 1) and n-2 middle nodes (degree 2)")
+        print("          - Our spanning tree creates random tree structure")
+        print("          - Tree structure rarely matches linear constraint")
+        print("          - Additional edges further violate linear structure")
         
     elif topology_name == 'Complete':
-        print(f"       ❌ Why it fails:")
-        print(f"          - Requires every node connected to every other node")
-        print(f"          - Our algorithm starts with spanning tree (n-1 edges per node)")
-        print(f"          - Adds only 0 to n/2 additional edges randomly")
-        print(f"          - Never reaches complete graph density (n-1 edges per node)")
-        print(f"          - Would need to add ~n²/2 edges to be complete")
+        print("       ❌ Why it fails:")
+        print("          - Requires every node connected to every other node")
+        print("          - Our algorithm starts with spanning tree (n-1 edges per node)")
+        print("          - Adds only 0 to n/2 additional edges randomly")
+        print("          - Never reaches complete graph density (n-1 edges per node)")
+        print("          - Would need to add ~n²/2 edges to be complete")
 
 def calculate_topology_reconfiguration_difficulty():
     """Calculate why some topologies are harder to reconfigure than others."""
@@ -240,8 +238,8 @@ def calculate_topology_reconfiguration_difficulty():
     }
     
     print(f"\n   For {n_nodes}-node networks:")
-    print(f"   Topology | Edge Count | Degree Constraints | Flexibility | Reconfiguration Difficulty")
-    print(f"   ---------|------------|-------------------|-------------|---------------------------")
+    print("   Topology | Edge Count | Degree Constraints | Flexibility | Reconfiguration Difficulty")
+    print("   ---------|------------|-------------------|-------------|---------------------------")
     
     for topo_name, topo_structure in topologies.items():
         edge_count = sum(len(connections) for connections in topo_structure.values()) // 2
@@ -252,7 +250,7 @@ def calculate_topology_reconfiguration_difficulty():
             flexibility = "High"
             difficulty = "Easy"
         elif topo_name == 'Ring':
-            constraints = f"All nodes (2)"
+            constraints = "All nodes (2)"
             flexibility = "Low"
             difficulty = "Hard"
         elif topo_name == 'Line':

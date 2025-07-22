@@ -5,7 +5,6 @@ Extract baseline performance statistics from original paper results.
 
 import json
 import numpy as np
-from collections import defaultdict
 
 def extract_baseline_stats():
     """Extract baseline attack success rates from original paper results."""

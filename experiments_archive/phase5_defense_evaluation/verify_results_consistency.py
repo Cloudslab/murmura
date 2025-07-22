@@ -8,9 +8,8 @@ with baseline attack effectiveness from previous phases.
 
 import json
 import numpy as np
-import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict
 
 class ResultsConsistencyVerifier:
     """Verify consistency between Phase 5 and previous experimental phases."""

@@ -3,13 +3,12 @@
 Comprehensive defense mechanism evaluation across multiple experiments.
 """
 
-import os
 import sys
 import pandas as pd
 import numpy as np
 import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -17,8 +16,7 @@ import seaborn as sns
 sys.path.append('/Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura')
 
 from defense_mechanisms import (
-    DefenseConfig, StructuralNoiseInjection, TopologyAwareDifferentialPrivacy, 
-    DefenseEvaluator
+    DefenseConfig, StructuralNoiseInjection, TopologyAwareDifferentialPrivacy
 )
 from murmura.attacks.topology_attacks import (
     CommunicationPatternAttack, ParameterMagnitudeAttack, TopologyStructureAttack
@@ -420,14 +418,14 @@ def main():
         filter_pattern='mnist_federated_star'
     )
     
-    print(f"\n=== COMPREHENSIVE DEFENSE EVALUATION SUMMARY ===")
+    print("\n=== COMPREHENSIVE DEFENSE EVALUATION SUMMARY ===")
     print(f"Total experiments tested: {results['summary_stats']['successful_tests']}")
     print(f"Failed tests: {results['summary_stats']['failed_tests']}")
     
     # Print top performing defenses
     defense_effectiveness = results['summary_stats']['defense_effectiveness']
     if defense_effectiveness:
-        print(f"\nTop Performing Defense Mechanisms:")
+        print("\nTop Performing Defense Mechanisms:")
         sorted_defenses = sorted(
             [(name, stats['mean']) for name, stats in defense_effectiveness.items() 
              if isinstance(stats, dict)],

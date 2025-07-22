@@ -3,7 +3,6 @@
 Simple test of defense mechanisms on a few experiments without complex features.
 """
 
-import os
 import sys
 import pandas as pd
 import numpy as np
@@ -14,8 +13,7 @@ from pathlib import Path
 sys.path.append('/Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura')
 
 from defense_mechanisms import (
-    DefenseConfig, StructuralNoiseInjection, TopologyAwareDifferentialPrivacy, 
-    DefenseEvaluator
+    DefenseConfig, StructuralNoiseInjection, TopologyAwareDifferentialPrivacy
 )
 from murmura.attacks.topology_attacks import (
     CommunicationPatternAttack, ParameterMagnitudeAttack, TopologyStructureAttack
@@ -95,16 +93,16 @@ def test_defenses():
         print("No data loaded")
         return
         
-    print(f"\nOriginal data loaded:")
+    print("\nOriginal data loaded:")
     for key, df in original_data.items():
         print(f"  {key}: {len(df)} rows")
     
     # Run attacks on original data
-    print(f"\n=== ORIGINAL DATA ATTACKS ===")
+    print("\n=== ORIGINAL DATA ATTACKS ===")
     original_results = run_attacks_on_data(original_data)
     
     # Test Structural Noise Injection
-    print(f"\n=== TESTING STRUCTURAL NOISE INJECTION ===")
+    print("\n=== TESTING STRUCTURAL NOISE INJECTION ===")
     
     config = DefenseConfig(
         enable_comm_noise=True,
@@ -120,15 +118,15 @@ def test_defenses():
     noise_defense = StructuralNoiseInjection(config)
     defended_data_noise = noise_defense.apply_defense(original_data)
     
-    print(f"Defended data (noise injection):")
+    print("Defended data (noise injection):")
     for key, df in defended_data_noise.items():
         print(f"  {key}: {len(df)} rows")
     
-    print(f"\nAttacks on noise-defended data:")
+    print("\nAttacks on noise-defended data:")
     noise_results = run_attacks_on_data(defended_data_noise)
     
     # Test Topology-Aware DP
-    print(f"\n=== TESTING TOPOLOGY-AWARE DP ===")
+    print("\n=== TESTING TOPOLOGY-AWARE DP ===")
     
     config_dp = DefenseConfig(
         enable_comm_noise=False,
@@ -143,11 +141,11 @@ def test_defenses():
     dp_defense = TopologyAwareDifferentialPrivacy(config_dp)
     defended_data_dp = dp_defense.apply_defense(original_data)
     
-    print(f"Attacks on DP-defended data:")
+    print("Attacks on DP-defended data:")
     dp_results = run_attacks_on_data(defended_data_dp)
     
     # Compare results
-    print(f"\n=== DEFENSE EFFECTIVENESS SUMMARY ===")
+    print("\n=== DEFENSE EFFECTIVENESS SUMMARY ===")
     
     def print_attack_comparison(original, defended, defense_name):
         print(f"\n{defense_name}:")

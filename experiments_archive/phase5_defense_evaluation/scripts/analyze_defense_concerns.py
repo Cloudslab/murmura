@@ -9,10 +9,7 @@ This script provides honest analysis without data manipulation.
 """
 
 import json
-import pandas as pd
 import numpy as np
-from pathlib import Path
-from typing import Dict, List, Any
 
 def load_baseline_attack_results():
     """Load baseline attack results to understand DP effectiveness."""
@@ -270,17 +267,17 @@ def main():
     strong_dp_reduction = dp_stats['strong_dp']['attack_reduction_vs_no_dp']
     best_defense = max(defense_effectiveness.values(), key=lambda x: x['mean'])['mean']
     
-    print(f"\n1. BASELINE DP EFFECTIVENESS:")
+    print("\n1. BASELINE DP EFFECTIVENESS:")
     print(f"   Strong DP achieves {strong_dp_reduction:.1f}% attack reduction")
     print(f"   Our best defense achieves {best_defense:.1f}% attack reduction")
     
     if strong_dp_reduction > best_defense:
-        print(f"   ⚠️  HONEST ASSESSMENT: Baseline DP outperforms our defenses")
-        print(f"   This suggests our defense implementations need improvement")
+        print("   ⚠️  HONEST ASSESSMENT: Baseline DP outperforms our defenses")
+        print("   This suggests our defense implementations need improvement")
     else:
-        print(f"   ✅ Our defenses show improvement over baseline DP")
+        print("   ✅ Our defenses show improvement over baseline DP")
     
-    print(f"\n2. COMBINED VS STRUCTURAL NOISE:")
+    print("\n2. COMBINED VS STRUCTURAL NOISE:")
     structural_mean = defense_effectiveness['structural_noise_strong']['mean']
     combined_mean = defense_effectiveness['combined_medium']['mean']
     print(f"   Structural Noise (Strong): {structural_mean:.1f}%")
@@ -288,14 +285,14 @@ def main():
     print(f"   Difference: {structural_mean - combined_mean:+.1f}% points")
     
     if structural_mean > combined_mean:
-        print(f"   ⚠️  CONFIRMED: Combined approach underperforms pure structural noise")
-        print(f"   This indicates defense interference or implementation issues")
+        print("   ⚠️  CONFIRMED: Combined approach underperforms pure structural noise")
+        print("   This indicates defense interference or implementation issues")
     
-    print(f"\n3. NEXT STEPS:")
-    print(f"   - Validate defense implementations for correctness")
-    print(f"   - Run head-to-head comparison with baseline DP")
-    print(f"   - Investigate defense interference mechanisms")
-    print(f"   - Consider methodology improvements")
+    print("\n3. NEXT STEPS:")
+    print("   - Validate defense implementations for correctness")
+    print("   - Run head-to-head comparison with baseline DP")
+    print("   - Investigate defense interference mechanisms")
+    print("   - Consider methodology improvements")
     
     # Save analysis results
     output_file = "/Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura/defense_concerns_analysis.json"

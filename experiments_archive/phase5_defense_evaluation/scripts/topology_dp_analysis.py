@@ -4,8 +4,6 @@ Analysis of why our topology-aware DP performs so poorly compared to baseline DP
 This investigates fundamental implementation issues.
 """
 
-import json
-import numpy as np
 
 def analyze_topology_dp_implementation():
     """Analyze the fundamental issues with our topology-aware DP implementation."""
@@ -148,13 +146,13 @@ def calculate_proper_dp_noise_levels():
     import math
     sigma_dp = sensitivity * math.sqrt(2 * math.log(1.25 / delta)) / epsilon
     
-    print(f"     Privacy Parameters:")
+    print("     Privacy Parameters:")
     print(f"     - ε (epsilon): {epsilon}")
     print(f"     - δ (delta): {delta}")
     print(f"     - L2 Sensitivity: {sensitivity}")
     print(f"     - Required σ (sigma): {sigma_dp:.3f}")
     
-    print(f"\n2. OUR IMPLEMENTATION NOISE LEVELS:")
+    print("\n2. OUR IMPLEMENTATION NOISE LEVELS:")
     
     # Our implementation parameters
     parameter_norm = 1.0  # Typical parameter norm
@@ -165,13 +163,13 @@ def calculate_proper_dp_noise_levels():
     print(f"     Base noise multiplier: {base_noise_multiplier}")
     print(f"     Amplification factors: {amplification_factors}")
     
-    print(f"\n     Resulting noise levels:")
+    print("\n     Resulting noise levels:")
     for strength, amp in zip(['weak', 'medium', 'strong'], amplification_factors):
         our_noise = parameter_norm * base_noise_multiplier * amp
         ratio_to_proper_dp = our_noise / sigma_dp
         print(f"     - {strength:6}: σ = {our_noise:.4f} (vs proper DP: {ratio_to_proper_dp:.1%})")
     
-    print(f"\n3. CONCLUSION:")
+    print("\n3. CONCLUSION:")
     print(f"     Proper DP σ: {sigma_dp:.3f}")
     print(f"     Our strongest noise: {parameter_norm * base_noise_multiplier * 2.0:.4f}")
     print(f"     We use {(parameter_norm * base_noise_multiplier * 2.0 / sigma_dp * 100):.1f}% of proper DP noise levels!")

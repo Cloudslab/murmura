@@ -8,8 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-from typing import Dict, List, Any
-import pandas as pd
+from typing import Dict, Any
 
 
 def load_results(results_file: str) -> Dict[str, Any]:

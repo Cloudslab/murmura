@@ -4,7 +4,6 @@ Comprehensive evaluation of all defense mechanisms across ALL phase1 configurati
 Tests 520 experiments across MNIST and HAM10000 datasets with complete defense evaluation.
 """
 
-import os
 import sys
 import pandas as pd
 import numpy as np
@@ -14,7 +13,6 @@ from typing import Dict, List, Any, Tuple
 import logging
 import time
 from datetime import datetime
-import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import argparse
 
@@ -23,7 +21,7 @@ sys.path.append('/Users/MRANGWALA/Documents/Projects/PhD-Projects/murmura')
 
 from defense_mechanisms import (
     DefenseConfig, StructuralNoiseInjection, DynamicTopologyReconfiguration,
-    TopologyAwareDifferentialPrivacy, DefenseEvaluator
+    TopologyAwareDifferentialPrivacy
 )
 from murmura.attacks.topology_attacks import (
     CommunicationPatternAttack, ParameterMagnitudeAttack, TopologyStructureAttack
@@ -556,7 +554,7 @@ def main():
     
     # Print summary
     print(f"\n{'='*60}")
-    print(f"COMPREHENSIVE EVALUATION SUMMARY")
+    print("COMPREHENSIVE EVALUATION SUMMARY")
     print(f"{'='*60}")
     print(f"Total evaluations: {results['summary_stats']['total_evaluations']}")
     print(f"Successful: {results['summary_stats']['successful_evaluations']}")
@@ -566,7 +564,7 @@ def main():
     # Print top performing defenses
     defense_effectiveness = results['summary_stats']['defense_effectiveness']
     if defense_effectiveness:
-        print(f"\nTop Performing Defense Mechanisms:")
+        print("\nTop Performing Defense Mechanisms:")
         sorted_defenses = sorted(
             [(name, stats['mean']) for name, stats in defense_effectiveness.items() 
              if isinstance(stats, dict) and 'mean' in stats],

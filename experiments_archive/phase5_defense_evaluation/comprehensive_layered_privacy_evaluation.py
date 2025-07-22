@@ -10,15 +10,13 @@ Total: 808 experiments with fine-grained analysis across all topologies,
 DP levels, and sub-sampling configurations.
 """
 
-import os
 import json
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import copy
 from collections import defaultdict
 
 # Import our defense mechanism
@@ -660,7 +658,7 @@ class ComprehensiveLayeredPrivacyEvaluator:
             # Executive Summary
             f.write("## Executive Summary\n\n")
             f.write(f"This comprehensive evaluation analyzes structural noise injection across **{results['summary']['total_experiments_processed']} experiments** ")
-            f.write(f"from the complete Phase1 dataset:\n\n")
+            f.write("from the complete Phase1 dataset:\n\n")
             f.write(f"- **{results['summary']['training_data_experiments']} regular DP experiments** (training_data)\n")
             f.write(f"- **{results['summary']['training_data_extended_experiments']} sub-sampling + DP experiments** (training_data_extended)\n\n")
             
