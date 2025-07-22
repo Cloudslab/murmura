@@ -83,6 +83,14 @@ class TrustMonitor:
         self.distribution_baselines: Dict[str, float] = {}
         self.local_validation_data: Optional[Any] = None
         self.local_model_template: Optional[Any] = None
+        
+        # Lightweight label flipping detection state
+        self.layer_ratio_history: Dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=config.history_window_size)
+        )
+        self.distribution_history: Dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=config.history_window_size)
+        )
 
         # Logging
         self.logger = logging.getLogger(f"murmura.trust_monitor.{node_id}")
@@ -214,13 +222,10 @@ class TrustMonitor:
         return summary
 
     def set_local_validation_data(self, validation_data: Any, model_template: Any) -> None:
-        """Set local validation data and model template for loss spoofing detection."""
-        if self.config.enable_loss_spoofing_detection:
-            self.local_validation_data = validation_data
-            self.local_model_template = model_template
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Local validation data configured for loss spoofing detection"
-            )
+        """Deprecated: No longer needed with lightweight detection."""
+        self.logger.info(
+            f"TRUST MONITOR {self.node_id}: Validation data not needed for lightweight detection"
+        )
 
     def _compute_local_validation_loss(self, neighbor_id: str, neighbor_params: Dict[str, Any]) -> Optional[float]:
         """Validate neighbor's model parameters on local validation data."""
@@ -722,6 +727,234 @@ class TrustMonitor:
 
         return False, 0.0, {}
 
+    def _detect_label_flipping_statistical(self, neighbor_id: str, current_update: ParameterUpdate) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect label flipping through layer-wise update analysis."""
+        
+        # 1. Compute layer-wise update magnitudes
+        layer_magnitudes = {}
+        classifier_layers = []
+        feature_layers = []
+        
+        for layer_name, params in current_update.parameters.items():
+            if hasattr(params, "cpu"):
+                param_array = params.cpu().numpy().flatten()
+            else:
+                param_array = np.array(params).flatten()
+                
+            magnitude = float(np.linalg.norm(param_array))
+            layer_magnitudes[layer_name] = magnitude
+            
+            # Classify layers
+            if any(term in layer_name.lower() for term in ['fc', 'classifier', 'head', 'output', 'linear']):
+                classifier_layers.append((layer_name, magnitude))
+            else:
+                feature_layers.append((layer_name, magnitude))
+        
+        # 2. Compute classifier vs feature layer ratio
+        if classifier_layers and feature_layers:
+            avg_classifier_magnitude = np.mean([m for _, m in classifier_layers])
+            avg_feature_magnitude = np.mean([m for _, m in feature_layers])
+            
+            # Label flipping causes disproportionate classifier updates
+            classifier_feature_ratio = avg_classifier_magnitude / (avg_feature_magnitude + 1e-8)
+            
+            # Historical comparison
+            if len(self.layer_ratio_history[neighbor_id]) >= 3:
+                historical_ratios = list(self.layer_ratio_history[neighbor_id])
+                mean_ratio = float(np.mean(historical_ratios))
+                std_ratio = float(np.std(historical_ratios)) + 1e-8
+                z_score = (classifier_feature_ratio - mean_ratio) / std_ratio
+                
+                # Label flipping detection
+                is_suspicious = z_score > 2.5  # Classifier updates unusually large
+                confidence = min(1.0, z_score / 4.0)
+                
+                self.logger.debug(
+                    f"TRUST MONITOR {self.node_id}: Label flip detection for {neighbor_id}: "
+                    f"ratio={classifier_feature_ratio:.3f}, z-score={z_score:.3f}"
+                )
+                
+                # Store current ratio
+                self.layer_ratio_history[neighbor_id].append(classifier_feature_ratio)
+                
+                return is_suspicious, confidence, {
+                    "method": "layer_ratio_analysis",
+                    "classifier_feature_ratio": float(classifier_feature_ratio),
+                    "historical_mean": float(mean_ratio),
+                    "z_score": float(z_score),
+                    "classifier_layers": len(classifier_layers),
+                    "feature_layers": len(feature_layers)
+                }
+            
+            # Store for history
+            self.layer_ratio_history[neighbor_id].append(classifier_feature_ratio)
+        
+        return False, 0.0, {}
+
+    def _detect_distribution_shift(self, neighbor_id: str, current_update: ParameterUpdate) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect label flipping through parameter distribution analysis."""
+        
+        # Extract all parameter values
+        all_params = []
+        for params in current_update.parameters.values():
+            if hasattr(params, "cpu"):
+                param_array = params.cpu().numpy().flatten()
+            else:
+                param_array = np.array(params).flatten()
+            all_params.extend(param_array.tolist())
+        
+        # Compute distribution statistics
+        params_array = np.array(all_params)
+        
+        # Import scipy.stats for kurtosis and skew
+        from scipy import stats as scipy_stats
+        
+        # Key statistics that change with label flipping
+        stats_dict = {
+            'kurtosis': float(scipy_stats.kurtosis(params_array)),
+            'skewness': float(scipy_stats.skew(params_array)),
+            'std': float(np.std(params_array)),
+            'mean_abs': float(np.mean(np.abs(params_array)))
+        }
+        
+        # Compare with historical distribution
+        if len(self.distribution_history[neighbor_id]) >= 3:
+            history = list(self.distribution_history[neighbor_id])
+            
+            # Compute divergence from historical pattern
+            historical_stats = {
+                key: [h[key] for h in history]
+                for key in stats_dict.keys()
+            }
+            
+            divergence_scores = []
+            for key, value in stats_dict.items():
+                hist_mean = np.mean(historical_stats[key])
+                hist_std = np.std(historical_stats[key]) + 1e-8
+                divergence = abs(value - hist_mean) / hist_std
+                divergence_scores.append(divergence)
+            
+            # Combined divergence score
+            total_divergence = float(np.mean(divergence_scores))
+            is_suspicious = total_divergence > 2.0
+            confidence = min(1.0, total_divergence / 3.0)
+            
+            self.logger.debug(
+                f"TRUST MONITOR {self.node_id}: Distribution shift for {neighbor_id}: "
+                f"divergence={total_divergence:.3f}"
+            )
+            
+            # Store current stats
+            self.distribution_history[neighbor_id].append(stats_dict)
+            
+            return is_suspicious, confidence, {
+                "method": "distribution_shift",
+                "divergence_score": total_divergence,
+                "stats": stats_dict
+            }
+        
+        self.distribution_history[neighbor_id].append(stats_dict)
+        return False, 0.0, {}
+
+    def _detect_update_inconsistency(self, neighbor_id: str, current_update: ParameterUpdate) -> Tuple[bool, float, Dict[str, Any]]:
+        """Detect label flipping through update direction consistency."""
+        
+        if len(self.update_history[neighbor_id]) < 2:
+            return False, 0.0, {}
+        
+        # Get previous update
+        prev_update = self.update_history[neighbor_id][-1]
+        
+        # Compute update directions (simplified to signs)
+        direction_similarity = 0.0
+        total_params = 0
+        
+        for layer_name in current_update.parameters.keys():
+            if layer_name in prev_update.parameters:
+                if hasattr(current_update.parameters[layer_name], "cpu"):
+                    curr_params = current_update.parameters[layer_name].cpu().numpy().flatten()
+                    prev_params = prev_update.parameters[layer_name].cpu().numpy().flatten()
+                else:
+                    curr_params = np.array(current_update.parameters[layer_name]).flatten()
+                    prev_params = np.array(prev_update.parameters[layer_name]).flatten()
+                
+                # Count sign consistency
+                sign_consistency = np.sum(np.sign(curr_params) == np.sign(prev_params))
+                direction_similarity += sign_consistency
+                total_params += len(curr_params)
+        
+        if total_params > 0:
+            consistency_ratio = float(direction_similarity / total_params)
+            
+            self.logger.debug(
+                f"TRUST MONITOR {self.node_id}: Update consistency for {neighbor_id}: "
+                f"ratio={consistency_ratio:.3f}"
+            )
+            
+            # Label flipping causes erratic updates
+            if consistency_ratio < 0.3:  # Very low consistency
+                confidence = 1.0 - consistency_ratio
+                return True, confidence, {
+                    "method": "update_consistency",
+                    "consistency_ratio": consistency_ratio
+                }
+        
+        return False, 0.0, {}
+
+    def _detect_label_flipping_lightweight(self, neighbor_id: str, current_update: ParameterUpdate, round_num: int) -> Tuple[bool, float, Dict[str, Any]]:
+        """Combined lightweight detection for label flipping attacks."""
+        
+        detection_results = []
+        evidence_collection = {}
+        
+        with self._measure_trust_resource_usage("label_flipping_detection"):
+            # 1. Layer-wise magnitude analysis (most reliable)
+            layer_result = self._detect_label_flipping_statistical(neighbor_id, current_update)
+            if layer_result[0]:
+                detection_results.append(("layer_analysis", layer_result[1]))
+                evidence_collection["layer_analysis"] = layer_result[2]
+            
+            # 2. Distribution shift detection
+            dist_result = self._detect_distribution_shift(neighbor_id, current_update)
+            if dist_result[0]:
+                detection_results.append(("distribution", dist_result[1]))
+                evidence_collection["distribution"] = dist_result[2]
+            
+            # 3. Update consistency check (after round 3)
+            if round_num > 3:
+                consistency_result = self._detect_update_inconsistency(neighbor_id, current_update)
+                if consistency_result[0]:
+                    detection_results.append(("consistency", consistency_result[1]))
+                    evidence_collection["consistency"] = consistency_result[2]
+        
+        # Combine detections
+        if detection_results:
+            # Weight different detection methods
+            weights = {
+                "layer_analysis": 0.5,  # Most reliable for label flipping
+                "distribution": 0.3,
+                "consistency": 0.2
+            }
+            
+            total_score = sum(weights.get(method, 0.1) * score 
+                            for method, score in detection_results)
+            
+            is_malicious = total_score > 0.4  # Lower threshold for label flipping
+            
+            self.logger.info(
+                f"TRUST MONITOR {self.node_id}: Label flipping detection for {neighbor_id}: "
+                f"score={total_score:.3f}, detected={is_malicious}, methods={[m for m, _ in detection_results]}"
+            )
+            
+            return is_malicious, total_score, {
+                "detection_method": "label_flipping_lightweight",
+                "detection_results": detection_results,
+                "combined_score": float(total_score),
+                "evidence": evidence_collection
+            }
+        
+        return False, 0.0, {}
+
     def _detect_loss_spoofing(
         self, 
         neighbor_id: str, 
@@ -1164,27 +1397,26 @@ class TrustMonitor:
             if is_anomaly:
                 all_anomalies[neighbor_id] = (is_anomaly, score, evidence)
 
-        # 2. Loss spoofing detection for each neighbor
-        if self.config.enable_loss_spoofing_detection:
-            self.logger.debug(
-                f"TRUST MONITOR {self.node_id}: Running loss spoofing detection on {len(current_updates)} neighbors"
+        # 2. Lightweight label flipping detection
+        self.logger.debug(
+            f"TRUST MONITOR {self.node_id}: Running lightweight label flipping detection on {len(current_updates)} neighbors"
+        )
+        for neighbor_id, update in current_updates.items():
+            is_label_flip, label_flip_score, label_flip_evidence = self._detect_label_flipping_lightweight(
+                neighbor_id, update, round_num
             )
-            for neighbor_id, update in current_updates.items():
-                is_spoofing, spoofing_score, spoofing_evidence = self._detect_loss_spoofing(
-                    neighbor_id, update.reported_loss, update.parameters, round_num
-                )
-                self.logger.debug(
-                    f"TRUST MONITOR {self.node_id}: Loss spoofing {neighbor_id} - spoofing={is_spoofing}, score={spoofing_score:.3f}"
-                )
-                if is_spoofing:
-                    # Combine with existing anomaly or create new one
-                    if neighbor_id in all_anomalies:
-                        existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
-                        combined_score = max(existing_score, spoofing_score)
-                        combined_evidence = {**existing_evidence, **spoofing_evidence}
-                        all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
-                    else:
-                        all_anomalies[neighbor_id] = (is_spoofing, spoofing_score, spoofing_evidence)
+            self.logger.debug(
+                f"TRUST MONITOR {self.node_id}: Label flipping {neighbor_id} - detected={is_label_flip}, score={label_flip_score:.3f}"
+            )
+            if is_label_flip:
+                # Combine with existing anomaly or create new one
+                if neighbor_id in all_anomalies:
+                    existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
+                    combined_score = max(existing_score, label_flip_score)
+                    combined_evidence = {**existing_evidence, **label_flip_evidence}
+                    all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
+                else:
+                    all_anomalies[neighbor_id] = (is_label_flip, label_flip_score, label_flip_evidence)
 
         # 3. Loss pattern anomaly detection for each neighbor  
         self.logger.info(

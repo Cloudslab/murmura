@@ -26,7 +26,7 @@ mkdir -p $OUTPUT_DIR
 cd $OUTPUT_DIR
 
 # Node count configurations
-NODE_COUNTS=(20 30 50)
+NODE_COUNTS=(10)
 
 # Common parameters for all experiments  
 COMMON_BASE_PARAMS="
@@ -41,7 +41,7 @@ COMMON_BASE_PARAMS="
     --monitor_resources
     --health_check_interval 10
     --create_animation
-    --malicious_node_seed 42
+    --malicious_node 42
     --data_partitioning_seed 42
     --model_seed 42
 "
@@ -345,7 +345,7 @@ run_scalability_experiments() {
     
     datasets=("cifar10" "eurosat")
     topologies=("complete" "ring")  # Test dense vs sparse connectivity
-    attack_types=("gradient" "label_flip")
+    attack_types=("label_flip" "gradient")
     trust_settings=("true" "false")
     
     for dataset in "${datasets[@]}"; do

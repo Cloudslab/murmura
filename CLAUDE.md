@@ -54,6 +54,11 @@ pytest -k "test_pattern"
 
 # Run comprehensive CUSUM trust detection evaluation
 ./test_cusum_detection.sh
+
+# Run enhanced trust monitoring experiments
+cd scripts/
+./test_enhanced_trust_evaluation.sh
+python analyze_enhanced_results.py enhanced_trust_results_TIMESTAMP --create-plots
 ```
 
 ### Code Quality
