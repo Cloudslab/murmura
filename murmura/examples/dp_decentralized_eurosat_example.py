@@ -261,7 +261,30 @@ def main() -> None:
     parser.add_argument(
         "--enable_trust_monitoring",
         action="store_true",
-        help="Enable trust monitoring for malicious node detection",
+        help="Enable trust monitoring for malicious behavior detection",
+    )
+    parser.add_argument(
+        "--enable_trust_weighted_aggregation",
+        action="store_true",
+        default=True,
+        help="Apply trust scores as weights during aggregation (default: True)",
+    )
+    parser.add_argument(
+        "--enable_exponential_decay",
+        action="store_true",
+        help="Use exponential decay for repeated trust violations (more aggressive)",
+    )
+    parser.add_argument(
+        "--exponential_decay_base",
+        type=float,
+        default=0.8,
+        help="Base for exponential decay (lower = more aggressive, default: 0.8)",
+    )
+    parser.add_argument(
+        "--trust_scaling_factor",
+        type=float,
+        default=1.0,
+        help="Scaling factor for trust-to-weight conversion (lower = more aggressive, default: 1.0)",
     )
     parser.add_argument(
         "--anomaly_detection_method",
@@ -526,23 +549,30 @@ def main() -> None:
         # Create trust monitoring configuration if enabled
         trust_config = None
         if args.enable_trust_monitoring:
-            logger.info("=== Configuring Trust Monitoring ===")
+            logger.info("=== Trust monitoring ENABLED ===")
             trust_config = TrustMonitorConfig(
                 enable_trust_monitoring=True,
-                anomaly_detection_method=args.anomaly_detection_method,
-                suspicion_threshold=args.suspicion_threshold,
-                trust_decay_rate=args.trust_decay_rate,
-                min_trust_score=args.min_trust_score,
+                enable_trust_weighted_aggregation=args.enable_trust_weighted_aggregation,
+                enable_exponential_decay=args.enable_exponential_decay,
+                exponential_decay_base=args.exponential_decay_base,
+                trust_scaling_factor=args.trust_scaling_factor,
                 trust_weight_exponent=args.trust_weight_exponent,
                 enable_trust_resource_monitoring=args.enable_trust_resource_monitoring,
             )
-
-            logger.info("Trust monitoring configuration created:")
-            logger.info(f"  - Anomaly detection method: {args.anomaly_detection_method}")
-            logger.info(f"  - Suspicion threshold: {args.suspicion_threshold}")
-            logger.info(f"  - Trust decay rate: {args.trust_decay_rate}")
-            logger.info(f"  - Min trust score: {args.min_trust_score}")
-            logger.info(f"  - Trust weight exponent: {args.trust_weight_exponent}")
+            if args.enable_trust_weighted_aggregation:
+                logger.info("=== Trust-weighted aggregation ENABLED ===")
+                if args.enable_exponential_decay:
+                    logger.info(
+                        f"=== Exponential decay ENABLED (base: {args.exponential_decay_base}) ==="
+                    )
+                logger.info(
+                    f"=== Trust scaling factor: {args.trust_scaling_factor} ==="
+                )
+                logger.info(
+                    f"=== Trust weight exponent: {args.trust_weight_exponent} ==="
+                )
+            else:
+                logger.info("=== Trust-weighted aggregation DISABLED ===")
         else:
             logger.info("Trust monitoring is DISABLED")
 
