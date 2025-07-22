@@ -765,9 +765,10 @@ class TrustMonitor:
                 std_ratio = float(np.std(historical_ratios)) + 1e-8
                 z_score = (classifier_feature_ratio - mean_ratio) / std_ratio
                 
-                # Label flipping detection
-                is_suspicious = z_score > 2.5  # Classifier updates unusually large
-                confidence = min(1.0, z_score / 4.0)
+                # Label flipping detection - continuous scoring for trust evolution
+                # Use raw z-score for continuous trust evolution (no binary threshold)
+                is_suspicious = True  # Always apply trust evolution
+                confidence = min(1.0, max(0.0, abs(z_score) / 3.0))  # Continuous confidence from z-score magnitude
                 
                 self.logger.debug(
                     f"TRUST MONITOR {self.node_id}: Label flip detection for {neighbor_id}: "
@@ -834,10 +835,10 @@ class TrustMonitor:
                 divergence = abs(value - hist_mean) / hist_std
                 divergence_scores.append(divergence)
             
-            # Combined divergence score
+            # Combined divergence score - continuous scoring for trust evolution
             total_divergence = float(np.mean(divergence_scores))
-            is_suspicious = total_divergence > 2.0
-            confidence = min(1.0, total_divergence / 3.0)
+            is_suspicious = True  # Always apply trust evolution
+            confidence = min(1.0, max(0.0, total_divergence / 3.0))
             
             self.logger.debug(
                 f"TRUST MONITOR {self.node_id}: Distribution shift for {neighbor_id}: "
@@ -891,13 +892,13 @@ class TrustMonitor:
                 f"ratio={consistency_ratio:.3f}"
             )
             
-            # Label flipping causes erratic updates
-            if consistency_ratio < 0.3:  # Very low consistency
-                confidence = 1.0 - consistency_ratio
-                return True, confidence, {
-                    "method": "update_consistency",
-                    "consistency_ratio": consistency_ratio
-                }
+            # Label flipping causes erratic updates - continuous scoring
+            # Lower consistency means higher anomaly score
+            confidence = max(0.0, 1.0 - consistency_ratio)  # Continuous confidence based on inconsistency
+            return True, confidence, {  # Always return for continuous trust evolution
+                "method": "update_consistency",
+                "consistency_ratio": consistency_ratio
+            }
         
         return False, 0.0, {}
 
@@ -1244,29 +1245,29 @@ class TrustMonitor:
             if neighbor_id in anomalies:
                 is_anomaly, anomaly_score, evidence = anomalies[neighbor_id]
 
-                if is_anomaly:
-                    # Decay trust score using polynomial decay method
-                    old_score = self.trust_scores[neighbor_id]
-                    self.trust_scores[neighbor_id] = self._calculate_trust_decay(
-                        neighbor_id, anomaly_score
-                    )
-                    score_changes[neighbor_id] = (
-                        self.trust_scores[neighbor_id] - old_score
-                    )
+                # Apply continuous trust decay based on anomaly score (no binary check)
+                old_score = self.trust_scores[neighbor_id]
+                self.trust_scores[neighbor_id] = self._calculate_trust_decay(
+                    neighbor_id, anomaly_score
+                )
+                score_changes[neighbor_id] = (
+                    self.trust_scores[neighbor_id] - old_score
+                )
 
-                    # Track trust action for state-based weighting
-                    self.last_trust_actions[neighbor_id] = "decay"
-                    self.rounds_since_decay[neighbor_id] = 0
+                # Track trust action for state-based weighting
+                self.last_trust_actions[neighbor_id] = "decay"
+                self.rounds_since_decay[neighbor_id] = 0
 
-                    # Increment anomaly count
+                # Increment anomaly count based on score magnitude
+                if anomaly_score > 0.1:  # Only count significant anomalies
                     self.anomaly_counts[neighbor_id] += 1
 
-                    # Emit anomaly event
-                    if self.config.log_trust_events:
-                        self.logger.warning(
-                            f"Anomaly detected for neighbor {neighbor_id}: "
-                            f"score={anomaly_score:.3f}, trust={self.trust_scores[neighbor_id]:.3f}"
-                        )
+                # Emit anomaly event for significant changes
+                if self.config.log_trust_events and abs(score_changes[neighbor_id]) > 0.01:
+                    self.logger.warning(
+                        f"Trust decay for neighbor {neighbor_id}: "
+                        f"anomaly_score={anomaly_score:.3f}, trust={self.trust_scores[neighbor_id]:.3f}, change={score_changes[neighbor_id]:.3f}"
+                    )
 
                     # Determine anomaly type based on evidence
                     anomaly_type = evidence.get("detection_method", "unknown")
@@ -1394,8 +1395,8 @@ class TrustMonitor:
             self.logger.debug(
                 f"TRUST MONITOR {self.node_id}: CUSUM {neighbor_id} - anomaly={is_anomaly}, score={score:.3f}"
             )
-            if is_anomaly:
-                all_anomalies[neighbor_id] = (is_anomaly, score, evidence)
+            # Always include anomaly scores for continuous trust evolution
+            all_anomalies[neighbor_id] = (True, score, evidence)
 
         # 2. Lightweight label flipping detection
         self.logger.debug(
@@ -1408,15 +1409,14 @@ class TrustMonitor:
             self.logger.debug(
                 f"TRUST MONITOR {self.node_id}: Label flipping {neighbor_id} - detected={is_label_flip}, score={label_flip_score:.3f}"
             )
-            if is_label_flip:
-                # Combine with existing anomaly or create new one
-                if neighbor_id in all_anomalies:
-                    existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
-                    combined_score = max(existing_score, label_flip_score)
-                    combined_evidence = {**existing_evidence, **label_flip_evidence}
-                    all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
-                else:
-                    all_anomalies[neighbor_id] = (is_label_flip, label_flip_score, label_flip_evidence)
+            # Always combine label flipping scores for continuous trust evolution
+            if neighbor_id in all_anomalies:
+                existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
+                combined_score = max(existing_score, label_flip_score)
+                combined_evidence = {**existing_evidence, **label_flip_evidence}
+                all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
+            else:
+                all_anomalies[neighbor_id] = (True, label_flip_score, label_flip_evidence)
 
         # 3. Loss pattern anomaly detection for each neighbor  
         self.logger.info(
@@ -1433,16 +1433,14 @@ class TrustMonitor:
                     f"TRUST MONITOR {self.node_id}: Loss pattern {neighbor_id} - anomaly_score={loss_anomaly_score:.3f}"
                 )
                 
-                # Consider loss pattern anomaly if score > 0.4
-                if loss_anomaly_score > 0.4:
-                    # Combine with existing anomaly or create new one
-                    if neighbor_id in all_anomalies:
-                        existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
-                        combined_score = max(existing_score, loss_anomaly_score)
-                        combined_evidence = {**existing_evidence, **loss_pattern_metrics}
-                        all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
-                    else:
-                        all_anomalies[neighbor_id] = (True, loss_anomaly_score, loss_pattern_metrics)
+                # Always include loss pattern scores for continuous trust evolution
+                if neighbor_id in all_anomalies:
+                    existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
+                    combined_score = max(existing_score, loss_anomaly_score)
+                    combined_evidence = {**existing_evidence, **loss_pattern_metrics}
+                    all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
+                else:
+                    all_anomalies[neighbor_id] = (True, loss_anomaly_score, loss_pattern_metrics)
 
         self.logger.info(f"TRUST MONITOR {self.node_id}: Running consensus detection")
 
@@ -1621,16 +1619,19 @@ class TrustMonitor:
 
         # Priority: Explicitly enabled methods take precedence over defaults
         if self.config.enable_exponential_decay:
-            # Exponential decay - less aggressive than polynomial
-            decay = self.config.exponential_decay_base ** (violation_count + 1)
-            new_score = current_score * decay
+            # Continuous exponential decay based on anomaly score magnitude
+            base_decay = self.config.exponential_decay_base ** (violation_count + 1)
+            # Scale decay by anomaly score for continuous evolution
+            anomaly_factor = min(1.0, anomaly_score)  # Cap at 1.0 to prevent over-decay
+            continuous_decay = base_decay * (1.0 - 0.1 * anomaly_factor)  # 0.1 = decay rate
+            new_score = current_score * continuous_decay
             
             self.logger.debug(
-                f"Exponential decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
-                f"(violations: {violation_count}, base: {self.config.exponential_decay_base}, decay: {decay:.6f})"
+                f"Continuous exponential decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
+                f"(violations: {violation_count}, anomaly_score: {anomaly_score:.3f}, decay: {continuous_decay:.6f})"
             )
             
-            return max(0.0, new_score)
+            return max(0.01, new_score)  # Minimum 0.01 to prevent complete exclusion
             
         elif self.config.enable_escalating_penalty_decay or self.config.enable_polynomial_decay:
             # Escalating penalty decay: punishment increases with repeated violations

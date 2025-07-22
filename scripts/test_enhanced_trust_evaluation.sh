@@ -225,31 +225,32 @@ run_experiment() {
         echo "   🎯 Actual malicious nodes: $malicious_indices"
         
         if [ "$trust_enabled" = "true" ]; then
-            # Extract detected suspicious neighbors - updated for new log format
-            # Look for: "Trust monitoring detected X suspicious neighbors across all nodes: ['node_1', 'node_0']"
-            local detected_line=$(grep "Trust monitoring detected.*suspicious neighbors across all nodes:" $output_file | tail -1)
-            if [ -n "$detected_line" ]; then
-                # Extract the node list from the line like: ['node_1', 'node_0', 'node_7']
-                local all_detections=$(echo "$detected_line" | grep -o "\['[^']*'[^]]*\]" | sed "s/'node_/'/g" | sed "s/'//g" | sed 's/\[//' | sed 's/\]//' | tr ',' '\n' | sed 's/^ *//' | sort -n | uniq)
-                if [ -n "$all_detections" ]; then
-                    local detected_array="[$(echo $all_detections | tr ' ' ',')]"
-                    echo "   🔍 Detected suspicious nodes: $detected_array"
-                    
-                    # Count total detections
-                    local detection_count=$(echo $all_detections | wc -w | tr -d ' ')
-                    echo "   📈 Total unique detections: $detection_count"
-                else
-                    echo "   🔍 Detected suspicious nodes: None"
-                    echo "   📈 Total unique detections: 0"
-                fi
+            # Check trust score evolution (continuous scoring approach)
+            # Look for trust decay events to understand which nodes are being penalized
+            local trust_decay_events=$(grep "Trust decay for neighbor" $output_file | wc -l | tr -d ' ')
+            echo "   📉 Trust decay events: $trust_decay_events"
+            
+            # Extract final trust scores from the end of training
+            local final_trust_line=$(grep "Final trust scores:" $output_file | tail -1)
+            if [ -n "$final_trust_line" ]; then
+                echo "   📊 $final_trust_line"
             else
-                echo "   🔍 Detected suspicious nodes: None"
-                echo "   📈 Total unique detections: 0"
+                echo "   📊 Final trust scores: Not available"
             fi
             
-            # First detection round - look for the global detection message
-            local first_detection=$(grep -B 10 "Trust monitoring detected.*suspicious neighbors across all nodes:" $output_file | grep "Round [0-9]" | tail -1 | grep -o "[0-9]*" || echo "Not detected")
-            echo "   ⏱️  First detection: Round $first_detection"
+            # Check if trust evolution file exists
+            local trust_evolution_file="${output_file%.*}_trust_evolution.txt"
+            if [ -f "$trust_evolution_file" ]; then
+                # Count unique neighbors with declining trust scores
+                local declining_nodes=$(awk -F',' 'NR>1 && $4<1.0 {print $3}' "$trust_evolution_file" | sort -u | wc -l | tr -d ' ')
+                echo "   📈 Nodes with declining trust: $declining_nodes"
+                
+                # Get final round trust scores for analysis
+                local final_round=$(awk -F',' 'NR>1 {print $1}' "$trust_evolution_file" | sort -n | tail -1)
+                echo "   ⏱️  Trust evolution tracked through round: $final_round"
+            else
+                echo "   📈 Trust evolution file: Not generated"
+            fi
         else
             echo "   🔍 Trust monitoring: DISABLED (baseline)"
         fi
@@ -416,26 +417,31 @@ for file in *.txt; do
             # Extract actual malicious node indices (same for baseline and trust experiments)
             actual_malicious=$(grep "Malicious clients will be created at indices:" $file | grep -o "\[.*\]" | head -1 | tr -d '[]' | tr -d ' ' || echo "N/A")
             
-            # Detection results - updated for new log format
+            # Trust evolution analysis - updated for continuous scoring
             if [ "$trust_enabled" = "true" ]; then
-                # Extract detected suspicious neighbors from the global detection message
-                detected_line=$(grep "Trust monitoring detected.*suspicious neighbors across all nodes:" $file | tail -1)
-                if [ -n "$detected_line" ]; then
-                    # Extract node numbers from the format: ['node_1', 'node_0', 'node_7']
-                    detected_nodes=$(echo "$detected_line" | grep -o "\['[^']*'[^]]*\]" | sed "s/'node_/'/g" | sed "s/'//g" | sed 's/\[//' | sed 's/\]//' | tr ',' '\n' | sed 's/^ *//' | sort -n | uniq)
-                    if [ -n "$detected_nodes" ]; then
-                        detected_malicious=$(echo "$detected_nodes" | tr '\n' ',' | sed 's/,$//')
-                        detection_count=$(echo $detected_nodes | wc -w | tr -d ' ')
+                # Count trust decay events as indicator of anomaly detection
+                trust_decay_events=$(grep -c "Trust decay for neighbor" $file || echo "0")
+                
+                # Analyze trust evolution file if it exists
+                trust_evolution_file="${file%.*}_trust_evolution.txt"
+                if [ -f "$trust_evolution_file" ]; then
+                    # Find nodes with significantly degraded trust scores (< 0.8)
+                    degraded_nodes=$(awk -F',' 'NR>1 && $4<0.8 {print $3}' "$trust_evolution_file" | sort -u | tr '\n' ',' | sed 's/,$//')
+                    if [ -n "$degraded_nodes" ]; then
+                        detected_malicious="$degraded_nodes"
+                        detection_count=$(echo "$degraded_nodes" | tr ',' ' ' | wc -w)
                     else
                         detected_malicious="None"
                         detection_count="0"
                     fi
+                    # Get first round where any trust score dropped below 0.95
+                    detection_round=$(awk -F',' 'NR>1 && $4<0.95 {print $1; exit}' "$trust_evolution_file" | head -1 || echo "N/A")
                 else
-                    detected_malicious="None"
-                    detection_count="0"
+                    # Fallback to trust decay events count
+                    detected_malicious="From_decay_events"
+                    detection_count="$trust_decay_events"
+                    detection_round="N/A"
                 fi
-                # First detection round from global detection message
-                detection_round=$(grep -B 10 "Trust monitoring detected.*suspicious neighbors across all nodes:" $file | grep "Round [0-9]" | tail -1 | grep -o "[0-9]*" || echo "N/A")
             else
                 detected_malicious="N/A"
                 detection_count="N/A"
@@ -508,8 +514,9 @@ echo "   grep 'Malicious clients will be created' *_baseline.txt | cut -d: -f2 |
 echo "   grep 'Malicious clients will be created' *_trust.txt | cut -d: -f2 | sort | uniq"
 echo "   # Both baseline and trust experiments use same seeds (malicious=42, data_partitioning=42)"
 echo ""
-echo "   # Detection performance across node counts:"
-echo "   grep 'Trust monitoring detected.*suspicious neighbors across all nodes' *.txt | sort"
+echo "   # Trust evolution analysis across node counts:"
+echo "   echo 'Trust decay events:'; grep -c 'Trust decay for neighbor' *_trust.txt | sort"
+echo "   echo 'Trust evolution files:'; ls -1 *_trust_evolution.txt 2>/dev/null || echo 'None found'"
 echo ""
 echo "   # Aggregation strategy verification:"
 echo "   echo \"Trust-weighted strategy usage:\"; grep 'AGGREGATION_DEBUG.*TRUST-WEIGHTED' *_trust.txt | wc -l"
