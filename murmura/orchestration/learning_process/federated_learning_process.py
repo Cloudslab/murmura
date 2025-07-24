@@ -1,5 +1,6 @@
 from statistics import mean
 from typing import Dict, Any
+import time
 
 import numpy as np
 import ray
@@ -12,6 +13,7 @@ from murmura.visualization.training_event import (
     ParameterTransferEvent,
     LocalTrainingEvent,
 )
+from murmura.visualization.resource_events import ResourceSummaryEvent
 
 
 class FederatedLearningProcess(LearningProcess):
@@ -168,9 +170,21 @@ class FederatedLearningProcess(LearningProcess):
         if self.cluster_manager.topology_manager.config.topology_type.value == "star":
             hub_index = self.cluster_manager.topology_manager.config.hub_index
 
+        # Set up observer for resource tracking
+        if hasattr(self.cluster_manager, 'set_observer'):
+            for observer in self.training_monitor.observers:
+                self.cluster_manager.set_observer(observer)
+                break  # Use the first observer (typically NetworkVisualizer)
+
         # Training rounds with enhanced monitoring
         for round_num in range(1, rounds + 1):
             self.logger.info(f"--- Round {round_num}/{rounds} ---")
+            
+            # Set current round in cluster manager for event emission
+            if hasattr(self.cluster_manager, 'set_current_round'):
+                self.cluster_manager.set_current_round(round_num)
+            
+            round_start_time = time.time()
 
             # UPDATED: Monitor resource usage if enabled
             if monitor_resources:
@@ -329,6 +343,39 @@ class FederatedLearningProcess(LearningProcess):
             # Emit evaluation event
             self.training_monitor.emit_event(
                 EvaluationEvent(round_num=round_num, metrics=test_metrics)
+            )
+
+            # Calculate round completion time and emit resource summary
+            round_completion_time = time.time() - round_start_time
+            
+            # Estimate total communication bytes for this round
+            # Model distribution + parameter collection + model update
+            if self.cluster_manager.actors:
+                model_size_bytes = sum(
+                    param.nbytes if hasattr(param, 'nbytes') else len(str(param).encode())
+                    for param in aggregated_params.values()
+                )
+                # Communication: distribute model + collect params + distribute updates
+                total_communication_bytes = model_size_bytes * len(self.cluster_manager.actors) * 3
+            else:
+                total_communication_bytes = 0
+            
+            # Calculate total computation time from train metrics
+            total_computation_time = sum(
+                m.get("training_time", 0) for m in train_metrics
+            )
+            
+            # Emit resource summary event
+            self.training_monitor.emit_event(
+                ResourceSummaryEvent(
+                    round_num=round_num,
+                    total_communication_bytes=total_communication_bytes,
+                    total_computation_time=total_computation_time,
+                    total_clients_involved=len(self.cluster_manager.actors),
+                    sampled_clients_count=len(train_metrics),
+                    round_completion_time=round_completion_time,
+                    resource_efficiency_score=test_metrics['accuracy'] / round_completion_time if round_completion_time > 0 else 0
+                )
             )
 
             # Collect privacy metrics after each round

@@ -1,5 +1,6 @@
 from statistics import mean
 from typing import Dict, Any
+import time
 
 import numpy as np
 import ray
@@ -12,6 +13,7 @@ from murmura.visualization.training_event import (
     ParameterTransferEvent,
     LocalTrainingEvent,
 )
+from murmura.visualization.resource_events import ResourceSummaryEvent
 
 
 class DecentralizedLearningProcess(LearningProcess):
@@ -148,9 +150,21 @@ class DecentralizedLearningProcess(LearningProcess):
         cumulative_privacy_spent = {"epsilon": 0.0, "delta": 0.0}
         per_round_privacy_metrics = []
 
+        # Set up observer for resource tracking
+        if hasattr(self.cluster_manager, 'set_observer'):
+            for observer in self.training_monitor.observers:
+                self.cluster_manager.set_observer(observer)
+                break  # Use the first observer (typically NetworkVisualizer)
+
         # Training rounds
         for round_num in range(1, rounds + 1):
             self.logger.info(f"--- Round {round_num}/{rounds} ---")
+            
+            # Set current round in cluster manager for event emission
+            if hasattr(self.cluster_manager, 'set_current_round'):
+                self.cluster_manager.set_current_round(round_num)
+            
+            round_start_time = time.time()
 
             # Monitor resource usage if enabled
             if monitor_resources:
@@ -296,6 +310,41 @@ class DecentralizedLearningProcess(LearningProcess):
             # Emit evaluation event
             self.training_monitor.emit_event(
                 EvaluationEvent(round_num=round_num, metrics=test_metrics)
+            )
+
+            # Calculate round completion time and emit resource summary
+            round_completion_time = time.time() - round_start_time
+            
+            # Estimate total communication bytes for decentralized learning
+            # In decentralized learning, communication occurs between neighbors
+            if self.cluster_manager.actors and adjacency_list:
+                # Calculate model size from representative parameters
+                model_size_bytes = sum(
+                    param.nbytes if hasattr(param, 'nbytes') else len(str(param).encode())
+                    for param in representative_params.values()
+                )
+                # Estimate communication: each node exchanges with its neighbors
+                total_edges = sum(len(neighbors) for neighbors in adjacency_list.values())
+                total_communication_bytes = model_size_bytes * total_edges
+            else:
+                total_communication_bytes = 0
+            
+            # Calculate total computation time from train metrics
+            total_computation_time = sum(
+                m.get("training_time", 0) for m in train_metrics
+            )
+            
+            # Emit resource summary event
+            self.training_monitor.emit_event(
+                ResourceSummaryEvent(
+                    round_num=round_num,
+                    total_communication_bytes=total_communication_bytes,
+                    total_computation_time=total_computation_time,
+                    total_clients_involved=len(self.cluster_manager.actors),
+                    sampled_clients_count=len(train_metrics),
+                    round_completion_time=round_completion_time,
+                    resource_efficiency_score=test_metrics['accuracy'] / round_completion_time if round_completion_time > 0 else 0
+                )
             )
 
             # Collect privacy metrics after each round

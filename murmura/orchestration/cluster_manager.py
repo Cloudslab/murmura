@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from typing import Dict, Any, List, Optional, Tuple
 
 import numpy as np
@@ -35,6 +36,10 @@ class ClusterManager:
         self.aggregation_strategy: Optional[AggregationStrategy] = None
         self.topology_coordinator: Optional[TopologyCoordinator] = None
         self.cluster_info: Dict[str, Any] = {}
+        
+        # Observer for emitting resource events
+        self.observer = None
+        self.current_round = 0
 
         # Set up logging
         self._setup_logging()
@@ -289,6 +294,34 @@ class ClusterManager:
             )
 
         return resource_requirements, actors_per_node
+
+    def set_observer(self, observer) -> None:
+        """Set the training observer for emitting resource events"""
+        self.observer = observer
+    
+    def set_current_round(self, round_num: int) -> None:
+        """Set the current round number for event emission"""
+        self.current_round = round_num
+    
+    def _calculate_model_size_bytes(self, parameters: Dict[str, Any]) -> int:
+        """Calculate the size of model parameters in bytes"""
+        total_size = 0
+        try:
+            import torch
+            for param_name, param_value in parameters.items():
+                if isinstance(param_value, torch.Tensor):
+                    total_size += param_value.numel() * param_value.element_size()
+                elif isinstance(param_value, np.ndarray):
+                    total_size += param_value.nbytes
+                elif hasattr(param_value, '__len__'):
+                    # Rough estimate for lists/other sequences
+                    total_size += len(str(param_value).encode('utf-8'))
+        except Exception as e:
+            logging.getLogger("murmura").debug(f"Could not calculate exact model size: {e}")
+            # Fallback: rough estimate
+            total_size = len(str(parameters).encode('utf-8'))
+        
+        return total_size
 
     def create_actors(self, num_actors: int, topology: TopologyConfig) -> List[Any]:
         """
@@ -1014,6 +1047,8 @@ class ClusterManager:
         """Distribute model to all actors with enhanced error handling and batching"""
         logging.getLogger("murmura").info("Distributing model to client actors...")
 
+        distribution_start_time = time.time()
+
         # Prepare model for serialization (move to CPU)
         original_device = None
         if hasattr(model, "model") and hasattr(model.model, "to"):
@@ -1024,6 +1059,9 @@ class ClusterManager:
                 model.device = "cpu"
 
         parameters = model.get_parameters()
+        
+        # Calculate model size for communication tracking
+        model_size_bytes = self._calculate_model_size_bytes(parameters)
 
         # Distribute in smaller batches for better stability
         batch_size = 10
@@ -1058,6 +1096,27 @@ class ClusterManager:
                 )
                 raise
 
+        distribution_time = time.time() - distribution_start_time
+        
+        # Emit communication event for model distribution
+        if self.observer:
+            from murmura.visualization.resource_events import CommunicationEvent
+            
+            # Server to all clients
+            source_nodes = [0]  # Assume server is node 0
+            target_nodes = list(range(len(self.actors)))
+            
+            comm_event = CommunicationEvent(
+                round_num=self.current_round,
+                source_nodes=source_nodes,
+                target_nodes=target_nodes,
+                bytes_transferred=model_size_bytes * len(self.actors),  # Total bytes sent
+                communication_time=distribution_time,
+                message_type="model_parameters",
+                direction="download"
+            )
+            self.observer.on_event(comm_event)
+
         # Restore original device
         if (
             hasattr(model, "model")
@@ -1085,12 +1144,15 @@ class ClusterManager:
         Returns:
             List of training results_phase1 from sampled clients
         """
+        training_start_time = time.time()
+        
         # Sample clients if client_sampling_rate < 1.0
         if client_sampling_rate < 1.0:
             num_clients_to_sample = max(1, int(len(self.actors) * client_sampling_rate))
             import random
 
             sampled_actors = random.sample(self.actors, num_clients_to_sample)
+            sampled_client_indices = [self.actors.index(actor) for actor in sampled_actors]
 
             logging.getLogger("murmura").info(
                 f"Client subsampling: selected {num_clients_to_sample}/{len(self.actors)} clients "
@@ -1098,6 +1160,22 @@ class ClusterManager:
             )
         else:
             sampled_actors = self.actors
+            sampled_client_indices = list(range(len(self.actors)))
+
+        # Emit sampling event
+        if self.observer:
+            from murmura.visualization.resource_events import SamplingEvent
+            
+            sampling_event = SamplingEvent(
+                round_num=self.current_round,
+                total_clients=len(self.actors),
+                sampled_clients=sampled_client_indices,
+                client_sampling_rate=client_sampling_rate,
+                data_sampling_rates={i: data_sampling_rate for i in sampled_client_indices},
+                total_data_points=None,  # Could be calculated if needed
+                sampled_data_points=None
+            )
+            self.observer.on_event(sampling_event)
 
         # Add data sampling rate to kwargs
         kwargs["data_sampling_rate"] = data_sampling_rate
@@ -1127,6 +1205,29 @@ class ClusterManager:
                     f"Training failed for batch {i // batch_size}: {e}"
                 )
                 raise
+
+        training_time = time.time() - training_start_time
+        
+        # Emit computation time events for training
+        if self.observer and all_results:
+            from murmura.visualization.resource_events import ComputationTimeEvent
+            
+            # Calculate aggregated metrics
+            total_samples = sum(result.get('samples_processed', 0) for result in all_results)
+            total_batches = sum(result.get('batches_processed', 0) for result in all_results)
+            total_epochs = sum(result.get('epochs_completed', 0) for result in all_results)
+            
+            # Emit aggregate computation event
+            comp_event = ComputationTimeEvent(
+                round_num=self.current_round,
+                node_id=-1,  # -1 indicates aggregate across all sampled clients
+                computation_type="training",
+                time_taken=training_time,
+                samples_processed=total_samples,
+                batches_processed=total_batches,
+                epochs_completed=total_epochs
+            )
+            self.observer.on_event(comp_event)
 
         return all_results
 
@@ -1226,7 +1327,33 @@ class ClusterManager:
         if not self.topology_coordinator:
             raise ValueError("Topology coordinator not initialized.")
 
-        return self.topology_coordinator.coordinate_aggregation(weights=weights)
+        aggregation_start_time = time.time()
+        
+        result = self.topology_coordinator.coordinate_aggregation(weights=weights)
+        
+        aggregation_time = time.time() - aggregation_start_time
+        
+        # Emit aggregation cost event
+        if self.observer:
+            from murmura.visualization.resource_events import AggregationCostEvent
+            
+            # Calculate parameters size (rough estimate)
+            parameters_size = 0
+            if 'aggregated_parameters' in result:
+                parameters_size = self._calculate_model_size_bytes(result['aggregated_parameters'])
+            
+            agg_event = AggregationCostEvent(
+                round_num=self.current_round,
+                aggregation_time=aggregation_time,
+                num_clients_aggregated=len(self.actors),
+                parameters_size_bytes=parameters_size,
+                aggregation_type=self.aggregation_strategy.__class__.__name__.lower(),
+                cpu_usage_percent=None,  # Could be measured if needed
+                memory_usage_mb=None
+            )
+            self.observer.on_event(agg_event)
+        
+        return result
 
     def perform_decentralized_aggregation(
         self, weights: Optional[List[float]] = None

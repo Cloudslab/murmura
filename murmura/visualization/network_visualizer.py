@@ -18,6 +18,15 @@ from murmura.visualization.training_event import (
     InitialStateEvent,
     NetworkStructureEvent,
 )
+from murmura.visualization.resource_events import (
+    CommunicationEvent,
+    ComputationTimeEvent,
+    MemoryUsageEvent,
+    SamplingEvent,
+    AggregationCostEvent,
+    PrivacyAmplificationEvent,
+    ResourceSummaryEvent,
+)
 from murmura.visualization.training_observer import TrainingObserver
 
 
@@ -58,7 +67,6 @@ class NetworkVisualizer(TrainingObserver):
         self.node_activities: Dict[
             int, List[Dict[str, Any]]
         ] = {}  # Per-node activity tracking
-        self.communication_log: List[Dict[str, Any]] = []  # Communication events
         self.parameter_updates: List[Dict[str, Any]] = []  # Parameter update tracking
 
         # Enhanced network structure data
@@ -69,6 +77,16 @@ class NetworkVisualizer(TrainingObserver):
         self.node_attributes: Dict[int, Dict[str, Any]] = {}
         self.geographic_info: Dict[int, Dict[str, float]] = {}
         self.organizational_hierarchy: Dict[int, Dict[str, str]] = {}
+        
+        # Resource tracking data structures
+        self.communication_log: List[Dict[str, Any]] = []  # Communication events
+        self.computation_time_log: List[Dict[str, Any]] = []
+        self.memory_usage_log: List[Dict[str, Any]] = []
+        self.sampling_log: List[Dict[str, Any]] = []
+        self.aggregation_cost_log: List[Dict[str, Any]] = []
+        self.privacy_amplification_log: List[Dict[str, Any]] = []
+        self.resource_summary_log: List[Dict[str, Any]] = []
+        self.parameter_transfer_log: List[Dict[str, Any]] = []  # Separate log for parameter transfers
 
     def set_topology(self, topology_manager: TopologyManager) -> None:
         """
@@ -212,8 +230,8 @@ class NetworkVisualizer(TrainingObserver):
                 for target in event.target_nodes:
                     frame["active_edges"].append((source, target))
 
-                    # Log communication
-                    comm_data = {
+                    # Log parameter transfer
+                    transfer_data = {
                         "timestamp": event.timestamp,
                         "round_num": event.round_num,
                         "source_node": source,
@@ -221,7 +239,7 @@ class NetworkVisualizer(TrainingObserver):
                         "transfer_type": "parameter_transfer",
                         "param_summary": str(event.param_summary.get(source, {})),
                     }
-                    self.communication_log.append(comm_data)
+                    self.parameter_transfer_log.append(transfer_data)
 
             # Track parameter summaries for visualization
             for node, summary in event.param_summary.items():
@@ -300,8 +318,8 @@ class NetworkVisualizer(TrainingObserver):
                     if node != event.aggregator_node:
                         frame["active_edges"].append((node, event.aggregator_node))
 
-                        # Log communication to aggregator
-                        comm_data = {
+                        # Log aggregation transfer
+                        agg_data = {
                             "timestamp": event.timestamp,
                             "round_num": event.round_num,
                             "source_node": node,
@@ -309,7 +327,7 @@ class NetworkVisualizer(TrainingObserver):
                             "transfer_type": "aggregation",
                             "strategy_name": event.strategy_name,
                         }
-                        self.communication_log.append(comm_data)
+                        self.parameter_transfer_log.append(agg_data)
 
                 description = (
                     f"Round {event.round_num}: Aggregation at node {event.aggregator_node} "
@@ -402,6 +420,94 @@ class NetworkVisualizer(TrainingObserver):
                     "loss": event.metrics.get("loss"),
                 }
             )
+
+        # Handle resource tracking events
+        elif isinstance(event, CommunicationEvent):
+            communication_data = {
+                "timestamp": event.timestamp,
+                "round_num": event.round_num,
+                "source_nodes": event.source_nodes,
+                "target_nodes": event.target_nodes,
+                "bytes_transferred": event.bytes_transferred,
+                "communication_time": event.communication_time,
+                "message_type": event.message_type,
+                "direction": event.direction,
+                "bandwidth_mbps": event.bandwidth_mbps,
+            }
+            self.communication_log.append(communication_data)
+            
+            frame["communication_bytes"] = event.bytes_transferred
+            frame["communication_time"] = event.communication_time
+            description = f"Round {event.round_num}: Communication - {event.bytes_transferred/1e6:.2f} MB"
+            
+            # Add to event log
+            event_data.update(communication_data)
+        
+        elif isinstance(event, ComputationTimeEvent):
+            computation_data = {
+                "timestamp": event.timestamp,
+                "round_num": event.round_num,
+                "node_id": event.node_id,
+                "computation_type": event.computation_type,
+                "time_taken": event.time_taken,
+                "samples_processed": event.samples_processed,
+                "batches_processed": event.batches_processed,
+                "epochs_completed": event.epochs_completed,
+                "throughput_samples_per_sec": event.throughput_samples_per_sec,
+            }
+            self.computation_time_log.append(computation_data)
+            
+            frame["computation_time"] = event.time_taken
+            frame["computation_type"] = event.computation_type
+            description = f"Round {event.round_num}: {event.computation_type} - {event.time_taken:.2f}s"
+            
+            # Add to event log
+            event_data.update(computation_data)
+        
+        elif isinstance(event, SamplingEvent):
+            sampling_data = {
+                "timestamp": event.timestamp,
+                "round_num": event.round_num,
+                "total_clients": event.total_clients,
+                "sampled_clients": event.sampled_clients,
+                "num_sampled_clients": event.num_sampled_clients,
+                "client_sampling_rate": event.client_sampling_rate,
+                "actual_client_rate": event.actual_client_rate,
+                "data_sampling_rates": event.data_sampling_rates,
+                "total_data_points": event.total_data_points,
+                "sampled_data_points": event.sampled_data_points,
+                "actual_data_rate": event.actual_data_rate,
+            }
+            self.sampling_log.append(sampling_data)
+            
+            frame["sampled_clients"] = event.num_sampled_clients
+            frame["actual_client_rate"] = event.actual_client_rate
+            description = f"Round {event.round_num}: Sampled {event.num_sampled_clients}/{event.total_clients} clients"
+            
+            # Add to event log
+            event_data.update(sampling_data)
+        
+        elif isinstance(event, ResourceSummaryEvent):
+            summary_data = {
+                "timestamp": event.timestamp,
+                "round_num": event.round_num,
+                "total_communication_bytes": event.total_communication_bytes,
+                "total_computation_time": event.total_computation_time,
+                "total_clients_involved": event.total_clients_involved,
+                "sampled_clients_count": event.sampled_clients_count,
+                "round_completion_time": event.round_completion_time,
+                "resource_efficiency_score": event.resource_efficiency_score,
+                "communication_savings_percent": event.communication_savings_percent,
+                "time_per_client": event.time_per_client,
+            }
+            self.resource_summary_log.append(summary_data)
+            
+            frame["resource_efficiency"] = event.resource_efficiency_score
+            frame["communication_savings"] = event.communication_savings_percent
+            description = f"Round {event.round_num}: Resource summary - {event.communication_savings_percent:.1f}% savings"
+            
+            # Add to event log
+            event_data.update(summary_data)
 
         # Ensure all metrics data is available for all frames
         frame["all_metrics"] = self.round_metrics.copy()
@@ -722,7 +828,98 @@ class NetworkVisualizer(TrainingObserver):
                         writer.writerow(row)
                 print(f"Organizational hierarchy exported to {org_csv_path}")
 
+        # Export resource tracking data
+        self._export_resource_csvs(prefix)
+
         print(f"All training data exported to {self.output_dir}")
+    
+    def _export_resource_csvs(self, prefix: str = "training_data") -> None:
+        """Export resource tracking data to CSV files"""
+        
+        # Communication log CSV
+        if self.communication_log:
+            comm_csv_path = os.path.join(self.output_dir, f"{prefix}_communication.csv")
+            with open(comm_csv_path, "w", newline="", encoding="utf-8") as f:
+                fieldnames = [
+                    "timestamp", "round_num", "source_nodes", "target_nodes",
+                    "bytes_transferred", "communication_time", "message_type",
+                    "direction", "bandwidth_mbps"
+                ]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for entry in self.communication_log:
+                    # Convert lists to strings for CSV
+                    row = entry.copy()
+                    row["source_nodes"] = str(entry.get("source_nodes", []))
+                    row["target_nodes"] = str(entry.get("target_nodes", []))
+                    writer.writerow(row)
+            print(f"Communication log exported to {comm_csv_path}")
+        
+        # Computation time log CSV
+        if self.computation_time_log:
+            comp_csv_path = os.path.join(self.output_dir, f"{prefix}_computation_time.csv")
+            with open(comp_csv_path, "w", newline="", encoding="utf-8") as f:
+                fieldnames = [
+                    "timestamp", "round_num", "node_id", "computation_type",
+                    "time_taken", "samples_processed", "batches_processed",
+                    "epochs_completed", "throughput_samples_per_sec"
+                ]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.computation_time_log)
+            print(f"Computation time log exported to {comp_csv_path}")
+        
+        # Sampling log CSV
+        if self.sampling_log:
+            sampling_csv_path = os.path.join(self.output_dir, f"{prefix}_sampling.csv")
+            with open(sampling_csv_path, "w", newline="", encoding="utf-8") as f:
+                fieldnames = [
+                    "timestamp", "round_num", "total_clients", "sampled_clients",
+                    "num_sampled_clients", "client_sampling_rate", "actual_client_rate",
+                    "data_sampling_rates", "total_data_points", "sampled_data_points",
+                    "actual_data_rate"
+                ]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for entry in self.sampling_log:
+                    # Convert complex types to strings for CSV
+                    row = entry.copy()
+                    row["sampled_clients"] = str(entry["sampled_clients"])
+                    row["data_sampling_rates"] = str(entry.get("data_sampling_rates", {}))
+                    writer.writerow(row)
+            print(f"Sampling log exported to {sampling_csv_path}")
+        
+        # Parameter transfer log CSV  
+        if self.parameter_transfer_log:
+            transfer_csv_path = os.path.join(self.output_dir, f"{prefix}_parameter_transfers.csv")
+            with open(transfer_csv_path, "w", newline="", encoding="utf-8") as f:
+                fieldnames = [
+                    "timestamp", "round_num", "source_node", "target_node",
+                    "transfer_type", "param_summary", "strategy_name"
+                ]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for entry in self.parameter_transfer_log:
+                    # Ensure all fields are present
+                    row = {field: entry.get(field, "") for field in fieldnames}
+                    writer.writerow(row)
+            print(f"Parameter transfer log exported to {transfer_csv_path}")
+        
+        # Resource summary log CSV
+        if self.resource_summary_log:
+            summary_csv_path = os.path.join(self.output_dir, f"{prefix}_resource_summary.csv")
+            with open(summary_csv_path, "w", newline="", encoding="utf-8") as f:
+                fieldnames = [
+                    "timestamp", "round_num", "total_communication_bytes",
+                    "total_computation_time", "total_clients_involved",
+                    "sampled_clients_count", "round_completion_time",
+                    "resource_efficiency_score", "communication_savings_percent",
+                    "time_per_client"
+                ]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.resource_summary_log)
+            print(f"Resource summary log exported to {summary_csv_path}")
 
     def render_training_animation(
         self, filename: str = "training_animation.mp4", fps: int = 1
