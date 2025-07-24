@@ -62,6 +62,8 @@ class ResourceAwareSamplingExperiments:
         """Check if topology is compatible with learning paradigm"""
         if paradigm == "decentralized" and topology == "star":
             return False  # Decentralized learning doesn't work with star topology
+        if paradigm == "federated" and topology in ["ring", "complete"]:
+            return False  # Federated learning examples only support star topology
         return True
     
     def get_experiment_script(self, dataset: str, paradigm: str) -> str:
@@ -79,6 +81,15 @@ class ResourceAwareSamplingExperiments:
         
         raise ValueError(f"No script found for dataset={dataset}, paradigm={paradigm}")
     
+    def get_aggregation_strategy(self, paradigm: str, topology: str) -> str:
+        """Get the appropriate aggregation strategy for the paradigm and topology"""
+        if paradigm == "federated":
+            # Federated learning uses centralized strategies
+            return "fedavg"
+        else:  # decentralized paradigm
+            # Decentralized learning uses gossip averaging
+            return "gossip_avg"
+
     def build_experiment_command(self, 
                                 dataset: str, 
                                 paradigm: str, 
@@ -90,6 +101,7 @@ class ResourceAwareSamplingExperiments:
         """Build command line arguments for experiment"""
         
         script = self.get_experiment_script(dataset, paradigm)
+        aggregation_strategy = self.get_aggregation_strategy(paradigm, topology)
         
         cmd = [
             "python", script,
@@ -98,6 +110,7 @@ class ResourceAwareSamplingExperiments:
             "--batch_size", str(self.batch_size),
             "--num_actors", str(num_clients),
             "--topology", topology,
+            "--aggregation_strategy", aggregation_strategy,
             "--client_sampling_rate", str(sampling_rate),
             "--data_sampling_rate", "1.0",  # Focus on client sampling for this study
             "--vis_dir", output_dir,

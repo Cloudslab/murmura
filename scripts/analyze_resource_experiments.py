@@ -56,11 +56,15 @@ class ResourceExperimentAnalyzer:
         rows = []
         for exp in self.analysis_data:
             if exp["execution"]["status"] == "success":
+                # Determine aggregation strategy based on topology
+                aggregation_strategy = "fedavg" if exp["topology"] == "star" else "gossip_avg"
+                
                 base_data = {
                     "experiment_name": exp["experiment_name"],
                     "dataset": exp["dataset"],
-                    "paradigm": exp["paradigm"],
+                    "paradigm": exp["paradigm"],  
                     "topology": exp["topology"],
+                    "aggregation_strategy": aggregation_strategy,
                     "num_clients": exp["num_clients"],
                     "sampling_rate": exp["sampling_rate"],
                     "privacy_setting": exp["privacy_config"]["name"],
@@ -227,6 +231,73 @@ class ResourceExperimentAnalyzer:
         plt.close()
         
         logger.info("Generated topology comparison plot")
+    
+    def plot_aggregation_strategy_comparison(self):
+        """Generate plots comparing FedAvg vs GossipAvg aggregation strategies"""
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        fig.suptitle('Aggregation Strategy Comparison: FedAvg vs GossipAvg', fontsize=16, y=0.98)
+        
+        # 1. Communication Efficiency by Strategy
+        ax1 = axes[0, 0]
+        strategy_comm = self.df.groupby(['aggregation_strategy', 'paradigm'])['communication_mb'].mean().unstack()
+        strategy_comm.plot(kind='bar', ax=ax1, width=0.8)
+        ax1.set_xlabel('Aggregation Strategy')
+        ax1.set_ylabel('Avg Communication (MB)')
+        ax1.set_title('Communication by Aggregation Strategy')
+        ax1.legend(title='Learning Paradigm')
+        ax1.tick_params(axis='x', rotation=45)
+        
+        # 2. Training Time by Strategy
+        ax2 = axes[0, 1]
+        strategy_time = self.df.groupby(['aggregation_strategy'])['avg_round_time'].mean()
+        bars2 = ax2.bar(strategy_time.index, strategy_time.values, 
+                       color=['#1f77b4', '#ff7f0e'], alpha=0.7)
+        ax2.set_xlabel('Aggregation Strategy')
+        ax2.set_ylabel('Avg Round Time (seconds)')
+        ax2.set_title('Training Time by Aggregation Strategy')
+        ax2.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for bar in bars2:
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                    f'{height:.1f}s', ha='center', va='bottom')
+        
+        # 3. Efficiency Score by Strategy and Sampling Rate
+        ax3 = axes[1, 0]
+        for strategy in self.df['aggregation_strategy'].unique():
+            subset = self.df[self.df['aggregation_strategy'] == strategy]
+            grouped = subset.groupby('sampling_rate')['avg_efficiency_score'].mean()
+            ax3.plot(grouped.index, grouped.values, marker='o', 
+                    label=f'{strategy.upper()}', linewidth=2)
+        
+        ax3.set_xlabel('Client Sampling Rate')
+        ax3.set_ylabel('Resource Efficiency Score')
+        ax3.set_title('Efficiency by Strategy and Sampling Rate')
+        ax3.legend()
+        ax3.grid(True, alpha=0.3)
+        
+        # 4. Communication Savings by Strategy
+        ax4 = axes[1, 1]
+        strategy_savings = self.df.groupby('aggregation_strategy')['communication_savings_percent'].mean()
+        bars4 = ax4.bar(strategy_savings.index, strategy_savings.values,
+                       color=['#2ca02c', '#d62728'], alpha=0.7)
+        ax4.set_xlabel('Aggregation Strategy')
+        ax4.set_ylabel('Communication Savings (%)')
+        ax4.set_title('Communication Savings by Strategy')
+        ax4.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for bar in bars4:
+            height = bar.get_height()
+            ax4.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                    f'{height:.1f}%', ha='center', va='bottom')
+        
+        plt.tight_layout()
+        plt.savefig(self.plots_dir / 'aggregation_strategy_comparison.png', dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        logger.info("Generated aggregation strategy comparison plot")
     
     def plot_privacy_impact(self):
         """Generate plots analyzing the impact of differential privacy"""
@@ -405,6 +476,7 @@ class ResourceExperimentAnalyzer:
         
         self.plot_sampling_rate_analysis()
         self.plot_topology_comparison()
+        self.plot_aggregation_strategy_comparison()
         self.plot_privacy_impact()
         self.plot_scalability_analysis()
         self.generate_summary_table()
