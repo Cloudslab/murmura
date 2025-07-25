@@ -1,0 +1,11 @@
+node_id,admin_level,certification,city,country,department,established_year,funding_source,institution_name,institution_type,region,staff_count,timezone
+0,local,FedRAMP,Rochester,USA,radiology,1959,mixed,mayo_clinic,tier1_hospital,north_america,1052,America/Chicago
+1,national,SOC2,Baltimore,USA,oncology,2015,private,johns_hopkins,tier2_hospital,europe,2893,America/New_York
+2,local,ISO27001,Palo Alto,USA,cardiology,1976,mixed,stanford_med,research_center,asia_pacific,2503,America/Los_Angeles
+3,regional,SOC2,Boston,USA,neurology,1951,mixed,mass_general,mobile_unit,south_america,1097,America/New_York
+4,international,ISO27001,Los Angeles,USA,pathology,1989,private,ucla_health,edge_device,africa,296,America/Los_Angeles
+5,regional,ISO27001,London,UK,radiology,1989,private,mayo_clinic,tier1_hospital,north_america,523,Europe/London
+6,international,ISO27001,Paris,France,oncology,1983,mixed,johns_hopkins,tier2_hospital,europe,826,Europe/Paris
+7,regional,ISO27001,Tokyo,Japan,cardiology,1995,public,stanford_med,research_center,asia_pacific,2033,Asia/Tokyo
+8,national,FedRAMP,Singapore,Singapore,neurology,1957,mixed,mass_general,mobile_unit,south_america,1217,Asia/Singapore
+9,local,ISO27001,Sydney,Australia,pathology,1994,public,ucla_health,edge_device,africa,2059,Australia/Sydney

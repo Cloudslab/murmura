@@ -1,0 +1,11 @@
+node_id,admin_level,certification,city,country,department,established_year,funding_source,institution_name,institution_type,region,staff_count,timezone
+0,international,SOC2,Rochester,USA,radiology,1995,mixed,mayo_clinic,tier1_hospital,north_america,3323,America/Chicago
+1,international,HIPAA_compliant,Baltimore,USA,oncology,1994,public,johns_hopkins,tier2_hospital,europe,2614,America/New_York
+2,regional,SOC2,Palo Alto,USA,cardiology,2015,research_grant,stanford_med,research_center,asia_pacific,2736,America/Los_Angeles
+3,national,ISO27001,Boston,USA,neurology,1955,public,mass_general,mobile_unit,south_america,1414,America/New_York
+4,local,HIPAA_compliant,Los Angeles,USA,pathology,2013,public,ucla_health,edge_device,africa,1297,America/Los_Angeles
+5,local,HIPAA_compliant,London,UK,radiology,1996,research_grant,mayo_clinic,tier1_hospital,north_america,3362,Europe/London
+6,regional,FedRAMP,Paris,France,oncology,1989,mixed,johns_hopkins,tier2_hospital,europe,1796,Europe/Paris
+7,national,HIPAA_compliant,Tokyo,Japan,cardiology,1976,mixed,stanford_med,research_center,asia_pacific,4713,Asia/Tokyo
+8,international,HIPAA_compliant,Singapore,Singapore,neurology,2003,research_grant,mass_general,mobile_unit,south_america,712,Asia/Singapore
+9,regional,SOC2,Sydney,Australia,pathology,1998,mixed,ucla_health,edge_device,africa,4642,Australia/Sydney

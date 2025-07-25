@@ -1,0 +1,21 @@
+node_id,admin_level,certification,city,country,department,established_year,funding_source,institution_name,institution_type,region,staff_count,timezone
+0,regional,HIPAA_compliant,Rochester,USA,radiology,1955,public,mayo_clinic,tier1_hospital,north_america,3500,America/Chicago
+1,regional,ISO27001,Baltimore,USA,oncology,2003,public,johns_hopkins,tier2_hospital,europe,3013,America/New_York
+2,international,HIPAA_compliant,Palo Alto,USA,cardiology,1972,research_grant,stanford_med,research_center,asia_pacific,4896,America/Los_Angeles
+3,international,FedRAMP,Boston,USA,neurology,1989,mixed,mass_general,mobile_unit,south_america,2407,America/New_York
+4,international,SOC2,Los Angeles,USA,pathology,1980,private,ucla_health,edge_device,africa,161,America/Los_Angeles
+5,regional,ISO27001,London,UK,radiology,1977,private,mayo_clinic,tier1_hospital,north_america,4537,Europe/London
+6,local,HIPAA_compliant,Paris,France,oncology,1961,public,johns_hopkins,tier2_hospital,europe,3521,Europe/Paris
+7,national,FedRAMP,Tokyo,Japan,cardiology,2016,research_grant,stanford_med,research_center,asia_pacific,2799,Asia/Tokyo
+8,regional,SOC2,Singapore,Singapore,neurology,1982,mixed,mass_general,mobile_unit,south_america,2677,Asia/Singapore
+9,local,HIPAA_compliant,Sydney,Australia,pathology,1993,mixed,ucla_health,edge_device,africa,2015,Australia/Sydney
+10,regional,FedRAMP,Rochester,USA,radiology,1989,mixed,mayo_clinic,tier1_hospital,north_america,1445,America/Chicago
+11,regional,SOC2,Baltimore,USA,oncology,2016,mixed,johns_hopkins,tier2_hospital,europe,4132,America/New_York
+12,regional,ISO27001,Palo Alto,USA,cardiology,1973,research_grant,stanford_med,research_center,asia_pacific,2233,America/Los_Angeles
+13,international,ISO27001,Boston,USA,neurology,1983,public,mass_general,mobile_unit,south_america,287,America/New_York
+14,international,ISO27001,Los Angeles,USA,pathology,1981,private,ucla_health,edge_device,africa,1126,America/Los_Angeles
+15,national,ISO27001,London,UK,radiology,1963,mixed,mayo_clinic,tier1_hospital,north_america,157,Europe/London
+16,local,FedRAMP,Paris,France,oncology,1977,private,johns_hopkins,tier2_hospital,europe,3081,Europe/Paris
+17,local,ISO27001,Tokyo,Japan,cardiology,1994,public,stanford_med,research_center,asia_pacific,1482,Asia/Tokyo
+18,international,SOC2,Singapore,Singapore,neurology,2019,private,mass_general,mobile_unit,south_america,146,Asia/Singapore
+19,international,SOC2,Sydney,Australia,pathology,2003,public,ucla_health,edge_device,africa,501,Australia/Sydney

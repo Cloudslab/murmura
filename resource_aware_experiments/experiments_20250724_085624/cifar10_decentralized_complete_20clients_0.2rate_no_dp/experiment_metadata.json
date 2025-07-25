@@ -1,0 +1,25 @@
+{
+  "experiment_name": "cifar10_decentralized_complete_20clients_0.2rate_no_dp",
+  "dataset": "cifar10",
+  "paradigm": "decentralized",
+  "topology": "complete",
+  "num_clients": 20,
+  "sampling_rate": 0.2,
+  "privacy_config": {
+    "name": "no_dp",
+    "enable_dp": false
+  },
+  "training_config": {
+    "rounds": 10,
+    "epochs": 3,
+    "batch_size": 64
+  },
+  "execution": {
+    "status": "success",
+    "duration_seconds": 187.9781632423401,
+    "error_message": null,
+    "command": "python murmura/examples/dp_decentralized_cifar10_example.py --rounds 10 --epochs 3 --batch_size 64 --num_actors 20 --topology complete --aggregation_strategy gossip_avg --client_sampling_rate 0.2 --data_sampling_rate 1.0 --vis_dir resource_aware_experiments/experiments_20250724_085624/cifar10_decentralized_complete_20clients_0.2rate_no_dp --create_summary --experiment_name cifar10_decentralized_complete_20clients_0.2rate_no_dp"
+  },
+  "output_directory": "resource_aware_experiments/experiments_20250724_085624/cifar10_decentralized_complete_20clients_0.2rate_no_dp",
+  "timestamp": "2025-07-24T22:07:17.978138"
+}

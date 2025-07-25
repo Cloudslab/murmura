@@ -1,0 +1,27 @@
+{
+  "experiment_name": "mnist_decentralized_ring_10clients_0.6rate_medium_privacy",
+  "dataset": "mnist",
+  "paradigm": "decentralized",
+  "topology": "ring",
+  "num_clients": 10,
+  "sampling_rate": 0.6,
+  "privacy_config": {
+    "name": "medium_privacy",
+    "enable_dp": true,
+    "target_epsilon_per_round": 0.5,
+    "target_delta": 1e-05
+  },
+  "training_config": {
+    "rounds": 10,
+    "epochs": 3,
+    "batch_size": 64
+  },
+  "execution": {
+    "status": "success",
+    "duration_seconds": 134.87857365608215,
+    "error_message": null,
+    "command": "python murmura/examples/dp_decentralized_mnist_example.py --rounds 10 --epochs 3 --batch_size 64 --num_actors 10 --topology ring --aggregation_strategy gossip_avg --client_sampling_rate 0.6 --data_sampling_rate 1.0 --vis_dir resource_aware_experiments/experiments_20250724_085624/mnist_decentralized_ring_10clients_0.6rate_medium_privacy --create_summary --experiment_name mnist_decentralized_ring_10clients_0.6rate_medium_privacy --enable_dp --target_epsilon_per_round 0.5 --target_delta 1e-05 --enable_subsampling_amplification"
+  },
+  "output_directory": "resource_aware_experiments/experiments_20250724_085624/mnist_decentralized_ring_10clients_0.6rate_medium_privacy",
+  "timestamp": "2025-07-24T11:58:45.964580"
+}

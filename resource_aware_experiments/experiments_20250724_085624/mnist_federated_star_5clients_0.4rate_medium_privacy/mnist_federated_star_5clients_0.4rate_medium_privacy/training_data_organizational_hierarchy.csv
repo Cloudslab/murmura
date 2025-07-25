@@ -1,0 +1,6 @@
+node_id,admin_level,certification,city,country,department,established_year,funding_source,institution_name,institution_type,region,staff_count,timezone
+0,regional,FedRAMP,Rochester,USA,radiology,1969,research_grant,mayo_clinic,tier1_hospital,north_america,453,America/Chicago
+1,national,HIPAA_compliant,Baltimore,USA,oncology,1986,private,johns_hopkins,tier2_hospital,europe,764,America/New_York
+2,local,HIPAA_compliant,Palo Alto,USA,cardiology,1972,private,stanford_med,research_center,asia_pacific,3098,America/Los_Angeles
+3,national,FedRAMP,Boston,USA,neurology,1953,mixed,mass_general,mobile_unit,south_america,3901,America/New_York
+4,national,HIPAA_compliant,Los Angeles,USA,pathology,1965,public,ucla_health,edge_device,africa,2687,America/Los_Angeles

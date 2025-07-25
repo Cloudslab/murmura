@@ -1,0 +1,27 @@
+{
+  "experiment_name": "cifar10_federated_star_10clients_0.2rate_high_privacy",
+  "dataset": "cifar10",
+  "paradigm": "federated",
+  "topology": "star",
+  "num_clients": 10,
+  "sampling_rate": 0.2,
+  "privacy_config": {
+    "name": "high_privacy",
+    "enable_dp": true,
+    "target_epsilon_per_round": 0.1,
+    "target_delta": 1e-05
+  },
+  "training_config": {
+    "rounds": 10,
+    "epochs": 3,
+    "batch_size": 64
+  },
+  "execution": {
+    "status": "success",
+    "duration_seconds": 169.4736931324005,
+    "error_message": null,
+    "command": "python murmura/examples/dp_cifar10_example.py --rounds 10 --epochs 3 --batch_size 64 --num_actors 10 --topology star --aggregation_strategy fedavg --client_sampling_rate 0.2 --data_sampling_rate 1.0 --vis_dir resource_aware_experiments/experiments_20250724_085624/cifar10_federated_star_10clients_0.2rate_high_privacy --create_summary --experiment_name cifar10_federated_star_10clients_0.2rate_high_privacy --enable_dp --target_epsilon_per_round 0.1 --target_delta 1e-05 --enable_subsampling_amplification"
+  },
+  "output_directory": "resource_aware_experiments/experiments_20250724_085624/cifar10_federated_star_10clients_0.2rate_high_privacy",
+  "timestamp": "2025-07-24T16:05:52.240328"
+}
