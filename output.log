@@ -1,0 +1,1814 @@
+nohup: ignoring input
+2025-07-24 08:56:24,204 - INFO - Experiment suite initialized. Results will be saved to: resource_aware_experiments/experiments_20250724_085624
+2025-07-24 08:56:24,205 - INFO - Running 360 experiments...
+2025-07-24 08:56:24,205 - INFO - Progress: 1/360
+2025-07-24 08:56:24,205 - INFO - Running experiment: mnist_federated_star_5clients_0.2rate_no_dp
+2025-07-24 08:58:01,926 - INFO - ✅ Experiment mnist_federated_star_5clients_0.2rate_no_dp completed successfully in 97.7s
+2025-07-24 08:58:01,927 - INFO - Progress: 2/360
+2025-07-24 08:58:01,927 - INFO - Running experiment: mnist_federated_star_5clients_0.2rate_high_privacy
+2025-07-24 09:00:24,274 - INFO - ✅ Experiment mnist_federated_star_5clients_0.2rate_high_privacy completed successfully in 142.3s
+2025-07-24 09:00:24,275 - INFO - Progress: 3/360
+2025-07-24 09:00:24,275 - INFO - Running experiment: mnist_federated_star_5clients_0.2rate_medium_privacy
+2025-07-24 09:02:54,885 - INFO - ✅ Experiment mnist_federated_star_5clients_0.2rate_medium_privacy completed successfully in 150.6s
+2025-07-24 09:02:54,885 - INFO - Progress: 4/360
+2025-07-24 09:02:54,886 - INFO - Running experiment: mnist_federated_star_5clients_0.2rate_low_privacy
+2025-07-24 09:05:39,453 - INFO - ✅ Experiment mnist_federated_star_5clients_0.2rate_low_privacy completed successfully in 164.6s
+2025-07-24 09:05:39,453 - INFO - Progress: 5/360
+2025-07-24 09:05:39,453 - INFO - Running experiment: mnist_federated_star_5clients_0.4rate_no_dp
+2025-07-24 09:07:16,109 - INFO - ✅ Experiment mnist_federated_star_5clients_0.4rate_no_dp completed successfully in 96.7s
+2025-07-24 09:07:16,110 - INFO - Progress: 6/360
+2025-07-24 09:07:16,110 - INFO - Running experiment: mnist_federated_star_5clients_0.4rate_high_privacy
+2025-07-24 09:09:20,483 - INFO - ✅ Experiment mnist_federated_star_5clients_0.4rate_high_privacy completed successfully in 124.4s
+2025-07-24 09:09:20,484 - INFO - Progress: 7/360
+2025-07-24 09:09:20,484 - INFO - Running experiment: mnist_federated_star_5clients_0.4rate_medium_privacy
+2025-07-24 09:11:53,719 - INFO - ✅ Experiment mnist_federated_star_5clients_0.4rate_medium_privacy completed successfully in 153.2s
+2025-07-24 09:11:53,720 - INFO - Progress: 8/360
+2025-07-24 09:11:53,720 - INFO - Running experiment: mnist_federated_star_5clients_0.4rate_low_privacy
+2025-07-24 09:14:49,283 - INFO - ✅ Experiment mnist_federated_star_5clients_0.4rate_low_privacy completed successfully in 175.6s
+2025-07-24 09:14:49,284 - INFO - Progress: 9/360
+2025-07-24 09:14:49,284 - INFO - Running experiment: mnist_federated_star_5clients_0.6rate_no_dp
+2025-07-24 09:16:29,379 - INFO - ✅ Experiment mnist_federated_star_5clients_0.6rate_no_dp completed successfully in 100.1s
+2025-07-24 09:16:29,379 - INFO - Progress: 10/360
+2025-07-24 09:16:29,379 - INFO - Running experiment: mnist_federated_star_5clients_0.6rate_high_privacy
+2025-07-24 09:18:42,871 - INFO - ✅ Experiment mnist_federated_star_5clients_0.6rate_high_privacy completed successfully in 133.5s
+2025-07-24 09:18:42,872 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 09:18:42,872 - INFO - Progress: 11/360
+2025-07-24 09:18:42,872 - INFO - Running experiment: mnist_federated_star_5clients_0.6rate_medium_privacy
+2025-07-24 09:21:04,758 - INFO - ✅ Experiment mnist_federated_star_5clients_0.6rate_medium_privacy completed successfully in 141.9s
+2025-07-24 09:21:04,758 - INFO - Progress: 12/360
+2025-07-24 09:21:04,758 - INFO - Running experiment: mnist_federated_star_5clients_0.6rate_low_privacy
+2025-07-24 09:23:24,044 - INFO - ✅ Experiment mnist_federated_star_5clients_0.6rate_low_privacy completed successfully in 139.3s
+2025-07-24 09:23:24,045 - INFO - Progress: 13/360
+2025-07-24 09:23:24,045 - INFO - Running experiment: mnist_federated_star_5clients_0.8rate_no_dp
+2025-07-24 09:25:00,772 - INFO - ✅ Experiment mnist_federated_star_5clients_0.8rate_no_dp completed successfully in 96.7s
+2025-07-24 09:25:00,773 - INFO - Progress: 14/360
+2025-07-24 09:25:00,773 - INFO - Running experiment: mnist_federated_star_5clients_0.8rate_high_privacy
+2025-07-24 09:27:01,422 - INFO - ✅ Experiment mnist_federated_star_5clients_0.8rate_high_privacy completed successfully in 120.6s
+2025-07-24 09:27:01,423 - INFO - Progress: 15/360
+2025-07-24 09:27:01,423 - INFO - Running experiment: mnist_federated_star_5clients_0.8rate_medium_privacy
+2025-07-24 09:29:13,198 - INFO - ✅ Experiment mnist_federated_star_5clients_0.8rate_medium_privacy completed successfully in 131.8s
+2025-07-24 09:29:13,198 - INFO - Progress: 16/360
+2025-07-24 09:29:13,199 - INFO - Running experiment: mnist_federated_star_5clients_0.8rate_low_privacy
+2025-07-24 09:31:26,056 - INFO - ✅ Experiment mnist_federated_star_5clients_0.8rate_low_privacy completed successfully in 132.9s
+2025-07-24 09:31:26,056 - INFO - Progress: 17/360
+2025-07-24 09:31:26,056 - INFO - Running experiment: mnist_federated_star_5clients_1.0rate_no_dp
+2025-07-24 09:33:00,385 - INFO - ✅ Experiment mnist_federated_star_5clients_1.0rate_no_dp completed successfully in 94.3s
+2025-07-24 09:33:00,385 - INFO - Progress: 18/360
+2025-07-24 09:33:00,386 - INFO - Running experiment: mnist_federated_star_5clients_1.0rate_high_privacy
+2025-07-24 09:34:50,737 - INFO - ✅ Experiment mnist_federated_star_5clients_1.0rate_high_privacy completed successfully in 110.4s
+2025-07-24 09:34:50,737 - INFO - Progress: 19/360
+2025-07-24 09:34:50,737 - INFO - Running experiment: mnist_federated_star_5clients_1.0rate_medium_privacy
+2025-07-24 09:36:51,954 - INFO - ✅ Experiment mnist_federated_star_5clients_1.0rate_medium_privacy completed successfully in 121.2s
+2025-07-24 09:36:51,955 - INFO - Progress: 20/360
+2025-07-24 09:36:51,955 - INFO - Running experiment: mnist_federated_star_5clients_1.0rate_low_privacy
+2025-07-24 09:38:59,153 - INFO - ✅ Experiment mnist_federated_star_5clients_1.0rate_low_privacy completed successfully in 127.2s
+2025-07-24 09:38:59,155 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 09:38:59,155 - INFO - Progress: 21/360
+2025-07-24 09:38:59,155 - INFO - Running experiment: mnist_federated_star_10clients_0.2rate_no_dp
+2025-07-24 09:40:33,225 - INFO - ✅ Experiment mnist_federated_star_10clients_0.2rate_no_dp completed successfully in 94.1s
+2025-07-24 09:40:33,225 - INFO - Progress: 22/360
+2025-07-24 09:40:33,225 - INFO - Running experiment: mnist_federated_star_10clients_0.2rate_high_privacy
+2025-07-24 09:42:40,423 - INFO - ✅ Experiment mnist_federated_star_10clients_0.2rate_high_privacy completed successfully in 127.2s
+2025-07-24 09:42:40,423 - INFO - Progress: 23/360
+2025-07-24 09:42:40,423 - INFO - Running experiment: mnist_federated_star_10clients_0.2rate_medium_privacy
+2025-07-24 09:45:00,766 - INFO - ✅ Experiment mnist_federated_star_10clients_0.2rate_medium_privacy completed successfully in 140.3s
+2025-07-24 09:45:00,766 - INFO - Progress: 24/360
+2025-07-24 09:45:00,766 - INFO - Running experiment: mnist_federated_star_10clients_0.2rate_low_privacy
+2025-07-24 09:47:53,861 - INFO - ✅ Experiment mnist_federated_star_10clients_0.2rate_low_privacy completed successfully in 173.1s
+2025-07-24 09:47:53,862 - INFO - Progress: 25/360
+2025-07-24 09:47:53,862 - INFO - Running experiment: mnist_federated_star_10clients_0.4rate_no_dp
+2025-07-24 09:49:15,461 - INFO - ✅ Experiment mnist_federated_star_10clients_0.4rate_no_dp completed successfully in 81.6s
+2025-07-24 09:49:15,462 - INFO - Progress: 26/360
+2025-07-24 09:49:15,462 - INFO - Running experiment: mnist_federated_star_10clients_0.4rate_high_privacy
+2025-07-24 09:51:09,307 - INFO - ✅ Experiment mnist_federated_star_10clients_0.4rate_high_privacy completed successfully in 113.8s
+2025-07-24 09:51:09,309 - INFO - Progress: 27/360
+2025-07-24 09:51:09,309 - INFO - Running experiment: mnist_federated_star_10clients_0.4rate_medium_privacy
+2025-07-24 09:53:33,343 - INFO - ✅ Experiment mnist_federated_star_10clients_0.4rate_medium_privacy completed successfully in 144.0s
+2025-07-24 09:53:33,343 - INFO - Progress: 28/360
+2025-07-24 09:53:33,344 - INFO - Running experiment: mnist_federated_star_10clients_0.4rate_low_privacy
+2025-07-24 09:56:13,890 - INFO - ✅ Experiment mnist_federated_star_10clients_0.4rate_low_privacy completed successfully in 160.5s
+2025-07-24 09:56:13,891 - INFO - Progress: 29/360
+2025-07-24 09:56:13,891 - INFO - Running experiment: mnist_federated_star_10clients_0.6rate_no_dp
+2025-07-24 09:57:39,382 - INFO - ✅ Experiment mnist_federated_star_10clients_0.6rate_no_dp completed successfully in 85.5s
+2025-07-24 09:57:39,382 - INFO - Progress: 30/360
+2025-07-24 09:57:39,383 - INFO - Running experiment: mnist_federated_star_10clients_0.6rate_high_privacy
+2025-07-24 09:59:25,339 - INFO - ✅ Experiment mnist_federated_star_10clients_0.6rate_high_privacy completed successfully in 106.0s
+2025-07-24 09:59:25,341 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 09:59:25,342 - INFO - Progress: 31/360
+2025-07-24 09:59:25,342 - INFO - Running experiment: mnist_federated_star_10clients_0.6rate_medium_privacy
+2025-07-24 10:01:35,045 - INFO - ✅ Experiment mnist_federated_star_10clients_0.6rate_medium_privacy completed successfully in 129.7s
+2025-07-24 10:01:35,045 - INFO - Progress: 32/360
+2025-07-24 10:01:35,046 - INFO - Running experiment: mnist_federated_star_10clients_0.6rate_low_privacy
+2025-07-24 10:04:08,383 - INFO - ✅ Experiment mnist_federated_star_10clients_0.6rate_low_privacy completed successfully in 153.3s
+2025-07-24 10:04:08,384 - INFO - Progress: 33/360
+2025-07-24 10:04:08,384 - INFO - Running experiment: mnist_federated_star_10clients_0.8rate_no_dp
+2025-07-24 10:05:26,157 - INFO - ✅ Experiment mnist_federated_star_10clients_0.8rate_no_dp completed successfully in 77.8s
+2025-07-24 10:05:26,157 - INFO - Progress: 34/360
+2025-07-24 10:05:26,157 - INFO - Running experiment: mnist_federated_star_10clients_0.8rate_high_privacy
+2025-07-24 10:07:08,354 - INFO - ✅ Experiment mnist_federated_star_10clients_0.8rate_high_privacy completed successfully in 102.2s
+2025-07-24 10:07:08,355 - INFO - Progress: 35/360
+2025-07-24 10:07:08,355 - INFO - Running experiment: mnist_federated_star_10clients_0.8rate_medium_privacy
+2025-07-24 10:09:00,398 - INFO - ✅ Experiment mnist_federated_star_10clients_0.8rate_medium_privacy completed successfully in 112.0s
+2025-07-24 10:09:00,398 - INFO - Progress: 36/360
+2025-07-24 10:09:00,398 - INFO - Running experiment: mnist_federated_star_10clients_0.8rate_low_privacy
+2025-07-24 10:10:52,768 - INFO - ✅ Experiment mnist_federated_star_10clients_0.8rate_low_privacy completed successfully in 112.4s
+2025-07-24 10:10:52,769 - INFO - Progress: 37/360
+2025-07-24 10:10:52,769 - INFO - Running experiment: mnist_federated_star_10clients_1.0rate_no_dp
+2025-07-24 10:12:06,609 - INFO - ✅ Experiment mnist_federated_star_10clients_1.0rate_no_dp completed successfully in 73.8s
+2025-07-24 10:12:06,609 - INFO - Progress: 38/360
+2025-07-24 10:12:06,610 - INFO - Running experiment: mnist_federated_star_10clients_1.0rate_high_privacy
+2025-07-24 10:13:32,167 - INFO - ✅ Experiment mnist_federated_star_10clients_1.0rate_high_privacy completed successfully in 85.6s
+2025-07-24 10:13:32,168 - INFO - Progress: 39/360
+2025-07-24 10:13:32,168 - INFO - Running experiment: mnist_federated_star_10clients_1.0rate_medium_privacy
+2025-07-24 10:15:05,719 - INFO - ✅ Experiment mnist_federated_star_10clients_1.0rate_medium_privacy completed successfully in 93.6s
+2025-07-24 10:15:05,719 - INFO - Progress: 40/360
+2025-07-24 10:15:05,720 - INFO - Running experiment: mnist_federated_star_10clients_1.0rate_low_privacy
+2025-07-24 10:16:47,355 - INFO - ✅ Experiment mnist_federated_star_10clients_1.0rate_low_privacy completed successfully in 101.6s
+2025-07-24 10:16:47,358 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 10:16:47,358 - INFO - Progress: 41/360
+2025-07-24 10:16:47,358 - INFO - Running experiment: mnist_federated_star_20clients_0.2rate_no_dp
+2025-07-24 10:18:28,191 - INFO - ✅ Experiment mnist_federated_star_20clients_0.2rate_no_dp completed successfully in 100.8s
+2025-07-24 10:18:28,192 - INFO - Progress: 42/360
+2025-07-24 10:18:28,192 - INFO - Running experiment: mnist_federated_star_20clients_0.2rate_high_privacy
+2025-07-24 10:20:42,989 - INFO - ✅ Experiment mnist_federated_star_20clients_0.2rate_high_privacy completed successfully in 134.8s
+2025-07-24 10:20:42,990 - INFO - Progress: 43/360
+2025-07-24 10:20:42,990 - INFO - Running experiment: mnist_federated_star_20clients_0.2rate_medium_privacy
+2025-07-24 10:23:17,573 - INFO - ✅ Experiment mnist_federated_star_20clients_0.2rate_medium_privacy completed successfully in 154.6s
+2025-07-24 10:23:17,574 - INFO - Progress: 44/360
+2025-07-24 10:23:17,574 - INFO - Running experiment: mnist_federated_star_20clients_0.2rate_low_privacy
+2025-07-24 10:26:01,272 - INFO - ✅ Experiment mnist_federated_star_20clients_0.2rate_low_privacy completed successfully in 163.7s
+2025-07-24 10:26:01,273 - INFO - Progress: 45/360
+2025-07-24 10:26:01,273 - INFO - Running experiment: mnist_federated_star_20clients_0.4rate_no_dp
+2025-07-24 10:27:29,135 - INFO - ✅ Experiment mnist_federated_star_20clients_0.4rate_no_dp completed successfully in 87.9s
+2025-07-24 10:27:29,135 - INFO - Progress: 46/360
+2025-07-24 10:27:29,136 - INFO - Running experiment: mnist_federated_star_20clients_0.4rate_high_privacy
+2025-07-24 10:29:18,234 - INFO - ✅ Experiment mnist_federated_star_20clients_0.4rate_high_privacy completed successfully in 109.1s
+2025-07-24 10:29:18,235 - INFO - Progress: 47/360
+2025-07-24 10:29:18,235 - INFO - Running experiment: mnist_federated_star_20clients_0.4rate_medium_privacy
+2025-07-24 10:31:40,918 - INFO - ✅ Experiment mnist_federated_star_20clients_0.4rate_medium_privacy completed successfully in 142.7s
+2025-07-24 10:31:40,919 - INFO - Progress: 48/360
+2025-07-24 10:31:40,919 - INFO - Running experiment: mnist_federated_star_20clients_0.4rate_low_privacy
+2025-07-24 10:34:17,263 - INFO - ✅ Experiment mnist_federated_star_20clients_0.4rate_low_privacy completed successfully in 156.3s
+2025-07-24 10:34:17,263 - INFO - Progress: 49/360
+2025-07-24 10:34:17,263 - INFO - Running experiment: mnist_federated_star_20clients_0.6rate_no_dp
+2025-07-24 10:35:35,719 - INFO - ✅ Experiment mnist_federated_star_20clients_0.6rate_no_dp completed successfully in 78.5s
+2025-07-24 10:35:35,719 - INFO - Progress: 50/360
+2025-07-24 10:35:35,719 - INFO - Running experiment: mnist_federated_star_20clients_0.6rate_high_privacy
+2025-07-24 10:37:25,462 - INFO - ✅ Experiment mnist_federated_star_20clients_0.6rate_high_privacy completed successfully in 109.7s
+2025-07-24 10:37:25,464 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 10:37:25,464 - INFO - Progress: 51/360
+2025-07-24 10:37:25,464 - INFO - Running experiment: mnist_federated_star_20clients_0.6rate_medium_privacy
+2025-07-24 10:39:12,323 - INFO - ✅ Experiment mnist_federated_star_20clients_0.6rate_medium_privacy completed successfully in 106.9s
+2025-07-24 10:39:12,323 - INFO - Progress: 52/360
+2025-07-24 10:39:12,324 - INFO - Running experiment: mnist_federated_star_20clients_0.6rate_low_privacy
+2025-07-24 10:41:40,786 - INFO - ✅ Experiment mnist_federated_star_20clients_0.6rate_low_privacy completed successfully in 148.5s
+2025-07-24 10:41:40,786 - INFO - Progress: 53/360
+2025-07-24 10:41:40,786 - INFO - Running experiment: mnist_federated_star_20clients_0.8rate_no_dp
+2025-07-24 10:42:52,114 - INFO - ✅ Experiment mnist_federated_star_20clients_0.8rate_no_dp completed successfully in 71.3s
+2025-07-24 10:42:52,115 - INFO - Progress: 54/360
+2025-07-24 10:42:52,115 - INFO - Running experiment: mnist_federated_star_20clients_0.8rate_high_privacy
+2025-07-24 10:44:18,946 - INFO - ✅ Experiment mnist_federated_star_20clients_0.8rate_high_privacy completed successfully in 86.8s
+2025-07-24 10:44:18,946 - INFO - Progress: 55/360
+2025-07-24 10:44:18,946 - INFO - Running experiment: mnist_federated_star_20clients_0.8rate_medium_privacy
+2025-07-24 10:46:04,628 - INFO - ✅ Experiment mnist_federated_star_20clients_0.8rate_medium_privacy completed successfully in 105.7s
+2025-07-24 10:46:04,628 - INFO - Progress: 56/360
+2025-07-24 10:46:04,628 - INFO - Running experiment: mnist_federated_star_20clients_0.8rate_low_privacy
+2025-07-24 10:47:58,473 - INFO - ✅ Experiment mnist_federated_star_20clients_0.8rate_low_privacy completed successfully in 113.8s
+2025-07-24 10:47:58,473 - INFO - Progress: 57/360
+2025-07-24 10:47:58,474 - INFO - Running experiment: mnist_federated_star_20clients_1.0rate_no_dp
+2025-07-24 10:49:09,082 - INFO - ✅ Experiment mnist_federated_star_20clients_1.0rate_no_dp completed successfully in 70.6s
+2025-07-24 10:49:09,082 - INFO - Progress: 58/360
+2025-07-24 10:49:09,082 - INFO - Running experiment: mnist_federated_star_20clients_1.0rate_high_privacy
+2025-07-24 10:50:31,314 - INFO - ✅ Experiment mnist_federated_star_20clients_1.0rate_high_privacy completed successfully in 82.2s
+2025-07-24 10:50:31,314 - INFO - Progress: 59/360
+2025-07-24 10:50:31,315 - INFO - Running experiment: mnist_federated_star_20clients_1.0rate_medium_privacy
+2025-07-24 10:52:01,359 - INFO - ✅ Experiment mnist_federated_star_20clients_1.0rate_medium_privacy completed successfully in 90.0s
+2025-07-24 10:52:01,359 - INFO - Progress: 60/360
+2025-07-24 10:52:01,360 - INFO - Running experiment: mnist_federated_star_20clients_1.0rate_low_privacy
+2025-07-24 10:53:36,756 - INFO - ✅ Experiment mnist_federated_star_20clients_1.0rate_low_privacy completed successfully in 95.4s
+2025-07-24 10:53:36,759 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 10:53:36,759 - INFO - Progress: 61/360
+2025-07-24 10:53:36,759 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.2rate_no_dp
+2025-07-24 10:55:08,793 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.2rate_no_dp completed successfully in 92.0s
+2025-07-24 10:55:08,793 - INFO - Progress: 62/360
+2025-07-24 10:55:08,794 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.2rate_high_privacy
+2025-07-24 10:57:26,279 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.2rate_high_privacy completed successfully in 137.5s
+2025-07-24 10:57:26,280 - INFO - Progress: 63/360
+2025-07-24 10:57:26,280 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.2rate_medium_privacy
+2025-07-24 10:59:56,882 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.2rate_medium_privacy completed successfully in 150.6s
+2025-07-24 10:59:56,882 - INFO - Progress: 64/360
+2025-07-24 10:59:56,882 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.2rate_low_privacy
+2025-07-24 11:02:59,622 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.2rate_low_privacy completed successfully in 182.7s
+2025-07-24 11:02:59,622 - INFO - Progress: 65/360
+2025-07-24 11:02:59,622 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.4rate_no_dp
+2025-07-24 11:04:38,784 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.4rate_no_dp completed successfully in 99.2s
+2025-07-24 11:04:38,784 - INFO - Progress: 66/360
+2025-07-24 11:04:38,784 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.4rate_high_privacy
+2025-07-24 11:06:42,589 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.4rate_high_privacy completed successfully in 123.8s
+2025-07-24 11:06:42,589 - INFO - Progress: 67/360
+2025-07-24 11:06:42,590 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.4rate_medium_privacy
+2025-07-24 11:09:04,762 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.4rate_medium_privacy completed successfully in 142.2s
+2025-07-24 11:09:04,762 - INFO - Progress: 68/360
+2025-07-24 11:09:04,762 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.4rate_low_privacy
+2025-07-24 11:11:49,256 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.4rate_low_privacy completed successfully in 164.5s
+2025-07-24 11:11:49,257 - INFO - Progress: 69/360
+2025-07-24 11:11:49,257 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.6rate_no_dp
+2025-07-24 11:13:28,038 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.6rate_no_dp completed successfully in 98.8s
+2025-07-24 11:13:28,038 - INFO - Progress: 70/360
+2025-07-24 11:13:28,039 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.6rate_high_privacy
+2025-07-24 11:15:30,094 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.6rate_high_privacy completed successfully in 122.1s
+2025-07-24 11:15:30,098 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 11:15:30,098 - INFO - Progress: 71/360
+2025-07-24 11:15:30,098 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.6rate_medium_privacy
+2025-07-24 11:17:42,527 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.6rate_medium_privacy completed successfully in 132.4s
+2025-07-24 11:17:42,527 - INFO - Progress: 72/360
+2025-07-24 11:17:42,528 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.6rate_low_privacy
+2025-07-24 11:20:22,200 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.6rate_low_privacy completed successfully in 159.7s
+2025-07-24 11:20:22,200 - INFO - Progress: 73/360
+2025-07-24 11:20:22,201 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.8rate_no_dp
+2025-07-24 11:22:03,264 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.8rate_no_dp completed successfully in 101.1s
+2025-07-24 11:22:03,265 - INFO - Progress: 74/360
+2025-07-24 11:22:03,265 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.8rate_high_privacy
+2025-07-24 11:24:04,774 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.8rate_high_privacy completed successfully in 121.5s
+2025-07-24 11:24:04,774 - INFO - Progress: 75/360
+2025-07-24 11:24:04,774 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.8rate_medium_privacy
+2025-07-24 11:26:18,476 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.8rate_medium_privacy completed successfully in 133.7s
+2025-07-24 11:26:18,476 - INFO - Progress: 76/360
+2025-07-24 11:26:18,476 - INFO - Running experiment: mnist_decentralized_ring_5clients_0.8rate_low_privacy
+2025-07-24 11:28:45,074 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_0.8rate_low_privacy completed successfully in 146.6s
+2025-07-24 11:28:45,074 - INFO - Progress: 77/360
+2025-07-24 11:28:45,074 - INFO - Running experiment: mnist_decentralized_ring_5clients_1.0rate_no_dp
+2025-07-24 11:30:22,657 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_1.0rate_no_dp completed successfully in 97.6s
+2025-07-24 11:30:22,657 - INFO - Progress: 78/360
+2025-07-24 11:30:22,657 - INFO - Running experiment: mnist_decentralized_ring_5clients_1.0rate_high_privacy
+2025-07-24 11:32:13,618 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_1.0rate_high_privacy completed successfully in 111.0s
+2025-07-24 11:32:13,618 - INFO - Progress: 79/360
+2025-07-24 11:32:13,618 - INFO - Running experiment: mnist_decentralized_ring_5clients_1.0rate_medium_privacy
+2025-07-24 11:34:13,932 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_1.0rate_medium_privacy completed successfully in 120.3s
+2025-07-24 11:34:13,932 - INFO - Progress: 80/360
+2025-07-24 11:34:13,933 - INFO - Running experiment: mnist_decentralized_ring_5clients_1.0rate_low_privacy
+2025-07-24 11:36:22,527 - INFO - ✅ Experiment mnist_decentralized_ring_5clients_1.0rate_low_privacy completed successfully in 128.6s
+2025-07-24 11:36:22,531 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 11:36:22,531 - INFO - Progress: 81/360
+2025-07-24 11:36:22,531 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.2rate_no_dp
+2025-07-24 11:37:55,339 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.2rate_no_dp completed successfully in 92.8s
+2025-07-24 11:37:55,339 - INFO - Progress: 82/360
+2025-07-24 11:37:55,339 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.2rate_high_privacy
+2025-07-24 11:39:51,109 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.2rate_high_privacy completed successfully in 115.8s
+2025-07-24 11:39:51,110 - INFO - Progress: 83/360
+2025-07-24 11:39:51,110 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.2rate_medium_privacy
+2025-07-24 11:42:18,770 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.2rate_medium_privacy completed successfully in 147.7s
+2025-07-24 11:42:18,770 - INFO - Progress: 84/360
+2025-07-24 11:42:18,770 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.2rate_low_privacy
+2025-07-24 11:44:58,036 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.2rate_low_privacy completed successfully in 159.3s
+2025-07-24 11:44:58,036 - INFO - Progress: 85/360
+2025-07-24 11:44:58,036 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.4rate_no_dp
+2025-07-24 11:46:28,252 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.4rate_no_dp completed successfully in 90.2s
+2025-07-24 11:46:28,253 - INFO - Progress: 86/360
+2025-07-24 11:46:28,253 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.4rate_high_privacy
+2025-07-24 11:48:18,136 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.4rate_high_privacy completed successfully in 109.9s
+2025-07-24 11:48:18,136 - INFO - Progress: 87/360
+2025-07-24 11:48:18,136 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.4rate_medium_privacy
+2025-07-24 11:50:31,210 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.4rate_medium_privacy completed successfully in 133.1s
+2025-07-24 11:50:31,210 - INFO - Progress: 88/360
+2025-07-24 11:50:31,211 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.4rate_low_privacy
+2025-07-24 11:53:16,693 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.4rate_low_privacy completed successfully in 165.5s
+2025-07-24 11:53:16,694 - INFO - Progress: 89/360
+2025-07-24 11:53:16,694 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.6rate_no_dp
+2025-07-24 11:54:46,408 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.6rate_no_dp completed successfully in 89.7s
+2025-07-24 11:54:46,408 - INFO - Progress: 90/360
+2025-07-24 11:54:46,409 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.6rate_high_privacy
+2025-07-24 11:56:31,081 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.6rate_high_privacy completed successfully in 104.7s
+2025-07-24 11:56:31,085 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 11:56:31,085 - INFO - Progress: 91/360
+2025-07-24 11:56:31,085 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.6rate_medium_privacy
+2025-07-24 11:58:45,964 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.6rate_medium_privacy completed successfully in 134.9s
+2025-07-24 11:58:45,964 - INFO - Progress: 92/360
+2025-07-24 11:58:45,965 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.6rate_low_privacy
+2025-07-24 12:00:58,689 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.6rate_low_privacy completed successfully in 132.7s
+2025-07-24 12:00:58,689 - INFO - Progress: 93/360
+2025-07-24 12:00:58,689 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.8rate_no_dp
+2025-07-24 12:02:20,573 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.8rate_no_dp completed successfully in 81.9s
+2025-07-24 12:02:20,573 - INFO - Progress: 94/360
+2025-07-24 12:02:20,573 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.8rate_high_privacy
+2025-07-24 12:03:57,443 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.8rate_high_privacy completed successfully in 96.9s
+2025-07-24 12:03:57,443 - INFO - Progress: 95/360
+2025-07-24 12:03:57,443 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.8rate_medium_privacy
+2025-07-24 12:05:45,382 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.8rate_medium_privacy completed successfully in 107.9s
+2025-07-24 12:05:45,383 - INFO - Progress: 96/360
+2025-07-24 12:05:45,383 - INFO - Running experiment: mnist_decentralized_ring_10clients_0.8rate_low_privacy
+2025-07-24 12:07:39,940 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_0.8rate_low_privacy completed successfully in 114.6s
+2025-07-24 12:07:39,941 - INFO - Progress: 97/360
+2025-07-24 12:07:39,941 - INFO - Running experiment: mnist_decentralized_ring_10clients_1.0rate_no_dp
+2025-07-24 12:08:55,916 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_1.0rate_no_dp completed successfully in 76.0s
+2025-07-24 12:08:55,916 - INFO - Progress: 98/360
+2025-07-24 12:08:55,916 - INFO - Running experiment: mnist_decentralized_ring_10clients_1.0rate_high_privacy
+2025-07-24 12:10:22,817 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_1.0rate_high_privacy completed successfully in 86.9s
+2025-07-24 12:10:22,818 - INFO - Progress: 99/360
+2025-07-24 12:10:22,818 - INFO - Running experiment: mnist_decentralized_ring_10clients_1.0rate_medium_privacy
+2025-07-24 12:11:59,349 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_1.0rate_medium_privacy completed successfully in 96.5s
+2025-07-24 12:11:59,349 - INFO - Progress: 100/360
+2025-07-24 12:11:59,349 - INFO - Running experiment: mnist_decentralized_ring_10clients_1.0rate_low_privacy
+2025-07-24 12:13:43,205 - INFO - ✅ Experiment mnist_decentralized_ring_10clients_1.0rate_low_privacy completed successfully in 103.9s
+2025-07-24 12:13:43,210 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 12:13:43,210 - INFO - Progress: 101/360
+2025-07-24 12:13:43,210 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.2rate_no_dp
+2025-07-24 12:15:20,700 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.2rate_no_dp completed successfully in 97.5s
+2025-07-24 12:15:20,700 - INFO - Progress: 102/360
+2025-07-24 12:15:20,700 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.2rate_high_privacy
+2025-07-24 12:17:23,917 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.2rate_high_privacy completed successfully in 123.2s
+2025-07-24 12:17:23,918 - INFO - Progress: 103/360
+2025-07-24 12:17:23,918 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.2rate_medium_privacy
+2025-07-24 12:20:11,426 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.2rate_medium_privacy completed successfully in 167.5s
+2025-07-24 12:20:11,426 - INFO - Progress: 104/360
+2025-07-24 12:20:11,427 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.2rate_low_privacy
+2025-07-24 12:23:23,650 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.2rate_low_privacy completed successfully in 192.2s
+2025-07-24 12:23:23,651 - INFO - Progress: 105/360
+2025-07-24 12:23:23,651 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.4rate_no_dp
+2025-07-24 12:24:54,144 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.4rate_no_dp completed successfully in 90.5s
+2025-07-24 12:24:54,144 - INFO - Progress: 106/360
+2025-07-24 12:24:54,145 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.4rate_high_privacy
+2025-07-24 12:26:48,701 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.4rate_high_privacy completed successfully in 114.6s
+2025-07-24 12:26:48,701 - INFO - Progress: 107/360
+2025-07-24 12:26:48,701 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.4rate_medium_privacy
+2025-07-24 12:29:07,357 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.4rate_medium_privacy completed successfully in 138.7s
+2025-07-24 12:29:07,357 - INFO - Progress: 108/360
+2025-07-24 12:29:07,358 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.4rate_low_privacy
+2025-07-24 12:32:00,276 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.4rate_low_privacy completed successfully in 172.9s
+2025-07-24 12:32:00,277 - INFO - Progress: 109/360
+2025-07-24 12:32:00,277 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.6rate_no_dp
+2025-07-24 12:33:23,212 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.6rate_no_dp completed successfully in 82.9s
+2025-07-24 12:33:23,212 - INFO - Progress: 110/360
+2025-07-24 12:33:23,213 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.6rate_high_privacy
+2025-07-24 12:35:09,661 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.6rate_high_privacy completed successfully in 106.4s
+2025-07-24 12:35:09,666 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 12:35:09,666 - INFO - Progress: 111/360
+2025-07-24 12:35:09,666 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.6rate_medium_privacy
+2025-07-24 12:37:12,367 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.6rate_medium_privacy completed successfully in 122.7s
+2025-07-24 12:37:12,367 - INFO - Progress: 112/360
+2025-07-24 12:37:12,368 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.6rate_low_privacy
+2025-07-24 12:39:29,518 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.6rate_low_privacy completed successfully in 137.2s
+2025-07-24 12:39:29,518 - INFO - Progress: 113/360
+2025-07-24 12:39:29,519 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.8rate_no_dp
+2025-07-24 12:40:46,817 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.8rate_no_dp completed successfully in 77.3s
+2025-07-24 12:40:46,818 - INFO - Progress: 114/360
+2025-07-24 12:40:46,818 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.8rate_high_privacy
+2025-07-24 12:42:19,600 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.8rate_high_privacy completed successfully in 92.8s
+2025-07-24 12:42:19,600 - INFO - Progress: 115/360
+2025-07-24 12:42:19,600 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.8rate_medium_privacy
+2025-07-24 12:44:11,221 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.8rate_medium_privacy completed successfully in 111.6s
+2025-07-24 12:44:11,221 - INFO - Progress: 116/360
+2025-07-24 12:44:11,222 - INFO - Running experiment: mnist_decentralized_ring_20clients_0.8rate_low_privacy
+2025-07-24 12:46:18,583 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_0.8rate_low_privacy completed successfully in 127.4s
+2025-07-24 12:46:18,583 - INFO - Progress: 117/360
+2025-07-24 12:46:18,583 - INFO - Running experiment: mnist_decentralized_ring_20clients_1.0rate_no_dp
+2025-07-24 12:47:34,447 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_1.0rate_no_dp completed successfully in 75.9s
+2025-07-24 12:47:34,448 - INFO - Progress: 118/360
+2025-07-24 12:47:34,448 - INFO - Running experiment: mnist_decentralized_ring_20clients_1.0rate_high_privacy
+2025-07-24 12:49:00,709 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_1.0rate_high_privacy completed successfully in 86.3s
+2025-07-24 12:49:00,709 - INFO - Progress: 119/360
+2025-07-24 12:49:00,709 - INFO - Running experiment: mnist_decentralized_ring_20clients_1.0rate_medium_privacy
+2025-07-24 12:50:35,192 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_1.0rate_medium_privacy completed successfully in 94.5s
+2025-07-24 12:50:35,192 - INFO - Progress: 120/360
+2025-07-24 12:50:35,192 - INFO - Running experiment: mnist_decentralized_ring_20clients_1.0rate_low_privacy
+2025-07-24 12:52:15,961 - INFO - ✅ Experiment mnist_decentralized_ring_20clients_1.0rate_low_privacy completed successfully in 100.8s
+2025-07-24 12:52:15,967 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 12:52:15,967 - INFO - Progress: 121/360
+2025-07-24 12:52:15,967 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.2rate_no_dp
+2025-07-24 12:53:55,656 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.2rate_no_dp completed successfully in 99.7s
+2025-07-24 12:53:55,657 - INFO - Progress: 122/360
+2025-07-24 12:53:55,657 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.2rate_high_privacy
+2025-07-24 12:56:15,557 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.2rate_high_privacy completed successfully in 139.9s
+2025-07-24 12:56:15,558 - INFO - Progress: 123/360
+2025-07-24 12:56:15,558 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.2rate_medium_privacy
+2025-07-24 12:58:47,419 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.2rate_medium_privacy completed successfully in 151.9s
+2025-07-24 12:58:47,419 - INFO - Progress: 124/360
+2025-07-24 12:58:47,419 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.2rate_low_privacy
+2025-07-24 13:01:26,473 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.2rate_low_privacy completed successfully in 159.1s
+2025-07-24 13:01:26,473 - INFO - Progress: 125/360
+2025-07-24 13:01:26,473 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.4rate_no_dp
+2025-07-24 13:03:10,269 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.4rate_no_dp completed successfully in 103.8s
+2025-07-24 13:03:10,269 - INFO - Progress: 126/360
+2025-07-24 13:03:10,269 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.4rate_high_privacy
+2025-07-24 13:05:13,320 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.4rate_high_privacy completed successfully in 123.1s
+2025-07-24 13:05:13,321 - INFO - Progress: 127/360
+2025-07-24 13:05:13,321 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.4rate_medium_privacy
+2025-07-24 13:07:38,258 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.4rate_medium_privacy completed successfully in 144.9s
+2025-07-24 13:07:38,259 - INFO - Progress: 128/360
+2025-07-24 13:07:38,259 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.4rate_low_privacy
+2025-07-24 13:10:13,236 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.4rate_low_privacy completed successfully in 155.0s
+2025-07-24 13:10:13,236 - INFO - Progress: 129/360
+2025-07-24 13:10:13,236 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.6rate_no_dp
+2025-07-24 13:11:53,879 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.6rate_no_dp completed successfully in 100.6s
+2025-07-24 13:11:53,879 - INFO - Progress: 130/360
+2025-07-24 13:11:53,879 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.6rate_high_privacy
+2025-07-24 13:13:58,539 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.6rate_high_privacy completed successfully in 124.7s
+2025-07-24 13:13:58,545 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 13:13:58,545 - INFO - Progress: 131/360
+2025-07-24 13:13:58,545 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.6rate_medium_privacy
+2025-07-24 13:16:27,033 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.6rate_medium_privacy completed successfully in 148.5s
+2025-07-24 13:16:27,033 - INFO - Progress: 132/360
+2025-07-24 13:16:27,033 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.6rate_low_privacy
+2025-07-24 13:19:03,044 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.6rate_low_privacy completed successfully in 156.0s
+2025-07-24 13:19:03,044 - INFO - Progress: 133/360
+2025-07-24 13:19:03,044 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.8rate_no_dp
+2025-07-24 13:20:44,529 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.8rate_no_dp completed successfully in 101.5s
+2025-07-24 13:20:44,529 - INFO - Progress: 134/360
+2025-07-24 13:20:44,529 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.8rate_high_privacy
+2025-07-24 13:22:47,320 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.8rate_high_privacy completed successfully in 122.8s
+2025-07-24 13:22:47,320 - INFO - Progress: 135/360
+2025-07-24 13:22:47,320 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.8rate_medium_privacy
+2025-07-24 13:25:04,186 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.8rate_medium_privacy completed successfully in 136.9s
+2025-07-24 13:25:04,187 - INFO - Progress: 136/360
+2025-07-24 13:25:04,187 - INFO - Running experiment: mnist_decentralized_complete_5clients_0.8rate_low_privacy
+2025-07-24 13:27:31,117 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_0.8rate_low_privacy completed successfully in 146.9s
+2025-07-24 13:27:31,117 - INFO - Progress: 137/360
+2025-07-24 13:27:31,117 - INFO - Running experiment: mnist_decentralized_complete_5clients_1.0rate_no_dp
+2025-07-24 13:29:08,362 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_1.0rate_no_dp completed successfully in 97.2s
+2025-07-24 13:29:08,362 - INFO - Progress: 138/360
+2025-07-24 13:29:08,362 - INFO - Running experiment: mnist_decentralized_complete_5clients_1.0rate_high_privacy
+2025-07-24 13:31:00,906 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_1.0rate_high_privacy completed successfully in 112.5s
+2025-07-24 13:31:00,906 - INFO - Progress: 139/360
+2025-07-24 13:31:00,907 - INFO - Running experiment: mnist_decentralized_complete_5clients_1.0rate_medium_privacy
+2025-07-24 13:33:04,296 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_1.0rate_medium_privacy completed successfully in 123.4s
+2025-07-24 13:33:04,297 - INFO - Progress: 140/360
+2025-07-24 13:33:04,297 - INFO - Running experiment: mnist_decentralized_complete_5clients_1.0rate_low_privacy
+2025-07-24 13:35:15,316 - INFO - ✅ Experiment mnist_decentralized_complete_5clients_1.0rate_low_privacy completed successfully in 131.0s
+2025-07-24 13:35:15,323 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 13:35:15,323 - INFO - Progress: 141/360
+2025-07-24 13:35:15,323 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.2rate_no_dp
+2025-07-24 13:36:58,993 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.2rate_no_dp completed successfully in 103.7s
+2025-07-24 13:36:58,993 - INFO - Progress: 142/360
+2025-07-24 13:36:58,993 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.2rate_high_privacy
+2025-07-24 13:39:11,505 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.2rate_high_privacy completed successfully in 132.5s
+2025-07-24 13:39:11,505 - INFO - Progress: 143/360
+2025-07-24 13:39:11,505 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.2rate_medium_privacy
+2025-07-24 13:41:44,487 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.2rate_medium_privacy completed successfully in 153.0s
+2025-07-24 13:41:44,488 - INFO - Progress: 144/360
+2025-07-24 13:41:44,488 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.2rate_low_privacy
+2025-07-24 13:44:31,341 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.2rate_low_privacy completed successfully in 166.9s
+2025-07-24 13:44:31,341 - INFO - Progress: 145/360
+2025-07-24 13:44:31,342 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.4rate_no_dp
+2025-07-24 13:46:04,247 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.4rate_no_dp completed successfully in 92.9s
+2025-07-24 13:46:04,247 - INFO - Progress: 146/360
+2025-07-24 13:46:04,247 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.4rate_high_privacy
+2025-07-24 13:48:07,951 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.4rate_high_privacy completed successfully in 123.7s
+2025-07-24 13:48:07,951 - INFO - Progress: 147/360
+2025-07-24 13:48:07,951 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.4rate_medium_privacy
+2025-07-24 13:50:30,317 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.4rate_medium_privacy completed successfully in 142.4s
+2025-07-24 13:50:30,318 - INFO - Progress: 148/360
+2025-07-24 13:50:30,318 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.4rate_low_privacy
+2025-07-24 13:53:22,604 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.4rate_low_privacy completed successfully in 172.3s
+2025-07-24 13:53:22,605 - INFO - Progress: 149/360
+2025-07-24 13:53:22,605 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.6rate_no_dp
+2025-07-24 13:54:54,810 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.6rate_no_dp completed successfully in 92.2s
+2025-07-24 13:54:54,810 - INFO - Progress: 150/360
+2025-07-24 13:54:54,811 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.6rate_high_privacy
+2025-07-24 13:56:43,437 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.6rate_high_privacy completed successfully in 108.6s
+2025-07-24 13:56:43,443 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 13:56:43,443 - INFO - Progress: 151/360
+2025-07-24 13:56:43,444 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.6rate_medium_privacy
+2025-07-24 13:59:08,158 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.6rate_medium_privacy completed successfully in 144.7s
+2025-07-24 13:59:08,158 - INFO - Progress: 152/360
+2025-07-24 13:59:08,159 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.6rate_low_privacy
+2025-07-24 14:01:30,822 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.6rate_low_privacy completed successfully in 142.7s
+2025-07-24 14:01:30,823 - INFO - Progress: 153/360
+2025-07-24 14:01:30,823 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.8rate_no_dp
+2025-07-24 14:03:05,371 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.8rate_no_dp completed successfully in 94.5s
+2025-07-24 14:03:05,372 - INFO - Progress: 154/360
+2025-07-24 14:03:05,372 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.8rate_high_privacy
+2025-07-24 14:04:57,036 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.8rate_high_privacy completed successfully in 111.7s
+2025-07-24 14:04:57,037 - INFO - Progress: 155/360
+2025-07-24 14:04:57,037 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.8rate_medium_privacy
+2025-07-24 14:06:52,202 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.8rate_medium_privacy completed successfully in 115.2s
+2025-07-24 14:06:52,202 - INFO - Progress: 156/360
+2025-07-24 14:06:52,202 - INFO - Running experiment: mnist_decentralized_complete_10clients_0.8rate_low_privacy
+2025-07-24 14:08:55,390 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_0.8rate_low_privacy completed successfully in 123.2s
+2025-07-24 14:08:55,390 - INFO - Progress: 157/360
+2025-07-24 14:08:55,390 - INFO - Running experiment: mnist_decentralized_complete_10clients_1.0rate_no_dp
+2025-07-24 14:10:21,228 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_1.0rate_no_dp completed successfully in 85.8s
+2025-07-24 14:10:21,229 - INFO - Progress: 158/360
+2025-07-24 14:10:21,229 - INFO - Running experiment: mnist_decentralized_complete_10clients_1.0rate_high_privacy
+2025-07-24 14:12:05,069 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_1.0rate_high_privacy completed successfully in 103.8s
+2025-07-24 14:12:05,069 - INFO - Progress: 159/360
+2025-07-24 14:12:05,069 - INFO - Running experiment: mnist_decentralized_complete_10clients_1.0rate_medium_privacy
+2025-07-24 14:13:50,391 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_1.0rate_medium_privacy completed successfully in 105.3s
+2025-07-24 14:13:50,391 - INFO - Progress: 160/360
+2025-07-24 14:13:50,391 - INFO - Running experiment: mnist_decentralized_complete_10clients_1.0rate_low_privacy
+2025-07-24 14:15:43,345 - INFO - ✅ Experiment mnist_decentralized_complete_10clients_1.0rate_low_privacy completed successfully in 113.0s
+2025-07-24 14:15:43,352 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 14:15:43,352 - INFO - Progress: 161/360
+2025-07-24 14:15:43,352 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.2rate_no_dp
+2025-07-24 14:18:05,545 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.2rate_no_dp completed successfully in 142.2s
+2025-07-24 14:18:05,545 - INFO - Progress: 162/360
+2025-07-24 14:18:05,545 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.2rate_high_privacy
+2025-07-24 14:20:37,238 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.2rate_high_privacy completed successfully in 151.7s
+2025-07-24 14:20:37,238 - INFO - Progress: 163/360
+2025-07-24 14:20:37,239 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.2rate_medium_privacy
+2025-07-24 14:24:05,775 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.2rate_medium_privacy completed successfully in 208.5s
+2025-07-24 14:24:05,776 - INFO - Progress: 164/360
+2025-07-24 14:24:05,776 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.2rate_low_privacy
+2025-07-24 14:27:42,109 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.2rate_low_privacy completed successfully in 216.3s
+2025-07-24 14:27:42,110 - INFO - Progress: 165/360
+2025-07-24 14:27:42,110 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.4rate_no_dp
+2025-07-24 14:29:54,528 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.4rate_no_dp completed successfully in 132.4s
+2025-07-24 14:29:54,528 - INFO - Progress: 166/360
+2025-07-24 14:29:54,528 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.4rate_high_privacy
+2025-07-24 14:32:35,734 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.4rate_high_privacy completed successfully in 161.2s
+2025-07-24 14:32:35,734 - INFO - Progress: 167/360
+2025-07-24 14:32:35,735 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.4rate_medium_privacy
+2025-07-24 14:35:45,220 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.4rate_medium_privacy completed successfully in 189.5s
+2025-07-24 14:35:45,220 - INFO - Progress: 168/360
+2025-07-24 14:35:45,220 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.4rate_low_privacy
+2025-07-24 14:38:53,608 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.4rate_low_privacy completed successfully in 188.4s
+2025-07-24 14:38:53,609 - INFO - Progress: 169/360
+2025-07-24 14:38:53,609 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.6rate_no_dp
+2025-07-24 14:40:52,821 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.6rate_no_dp completed successfully in 119.2s
+2025-07-24 14:40:52,822 - INFO - Progress: 170/360
+2025-07-24 14:40:52,822 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.6rate_high_privacy
+2025-07-24 14:43:07,046 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.6rate_high_privacy completed successfully in 134.2s
+2025-07-24 14:43:07,054 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 14:43:07,054 - INFO - Progress: 171/360
+2025-07-24 14:43:07,054 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.6rate_medium_privacy
+2025-07-24 14:45:48,350 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.6rate_medium_privacy completed successfully in 161.3s
+2025-07-24 14:45:48,351 - INFO - Progress: 172/360
+2025-07-24 14:45:48,351 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.6rate_low_privacy
+2025-07-24 14:49:01,886 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.6rate_low_privacy completed successfully in 193.5s
+2025-07-24 14:49:01,886 - INFO - Progress: 173/360
+2025-07-24 14:49:01,886 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.8rate_no_dp
+2025-07-24 14:50:58,961 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.8rate_no_dp completed successfully in 117.1s
+2025-07-24 14:50:58,962 - INFO - Progress: 174/360
+2025-07-24 14:50:58,962 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.8rate_high_privacy
+2025-07-24 14:53:16,654 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.8rate_high_privacy completed successfully in 137.7s
+2025-07-24 14:53:16,654 - INFO - Progress: 175/360
+2025-07-24 14:53:16,654 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.8rate_medium_privacy
+2025-07-24 14:55:45,162 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.8rate_medium_privacy completed successfully in 148.5s
+2025-07-24 14:55:45,163 - INFO - Progress: 176/360
+2025-07-24 14:55:45,163 - INFO - Running experiment: mnist_decentralized_complete_20clients_0.8rate_low_privacy
+2025-07-24 14:58:26,118 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_0.8rate_low_privacy completed successfully in 161.0s
+2025-07-24 14:58:26,118 - INFO - Progress: 177/360
+2025-07-24 14:58:26,118 - INFO - Running experiment: mnist_decentralized_complete_20clients_1.0rate_no_dp
+2025-07-24 15:00:21,166 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_1.0rate_no_dp completed successfully in 115.0s
+2025-07-24 15:00:21,166 - INFO - Progress: 178/360
+2025-07-24 15:00:21,166 - INFO - Running experiment: mnist_decentralized_complete_20clients_1.0rate_high_privacy
+2025-07-24 15:02:28,562 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_1.0rate_high_privacy completed successfully in 127.4s
+2025-07-24 15:02:28,563 - INFO - Progress: 179/360
+2025-07-24 15:02:28,563 - INFO - Running experiment: mnist_decentralized_complete_20clients_1.0rate_medium_privacy
+2025-07-24 15:04:42,961 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_1.0rate_medium_privacy completed successfully in 134.4s
+2025-07-24 15:04:42,961 - INFO - Progress: 180/360
+2025-07-24 15:04:42,961 - INFO - Running experiment: mnist_decentralized_complete_20clients_1.0rate_low_privacy
+2025-07-24 15:07:03,765 - INFO - ✅ Experiment mnist_decentralized_complete_20clients_1.0rate_low_privacy completed successfully in 140.8s
+2025-07-24 15:07:03,773 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 15:07:03,773 - INFO - Progress: 181/360
+2025-07-24 15:07:03,773 - INFO - Running experiment: cifar10_federated_star_5clients_0.2rate_no_dp
+2025-07-24 15:09:33,601 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.2rate_no_dp completed successfully in 149.8s
+2025-07-24 15:09:33,602 - INFO - Progress: 182/360
+2025-07-24 15:09:33,602 - INFO - Running experiment: cifar10_federated_star_5clients_0.2rate_high_privacy
+2025-07-24 15:12:32,501 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.2rate_high_privacy completed successfully in 178.9s
+2025-07-24 15:12:32,502 - INFO - Progress: 183/360
+2025-07-24 15:12:32,502 - INFO - Running experiment: cifar10_federated_star_5clients_0.2rate_medium_privacy
+2025-07-24 15:15:44,649 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.2rate_medium_privacy completed successfully in 192.1s
+2025-07-24 15:15:44,650 - INFO - Progress: 184/360
+2025-07-24 15:15:44,650 - INFO - Running experiment: cifar10_federated_star_5clients_0.2rate_low_privacy
+2025-07-24 15:19:34,082 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.2rate_low_privacy completed successfully in 229.4s
+2025-07-24 15:19:34,082 - INFO - Progress: 185/360
+2025-07-24 15:19:34,082 - INFO - Running experiment: cifar10_federated_star_5clients_0.4rate_no_dp
+2025-07-24 15:21:48,167 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.4rate_no_dp completed successfully in 134.1s
+2025-07-24 15:21:48,168 - INFO - Progress: 186/360
+2025-07-24 15:21:48,168 - INFO - Running experiment: cifar10_federated_star_5clients_0.4rate_high_privacy
+2025-07-24 15:24:30,240 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.4rate_high_privacy completed successfully in 162.1s
+2025-07-24 15:24:30,240 - INFO - Progress: 187/360
+2025-07-24 15:24:30,241 - INFO - Running experiment: cifar10_federated_star_5clients_0.4rate_medium_privacy
+2025-07-24 15:27:32,829 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.4rate_medium_privacy completed successfully in 182.6s
+2025-07-24 15:27:32,830 - INFO - Progress: 188/360
+2025-07-24 15:27:32,830 - INFO - Running experiment: cifar10_federated_star_5clients_0.4rate_low_privacy
+2025-07-24 15:30:52,194 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.4rate_low_privacy completed successfully in 199.4s
+2025-07-24 15:30:52,194 - INFO - Progress: 189/360
+2025-07-24 15:30:52,195 - INFO - Running experiment: cifar10_federated_star_5clients_0.6rate_no_dp
+2025-07-24 15:33:00,075 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.6rate_no_dp completed successfully in 127.9s
+2025-07-24 15:33:00,075 - INFO - Progress: 190/360
+2025-07-24 15:33:00,075 - INFO - Running experiment: cifar10_federated_star_5clients_0.6rate_high_privacy
+2025-07-24 15:35:44,058 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.6rate_high_privacy completed successfully in 164.0s
+2025-07-24 15:35:44,067 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 15:35:44,067 - INFO - Progress: 191/360
+2025-07-24 15:35:44,067 - INFO - Running experiment: cifar10_federated_star_5clients_0.6rate_medium_privacy
+2025-07-24 15:38:40,213 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.6rate_medium_privacy completed successfully in 176.1s
+2025-07-24 15:38:40,213 - INFO - Progress: 192/360
+2025-07-24 15:38:40,213 - INFO - Running experiment: cifar10_federated_star_5clients_0.6rate_low_privacy
+2025-07-24 15:41:53,789 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.6rate_low_privacy completed successfully in 193.6s
+2025-07-24 15:41:53,789 - INFO - Progress: 193/360
+2025-07-24 15:41:53,789 - INFO - Running experiment: cifar10_federated_star_5clients_0.8rate_no_dp
+2025-07-24 15:43:54,678 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.8rate_no_dp completed successfully in 120.9s
+2025-07-24 15:43:54,678 - INFO - Progress: 194/360
+2025-07-24 15:43:54,678 - INFO - Running experiment: cifar10_federated_star_5clients_0.8rate_high_privacy
+2025-07-24 15:46:24,539 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.8rate_high_privacy completed successfully in 149.9s
+2025-07-24 15:46:24,539 - INFO - Progress: 195/360
+2025-07-24 15:46:24,539 - INFO - Running experiment: cifar10_federated_star_5clients_0.8rate_medium_privacy
+2025-07-24 15:49:05,868 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.8rate_medium_privacy completed successfully in 161.3s
+2025-07-24 15:49:05,868 - INFO - Progress: 196/360
+2025-07-24 15:49:05,868 - INFO - Running experiment: cifar10_federated_star_5clients_0.8rate_low_privacy
+2025-07-24 15:51:54,190 - INFO - ✅ Experiment cifar10_federated_star_5clients_0.8rate_low_privacy completed successfully in 168.3s
+2025-07-24 15:51:54,190 - INFO - Progress: 197/360
+2025-07-24 15:51:54,191 - INFO - Running experiment: cifar10_federated_star_5clients_1.0rate_no_dp
+2025-07-24 15:53:47,701 - INFO - ✅ Experiment cifar10_federated_star_5clients_1.0rate_no_dp completed successfully in 113.5s
+2025-07-24 15:53:47,701 - INFO - Progress: 198/360
+2025-07-24 15:53:47,702 - INFO - Running experiment: cifar10_federated_star_5clients_1.0rate_high_privacy
+2025-07-24 15:55:58,742 - INFO - ✅ Experiment cifar10_federated_star_5clients_1.0rate_high_privacy completed successfully in 131.0s
+2025-07-24 15:55:58,742 - INFO - Progress: 199/360
+2025-07-24 15:55:58,742 - INFO - Running experiment: cifar10_federated_star_5clients_1.0rate_medium_privacy
+2025-07-24 15:58:19,180 - INFO - ✅ Experiment cifar10_federated_star_5clients_1.0rate_medium_privacy completed successfully in 140.4s
+2025-07-24 15:58:19,180 - INFO - Progress: 200/360
+2025-07-24 15:58:19,180 - INFO - Running experiment: cifar10_federated_star_5clients_1.0rate_low_privacy
+2025-07-24 16:00:46,580 - INFO - ✅ Experiment cifar10_federated_star_5clients_1.0rate_low_privacy completed successfully in 147.4s
+2025-07-24 16:00:46,588 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 16:00:46,588 - INFO - Progress: 201/360
+2025-07-24 16:00:46,588 - INFO - Running experiment: cifar10_federated_star_10clients_0.2rate_no_dp
+2025-07-24 16:03:02,765 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.2rate_no_dp completed successfully in 136.2s
+2025-07-24 16:03:02,766 - INFO - Progress: 202/360
+2025-07-24 16:03:02,766 - INFO - Running experiment: cifar10_federated_star_10clients_0.2rate_high_privacy
+2025-07-24 16:05:52,240 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.2rate_high_privacy completed successfully in 169.5s
+2025-07-24 16:05:52,240 - INFO - Progress: 203/360
+2025-07-24 16:05:52,240 - INFO - Running experiment: cifar10_federated_star_10clients_0.2rate_medium_privacy
+2025-07-24 16:09:03,193 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.2rate_medium_privacy completed successfully in 191.0s
+2025-07-24 16:09:03,193 - INFO - Progress: 204/360
+2025-07-24 16:09:03,193 - INFO - Running experiment: cifar10_federated_star_10clients_0.2rate_low_privacy
+2025-07-24 16:12:31,913 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.2rate_low_privacy completed successfully in 208.7s
+2025-07-24 16:12:31,914 - INFO - Progress: 205/360
+2025-07-24 16:12:31,914 - INFO - Running experiment: cifar10_federated_star_10clients_0.4rate_no_dp
+2025-07-24 16:14:31,326 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.4rate_no_dp completed successfully in 119.4s
+2025-07-24 16:14:31,326 - INFO - Progress: 206/360
+2025-07-24 16:14:31,326 - INFO - Running experiment: cifar10_federated_star_10clients_0.4rate_high_privacy
+2025-07-24 16:17:20,531 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.4rate_high_privacy completed successfully in 169.2s
+2025-07-24 16:17:20,531 - INFO - Progress: 207/360
+2025-07-24 16:17:20,532 - INFO - Running experiment: cifar10_federated_star_10clients_0.4rate_medium_privacy
+2025-07-24 16:20:30,580 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.4rate_medium_privacy completed successfully in 190.0s
+2025-07-24 16:20:30,581 - INFO - Progress: 208/360
+2025-07-24 16:20:30,581 - INFO - Running experiment: cifar10_federated_star_10clients_0.4rate_low_privacy
+2025-07-24 16:24:15,550 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.4rate_low_privacy completed successfully in 225.0s
+2025-07-24 16:24:15,551 - INFO - Progress: 209/360
+2025-07-24 16:24:15,551 - INFO - Running experiment: cifar10_federated_star_10clients_0.6rate_no_dp
+2025-07-24 16:26:12,324 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.6rate_no_dp completed successfully in 116.8s
+2025-07-24 16:26:12,324 - INFO - Progress: 210/360
+2025-07-24 16:26:12,324 - INFO - Running experiment: cifar10_federated_star_10clients_0.6rate_high_privacy
+2025-07-24 16:28:42,782 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.6rate_high_privacy completed successfully in 150.5s
+2025-07-24 16:28:42,791 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 16:28:42,791 - INFO - Progress: 211/360
+2025-07-24 16:28:42,792 - INFO - Running experiment: cifar10_federated_star_10clients_0.6rate_medium_privacy
+2025-07-24 16:31:38,261 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.6rate_medium_privacy completed successfully in 175.5s
+2025-07-24 16:31:38,262 - INFO - Progress: 212/360
+2025-07-24 16:31:38,262 - INFO - Running experiment: cifar10_federated_star_10clients_0.6rate_low_privacy
+2025-07-24 16:34:23,228 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.6rate_low_privacy completed successfully in 165.0s
+2025-07-24 16:34:23,229 - INFO - Progress: 213/360
+2025-07-24 16:34:23,229 - INFO - Running experiment: cifar10_federated_star_10clients_0.8rate_no_dp
+2025-07-24 16:36:14,761 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.8rate_no_dp completed successfully in 111.5s
+2025-07-24 16:36:14,762 - INFO - Progress: 214/360
+2025-07-24 16:36:14,762 - INFO - Running experiment: cifar10_federated_star_10clients_0.8rate_high_privacy
+2025-07-24 16:38:34,427 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.8rate_high_privacy completed successfully in 139.7s
+2025-07-24 16:38:34,427 - INFO - Progress: 215/360
+2025-07-24 16:38:34,427 - INFO - Running experiment: cifar10_federated_star_10clients_0.8rate_medium_privacy
+2025-07-24 16:41:11,393 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.8rate_medium_privacy completed successfully in 157.0s
+2025-07-24 16:41:11,393 - INFO - Progress: 216/360
+2025-07-24 16:41:11,393 - INFO - Running experiment: cifar10_federated_star_10clients_0.8rate_low_privacy
+2025-07-24 16:43:55,673 - INFO - ✅ Experiment cifar10_federated_star_10clients_0.8rate_low_privacy completed successfully in 164.3s
+2025-07-24 16:43:55,674 - INFO - Progress: 217/360
+2025-07-24 16:43:55,674 - INFO - Running experiment: cifar10_federated_star_10clients_1.0rate_no_dp
+2025-07-24 16:45:36,119 - INFO - ✅ Experiment cifar10_federated_star_10clients_1.0rate_no_dp completed successfully in 100.4s
+2025-07-24 16:45:36,120 - INFO - Progress: 218/360
+2025-07-24 16:45:36,120 - INFO - Running experiment: cifar10_federated_star_10clients_1.0rate_high_privacy
+2025-07-24 16:47:29,630 - INFO - ✅ Experiment cifar10_federated_star_10clients_1.0rate_high_privacy completed successfully in 113.5s
+2025-07-24 16:47:29,631 - INFO - Progress: 219/360
+2025-07-24 16:47:29,631 - INFO - Running experiment: cifar10_federated_star_10clients_1.0rate_medium_privacy
+2025-07-24 16:49:33,023 - INFO - ✅ Experiment cifar10_federated_star_10clients_1.0rate_medium_privacy completed successfully in 123.4s
+2025-07-24 16:49:33,023 - INFO - Progress: 220/360
+2025-07-24 16:49:33,023 - INFO - Running experiment: cifar10_federated_star_10clients_1.0rate_low_privacy
+2025-07-24 16:51:47,866 - INFO - ✅ Experiment cifar10_federated_star_10clients_1.0rate_low_privacy completed successfully in 134.8s
+2025-07-24 16:51:47,876 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 16:51:47,876 - INFO - Progress: 221/360
+2025-07-24 16:51:47,876 - INFO - Running experiment: cifar10_federated_star_20clients_0.2rate_no_dp
+2025-07-24 16:54:02,661 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.2rate_no_dp completed successfully in 134.8s
+2025-07-24 16:54:02,662 - INFO - Progress: 222/360
+2025-07-24 16:54:02,662 - INFO - Running experiment: cifar10_federated_star_20clients_0.2rate_high_privacy
+2025-07-24 16:56:50,592 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.2rate_high_privacy completed successfully in 167.9s
+2025-07-24 16:56:50,593 - INFO - Progress: 223/360
+2025-07-24 16:56:50,593 - INFO - Running experiment: cifar10_federated_star_20clients_0.2rate_medium_privacy
+2025-07-24 17:00:34,418 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.2rate_medium_privacy completed successfully in 223.8s
+2025-07-24 17:00:34,418 - INFO - Progress: 224/360
+2025-07-24 17:00:34,419 - INFO - Running experiment: cifar10_federated_star_20clients_0.2rate_low_privacy
+2025-07-24 17:03:59,553 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.2rate_low_privacy completed successfully in 205.1s
+2025-07-24 17:03:59,554 - INFO - Progress: 225/360
+2025-07-24 17:03:59,554 - INFO - Running experiment: cifar10_federated_star_20clients_0.4rate_no_dp
+2025-07-24 17:05:58,902 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.4rate_no_dp completed successfully in 119.3s
+2025-07-24 17:05:58,902 - INFO - Progress: 226/360
+2025-07-24 17:05:58,902 - INFO - Running experiment: cifar10_federated_star_20clients_0.4rate_high_privacy
+2025-07-24 17:08:29,875 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.4rate_high_privacy completed successfully in 151.0s
+2025-07-24 17:08:29,876 - INFO - Progress: 227/360
+2025-07-24 17:08:29,876 - INFO - Running experiment: cifar10_federated_star_20clients_0.4rate_medium_privacy
+2025-07-24 17:11:39,243 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.4rate_medium_privacy completed successfully in 189.4s
+2025-07-24 17:11:39,243 - INFO - Progress: 228/360
+2025-07-24 17:11:39,243 - INFO - Running experiment: cifar10_federated_star_20clients_0.4rate_low_privacy
+2025-07-24 17:15:18,659 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.4rate_low_privacy completed successfully in 219.4s
+2025-07-24 17:15:18,660 - INFO - Progress: 229/360
+2025-07-24 17:15:18,660 - INFO - Running experiment: cifar10_federated_star_20clients_0.6rate_no_dp
+2025-07-24 17:17:12,043 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.6rate_no_dp completed successfully in 113.4s
+2025-07-24 17:17:12,044 - INFO - Progress: 230/360
+2025-07-24 17:17:12,044 - INFO - Running experiment: cifar10_federated_star_20clients_0.6rate_high_privacy
+2025-07-24 17:19:26,040 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.6rate_high_privacy completed successfully in 134.0s
+2025-07-24 17:19:26,050 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 17:19:26,050 - INFO - Progress: 231/360
+2025-07-24 17:19:26,050 - INFO - Running experiment: cifar10_federated_star_20clients_0.6rate_medium_privacy
+2025-07-24 17:21:50,610 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.6rate_medium_privacy completed successfully in 144.6s
+2025-07-24 17:21:50,610 - INFO - Progress: 232/360
+2025-07-24 17:21:50,611 - INFO - Running experiment: cifar10_federated_star_20clients_0.6rate_low_privacy
+2025-07-24 17:24:24,964 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.6rate_low_privacy completed successfully in 154.4s
+2025-07-24 17:24:24,964 - INFO - Progress: 233/360
+2025-07-24 17:24:24,964 - INFO - Running experiment: cifar10_federated_star_20clients_0.8rate_no_dp
+2025-07-24 17:26:12,583 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.8rate_no_dp completed successfully in 107.6s
+2025-07-24 17:26:12,583 - INFO - Progress: 234/360
+2025-07-24 17:26:12,583 - INFO - Running experiment: cifar10_federated_star_20clients_0.8rate_high_privacy
+2025-07-24 17:28:13,208 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.8rate_high_privacy completed successfully in 120.6s
+2025-07-24 17:28:13,208 - INFO - Progress: 235/360
+2025-07-24 17:28:13,208 - INFO - Running experiment: cifar10_federated_star_20clients_0.8rate_medium_privacy
+2025-07-24 17:30:20,237 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.8rate_medium_privacy completed successfully in 127.0s
+2025-07-24 17:30:20,237 - INFO - Progress: 236/360
+2025-07-24 17:30:20,237 - INFO - Running experiment: cifar10_federated_star_20clients_0.8rate_low_privacy
+2025-07-24 17:32:50,631 - INFO - ✅ Experiment cifar10_federated_star_20clients_0.8rate_low_privacy completed successfully in 150.4s
+2025-07-24 17:32:50,631 - INFO - Progress: 237/360
+2025-07-24 17:32:50,631 - INFO - Running experiment: cifar10_federated_star_20clients_1.0rate_no_dp
+2025-07-24 17:34:28,235 - INFO - ✅ Experiment cifar10_federated_star_20clients_1.0rate_no_dp completed successfully in 97.6s
+2025-07-24 17:34:28,236 - INFO - Progress: 238/360
+2025-07-24 17:34:28,236 - INFO - Running experiment: cifar10_federated_star_20clients_1.0rate_high_privacy
+2025-07-24 17:36:20,394 - INFO - ✅ Experiment cifar10_federated_star_20clients_1.0rate_high_privacy completed successfully in 112.2s
+2025-07-24 17:36:20,395 - INFO - Progress: 239/360
+2025-07-24 17:36:20,395 - INFO - Running experiment: cifar10_federated_star_20clients_1.0rate_medium_privacy
+2025-07-24 17:38:19,725 - INFO - ✅ Experiment cifar10_federated_star_20clients_1.0rate_medium_privacy completed successfully in 119.3s
+2025-07-24 17:38:19,725 - INFO - Progress: 240/360
+2025-07-24 17:38:19,725 - INFO - Running experiment: cifar10_federated_star_20clients_1.0rate_low_privacy
+2025-07-24 17:40:24,723 - INFO - ✅ Experiment cifar10_federated_star_20clients_1.0rate_low_privacy completed successfully in 125.0s
+2025-07-24 17:40:24,734 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 17:40:24,734 - INFO - Progress: 241/360
+2025-07-24 17:40:24,734 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.2rate_no_dp
+2025-07-24 17:42:34,549 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.2rate_no_dp completed successfully in 129.8s
+2025-07-24 17:42:34,550 - INFO - Progress: 242/360
+2025-07-24 17:42:34,550 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.2rate_high_privacy
+2025-07-24 17:45:51,802 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.2rate_high_privacy completed successfully in 197.3s
+2025-07-24 17:45:51,802 - INFO - Progress: 243/360
+2025-07-24 17:45:51,802 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.2rate_medium_privacy
+2025-07-24 17:49:22,855 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.2rate_medium_privacy completed successfully in 211.1s
+2025-07-24 17:49:22,855 - INFO - Progress: 244/360
+2025-07-24 17:49:22,856 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.2rate_low_privacy
+2025-07-24 17:52:47,622 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.2rate_low_privacy completed successfully in 204.8s
+2025-07-24 17:52:47,622 - INFO - Progress: 245/360
+2025-07-24 17:52:47,622 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.4rate_no_dp
+2025-07-24 17:55:07,204 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.4rate_no_dp completed successfully in 139.6s
+2025-07-24 17:55:07,204 - INFO - Progress: 246/360
+2025-07-24 17:55:07,204 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.4rate_high_privacy
+2025-07-24 17:58:24,386 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.4rate_high_privacy completed successfully in 197.2s
+2025-07-24 17:58:24,386 - INFO - Progress: 247/360
+2025-07-24 17:58:24,386 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.4rate_medium_privacy
+2025-07-24 18:01:44,984 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.4rate_medium_privacy completed successfully in 200.6s
+2025-07-24 18:01:44,984 - INFO - Progress: 248/360
+2025-07-24 18:01:44,984 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.4rate_low_privacy
+2025-07-24 18:04:59,414 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.4rate_low_privacy completed successfully in 194.4s
+2025-07-24 18:04:59,414 - INFO - Progress: 249/360
+2025-07-24 18:04:59,414 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.6rate_no_dp
+2025-07-24 18:07:03,005 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.6rate_no_dp completed successfully in 123.6s
+2025-07-24 18:07:03,005 - INFO - Progress: 250/360
+2025-07-24 18:07:03,006 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.6rate_high_privacy
+2025-07-24 18:09:52,049 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.6rate_high_privacy completed successfully in 169.0s
+2025-07-24 18:09:52,060 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 18:09:52,060 - INFO - Progress: 251/360
+2025-07-24 18:09:52,060 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.6rate_medium_privacy
+2025-07-24 18:12:57,033 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.6rate_medium_privacy completed successfully in 185.0s
+2025-07-24 18:12:57,033 - INFO - Progress: 252/360
+2025-07-24 18:12:57,033 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.6rate_low_privacy
+2025-07-24 18:16:08,209 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.6rate_low_privacy completed successfully in 191.2s
+2025-07-24 18:16:08,209 - INFO - Progress: 253/360
+2025-07-24 18:16:08,210 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.8rate_no_dp
+2025-07-24 18:18:11,890 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.8rate_no_dp completed successfully in 123.7s
+2025-07-24 18:18:11,890 - INFO - Progress: 254/360
+2025-07-24 18:18:11,891 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.8rate_high_privacy
+2025-07-24 18:20:43,128 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.8rate_high_privacy completed successfully in 151.2s
+2025-07-24 18:20:43,128 - INFO - Progress: 255/360
+2025-07-24 18:20:43,128 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.8rate_medium_privacy
+2025-07-24 18:23:24,566 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.8rate_medium_privacy completed successfully in 161.4s
+2025-07-24 18:23:24,566 - INFO - Progress: 256/360
+2025-07-24 18:23:24,566 - INFO - Running experiment: cifar10_decentralized_ring_5clients_0.8rate_low_privacy
+2025-07-24 18:26:13,014 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_0.8rate_low_privacy completed successfully in 168.4s
+2025-07-24 18:26:13,014 - INFO - Progress: 257/360
+2025-07-24 18:26:13,014 - INFO - Running experiment: cifar10_decentralized_ring_5clients_1.0rate_no_dp
+2025-07-24 18:28:08,378 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_1.0rate_no_dp completed successfully in 115.4s
+2025-07-24 18:28:08,379 - INFO - Progress: 258/360
+2025-07-24 18:28:08,379 - INFO - Running experiment: cifar10_decentralized_ring_5clients_1.0rate_high_privacy
+2025-07-24 18:30:19,497 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_1.0rate_high_privacy completed successfully in 131.1s
+2025-07-24 18:30:19,497 - INFO - Progress: 259/360
+2025-07-24 18:30:19,498 - INFO - Running experiment: cifar10_decentralized_ring_5clients_1.0rate_medium_privacy
+2025-07-24 18:32:41,447 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_1.0rate_medium_privacy completed successfully in 141.9s
+2025-07-24 18:32:41,447 - INFO - Progress: 260/360
+2025-07-24 18:32:41,447 - INFO - Running experiment: cifar10_decentralized_ring_5clients_1.0rate_low_privacy
+2025-07-24 18:35:26,127 - INFO - ✅ Experiment cifar10_decentralized_ring_5clients_1.0rate_low_privacy completed successfully in 164.7s
+2025-07-24 18:35:26,138 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 18:35:26,138 - INFO - Progress: 261/360
+2025-07-24 18:35:26,138 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.2rate_no_dp
+2025-07-24 18:37:39,207 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.2rate_no_dp completed successfully in 133.1s
+2025-07-24 18:37:39,208 - INFO - Progress: 262/360
+2025-07-24 18:37:39,208 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.2rate_high_privacy
+2025-07-24 18:40:40,534 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.2rate_high_privacy completed successfully in 181.3s
+2025-07-24 18:40:40,535 - INFO - Progress: 263/360
+2025-07-24 18:40:40,535 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.2rate_medium_privacy
+2025-07-24 18:44:09,243 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.2rate_medium_privacy completed successfully in 208.7s
+2025-07-24 18:44:09,243 - INFO - Progress: 264/360
+2025-07-24 18:44:09,243 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.2rate_low_privacy
+2025-07-24 18:47:40,702 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.2rate_low_privacy completed successfully in 211.5s
+2025-07-24 18:47:40,702 - INFO - Progress: 265/360
+2025-07-24 18:47:40,702 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.4rate_no_dp
+2025-07-24 18:49:51,436 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.4rate_no_dp completed successfully in 130.7s
+2025-07-24 18:49:51,436 - INFO - Progress: 266/360
+2025-07-24 18:49:51,437 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.4rate_high_privacy
+2025-07-24 18:52:30,793 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.4rate_high_privacy completed successfully in 159.4s
+2025-07-24 18:52:30,793 - INFO - Progress: 267/360
+2025-07-24 18:52:30,793 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.4rate_medium_privacy
+2025-07-24 18:55:42,820 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.4rate_medium_privacy completed successfully in 192.0s
+2025-07-24 18:55:42,820 - INFO - Progress: 268/360
+2025-07-24 18:55:42,820 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.4rate_low_privacy
+2025-07-24 18:59:18,637 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.4rate_low_privacy completed successfully in 215.8s
+2025-07-24 18:59:18,637 - INFO - Progress: 269/360
+2025-07-24 18:59:18,638 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.6rate_no_dp
+2025-07-24 19:01:10,969 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.6rate_no_dp completed successfully in 112.3s
+2025-07-24 19:01:10,970 - INFO - Progress: 270/360
+2025-07-24 19:01:10,970 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.6rate_high_privacy
+2025-07-24 19:03:48,498 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.6rate_high_privacy completed successfully in 157.5s
+2025-07-24 19:03:48,509 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 19:03:48,509 - INFO - Progress: 271/360
+2025-07-24 19:03:48,509 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.6rate_medium_privacy
+2025-07-24 19:06:29,763 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.6rate_medium_privacy completed successfully in 161.3s
+2025-07-24 19:06:29,763 - INFO - Progress: 272/360
+2025-07-24 19:06:29,763 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.6rate_low_privacy
+2025-07-24 19:09:44,167 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.6rate_low_privacy completed successfully in 194.4s
+2025-07-24 19:09:44,167 - INFO - Progress: 273/360
+2025-07-24 19:09:44,167 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.8rate_no_dp
+2025-07-24 19:11:37,944 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.8rate_no_dp completed successfully in 113.8s
+2025-07-24 19:11:37,944 - INFO - Progress: 274/360
+2025-07-24 19:11:37,944 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.8rate_high_privacy
+2025-07-24 19:14:14,542 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.8rate_high_privacy completed successfully in 156.6s
+2025-07-24 19:14:14,543 - INFO - Progress: 275/360
+2025-07-24 19:14:14,543 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.8rate_medium_privacy
+2025-07-24 19:16:35,453 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.8rate_medium_privacy completed successfully in 140.9s
+2025-07-24 19:16:35,453 - INFO - Progress: 276/360
+2025-07-24 19:16:35,453 - INFO - Running experiment: cifar10_decentralized_ring_10clients_0.8rate_low_privacy
+2025-07-24 19:19:06,157 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_0.8rate_low_privacy completed successfully in 150.7s
+2025-07-24 19:19:06,158 - INFO - Progress: 277/360
+2025-07-24 19:19:06,158 - INFO - Running experiment: cifar10_decentralized_ring_10clients_1.0rate_no_dp
+2025-07-24 19:20:49,817 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_1.0rate_no_dp completed successfully in 103.7s
+2025-07-24 19:20:49,817 - INFO - Progress: 278/360
+2025-07-24 19:20:49,817 - INFO - Running experiment: cifar10_decentralized_ring_10clients_1.0rate_high_privacy
+2025-07-24 19:22:48,729 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_1.0rate_high_privacy completed successfully in 118.9s
+2025-07-24 19:22:48,729 - INFO - Progress: 279/360
+2025-07-24 19:22:48,729 - INFO - Running experiment: cifar10_decentralized_ring_10clients_1.0rate_medium_privacy
+2025-07-24 19:24:54,390 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_1.0rate_medium_privacy completed successfully in 125.7s
+2025-07-24 19:24:54,391 - INFO - Progress: 280/360
+2025-07-24 19:24:54,391 - INFO - Running experiment: cifar10_decentralized_ring_10clients_1.0rate_low_privacy
+2025-07-24 19:27:18,545 - INFO - ✅ Experiment cifar10_decentralized_ring_10clients_1.0rate_low_privacy completed successfully in 144.2s
+2025-07-24 19:27:18,557 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 19:27:18,557 - INFO - Progress: 281/360
+2025-07-24 19:27:18,557 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.2rate_no_dp
+2025-07-24 19:29:25,945 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.2rate_no_dp completed successfully in 127.4s
+2025-07-24 19:29:25,945 - INFO - Progress: 282/360
+2025-07-24 19:29:25,945 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.2rate_high_privacy
+2025-07-24 19:32:09,719 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.2rate_high_privacy completed successfully in 163.8s
+2025-07-24 19:32:09,720 - INFO - Progress: 283/360
+2025-07-24 19:32:09,720 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.2rate_medium_privacy
+2025-07-24 19:35:35,452 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.2rate_medium_privacy completed successfully in 205.7s
+2025-07-24 19:35:35,453 - INFO - Progress: 284/360
+2025-07-24 19:35:35,453 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.2rate_low_privacy
+2025-07-24 19:39:23,952 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.2rate_low_privacy completed successfully in 228.5s
+2025-07-24 19:39:23,952 - INFO - Progress: 285/360
+2025-07-24 19:39:23,953 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.4rate_no_dp
+2025-07-24 19:41:32,334 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.4rate_no_dp completed successfully in 128.4s
+2025-07-24 19:41:32,334 - INFO - Progress: 286/360
+2025-07-24 19:41:32,334 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.4rate_high_privacy
+2025-07-24 19:44:13,245 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.4rate_high_privacy completed successfully in 160.9s
+2025-07-24 19:44:13,245 - INFO - Progress: 287/360
+2025-07-24 19:44:13,245 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.4rate_medium_privacy
+2025-07-24 19:47:23,222 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.4rate_medium_privacy completed successfully in 190.0s
+2025-07-24 19:47:23,222 - INFO - Progress: 288/360
+2025-07-24 19:47:23,222 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.4rate_low_privacy
+2025-07-24 19:49:51,524 - ERROR - ❌ Experiment cifar10_decentralized_ring_20clients_0.4rate_low_privacy failed: 2025-07-24 19:47:41,296	INFO worker.py:1660 -- Connecting to existing Ray cluster at address: 10.0.4.103:6379...
+2025-07-24 19:47:41,309	INFO worker.py:1852 -- Connected to Ray cluster.
+2025-07-24 19:47:41,325 - murmura - INFO - Ray cluster initialized successfully
+07/24/2025 19:47:41:INFO:Ray cluster initialized successfully
+2025-07-24 19:47:41,327 - murmura - INFO - Ray cluster info: 5 nodes
+07/24/2025 19:47:41:INFO:Ray cluster info: 5 nodes
+2025-07-24 19:47:41,328 - murmura - INFO - Total CPUs: 80.0
+07/24/2025 19:47:41:INFO:Total CPUs: 80.0
+2025-07-24 19:47:41,328 - murmura - INFO - Total GPUs: 5.0
+07/24/2025 19:47:41:INFO:Total GPUs: 5.0
+2025-07-24 19:47:41,328 - murmura - INFO - Is multi-node cluster: True
+07/24/2025 19:47:41:INFO:Is multi-node cluster: True
+2025-07-24 19:47:41,328 - murmura.learning_process.DecentralizedLearningProcess - INFO - Setting up aggregation strategy...
+07/24/2025 19:47:41:INFO:Setting up aggregation strategy...
+2025-07-24 19:47:41,328 - murmura.learning_process.DecentralizedLearningProcess - INFO - Creating 20 virtual clients with ring topology...
+07/24/2025 19:47:41:INFO:Creating 20 virtual clients with ring topology...
+2025-07-24 19:47:41,328 - murmura.learning_process.DecentralizedLearningProcess - INFO - Cluster stats: 5 nodes, Multi-node: True
+07/24/2025 19:47:41:INFO:Cluster stats: 5 nodes, Multi-node: True
+2025-07-24 19:47:41,328 - murmura - INFO - GPU allocation: 0.25 GPUs per actor (median 1.0 GPUs/node, max 4 actors/node, distribution: 4+0 across 5 nodes)
+07/24/2025 19:47:41:INFO:GPU allocation: 0.25 GPUs per actor (median 1.0 GPUs/node, max 4 actors/node, distribution: 4+0 across 5 nodes)
+2025-07-24 19:47:41,328 - murmura - INFO - Resource allocation per actor: {'num_cpus': 1.0, 'num_gpus': 0.25}
+07/24/2025 19:47:41:INFO:Resource allocation per actor: {'num_cpus': 1.0, 'num_gpus': 0.25}
+2025-07-24 19:47:41,328 - murmura - INFO - Actors per node: 4
+07/24/2025 19:47:41:INFO:Actors per node: 4
+2025-07-24 19:47:41,328 - murmura - INFO - Creating 20 virtual clients across 5 nodes
+07/24/2025 19:47:41:INFO:Creating 20 virtual clients across 5 nodes
+2025-07-24 19:47:41,424 - murmura - INFO - Created actors 1/20
+07/24/2025 19:47:41:INFO:Created actors 1/20
+2025-07-24 19:47:41,428 - murmura - INFO - Created actors 11/20
+07/24/2025 19:47:41:INFO:Created actors 11/20
+2025-07-24 19:47:41,432 - murmura - INFO - Created actors 20/20
+07/24/2025 19:47:41:INFO:Created actors 20/20
+2025-07-24 19:47:41,438 - murmura - INFO - Applying topology for 20 actors with 3600s timeout
+07/24/2025 19:47:41:INFO:Applying topology for 20 actors with 3600s timeout
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:47:44,492 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Actor client_2 initialized on node 211850c5 with device: cuda
+2025-07-24 19:47:44,688 - murmura - INFO - Successfully created 20 actors across cluster
+07/24/2025 19:47:44:INFO:Successfully created 20 actors across cluster
+2025-07-24 19:47:44,689 - murmura.learning_process.DecentralizedLearningProcess - INFO - Partitioning dataset...
+07/24/2025 19:47:44:INFO:Partitioning dataset...
+2025-07-24 19:47:44,722 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing data partitions...
+07/24/2025 19:47:44:INFO:Distributing data partitions...
+2025-07-24 19:47:44,731 - murmura - INFO - Distributed data to actors 1-20
+07/24/2025 19:47:44:INFO:Distributed data to actors 1-20
+2025-07-24 19:47:44,731 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing dataset...
+07/24/2025 19:47:44:INFO:Distributing dataset...
+2025-07-24 19:47:44,731 - murmura.learning_process.DecentralizedLearningProcess - INFO - Using feature columns: ['img'], label column: label
+07/24/2025 19:47:44:INFO:Using feature columns: ['img'], label column: label
+2025-07-24 19:47:44,731 - murmura - INFO - Dataset analysis - Samples: 60000, Large: True, Multi-node: True, HF: True, Using lazy: True
+07/24/2025 19:47:44:INFO:Dataset analysis - Samples: 60000, Large: True, Multi-node: True, HF: True, Using lazy: True
+2025-07-24 19:47:44,731 - murmura - INFO - Using lazy distribution for large dataset
+07/24/2025 19:47:44:INFO:Using lazy distribution for large dataset
+2025-07-24 19:47:44,731 - murmura - INFO - Using lazy dataset distribution (metadata only)
+07/24/2025 19:47:44:INFO:Using lazy dataset distribution (metadata only)
+2025-07-24 19:47:44,732 - murmura - INFO - Distributing lazy metadata to 20 actors
+07/24/2025 19:47:44:INFO:Distributing lazy metadata to 20 actors
+2025-07-24 19:47:44,732 - murmura - INFO - Dataset: cifar10
+07/24/2025 19:47:44:INFO:Dataset: cifar10
+2025-07-24 19:47:44,732 - murmura - INFO - Splits: ['train', 'test']
+07/24/2025 19:47:44:INFO:Splits: ['train', 'test']
+2025-07-24 19:47:44,732 - murmura - INFO - Partitions: 1 splits partitioned
+07/24/2025 19:47:44:INFO:Partitions: 1 splits partitioned
+2025-07-24 19:47:44,732 - murmura - INFO - Feature columns: ['img']
+07/24/2025 19:47:44:INFO:Feature columns: ['img']
+2025-07-24 19:47:44,732 - murmura - INFO - Label column: label
+07/24/2025 19:47:44:INFO:Label column: label
+2025-07-24 19:47:44,792 - murmura - INFO - Successfully distributed metadata to 5/5 actors
+07/24/2025 19:47:44:INFO:Successfully distributed metadata to 5/5 actors
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:47:44,772 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Set dataset metadata for lazy loading
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:47:44,772 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Dataset: cifar10
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:47:44,772 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Splits: ['train', 'test']
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:47:44,772 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Features: ['img'], Label: label
+2025-07-24 19:47:44,852 - murmura - INFO - Successfully distributed metadata to 10/10 actors
+07/24/2025 19:47:44:INFO:Successfully distributed metadata to 10/10 actors
+2025-07-24 19:47:44,905 - murmura - INFO - Successfully distributed metadata to 15/15 actors
+07/24/2025 19:47:44:INFO:Successfully distributed metadata to 15/15 actors
+2025-07-24 19:47:44,961 - murmura - INFO - Successfully distributed metadata to 20/20 actors
+07/24/2025 19:47:44:INFO:Successfully distributed metadata to 20/20 actors
+2025-07-24 19:47:44,961 - murmura - INFO - Successfully distributed metadata to all 20 actors
+07/24/2025 19:47:44:INFO:Successfully distributed metadata to all 20 actors
+2025-07-24 19:47:44,961 - murmura.learning_process.DecentralizedLearningProcess - INFO - Distributing model...
+07/24/2025 19:47:44:INFO:Distributing model...
+2025-07-24 19:47:44,961 - murmura - INFO - Distributing model to client actors...
+07/24/2025 19:47:44:INFO:Distributing model to client actors...
+2025-07-24 19:47:46,125 - murmura - INFO - Distributed model to actors 1-10
+07/24/2025 19:47:46:INFO:Distributed model to actors 1-10
+2025-07-24 19:47:47,327 - murmura - INFO - Distributed model to actors 11-20
+07/24/2025 19:47:47:INFO:Distributed model to actors 11-20
+2025-07-24 19:47:47,467 - murmura.learning_process.DecentralizedLearningProcess - INFO - Validating actor dataset distribution...
+07/24/2025 19:47:47:INFO:Validating actor dataset distribution...
+2025-07-24 19:47:47,467 - murmura - INFO - Validating actor dataset state across cluster...
+07/24/2025 19:47:47:INFO:Validating actor dataset state across cluster...
+2025-07-24 19:47:47,474 - murmura - INFO - Actor validation complete:
+07/24/2025 19:47:47:INFO:Actor validation complete:
+2025-07-24 19:47:47,474 - murmura - INFO -   Valid actors: 20/20
+07/24/2025 19:47:47:INFO:  Valid actors: 20/20
+2025-07-24 19:47:47,474 - murmura - INFO -   Invalid actors: 0
+07/24/2025 19:47:47:INFO:  Invalid actors: 0
+2025-07-24 19:47:47,474 - murmura - INFO -   Unreachable actors: 0
+07/24/2025 19:47:47:INFO:  Unreachable actors: 0
+2025-07-24 19:47:47,474 - murmura.learning_process.DecentralizedLearningProcess - INFO - All 20 actors successfully configured for training
+07/24/2025 19:47:47:INFO:All 20 actors successfully configured for training
+2025-07-24 19:47:47,474 - murmura.learning_process.DecentralizedLearningProcess - INFO - Learning process initialized successfully.
+07/24/2025 19:47:47:INFO:Learning process initialized successfully.
+2025-07-24 19:47:47,474 - murmura.dp_decentralized_cifar10_example - INFO - === CIFAR-10 Decentralized Learning Setup ===
+07/24/2025 19:47:47:INFO:=== CIFAR-10 Decentralized Learning Setup ===
+2025-07-24 19:47:47,474 - murmura.dp_decentralized_cifar10_example - INFO - Dataset: CIFAR-10
+07/24/2025 19:47:47:INFO:Dataset: CIFAR-10
+2025-07-24 19:47:47,474 - murmura.dp_decentralized_cifar10_example - INFO - Learning Mode: Decentralized (Peer-to-Peer)
+07/24/2025 19:47:47:INFO:Learning Mode: Decentralized (Peer-to-Peer)
+2025-07-24 19:47:47,474 - murmura.dp_decentralized_cifar10_example - INFO - Model: simple
+07/24/2025 19:47:47:INFO:Model: simple
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Clients: 20
+07/24/2025 19:47:47:INFO:Clients: 20
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Partitioning: dirichlet (α=0.5)
+07/24/2025 19:47:47:INFO:Partitioning: dirichlet (α=0.5)
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Aggregation: AggregationStrategyType.GOSSIP_AVG
+07/24/2025 19:47:47:INFO:Aggregation: AggregationStrategyType.GOSSIP_AVG
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Mixing parameter: 0.5
+07/24/2025 19:47:47:INFO:Mixing parameter: 0.5
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Topology: TopologyType.RING
+07/24/2025 19:47:47:INFO:Topology: TopologyType.RING
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Rounds: 10
+07/24/2025 19:47:47:INFO:Rounds: 10
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Local epochs: 3
+07/24/2025 19:47:47:INFO:Local epochs: 3
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Batch size: 64
+07/24/2025 19:47:47:INFO:Batch size: 64
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Learning rate: 0.01
+07/24/2025 19:47:47:INFO:Learning rate: 0.01
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Device: cuda
+07/24/2025 19:47:47:INFO:Device: cuda
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - === Differential Privacy Settings ===
+07/24/2025 19:47:47:INFO:=== Differential Privacy Settings ===
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Total privacy budget per client: ε=10.0, δ=1e-05
+07/24/2025 19:47:47:INFO:Total privacy budget per client: ε=10.0, δ=1e-05
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Per-round privacy budget: ε=1.0, δ=1e-05
+07/24/2025 19:47:47:INFO:Per-round privacy budget: ε=1.0, δ=1e-05
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Max gradient norm: 1.0
+07/24/2025 19:47:47:INFO:Max gradient norm: 1.0
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Client DP: True
+07/24/2025 19:47:47:INFO:Client DP: True
+2025-07-24 19:47:47,475 - murmura.dp_decentralized_cifar10_example - INFO - Central DP: False
+07/24/2025 19:47:47:INFO:Central DP: False
+2025-07-24 19:47:47,476 - murmura.dp_decentralized_cifar10_example - INFO - Mechanism: gaussian
+07/24/2025 19:47:47:INFO:Mechanism: gaussian
+2025-07-24 19:47:47,476 - murmura.dp_decentralized_cifar10_example - INFO - Accounting: rdp
+07/24/2025 19:47:47:INFO:Accounting: rdp
+2025-07-24 19:47:47,476 - murmura.dp_decentralized_cifar10_example - INFO - Noise multiplier will be auto-calculated by each client based on actual partition size
+07/24/2025 19:47:47:INFO:Noise multiplier will be auto-calculated by each client based on actual partition size
+2025-07-24 19:47:47,476 - murmura.dp_decentralized_cifar10_example - INFO - === Starting Decentralized Training ===
+07/24/2025 19:47:47:INFO:=== Starting Decentralized Training ===
+2025-07-24 19:47:47,476 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 0 - status: starting_decentralized, rounds: 10
+07/24/2025 19:47:47:INFO:[multi-node:5 nodes] Round 0 - status: starting_decentralized, rounds: 10
+2025-07-24 19:47:47,476 - murmura.learning_process.DecentralizedLearningProcess - INFO - Using feature columns: ['img'], label column: label
+07/24/2025 19:47:47:INFO:Using feature columns: ['img'], label column: label
+2025-07-24 19:47:47,476 - murmura.learning_process.DecentralizedLearningProcess - INFO - Preparing test data for evaluation...
+07/24/2025 19:47:47:INFO:Preparing test data for evaluation...
+2025-07-24 19:47:49,471 - murmura.learning_process.DecentralizedLearningProcess - INFO - Prepared test data - Features shape: (10000, 32, 32, 3), Labels shape: (10000,)
+07/24/2025 19:47:49:INFO:Prepared test data - Features shape: (10000, 32, 32, 3), Labels shape: (10000,)
+2025-07-24 19:47:50,624 - murmura.learning_process.DecentralizedLearningProcess - INFO - Initial Test Accuracy: 9.98%
+07/24/2025 19:47:50:INFO:Initial Test Accuracy: 9.98%
+2025-07-24 19:47:50,624 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 1/10 ---
+07/24/2025 19:47:50:INFO:--- Round 1/10 ---
+2025-07-24 19:47:50,624 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 3 epochs...
+07/24/2025 19:47:50:INFO:Training on clients for 3 epochs...
+2025-07-24 19:47:50,624 - murmura - INFO - Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+07/24/2025 19:47:50:INFO:Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:50,626 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:50:INFO:Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:50,626 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:50:INFO:Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:50,627 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Loading dataset: cifar10
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:50:INFO:Loading dataset: cifar10
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:50,627 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:50:INFO:Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:50,627 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:50:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:47:44,676 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Actor client_17 initialized on node 98359aa6 with device: cuda[32m [repeated 19x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:44,960 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Set dataset metadata for lazy loading[32m [repeated 19x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:44,960 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Dataset: cifar10[32m [repeated 19x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:44,960 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Splits: ['train', 'test'][32m [repeated 19x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:44,960 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Features: ['img'], Label: label[32m [repeated 19x across cluster][0m
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 2025-07-24 19:47:57,170 - murmura.actor.client_14 - [Node:1131ea16] - [Actor:client_14] - INFO - Successfully loaded all splits at once
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 07/24/2025 19:47:57:INFO:Successfully loaded all splits at once
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 2025-07-24 19:47:57,171 - murmura.actor.client_14 - [Node:1131ea16] - [Actor:client_14] - INFO - Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 07/24/2025 19:47:57:INFO:Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 2025-07-24 19:47:57,171 - murmura.actor.client_14 - [Node:1131ea16] - [Actor:client_14] - INFO - Feature columns: ['img']
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 07/24/2025 19:47:57:INFO:Feature columns: ['img']
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 2025-07-24 19:47:57,171 - murmura.actor.client_14 - [Node:1131ea16] - [Actor:client_14] - INFO - Label column: label
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 07/24/2025 19:47:57:INFO:Label column: label
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 2025-07-24 19:47:57,171 - murmura.actor.client_14 - [Node:1131ea16] - [Actor:client_14] - INFO - Lazy loading completed successfully
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 07/24/2025 19:47:57:INFO:Lazy loading completed successfully
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:50,627 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Dataset not loaded, triggering lazy loading...[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 07/24/2025 19:47:50:INFO:Dataset not loaded, triggering lazy loading...[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:50,627 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Lazy loading dataset from metadata...[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 07/24/2025 19:47:50:INFO:Lazy loading dataset from metadata...[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:50,628 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Loading dataset: cifar10[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 07/24/2025 19:47:50:INFO:Loading dataset: cifar10[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 2025-07-24 19:47:50,628 - murmura.actor.client_19 - [Node:98359aa6] - [Actor:client_19] - INFO - Source: DatasetSource.HUGGING_FACE[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 07/24/2025 19:47:50:INFO:Source: DatasetSource.HUGGING_FACE[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 2025-07-24 19:47:57,171 - murmura.actor.client_14 - [Node:1131ea16] - [Actor:client_14] - INFO - Available splits: ['train', 'test'][32m [repeated 8x across cluster][0m
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m 07/24/2025 19:47:57:INFO:Available splits: ['train', 'test'][32m [repeated 8x across cluster][0m
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m   warnings.warn(
+[36m(VirtualClientActor pid=331555, ip=10.0.4.118)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:58,230 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Successfully loaded all splits at once[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:58:INFO:Successfully loaded all splits at once[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:58,230 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Dataset lazy loaded successfully![32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:58:INFO:Dataset lazy loaded successfully![32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:58,230 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Feature columns: ['img'][32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:58:INFO:Feature columns: ['img'][32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:58,231 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Label column: label[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:58:INFO:Label column: label[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:58,231 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Lazy loading completed successfully[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:58:INFO:Lazy loading completed successfully[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 2025-07-24 19:47:58,230 - murmura.actor.client_6 - [Node:1519538f] - [Actor:client_6] - INFO - Available splits: ['train', 'test'][32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:47:58:INFO:Available splits: ['train', 'test'][32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=331556, ip=10.0.4.118)[0m   warnings.warn([32m [repeated 11x across cluster][0m
+2025-07-24 19:48:15,735 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 1 - avg_train_loss: 1.8654, avg_train_accuracy: 0.3808, active_clients: 8, topology: ring
+07/24/2025 19:48:15:INFO:[multi-node:5 nodes] Round 1 - avg_train_loss: 1.8654, avg_train_accuracy: 0.3808, active_clients: 8, topology: ring
+2025-07-24 19:48:15,736 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+07/24/2025 19:48:15:INFO:Performing decentralized aggregation using ring topology...
+2025-07-24 19:48:18,031 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Loss: 2.4157
+07/24/2025 19:48:18:INFO:Representative Model Test Loss: 2.4157
+2025-07-24 19:48:18,032 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Accuracy: 9.96%
+07/24/2025 19:48:18:INFO:Representative Model Test Accuracy: 9.96%
+2025-07-24 19:48:18,447 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 2/10 ---
+07/24/2025 19:48:18:INFO:--- Round 2/10 ---
+2025-07-24 19:48:18,448 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 3 epochs...
+07/24/2025 19:48:18:INFO:Training on clients for 3 epochs...
+2025-07-24 19:48:18,448 - murmura - INFO - Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+07/24/2025 19:48:18:INFO:Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 2025-07-24 19:48:18,449 - murmura.actor.client_5 - [Node:1519538f] - [Actor:client_5] - INFO - Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 07/24/2025 19:48:18:INFO:Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 2025-07-24 19:48:18,450 - murmura.actor.client_5 - [Node:1519538f] - [Actor:client_5] - INFO - Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 07/24/2025 19:48:18:INFO:Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 2025-07-24 19:48:18,450 - murmura.actor.client_5 - [Node:1519538f] - [Actor:client_5] - INFO - Loading dataset: cifar10
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 07/24/2025 19:48:18:INFO:Loading dataset: cifar10
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 2025-07-24 19:48:18,450 - murmura.actor.client_5 - [Node:1519538f] - [Actor:client_5] - INFO - Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 07/24/2025 19:48:18:INFO:Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.[32m [repeated 7x across cluster][0m
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 2025-07-24 19:48:18,450 - murmura.actor.client_5 - [Node:1519538f] - [Actor:client_5] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=339302, ip=10.0.4.120)[0m 07/24/2025 19:48:18:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m   warnings.warn([32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:48:18,450 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:18:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=326816, ip=10.0.4.122)[0m 07/24/2025 19:48:20:WARNING:Privacy budget exhausted! Current ε=11.077, target ε=10.0
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:48:24,976 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Successfully loaded all splits at once
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:24:INFO:Successfully loaded all splits at once
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:48:24,976 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:24:INFO:Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:48:24,976 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Feature columns: ['img']
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:24:INFO:Feature columns: ['img']
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:48:24,976 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Label column: label
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:24:INFO:Label column: label
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:48:24,976 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Lazy loading completed successfully
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:24:INFO:Lazy loading completed successfully
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 2025-07-24 19:48:18,451 - murmura.actor.client_16 - [Node:98359aa6] - [Actor:client_16] - INFO - Dataset not loaded, triggering lazy loading...[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 07/24/2025 19:48:18:INFO:Dataset not loaded, triggering lazy loading...[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 2025-07-24 19:48:18,451 - murmura.actor.client_16 - [Node:98359aa6] - [Actor:client_16] - INFO - Lazy loading dataset from metadata...[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 07/24/2025 19:48:18:INFO:Lazy loading dataset from metadata...[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 2025-07-24 19:48:18,451 - murmura.actor.client_16 - [Node:98359aa6] - [Actor:client_16] - INFO - Loading dataset: cifar10[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 07/24/2025 19:48:18:INFO:Loading dataset: cifar10[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 2025-07-24 19:48:18,451 - murmura.actor.client_16 - [Node:98359aa6] - [Actor:client_16] - INFO - Source: DatasetSource.HUGGING_FACE[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=330869, ip=10.0.4.112)[0m 07/24/2025 19:48:18:INFO:Source: DatasetSource.HUGGING_FACE[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692462)[0m 2025-07-24 19:48:24,976 - murmura.actor.client_2 - [Node:211850c5] - [Actor:client_2] - INFO - Available splits: ['train', 'test'][32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:24:INFO:Available splits: ['train', 'test'][32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692462)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+[36m(VirtualClientActor pid=692462)[0m   warnings.warn(
+[36m(VirtualClientActor pid=330867, ip=10.0.4.112)[0m 07/24/2025 19:48:21:WARNING:Privacy budget exhausted! Current ε=11.026, target ε=10.0[32m [repeated 2x across cluster][0m
+[36m(VirtualClientActor pid=692462)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.
+[36m(VirtualClientActor pid=692461)[0m 2025-07-24 19:48:25,193 - murmura.actor.client_1 - [Node:211850c5] - [Actor:client_1] - INFO - Successfully loaded all splits at once[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 07/24/2025 19:48:25:INFO:Successfully loaded all splits at once[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 2025-07-24 19:48:25,193 - murmura.actor.client_1 - [Node:211850c5] - [Actor:client_1] - INFO - Dataset lazy loaded successfully![32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 07/24/2025 19:48:25:INFO:Dataset lazy loaded successfully![32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 2025-07-24 19:48:25,193 - murmura.actor.client_1 - [Node:211850c5] - [Actor:client_1] - INFO - Feature columns: ['img'][32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 07/24/2025 19:48:25:INFO:Feature columns: ['img'][32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 2025-07-24 19:48:25,194 - murmura.actor.client_1 - [Node:211850c5] - [Actor:client_1] - INFO - Label column: label[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 07/24/2025 19:48:25:INFO:Label column: label[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 2025-07-24 19:48:25,194 - murmura.actor.client_1 - [Node:211850c5] - [Actor:client_1] - INFO - Lazy loading completed successfully[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 07/24/2025 19:48:25:INFO:Lazy loading completed successfully[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 2025-07-24 19:48:25,193 - murmura.actor.client_1 - [Node:211850c5] - [Actor:client_1] - INFO - Available splits: ['train', 'test'][32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m 07/24/2025 19:48:25:INFO:Available splits: ['train', 'test'][32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=326814, ip=10.0.4.122)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692461)[0m   warnings.warn([32m [repeated 8x across cluster][0m
+2025-07-24 19:48:41,103 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 2 - avg_train_loss: 1.8374, avg_train_accuracy: 0.3606, active_clients: 8, topology: ring
+07/24/2025 19:48:41:INFO:[multi-node:5 nodes] Round 2 - avg_train_loss: 1.8374, avg_train_accuracy: 0.3606, active_clients: 8, topology: ring
+2025-07-24 19:48:41,104 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+07/24/2025 19:48:41:INFO:Performing decentralized aggregation using ring topology...
+2025-07-24 19:48:43,121 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Loss: 3.6418
+07/24/2025 19:48:43:INFO:Representative Model Test Loss: 3.6418
+2025-07-24 19:48:43,121 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Accuracy: 10.00%
+07/24/2025 19:48:43:INFO:Representative Model Test Accuracy: 10.00%
+2025-07-24 19:48:43,535 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 3/10 ---
+07/24/2025 19:48:43:INFO:--- Round 3/10 ---
+2025-07-24 19:48:43,536 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 3 epochs...
+07/24/2025 19:48:43:INFO:Training on clients for 3 epochs...
+2025-07-24 19:48:43,536 - murmura - INFO - Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+07/24/2025 19:48:43:INFO:Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:43,537 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:43:INFO:Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:43,538 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:43:INFO:Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:43,538 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Loading dataset: cifar10
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:43:INFO:Loading dataset: cifar10
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:43,538 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:43:INFO:Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=326814, ip=10.0.4.122)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.[32m [repeated 4x across cluster][0m
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:43,538 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:43:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=326814, ip=10.0.4.122)[0m   warnings.warn(
+[36m(VirtualClientActor pid=331554, ip=10.0.4.118)[0m 2025-07-24 19:48:43,539 - murmura.actor.client_12 - [Node:1131ea16] - [Actor:client_12] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=331554, ip=10.0.4.118)[0m 07/24/2025 19:48:43:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=692462)[0m 07/24/2025 19:48:44:WARNING:Privacy budget exhausted! Current ε=11.091, target ε=10.0
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:50,020 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Successfully loaded all splits at once
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:50:INFO:Successfully loaded all splits at once
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:50,021 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:50:INFO:Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:50,021 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Feature columns: ['img']
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:50:INFO:Feature columns: ['img']
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:50,021 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Label column: label
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:50:INFO:Label column: label
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:50,021 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Lazy loading completed successfully
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:50:INFO:Lazy loading completed successfully
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:43,538 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Dataset not loaded, triggering lazy loading...[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:43:INFO:Dataset not loaded, triggering lazy loading...[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:43,538 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Lazy loading dataset from metadata...[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:43:INFO:Lazy loading dataset from metadata...[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:43,539 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Loading dataset: cifar10[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:43:INFO:Loading dataset: cifar10[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:43,539 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Source: DatasetSource.HUGGING_FACE[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:43:INFO:Source: DatasetSource.HUGGING_FACE[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=692463)[0m 2025-07-24 19:48:50,021 - murmura.actor.client_3 - [Node:211850c5] - [Actor:client_3] - INFO - Available splits: ['train', 'test'][32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=692463)[0m 07/24/2025 19:48:50:INFO:Available splits: ['train', 'test'][32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=339305, ip=10.0.4.120)[0m 07/24/2025 19:48:46:WARNING:Privacy budget exhausted! Current ε=11.018, target ε=10.0[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=331553, ip=10.0.4.118)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+[36m(VirtualClientActor pid=331553, ip=10.0.4.118)[0m   warnings.warn(
+[36m(VirtualClientActor pid=692463)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:50,548 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Successfully loaded all splits at once[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:50:INFO:Successfully loaded all splits at once[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:50,548 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Dataset lazy loaded successfully![32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:50:INFO:Dataset lazy loaded successfully![32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:50,548 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Feature columns: ['img'][32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:50:INFO:Feature columns: ['img'][32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:50,548 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Label column: label[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:50:INFO:Label column: label[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:50,549 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Lazy loading completed successfully[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:50:INFO:Lazy loading completed successfully[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 2025-07-24 19:48:50,548 - murmura.actor.client_17 - [Node:98359aa6] - [Actor:client_17] - INFO - Available splits: ['train', 'test'][32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m 07/24/2025 19:48:50:INFO:Available splits: ['train', 'test'][32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=330866, ip=10.0.4.112)[0m   warnings.warn([32m [repeated 6x across cluster][0m
+2025-07-24 19:49:07,261 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 3 - avg_train_loss: 1.7924, avg_train_accuracy: 0.4383, active_clients: 8, topology: ring
+07/24/2025 19:49:07:INFO:[multi-node:5 nodes] Round 3 - avg_train_loss: 1.7924, avg_train_accuracy: 0.4383, active_clients: 8, topology: ring
+2025-07-24 19:49:07,261 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+07/24/2025 19:49:07:INFO:Performing decentralized aggregation using ring topology...
+2025-07-24 19:49:09,324 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Loss: 3.8635
+07/24/2025 19:49:09:INFO:Representative Model Test Loss: 3.8635
+2025-07-24 19:49:09,324 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Accuracy: 10.00%
+07/24/2025 19:49:09:INFO:Representative Model Test Accuracy: 10.00%
+2025-07-24 19:49:09,750 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 4/10 ---
+07/24/2025 19:49:09:INFO:--- Round 4/10 ---
+2025-07-24 19:49:09,750 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 3 epochs...
+07/24/2025 19:49:09:INFO:Training on clients for 3 epochs...
+2025-07-24 19:49:09,750 - murmura - INFO - Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+07/24/2025 19:49:09:INFO:Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:09,753 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:09:INFO:Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:09,753 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:09:INFO:Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:09,753 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Loading dataset: cifar10
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:09:INFO:Loading dataset: cifar10
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:09,753 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:09:INFO:Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=331553, ip=10.0.4.118)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.[32m [repeated 3x across cluster][0m
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:09,753 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:09:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=331553, ip=10.0.4.118)[0m   warnings.warn(
+[36m(VirtualClientActor pid=331556, ip=10.0.4.118)[0m 07/24/2025 19:49:11:WARNING:Privacy budget exhausted! Current ε=11.101, target ε=10.0
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:16,734 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Successfully loaded all splits at once
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:16:INFO:Successfully loaded all splits at once
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:16,734 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:16:INFO:Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:16,734 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:16:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:16,734 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Feature columns: ['img']
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:16:INFO:Feature columns: ['img']
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:16,734 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Label column: label
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:16:INFO:Label column: label
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 2025-07-24 19:49:16,734 - murmura.actor.client_9 - [Node:a583ef35] - [Actor:client_9] - INFO - Lazy loading completed successfully
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m 07/24/2025 19:49:16:INFO:Lazy loading completed successfully
+[36m(VirtualClientActor pid=326815, ip=10.0.4.122)[0m 07/24/2025 19:49:12:WARNING:Privacy budget exhausted! Current ε=12.001, target ε=10.0[32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m   warnings.warn(
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.
+[36m(VirtualClientActor pid=326813, ip=10.0.4.122)[0m   warnings.warn(
+2025-07-24 19:49:29,911 - murmura.learning_process.DecentralizedLearningProcess - INFO - [multi-node:5 nodes] Round 4 - avg_train_loss: 1.8424, avg_train_accuracy: 0.3964, active_clients: 8, topology: ring
+07/24/2025 19:49:29:INFO:[multi-node:5 nodes] Round 4 - avg_train_loss: 1.8424, avg_train_accuracy: 0.3964, active_clients: 8, topology: ring
+2025-07-24 19:49:29,912 - murmura.learning_process.DecentralizedLearningProcess - INFO - Performing decentralized aggregation using ring topology...
+07/24/2025 19:49:29:INFO:Performing decentralized aggregation using ring topology...
+2025-07-24 19:49:31,976 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Loss: 4.2775
+07/24/2025 19:49:31:INFO:Representative Model Test Loss: 4.2775
+2025-07-24 19:49:31,977 - murmura.learning_process.DecentralizedLearningProcess - INFO - Representative Model Test Accuracy: 10.00%
+07/24/2025 19:49:31:INFO:Representative Model Test Accuracy: 10.00%
+2025-07-24 19:49:32,400 - murmura.learning_process.DecentralizedLearningProcess - INFO - --- Round 5/10 ---
+07/24/2025 19:49:32:INFO:--- Round 5/10 ---
+2025-07-24 19:49:32,407 - murmura.learning_process.DecentralizedLearningProcess - INFO - Training on clients for 3 epochs...
+07/24/2025 19:49:32:INFO:Training on clients for 3 epochs...
+2025-07-24 19:49:32,408 - murmura - INFO - Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+07/24/2025 19:49:32:INFO:Client subsampling: selected 8/20 clients (sampling rate: 0.40)
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:32,410 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:32:INFO:Dataset not loaded, triggering lazy loading...
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:32,410 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:32:INFO:Lazy loading dataset from metadata...
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:32,410 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Loading dataset: cifar10
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:32:INFO:Loading dataset: cifar10
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:32,410 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:32:INFO:Source: DatasetSource.HUGGING_FACE
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:32,410 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:32:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=330868, ip=10.0.4.112)[0m 07/24/2025 19:49:33:WARNING:Privacy budget exhausted! Current ε=11.162, target ε=10.0
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:39,010 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Successfully loaded all splits at once
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:39:INFO:Successfully loaded all splits at once
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:39,010 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:39:INFO:Dataset lazy loaded successfully!
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:39,010 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:39:INFO:Available splits: ['train', 'test']
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:39,010 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Feature columns: ['img']
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:39:INFO:Feature columns: ['img']
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:39,010 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Label column: label
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:39:INFO:Label column: label
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:39,010 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - INFO - Lazy loading completed successfully
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:39:INFO:Lazy loading completed successfully
+[36m(VirtualClientActor pid=330867, ip=10.0.4.112)[0m 07/24/2025 19:49:35:WARNING:Privacy budget exhausted! Current ε=11.951, target ε=10.0[32m [repeated 6x across cluster][0m
+[36m(VirtualClientActor pid=692460)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/privacy_engine.py:96: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+[36m(VirtualClientActor pid=692460)[0m   warnings.warn(
+[36m(VirtualClientActor pid=692460)[0m /home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/accountants/analysis/rdp.py:332: UserWarning: Optimal order is the largest alpha. Please consider expanding the range of alphas to get a tighter privacy bound.
+[36m(VirtualClientActor pid=692460)[0m   warnings.warn(
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:49:ERROR:Training failed: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:49,739 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - ERROR - Training failed: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:49:ERROR:Training failed: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:49,739 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - ERROR - Features type: <class 'numpy.ndarray'>
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:49:ERROR:Features type: <class 'numpy.ndarray'>
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:49,739 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - ERROR - Labels type: <class 'numpy.ndarray'>
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:49:ERROR:Labels type: <class 'numpy.ndarray'>
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:49,739 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - ERROR - Features shape: (3487, 32, 32, 3)
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:49:ERROR:Features shape: (3487, 32, 32, 3)
+[36m(VirtualClientActor pid=692460)[0m 2025-07-24 19:49:49,739 - murmura.actor.client_0 - [Node:211850c5] - [Actor:client_0] - ERROR - Features dtype: float32
+[36m(VirtualClientActor pid=692460)[0m 07/24/2025 19:49:49:ERROR:Features dtype: float32
+2025-07-24 19:49:49,948 - murmura - ERROR - Training failed for batch 0: [36mray::VirtualClientActor.train_model()[39m (pid=692460, ip=10.0.4.103, actor_id=c67bfad6fcab8fb90e786718bc010000, repr=<murmura.node.client_actor.VirtualClientActor object at 0x7a5e56a90fd0>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/node/client_actor.py", line 881, in train_model
+    result = self.model.train(features, labels, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 401, in train
+    epoch_stats = self._train_epoch(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 467, in _train_epoch
+    loss.backward()
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/utils/hooks.py", line 137, in hook
+    out = hook(self.module, res, self.grad_outputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 340, in capture_backprops_hook
+    create_or_accumulate_grad_sample(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 58, in create_or_accumulate_grad_sample
+    param._current_grad_sample = torch.zeros(
+                                 ^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+07/24/2025 19:49:49:ERROR:Training failed for batch 0: [36mray::VirtualClientActor.train_model()[39m (pid=692460, ip=10.0.4.103, actor_id=c67bfad6fcab8fb90e786718bc010000, repr=<murmura.node.client_actor.VirtualClientActor object at 0x7a5e56a90fd0>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/node/client_actor.py", line 881, in train_model
+    result = self.model.train(features, labels, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 401, in train
+    epoch_stats = self._train_epoch(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 467, in _train_epoch
+    loss.backward()
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/utils/hooks.py", line 137, in hook
+    out = hook(self.module, res, self.grad_outputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 340, in capture_backprops_hook
+    create_or_accumulate_grad_sample(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 58, in create_or_accumulate_grad_sample
+    param._current_grad_sample = torch.zeros(
+                                 ^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+2025-07-24 19:49:49,948 - murmura.dp_decentralized_cifar10_example - INFO - === Shutting Down ===
+07/24/2025 19:49:49:INFO:=== Shutting Down ===
+2025-07-24 19:49:49,949 - murmura.learning_process.DecentralizedLearningProcess - INFO - Shutting down learning process...
+07/24/2025 19:49:49:INFO:Shutting down learning process...
+2025-07-24 19:49:49,949 - murmura - INFO - Cleaning up 20 actors
+07/24/2025 19:49:49:INFO:Cleaning up 20 actors
+2025-07-24 19:49:49,952 - murmura - INFO - Cluster manager shutdown complete
+07/24/2025 19:49:49:INFO:Cluster manager shutdown complete
+2025-07-24 19:49:49,952 - murmura.learning_process.DecentralizedLearningProcess - INFO - Learning process shut down successfully.
+07/24/2025 19:49:49:INFO:Learning process shut down successfully.
+2025-07-24 19:49:49,952 - murmura.dp_decentralized_cifar10_example - ERROR - DP Decentralized CIFAR-10 Learning Process failed: [36mray::VirtualClientActor.train_model()[39m (pid=692460, ip=10.0.4.103, actor_id=c67bfad6fcab8fb90e786718bc010000, repr=<murmura.node.client_actor.VirtualClientActor object at 0x7a5e56a90fd0>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/node/client_actor.py", line 881, in train_model
+    result = self.model.train(features, labels, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 401, in train
+    epoch_stats = self._train_epoch(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 467, in _train_epoch
+    loss.backward()
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/utils/hooks.py", line 137, in hook
+    out = hook(self.module, res, self.grad_outputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 340, in capture_backprops_hook
+    create_or_accumulate_grad_sample(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 58, in create_or_accumulate_grad_sample
+    param._current_grad_sample = torch.zeros(
+                                 ^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+07/24/2025 19:49:49:ERROR:DP Decentralized CIFAR-10 Learning Process failed: [36mray::VirtualClientActor.train_model()[39m (pid=692460, ip=10.0.4.103, actor_id=c67bfad6fcab8fb90e786718bc010000, repr=<murmura.node.client_actor.VirtualClientActor object at 0x7a5e56a90fd0>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/node/client_actor.py", line 881, in train_model
+    result = self.model.train(features, labels, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 401, in train
+    epoch_stats = self._train_epoch(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 467, in _train_epoch
+    loss.backward()
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/utils/hooks.py", line 137, in hook
+    out = hook(self.module, res, self.grad_outputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 340, in capture_backprops_hook
+    create_or_accumulate_grad_sample(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 58, in create_or_accumulate_grad_sample
+    param._current_grad_sample = torch.zeros(
+                                 ^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+Traceback (most recent call last):
+  File "/home/ubuntu/murmura/murmura/examples/dp_decentralized_cifar10_example.py", line 506, in main
+    results = learning_process.execute()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/orchestration/learning_process/decentralized_learning_process.py", line 204, in execute
+    train_metrics = self.cluster_manager.train_models(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/orchestration/cluster_manager.py", line 1194, in train_models
+    batch_results = ray.get(
+                    ^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py", line 2782, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py", line 929, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(OutOfMemoryError): [36mray::VirtualClientActor.train_model()[39m (pid=692460, ip=10.0.4.103, actor_id=c67bfad6fcab8fb90e786718bc010000, repr=<murmura.node.client_actor.VirtualClientActor object at 0x7a5e56a90fd0>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/node/client_actor.py", line 881, in train_model
+    result = self.model.train(features, labels, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 401, in train
+    epoch_stats = self._train_epoch(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 467, in _train_epoch
+    loss.backward()
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/utils/hooks.py", line 137, in hook
+    out = hook(self.module, res, self.grad_outputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 340, in capture_backprops_hook
+    create_or_accumulate_grad_sample(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 58, in create_or_accumulate_grad_sample
+    param._current_grad_sample = torch.zeros(
+                                 ^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+Traceback (most recent call last):
+  File "/home/ubuntu/murmura/murmura/examples/dp_decentralized_cifar10_example.py", line 608, in <module>
+    main()
+  File "/home/ubuntu/murmura/murmura/examples/dp_decentralized_cifar10_example.py", line 506, in main
+    results = learning_process.execute()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/orchestration/learning_process/decentralized_learning_process.py", line 204, in execute
+    train_metrics = self.cluster_manager.train_models(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/orchestration/cluster_manager.py", line 1194, in train_models
+    batch_results = ray.get(
+                    ^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py", line 2782, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/ray/_private/worker.py", line 929, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(OutOfMemoryError): [36mray::VirtualClientActor.train_model()[39m (pid=692460, ip=10.0.4.103, actor_id=c67bfad6fcab8fb90e786718bc010000, repr=<murmura.node.client_actor.VirtualClientActor object at 0x7a5e56a90fd0>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/node/client_actor.py", line 881, in train_model
+    result = self.model.train(features, labels, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 401, in train
+    epoch_stats = self._train_epoch(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/murmura/murmura/privacy/dp_model_wrapper.py", line 467, in _train_epoch
+    loss.backward()
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/_tensor.py", line 648, in backward
+    torch.autograd.backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/__init__.py", line 353, in backward
+    _engine_run_backward(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/autograd/graph.py", line 824, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/torch/utils/hooks.py", line 137, in hook
+    out = hook(self.module, res, self.grad_outputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 340, in capture_backprops_hook
+    create_or_accumulate_grad_sample(
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/site-packages/opacus/grad_sample/grad_sample_module.py", line 58, in create_or_accumulate_grad_sample
+    param._current_grad_sample = torch.zeros(
+                                 ^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 146.00 MiB. GPU 0 has a total capacity of 7.43 GiB of which 139.44 MiB is free. Process 692351 has 111.75 MiB memory in use. Process 692462 has 2.73 GiB memory in use. Process 692461 has 2.32 GiB memory in use. Including non-PyTorch memory, this process has 453.75 MiB memory in use. Process 692463 has 1.69 GiB memory in use. Of the allocated memory 226.19 MiB is allocated by PyTorch, and 129.81 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+
+2025-07-24 19:49:51,525 - INFO - Progress: 289/360
+2025-07-24 19:49:51,525 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.6rate_no_dp
+2025-07-24 19:51:42,991 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.6rate_no_dp completed successfully in 111.5s
+2025-07-24 19:51:42,991 - INFO - Progress: 290/360
+2025-07-24 19:51:42,992 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.6rate_high_privacy
+2025-07-24 19:54:06,465 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.6rate_high_privacy completed successfully in 143.5s
+2025-07-24 19:54:06,478 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 19:54:06,478 - INFO - Progress: 291/360
+2025-07-24 19:54:06,478 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.6rate_medium_privacy
+2025-07-24 19:56:32,478 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.6rate_medium_privacy completed successfully in 146.0s
+2025-07-24 19:56:32,478 - INFO - Progress: 292/360
+2025-07-24 19:56:32,478 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.6rate_low_privacy
+2025-07-24 19:59:27,800 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.6rate_low_privacy completed successfully in 175.3s
+2025-07-24 19:59:27,800 - INFO - Progress: 293/360
+2025-07-24 19:59:27,801 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.8rate_no_dp
+2025-07-24 20:01:21,584 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.8rate_no_dp completed successfully in 113.8s
+2025-07-24 20:01:21,585 - INFO - Progress: 294/360
+2025-07-24 20:01:21,585 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.8rate_high_privacy
+2025-07-24 20:03:25,469 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.8rate_high_privacy completed successfully in 123.9s
+2025-07-24 20:03:25,469 - INFO - Progress: 295/360
+2025-07-24 20:03:25,469 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.8rate_medium_privacy
+2025-07-24 20:05:41,189 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.8rate_medium_privacy completed successfully in 135.7s
+2025-07-24 20:05:41,189 - INFO - Progress: 296/360
+2025-07-24 20:05:41,189 - INFO - Running experiment: cifar10_decentralized_ring_20clients_0.8rate_low_privacy
+2025-07-24 20:08:03,359 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_0.8rate_low_privacy completed successfully in 142.2s
+2025-07-24 20:08:03,359 - INFO - Progress: 297/360
+2025-07-24 20:08:03,359 - INFO - Running experiment: cifar10_decentralized_ring_20clients_1.0rate_no_dp
+2025-07-24 20:09:48,636 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_1.0rate_no_dp completed successfully in 105.3s
+2025-07-24 20:09:48,637 - INFO - Progress: 298/360
+2025-07-24 20:09:48,637 - INFO - Running experiment: cifar10_decentralized_ring_20clients_1.0rate_high_privacy
+2025-07-24 20:11:49,895 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_1.0rate_high_privacy completed successfully in 121.3s
+2025-07-24 20:11:49,895 - INFO - Progress: 299/360
+2025-07-24 20:11:49,895 - INFO - Running experiment: cifar10_decentralized_ring_20clients_1.0rate_medium_privacy
+2025-07-24 20:13:56,097 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_1.0rate_medium_privacy completed successfully in 126.2s
+2025-07-24 20:13:56,098 - INFO - Progress: 300/360
+2025-07-24 20:13:56,098 - INFO - Running experiment: cifar10_decentralized_ring_20clients_1.0rate_low_privacy
+2025-07-24 20:16:08,040 - INFO - ✅ Experiment cifar10_decentralized_ring_20clients_1.0rate_low_privacy completed successfully in 131.9s
+2025-07-24 20:16:08,054 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 20:16:08,054 - INFO - Progress: 301/360
+2025-07-24 20:16:08,054 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.2rate_no_dp
+2025-07-24 20:18:21,407 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.2rate_no_dp completed successfully in 133.4s
+2025-07-24 20:18:21,407 - INFO - Progress: 302/360
+2025-07-24 20:18:21,408 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.2rate_high_privacy
+2025-07-24 20:21:40,402 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.2rate_high_privacy completed successfully in 199.0s
+2025-07-24 20:21:40,403 - INFO - Progress: 303/360
+2025-07-24 20:21:40,403 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.2rate_medium_privacy
+2025-07-24 20:25:23,133 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.2rate_medium_privacy completed successfully in 222.7s
+2025-07-24 20:25:23,133 - INFO - Progress: 304/360
+2025-07-24 20:25:23,133 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.2rate_low_privacy
+2025-07-24 20:28:57,557 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.2rate_low_privacy completed successfully in 214.4s
+2025-07-24 20:28:57,557 - INFO - Progress: 305/360
+2025-07-24 20:28:57,557 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.4rate_no_dp
+2025-07-24 20:31:15,002 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.4rate_no_dp completed successfully in 137.4s
+2025-07-24 20:31:15,003 - INFO - Progress: 306/360
+2025-07-24 20:31:15,003 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.4rate_high_privacy
+2025-07-24 20:34:16,721 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.4rate_high_privacy completed successfully in 181.7s
+2025-07-24 20:34:16,721 - INFO - Progress: 307/360
+2025-07-24 20:34:16,721 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.4rate_medium_privacy
+2025-07-24 20:37:42,450 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.4rate_medium_privacy completed successfully in 205.7s
+2025-07-24 20:37:42,450 - INFO - Progress: 308/360
+2025-07-24 20:37:42,450 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.4rate_low_privacy
+2025-07-24 20:40:58,905 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.4rate_low_privacy completed successfully in 196.5s
+2025-07-24 20:40:58,905 - INFO - Progress: 309/360
+2025-07-24 20:40:58,906 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.6rate_no_dp
+2025-07-24 20:43:10,508 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.6rate_no_dp completed successfully in 131.6s
+2025-07-24 20:43:10,508 - INFO - Progress: 310/360
+2025-07-24 20:43:10,509 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.6rate_high_privacy
+2025-07-24 20:45:54,952 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.6rate_high_privacy completed successfully in 164.4s
+2025-07-24 20:45:54,966 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 20:45:54,966 - INFO - Progress: 311/360
+2025-07-24 20:45:54,966 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.6rate_medium_privacy
+2025-07-24 20:48:57,269 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.6rate_medium_privacy completed successfully in 182.3s
+2025-07-24 20:48:57,269 - INFO - Progress: 312/360
+2025-07-24 20:48:57,270 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.6rate_low_privacy
+2025-07-24 20:52:10,508 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.6rate_low_privacy completed successfully in 193.2s
+2025-07-24 20:52:10,509 - INFO - Progress: 313/360
+2025-07-24 20:52:10,509 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.8rate_no_dp
+2025-07-24 20:54:15,874 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.8rate_no_dp completed successfully in 125.4s
+2025-07-24 20:54:15,874 - INFO - Progress: 314/360
+2025-07-24 20:54:15,874 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.8rate_high_privacy
+2025-07-24 20:56:45,475 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.8rate_high_privacy completed successfully in 149.6s
+2025-07-24 20:56:45,475 - INFO - Progress: 315/360
+2025-07-24 20:56:45,475 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.8rate_medium_privacy
+2025-07-24 20:59:22,559 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.8rate_medium_privacy completed successfully in 157.1s
+2025-07-24 20:59:22,559 - INFO - Progress: 316/360
+2025-07-24 20:59:22,560 - INFO - Running experiment: cifar10_decentralized_complete_5clients_0.8rate_low_privacy
+2025-07-24 21:02:28,228 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_0.8rate_low_privacy completed successfully in 185.7s
+2025-07-24 21:02:28,229 - INFO - Progress: 317/360
+2025-07-24 21:02:28,229 - INFO - Running experiment: cifar10_decentralized_complete_5clients_1.0rate_no_dp
+2025-07-24 21:04:24,408 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_1.0rate_no_dp completed successfully in 116.2s
+2025-07-24 21:04:24,408 - INFO - Progress: 318/360
+2025-07-24 21:04:24,408 - INFO - Running experiment: cifar10_decentralized_complete_5clients_1.0rate_high_privacy
+2025-07-24 21:06:36,543 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_1.0rate_high_privacy completed successfully in 132.1s
+2025-07-24 21:06:36,543 - INFO - Progress: 319/360
+2025-07-24 21:06:36,544 - INFO - Running experiment: cifar10_decentralized_complete_5clients_1.0rate_medium_privacy
+2025-07-24 21:09:01,972 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_1.0rate_medium_privacy completed successfully in 145.4s
+2025-07-24 21:09:01,972 - INFO - Progress: 320/360
+2025-07-24 21:09:01,972 - INFO - Running experiment: cifar10_decentralized_complete_5clients_1.0rate_low_privacy
+2025-07-24 21:11:31,446 - INFO - ✅ Experiment cifar10_decentralized_complete_5clients_1.0rate_low_privacy completed successfully in 149.5s
+2025-07-24 21:11:31,460 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 21:11:31,460 - INFO - Progress: 321/360
+2025-07-24 21:11:31,460 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.2rate_no_dp
+2025-07-24 21:13:40,167 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.2rate_no_dp completed successfully in 128.7s
+2025-07-24 21:13:40,167 - INFO - Progress: 322/360
+2025-07-24 21:13:40,167 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.2rate_high_privacy
+2025-07-24 21:16:50,005 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.2rate_high_privacy completed successfully in 189.8s
+2025-07-24 21:16:50,005 - INFO - Progress: 323/360
+2025-07-24 21:16:50,005 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.2rate_medium_privacy
+2025-07-24 21:20:11,907 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.2rate_medium_privacy completed successfully in 201.9s
+2025-07-24 21:20:11,907 - INFO - Progress: 324/360
+2025-07-24 21:20:11,908 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.2rate_low_privacy
+2025-07-24 21:23:18,649 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.2rate_low_privacy completed successfully in 186.7s
+2025-07-24 21:23:18,650 - INFO - Progress: 325/360
+2025-07-24 21:23:18,650 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.4rate_no_dp
+2025-07-24 21:25:30,853 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.4rate_no_dp completed successfully in 132.2s
+2025-07-24 21:25:30,853 - INFO - Progress: 326/360
+2025-07-24 21:25:30,854 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.4rate_high_privacy
+2025-07-24 21:28:08,034 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.4rate_high_privacy completed successfully in 157.2s
+2025-07-24 21:28:08,034 - INFO - Progress: 327/360
+2025-07-24 21:28:08,035 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.4rate_medium_privacy
+2025-07-24 21:31:08,473 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.4rate_medium_privacy completed successfully in 180.4s
+2025-07-24 21:31:08,473 - INFO - Progress: 328/360
+2025-07-24 21:31:08,473 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.4rate_low_privacy
+2025-07-24 21:34:29,627 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.4rate_low_privacy completed successfully in 201.2s
+2025-07-24 21:34:29,627 - INFO - Progress: 329/360
+2025-07-24 21:34:29,627 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.6rate_no_dp
+2025-07-24 21:36:42,139 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.6rate_no_dp completed successfully in 132.5s
+2025-07-24 21:36:42,140 - INFO - Progress: 330/360
+2025-07-24 21:36:42,140 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.6rate_high_privacy
+2025-07-24 21:39:23,298 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.6rate_high_privacy completed successfully in 161.2s
+2025-07-24 21:39:23,313 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 21:39:23,313 - INFO - Progress: 331/360
+2025-07-24 21:39:23,313 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.6rate_medium_privacy
+2025-07-24 21:42:27,067 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.6rate_medium_privacy completed successfully in 183.8s
+2025-07-24 21:42:27,067 - INFO - Progress: 332/360
+2025-07-24 21:42:27,067 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.6rate_low_privacy
+2025-07-24 21:45:24,440 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.6rate_low_privacy completed successfully in 177.4s
+2025-07-24 21:45:24,440 - INFO - Progress: 333/360
+2025-07-24 21:45:24,440 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.8rate_no_dp
+2025-07-24 21:47:27,863 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.8rate_no_dp completed successfully in 123.4s
+2025-07-24 21:47:27,863 - INFO - Progress: 334/360
+2025-07-24 21:47:27,863 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.8rate_high_privacy
+2025-07-24 21:49:48,979 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.8rate_high_privacy completed successfully in 141.1s
+2025-07-24 21:49:48,979 - INFO - Progress: 335/360
+2025-07-24 21:49:48,979 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.8rate_medium_privacy
+2025-07-24 21:52:30,727 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.8rate_medium_privacy completed successfully in 161.7s
+2025-07-24 21:52:30,728 - INFO - Progress: 336/360
+2025-07-24 21:52:30,728 - INFO - Running experiment: cifar10_decentralized_complete_10clients_0.8rate_low_privacy
+2025-07-24 21:55:24,373 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_0.8rate_low_privacy completed successfully in 173.6s
+2025-07-24 21:55:24,374 - INFO - Progress: 337/360
+2025-07-24 21:55:24,374 - INFO - Running experiment: cifar10_decentralized_complete_10clients_1.0rate_no_dp
+2025-07-24 21:57:18,963 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_1.0rate_no_dp completed successfully in 114.6s
+2025-07-24 21:57:18,963 - INFO - Progress: 338/360
+2025-07-24 21:57:18,963 - INFO - Running experiment: cifar10_decentralized_complete_10clients_1.0rate_high_privacy
+2025-07-24 21:59:28,325 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_1.0rate_high_privacy completed successfully in 129.4s
+2025-07-24 21:59:28,325 - INFO - Progress: 339/360
+2025-07-24 21:59:28,326 - INFO - Running experiment: cifar10_decentralized_complete_10clients_1.0rate_medium_privacy
+2025-07-24 22:01:44,892 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_1.0rate_medium_privacy completed successfully in 136.6s
+2025-07-24 22:01:44,893 - INFO - Progress: 340/360
+2025-07-24 22:01:44,893 - INFO - Running experiment: cifar10_decentralized_complete_10clients_1.0rate_low_privacy
+2025-07-24 22:04:09,984 - INFO - ✅ Experiment cifar10_decentralized_complete_10clients_1.0rate_low_privacy completed successfully in 145.1s
+2025-07-24 22:04:09,999 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 22:04:09,999 - INFO - Progress: 341/360
+2025-07-24 22:04:09,999 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.2rate_no_dp
+2025-07-24 22:07:17,977 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.2rate_no_dp completed successfully in 188.0s
+2025-07-24 22:07:17,978 - INFO - Progress: 342/360
+2025-07-24 22:07:17,978 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.2rate_high_privacy
+2025-07-24 22:11:17,644 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.2rate_high_privacy completed successfully in 239.7s
+2025-07-24 22:11:17,644 - INFO - Progress: 343/360
+2025-07-24 22:11:17,644 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.2rate_medium_privacy
+2025-07-24 22:15:14,442 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.2rate_medium_privacy completed successfully in 236.8s
+2025-07-24 22:15:14,443 - INFO - Progress: 344/360
+2025-07-24 22:15:14,443 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.2rate_low_privacy
+2025-07-24 22:20:07,821 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.2rate_low_privacy completed successfully in 293.4s
+2025-07-24 22:20:07,821 - INFO - Progress: 345/360
+2025-07-24 22:20:07,821 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.4rate_no_dp
+2025-07-24 22:22:58,495 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.4rate_no_dp completed successfully in 170.7s
+2025-07-24 22:22:58,495 - INFO - Progress: 346/360
+2025-07-24 22:22:58,495 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.4rate_high_privacy
+2025-07-24 22:26:41,799 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.4rate_high_privacy completed successfully in 223.3s
+2025-07-24 22:26:41,799 - INFO - Progress: 347/360
+2025-07-24 22:26:41,799 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.4rate_medium_privacy
+2025-07-24 22:30:58,503 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.4rate_medium_privacy completed successfully in 256.7s
+2025-07-24 22:30:58,503 - INFO - Progress: 348/360
+2025-07-24 22:30:58,503 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.4rate_low_privacy
+2025-07-24 22:35:34,417 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.4rate_low_privacy completed successfully in 275.9s
+2025-07-24 22:35:34,418 - INFO - Progress: 349/360
+2025-07-24 22:35:34,418 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.6rate_no_dp
+2025-07-24 22:38:18,970 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.6rate_no_dp completed successfully in 164.6s
+2025-07-24 22:38:18,971 - INFO - Progress: 350/360
+2025-07-24 22:38:18,971 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.6rate_high_privacy
+2025-07-24 22:41:41,663 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.6rate_high_privacy completed successfully in 202.7s
+2025-07-24 22:41:41,679 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 22:41:41,679 - INFO - Progress: 351/360
+2025-07-24 22:41:41,679 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.6rate_medium_privacy
+2025-07-24 22:45:28,155 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.6rate_medium_privacy completed successfully in 226.5s
+2025-07-24 22:45:28,155 - INFO - Progress: 352/360
+2025-07-24 22:45:28,156 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.6rate_low_privacy
+2025-07-24 22:49:17,513 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.6rate_low_privacy completed successfully in 229.4s
+2025-07-24 22:49:17,513 - INFO - Progress: 353/360
+2025-07-24 22:49:17,513 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.8rate_no_dp
+2025-07-24 22:52:00,089 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.8rate_no_dp completed successfully in 162.6s
+2025-07-24 22:52:00,089 - INFO - Progress: 354/360
+2025-07-24 22:52:00,089 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.8rate_high_privacy
+2025-07-24 22:55:04,925 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.8rate_high_privacy completed successfully in 184.8s
+2025-07-24 22:55:04,925 - INFO - Progress: 355/360
+2025-07-24 22:55:04,926 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.8rate_medium_privacy
+2025-07-24 22:58:11,583 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.8rate_medium_privacy completed successfully in 186.7s
+2025-07-24 22:58:11,583 - INFO - Progress: 356/360
+2025-07-24 22:58:11,583 - INFO - Running experiment: cifar10_decentralized_complete_20clients_0.8rate_low_privacy
+2025-07-24 23:01:27,689 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_0.8rate_low_privacy completed successfully in 196.1s
+2025-07-24 23:01:27,689 - INFO - Progress: 357/360
+2025-07-24 23:01:27,690 - INFO - Running experiment: cifar10_decentralized_complete_20clients_1.0rate_no_dp
+2025-07-24 23:04:05,782 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_1.0rate_no_dp completed successfully in 158.1s
+2025-07-24 23:04:05,782 - INFO - Progress: 358/360
+2025-07-24 23:04:05,782 - INFO - Running experiment: cifar10_decentralized_complete_20clients_1.0rate_high_privacy
+2025-07-24 23:06:58,183 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_1.0rate_high_privacy completed successfully in 172.4s
+2025-07-24 23:06:58,183 - INFO - Progress: 359/360
+2025-07-24 23:06:58,183 - INFO - Running experiment: cifar10_decentralized_complete_20clients_1.0rate_medium_privacy
+2025-07-24 23:09:57,197 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_1.0rate_medium_privacy completed successfully in 179.0s
+2025-07-24 23:09:57,197 - INFO - Progress: 360/360
+2025-07-24 23:09:57,197 - INFO - Running experiment: cifar10_decentralized_complete_20clients_1.0rate_low_privacy
+2025-07-24 23:13:02,020 - INFO - ✅ Experiment cifar10_decentralized_complete_20clients_1.0rate_low_privacy completed successfully in 184.8s
+2025-07-24 23:13:02,036 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 23:13:02,053 - INFO - Experiment summary saved to: resource_aware_experiments/experiments_20250724_085624/experiment_summary.json
+2025-07-24 23:13:02,053 - INFO - Generating analysis report...
+Traceback (most recent call last):
+  File "/home/ubuntu/murmura/scripts/resource_aware_sampling_experiments.py", line 541, in <module>
+    main()
+  File "/home/ubuntu/murmura/scripts/resource_aware_sampling_experiments.py", line 527, in main
+    experiments.run_experiment_subset(
+  File "/home/ubuntu/murmura/scripts/resource_aware_sampling_experiments.py", line 333, in run_experiment_subset
+    self.generate_analysis_report()
+  File "/home/ubuntu/murmura/scripts/resource_aware_sampling_experiments.py", line 388, in generate_analysis_report
+    json.dump(analysis_data, f, indent=2)
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/__init__.py", line 179, in dump
+    for chunk in iterable:
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/encoder.py", line 430, in _iterencode
+    yield from _iterencode_list(o, _current_indent_level)
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/home/ubuntu/miniconda3/envs/murmura/lib/python3.11/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type int64 is not JSON serializable
