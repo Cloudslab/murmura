@@ -16,12 +16,12 @@ class GossipAvg(AggregationStrategy):
 
     coordination_mode = CoordinationMode.DECENTRALIZED
 
-    def __init__(self, mixing_parameter: float = 0.5) -> None:
+    def __init__(self, mixing_parameter: float = 0.25) -> None:
         """
         Initialize the GossipAvg strategy with a mixing parameter.
 
-        :param mixing_parameter: Controls how much weight to give to neighbours versus local model (default is 0.5
-        for equal weighting)
+        :param mixing_parameter: Controls how much weight to give to neighbours versus local model (default is 0.25
+        for collaborative learning)
         """
         if mixing_parameter < 0 or mixing_parameter > 1:
             raise ValueError("Mixing parameter must be between 0 and 1.")

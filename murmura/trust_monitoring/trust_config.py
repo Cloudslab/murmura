@@ -81,6 +81,10 @@ class TrustMonitorConfig(BaseModel):
         default=True, description="Export trust metrics for analysis"
     )
 
+    enable_trust_resource_monitoring: bool = Field(
+        default=False, description="Enable trust monitoring resource usage tracking"
+    )
+
     # Trust-weighted aggregation settings
     enable_trust_weighted_aggregation: bool = Field(
         default=True,
@@ -160,63 +164,3 @@ class TrustMonitorConfig(BaseModel):
         description="Steepness parameter for sigmoid normalization (higher = sharper transition)",
     )
 
-    # Loss spoofing detection settings
-    enable_loss_spoofing_detection: bool = Field(
-        default=True,
-        description="Enable detection of loss spoofing attacks using local validation",
-    )
-
-    local_validation_split_ratio: float = Field(
-        default=0.1,
-        ge=0.05,
-        le=0.3,
-        description="Ratio of training data to reserve for local validation (loss spoofing detection)",
-    )
-
-    spoofing_detection_threshold: float = Field(
-        default=0.6,
-        ge=0.3,
-        le=0.9,
-        description="Threshold for flagging loss spoofing based on validation discrepancy",
-    )
-
-    baseline_calibration_rounds: int = Field(
-        default=3,
-        ge=2,
-        le=5,
-        description="Number of initial rounds to use for establishing distribution-aware baseline",
-    )
-
-    loss_ratio_tolerance: float = Field(
-        default=3.0,
-        ge=1.5,
-        le=10.0,
-        description="Maximum acceptable ratio between reported and validated loss before flagging",
-    )
-
-    min_loss_ratio_threshold: float = Field(
-        default=0.3,
-        ge=0.1,
-        le=0.7,
-        description="Minimum acceptable ratio between reported and validated loss (detects deflated reports)",
-    )
-
-    # Trust monitor resource monitoring
-    enable_trust_resource_monitoring: bool = Field(
-        default=False,
-        description="Enable resource usage tracking specifically for trust monitor operations",
-    )
-
-    trust_resource_sampling_interval: float = Field(
-        default=0.1,
-        ge=0.01,
-        le=1.0,
-        description="Sampling interval for trust monitor resource monitoring (seconds)",
-    )
-
-    max_trust_resource_history: int = Field(
-        default=1000,
-        ge=100,
-        le=10000,
-        description="Maximum number of resource measurements to keep in memory per trust monitor",
-    )

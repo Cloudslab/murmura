@@ -131,8 +131,8 @@ def main() -> None:
     parser.add_argument(
         "--mixing_parameter",
         type=float,
-        default=0.5,
-        help="Mixing parameter for gossip_avg strategy (0.5 = equal mixing)",
+        default=0.25,
+        help="Mixing parameter for gossip_avg strategy (0.25 = collaborative learning)",
     )
 
     # Topology arguments (only decentralized-compatible topologies)

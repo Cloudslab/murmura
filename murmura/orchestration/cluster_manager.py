@@ -1443,7 +1443,7 @@ class ClusterManager:
                         )
                         
                         # Log trust aggregation summary
-                        mixing_parameter = getattr(self.aggregation_strategy, 'mixing_parameter', 0.5)
+                        mixing_parameter = getattr(self.aggregation_strategy, 'mixing_parameter', 0.25)
                         trust_weights_summary = []
                         total_trust = sum(neighbor_trust_scores.values()) if neighbor_trust_scores else 0
                         trust_weights_summary.append(f"self:{mixing_parameter:.3f}")
@@ -1473,7 +1473,7 @@ class ClusterManager:
                             neighbor_params, neighbor_weights
                         )
                         
-                        mixing_parameter = getattr(self.aggregation_strategy, 'mixing_parameter', 0.5)
+                        mixing_parameter = getattr(self.aggregation_strategy, 'mixing_parameter', 0.25)
                         self.logger.info(
                             f"AGGREGATION_DEBUG Node {node_idx} baseline aggregation completed (mixing={mixing_parameter:.1f}): self + {len(neighbor_params_dict)} neighbors"
                         )

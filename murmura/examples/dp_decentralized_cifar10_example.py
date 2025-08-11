@@ -105,8 +105,8 @@ def main() -> None:
     parser.add_argument(
         "--mixing_parameter",
         type=float,
-        default=0.5,
-        help="Mixing parameter for gossip_avg strategy (0.5 = equal mixing)",
+        default=0.25,
+        help="Mixing parameter for gossip_avg strategy (0.25 = collaborative learning)",
     )
 
     # Model arguments
@@ -285,7 +285,7 @@ def main() -> None:
     parser.add_argument(
         "--malicious_node_seed",
         type=int,
-        default=None,
+        default=16,
         help="Seed for reproducible malicious node selection (None = random)",
     )
 

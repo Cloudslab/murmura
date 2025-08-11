@@ -1,118 +1,108 @@
 """
-Trust monitoring implementation for detecting malicious behavior in decentralized federated learning.
+Adaptive Trust Monitor for Decentralized Federated Learning.
+
+This lightweight trust monitor uses pure trust scoring without binary detection,
+solving network fragmentation issues and eliminating the need for validation data.
 """
 
 import logging
 import numpy as np
-import copy
-import time
-import psutil
-import threading
-from typing import Dict, Any, List, Optional, Tuple, Callable, ContextManager
+from typing import Dict, Any, List, Optional, Tuple, Deque, Set
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from contextlib import contextmanager, nullcontext
 from scipy.spatial.distance import cosine
+from scipy import stats as scipy_stats
 
 from .trust_config import TrustMonitorConfig
-from .trust_events import TrustEvent, TrustAnomalyEvent, TrustScoreEvent
+from .trust_events import TrustEvent, TrustScoreEvent, TrustAnomalyEvent
 
 
 @dataclass
-class TrustMonitorResourceMetrics:
-    """Resource metrics specifically for trust monitor operations."""
-    operation_name: str
-    cpu_percent: float
-    memory_mb: float
-    processing_time_ms: float
-    timestamp: float
+class GradientFingerprint:
+    """Lightweight statistical fingerprint of gradient updates."""
+    cross_layer_correlation: float
+    gradient_entropy: float
+    spectral_energy: float
+    update_magnitude_distribution: Dict[str, float]
+    layer_wise_stats: Dict[str, Dict[str, float]]
+
+
+@dataclass 
+class TrustSignals:
+    """Collection of anomaly signals for trust scoring."""
+    gradient_divergence: float = 0.0
+    pattern_shift: float = 0.0
+    consensus_deviation: float = 0.0
+    temporal_inconsistency: float = 0.0
+    layer_asymmetry: float = 0.0
 
 
 @dataclass
-class ParameterUpdate:
-    """Represents a parameter update from a neighbor."""
+class TrustStatistics:
+    """Anonymized trust statistics for gossip-based detection."""
+    min_trust: float
+    max_trust: float
+    mean_trust: float
+    std_trust: float
+    node_count: int
 
-    neighbor_id: str
-    round_num: int
-    parameters: Dict[str, Any]
-    parameter_stats: Dict[str, float]  # Precomputed statistics
-    reported_loss: Optional[float] = None
+
 
 
 class TrustMonitor:
     """
-    Trust monitor for detecting malicious behavior using neighbor-relative comparisons.
-
-    This monitor runs as a sidecar on honest nodes to detect progressive attacks
-    by analyzing parameter update patterns relative to neighbor behavior.
+    Adaptive trust monitor using continuous scoring without binary detection.
+    
+    Key innovations:
+    1. No validation data required - purely statistical
+    2. Adaptive influence weights preserve network connectivity
+    3. Lightweight gradient fingerprinting for anomaly detection
+    4. Smooth trust evolution without thresholds
     """
-
+    
     def __init__(self, node_id: str, config: TrustMonitorConfig):
         self.node_id = node_id
         self.config = config
-
-        # Trust scores for each neighbor
-        self.trust_scores: Dict[str, float] = {}
-
-        # Historical parameter updates for analysis
-        self.update_history: Dict[str, deque] = defaultdict(
-            lambda: deque(maxlen=config.history_window_size)
-        )
-
-        # Statistical baselines for each neighbor
-        self.neighbor_baselines: Dict[str, Dict[str, Any]] = defaultdict(dict)
-
-        # Detection state
-        self.anomaly_counts: Dict[str, int] = defaultdict(int)
-        self.consensus_history: deque = deque(maxlen=config.history_window_size)
-        
-        # Trust action tracking for state-based weighting
-        self.last_trust_actions: Dict[str, str] = {}  # {neighbor_id: "decay"/"recovery"/"stable"}
-        self.rounds_since_decay: Dict[str, int] = {}  # {neighbor_id: rounds_since_last_decay}
-
-        # Event callbacks
-        self.event_callbacks: List[Callable] = []
-
-        # Loss spoofing detection infrastructure
-        self.loss_history: Dict[str, deque] = defaultdict(
-            lambda: deque(maxlen=config.history_window_size)
-        )
-        self.loss_ratio_history: Dict[str, deque] = defaultdict(
-            lambda: deque(maxlen=config.baseline_calibration_rounds + 2)
-        )
-        self.distribution_baselines: Dict[str, float] = {}
-        self.local_validation_data: Optional[Any] = None
-        self.local_model_template: Optional[Any] = None
-        
-        # Lightweight label flipping detection state
-        self.layer_ratio_history: Dict[str, deque] = defaultdict(
-            lambda: deque(maxlen=config.history_window_size)
-        )
-        self.distribution_history: Dict[str, deque] = defaultdict(
-            lambda: deque(maxlen=config.history_window_size)
-        )
-
-        # Logging
         self.logger = logging.getLogger(f"murmura.trust_monitor.{node_id}")
-
-        # Resource monitoring
-        self.resource_monitoring_enabled = config.enable_trust_resource_monitoring
-        self.resource_metrics: List[TrustMonitorResourceMetrics] = []
-        self.max_resource_history = config.max_trust_resource_history
         
-        # Initialize process monitoring if enabled
-        if self.resource_monitoring_enabled:
-            try:
-                self.current_process = psutil.Process()
-                self.logger.info(f"Trust monitor resource monitoring enabled for {node_id}")
-            except Exception as e:
-                self.logger.warning(f"Failed to initialize resource monitoring: {e}")
-                self.resource_monitoring_enabled = False
-
-    def add_event_callback(self, callback: Callable) -> None:
+        # Core trust state
+        self.trust_scores: Dict[str, float] = {}
+        self.trust_velocities: Dict[str, float] = {}
+        self.influence_weights: Dict[str, float] = {}
+        
+        # Gradient fingerprint history for lightweight detection
+        self.fingerprint_history: Dict[str, Deque[GradientFingerprint]] = defaultdict(
+            lambda: deque(maxlen=config.history_window_size)
+        )
+        
+        # Temporal consistency tracking
+        self.update_directions: Dict[str, Deque[np.ndarray]] = defaultdict(
+            lambda: deque(maxlen=3)
+        )
+        
+        # Trust trajectory tracking for temporal clustering
+        self.trust_trajectories: Dict[str, Deque[float]] = defaultdict(
+            lambda: deque(maxlen=config.history_window_size)
+        )
+        
+        # Gossip trust statistics from other nodes
+        self.network_trust_stats: Deque[TrustStatistics] = deque(maxlen=20)
+        
+        # Network-aware state
+        self.network_topology_size: Optional[int] = None
+        self.rounds_completed: int = 0
+        
+        # Note: Detection logic removed - focusing on trust-weighted performance
+        
+        # Event callbacks
+        self.event_callbacks: List[callable] = []
+        
+        self.logger.info(f"Initialized Adaptive Trust Monitor for node {node_id}")
+    
+    def add_event_callback(self, callback: callable) -> None:
         """Add callback for trust events."""
         self.event_callbacks.append(callback)
-
+    
     def _emit_event(self, event: TrustEvent) -> None:
         """Emit trust event to all registered callbacks."""
         for callback in self.event_callbacks:
@@ -120,1622 +110,640 @@ class TrustMonitor:
                 callback(event)
             except Exception as e:
                 self.logger.error(f"Error in trust event callback: {e}")
-
-    @contextmanager
-    def _measure_trust_resource_usage(self, operation_name: str):
-        """Context manager to measure resource usage for specific trust monitor operations."""
-        if not self.resource_monitoring_enabled:
-            yield
-            return
-            
-        start_time = time.perf_counter()
-        start_memory = 0.0
-        
-        try:
-            memory_info = self.current_process.memory_info()
-            start_memory = memory_info.rss / 1024 / 1024  # Convert to MB
-        except Exception:
-            start_memory = 0.0
-            
-        try:
-            yield
-        finally:
-            end_time = time.perf_counter()
-            processing_time_ms = (end_time - start_time) * 1000
-            
-            try:
-                memory_info = self.current_process.memory_info()
-                end_memory = memory_info.rss / 1024 / 1024  # Convert to MB
-                cpu_percent = self.current_process.cpu_percent()
-            except Exception:
-                end_memory = start_memory
-                cpu_percent = 0.0
-                
-            # Record the resource usage
-            metrics = TrustMonitorResourceMetrics(
-                operation_name=operation_name,
-                cpu_percent=cpu_percent,
-                memory_mb=end_memory,
-                processing_time_ms=processing_time_ms,
-                timestamp=time.time()
-            )
-            
-            self.resource_metrics.append(metrics)
-            
-            # Maintain history limit
-            if len(self.resource_metrics) > self.max_resource_history:
-                self.resource_metrics = self.resource_metrics[-self.max_resource_history:]
-                
-    def get_trust_resource_summary(self) -> Dict[str, Any]:
-        """Get resource usage summary for this trust monitor."""
-        if not self.resource_monitoring_enabled or not self.resource_metrics:
-            return {"status": "no_resource_data", "node_id": self.node_id}
-            
-        # Group metrics by operation
-        operation_metrics = defaultdict(list)
-        for metric in self.resource_metrics:
-            operation_metrics[metric.operation_name].append(metric)
-            
-        summary = {
-            "node_id": self.node_id,
-            "total_measurements": len(self.resource_metrics),
-            "operations": {}
-        }
-        
-        # Overall statistics
-        all_cpu = [m.cpu_percent for m in self.resource_metrics]
-        all_memory = [m.memory_mb for m in self.resource_metrics]
-        all_time = [m.processing_time_ms for m in self.resource_metrics]
-        
-        summary["overall"] = {
-            "cpu_stats": {
-                "avg_percent": np.mean(all_cpu) if all_cpu else 0.0,
-                "max_percent": np.max(all_cpu) if all_cpu else 0.0,
-                "min_percent": np.min(all_cpu) if all_cpu else 0.0
-            },
-            "memory_stats": {
-                "avg_mb": np.mean(all_memory) if all_memory else 0.0,
-                "max_mb": np.max(all_memory) if all_memory else 0.0,
-                "peak_memory_mb": np.max(all_memory) if all_memory else 0.0
-            },
-            "timing_stats": {
-                "total_time_ms": np.sum(all_time) if all_time else 0.0,
-                "avg_time_ms": np.mean(all_time) if all_time else 0.0,
-                "max_time_ms": np.max(all_time) if all_time else 0.0
-            }
-        }
-        
-        # Per-operation statistics
-        for op_name, metrics in operation_metrics.items():
-            op_cpu = [m.cpu_percent for m in metrics]
-            op_memory = [m.memory_mb for m in metrics]
-            op_time = [m.processing_time_ms for m in metrics]
-            
-            summary["operations"][op_name] = {
-                "count": len(metrics),
-                "cpu_avg": np.mean(op_cpu) if op_cpu else 0.0,
-                "memory_peak": np.max(op_memory) if op_memory else 0.0,
-                "time_total": np.sum(op_time) if op_time else 0.0,
-                "time_avg": np.mean(op_time) if op_time else 0.0
-            }
-            
-        return summary
-
+    
     def set_local_validation_data(self, validation_data: Any, model_template: Any) -> None:
         """Deprecated: No longer needed with lightweight detection."""
         self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Validation data not needed for lightweight detection"
+            f"TRUST MONITOR {self.node_id}: Validation data not needed for adaptive trust monitoring"
         )
-
-    def _compute_local_validation_loss(self, neighbor_id: str, neighbor_params: Dict[str, Any]) -> Optional[float]:
-        """Validate neighbor's model parameters on local validation data."""
-        if not self.config.enable_loss_spoofing_detection:
-            return None
-            
-        if self.local_validation_data is None or self.local_model_template is None:
-            self.logger.warning(
-                f"TRUST MONITOR {self.node_id}: Local validation not configured, skipping spoofing detection"
-            )
-            return None
+    
+    def compute_gradient_fingerprint(self, parameters: Dict[str, Any]) -> GradientFingerprint:
+        """
+        Compute lightweight statistical fingerprint of gradient update.
+        No validation required - pure statistical analysis.
+        """
+        # 1. Cross-layer correlation (detects broken backprop chains from label flipping)
+        cross_correlation = self._compute_cross_layer_correlation(parameters)
         
-        try:
-            # Create a copy of the local model template
-            validation_model = copy.deepcopy(self.local_model_template)
-            
-            # Load neighbor's parameters
-            # Try to get the underlying PyTorch model if this is a wrapper
-            target_model = validation_model
-            if hasattr(validation_model, 'model') and hasattr(validation_model.model, 'load_state_dict'):
-                target_model = validation_model.model
-            
-            if hasattr(target_model, 'load_state_dict'):
-                # Convert parameters to proper format if needed
-                state_dict = {}
-                for name, param in neighbor_params.items():
-                    if hasattr(param, 'cpu'):
-                        state_dict[name] = param.cpu()
-                    else:
-                        state_dict[name] = param
-                target_model.load_state_dict(state_dict)
-            else:
-                self.logger.warning(
-                    f"TRUST MONITOR {self.node_id}: Model template doesn't support load_state_dict, trying direct assignment"
-                )
-                # Try direct assignment on the underlying model
-                for name, param in neighbor_params.items():
-                    if hasattr(target_model, name):
-                        setattr(target_model, name, param)
-            
-            # Set model to evaluation mode
-            if hasattr(target_model, 'eval'):
-                target_model.eval()
-            elif hasattr(validation_model, 'eval'):
-                validation_model.eval()
-            
-            # Compute validation loss using the model's evaluate method
-            val_features, val_labels = self.local_validation_data
-            
-            if hasattr(validation_model, 'evaluate'):
-                # Use the model's built-in evaluate method
-                result = validation_model.evaluate(val_features, val_labels)
-                validation_loss = result.get('loss', result.get('val_loss', 0.0))
-            else:
-                # Fallback: manual loss computation
-                validation_loss = self._compute_manual_validation_loss(validation_model, val_features, val_labels)
-            
-            self.logger.debug(
-                f"TRUST MONITOR {self.node_id}: Local validation loss for {neighbor_id}: {validation_loss:.6f}"
-            )
-            
-            return float(validation_loss)
-            
-        except Exception as e:
-            self.logger.warning(
-                f"TRUST MONITOR {self.node_id}: Failed to compute local validation loss for {neighbor_id}: {e}"
-            )
-            return None
-
-    def _compute_manual_validation_loss(self, model, features, labels) -> float:
-        """Manually compute validation loss when model doesn't have evaluate method."""
-        try:
-            import torch
-            import torch.nn.functional as F
-            
-            # Convert to tensors if needed
-            if not isinstance(features, torch.Tensor):
-                features = torch.tensor(features, dtype=torch.float32)
-            if not isinstance(labels, torch.Tensor):
-                labels = torch.tensor(labels, dtype=torch.long)
-            
-            # Set device if model has one
-            if hasattr(model, 'device'):
-                features = features.to(model.device)
-                labels = labels.to(model.device)
-            
-            # Forward pass
-            with torch.no_grad():
-                if hasattr(model, 'forward'):
-                    outputs = model.forward(features)
-                elif callable(model):
-                    outputs = model(features)
-                else:
-                    raise ValueError("Model is not callable and has no forward method")
-                
-                # Compute loss
-                if hasattr(model, 'criterion') and model.criterion:
-                    loss = model.criterion(outputs, labels)
-                else:
-                    # Default to cross-entropy loss
-                    loss = F.cross_entropy(outputs, labels)
-                
-                return float(loss.item())
-                
-        except Exception as e:
-            self.logger.warning(
-                f"TRUST MONITOR {self.node_id}: Manual loss computation failed: {e}"
-            )
-            # Return a safe default
+        # 2. Gradient entropy (detects distribution changes)
+        entropy = self._compute_gradient_entropy(parameters)
+        
+        # 3. Spectral energy distribution (detects manipulation patterns)
+        spectral_energy = self._compute_spectral_signature(parameters)
+        
+        # 4. Update magnitude distribution (detects layer-wise anomalies)
+        magnitude_dist = self._compute_magnitude_distribution(parameters)
+        
+        # 5. Layer-wise statistics for fine-grained analysis
+        layer_stats = self._compute_layer_statistics(parameters)
+        
+        return GradientFingerprint(
+            cross_layer_correlation=cross_correlation,
+            gradient_entropy=entropy,
+            spectral_energy=spectral_energy,
+            update_magnitude_distribution=magnitude_dist,
+            layer_wise_stats=layer_stats
+        )
+    
+    def _compute_cross_layer_correlation(self, parameters: Dict[str, Any]) -> float:
+        """
+        Compute correlation between consecutive layers.
+        Label flipping breaks the natural correlation pattern.
+        """
+        layer_names = list(parameters.keys())
+        if len(layer_names) < 2:
             return 1.0
-
-    def _compute_parameter_stats(self, parameters: Dict[str, Any]) -> Dict[str, float]:
-        """Compute statistical fingerprint of parameter update."""
-        param_stats = {}
-
-        # Flatten all parameters for global statistics
-        all_params = []
-        layer_stats = {}
-
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Computing parameter stats for {len(parameters)} layers"
-        )
-
-        for layer_name, param_tensor in parameters.items():
-            if hasattr(param_tensor, "cpu"):
-                param_array = param_tensor.cpu().numpy().flatten()
-            else:
-                param_array = np.array(param_tensor).flatten()
-
-            # Check for NaN or inf values and replace with zeros
-            if np.any(np.isnan(param_array)) or np.any(np.isinf(param_array)):
-                self.logger.warning(
-                    f"Found NaN/inf values in layer {layer_name}, replacing with zeros"
-                )
-                param_array = np.nan_to_num(
-                    param_array, nan=0.0, posinf=0.0, neginf=0.0
-                )
-
-            all_params.extend(param_array)
-
-            # Per-layer statistics with NaN protection
-            layer_mean = float(np.mean(param_array))
-            layer_std = float(np.std(param_array))
-            layer_l2_norm = float(np.linalg.norm(param_array))
-
-            # Ensure no NaN values in statistics
-            if np.isnan(layer_mean) or np.isnan(layer_std) or np.isnan(layer_l2_norm):
-                self.logger.warning(
-                    f"Layer {layer_name} produced NaN statistics, using defaults"
-                )
-                layer_mean = 0.0
-                layer_std = 1.0
-                layer_l2_norm = 1.0
-
-            layer_stats[f"{layer_name}_mean"] = layer_mean
-            layer_stats[f"{layer_name}_std"] = layer_std
-            layer_stats[f"{layer_name}_l2_norm"] = layer_l2_norm
-
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Layer {layer_name}: mean={layer_mean:.6f}, std={layer_std:.6f}, l2_norm={layer_l2_norm:.6f}, size={len(param_array)}"
-            )
-
-        # Global statistics with NaN protection
-        all_params_array = np.array(all_params)
-        all_params_array = np.nan_to_num(
-            all_params_array, nan=0.0, posinf=0.0, neginf=0.0
-        )
-
-        global_mean = float(np.mean(all_params_array))
-        global_std = float(np.std(all_params_array))
-        global_l2_norm = float(np.linalg.norm(all_params_array))
-        global_magnitude = float(np.sum(np.abs(all_params_array)))
-
-        # Final NaN check
-        if (
-            np.isnan(global_mean)
-            or np.isnan(global_std)
-            or np.isnan(global_l2_norm)
-            or np.isnan(global_magnitude)
-        ):
-            self.logger.warning("Global statistics produced NaN values, using defaults")
-            global_mean = 0.0
-            global_std = 1.0
-            global_l2_norm = 1.0
-            global_magnitude = 1.0
-
-        param_stats.update(
-            {
-                "global_mean": global_mean,
-                "global_std": global_std,
-                "global_l2_norm": global_l2_norm,
-                "global_magnitude": global_magnitude,
-                "param_count": len(all_params_array),
-            }
-        )
-
-        # Add layer-specific stats
-        param_stats.update(layer_stats)
-
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Global stats: mean={global_mean:.6f}, std={global_std:.6f}, l2_norm={global_l2_norm:.6f}, magnitude={global_magnitude:.6f}, total_params={len(all_params_array)}"
-        )
-
-        return param_stats
-
-    def _compute_update_similarity(
-        self, update1: ParameterUpdate, update2: ParameterUpdate
-    ) -> Dict[str, float]:
-        """Compute similarity metrics between two parameter updates."""
-        similarities = {}
-
-        # Compare parameter statistics
-        stats1 = update1.parameter_stats
-        stats2 = update2.parameter_stats
-
-        # Statistical similarity with improved sensitivity and NaN protection
-        l2_norm_ratio = min(
-            stats1["global_l2_norm"] / max(stats2["global_l2_norm"], 1e-8),
-            stats2["global_l2_norm"] / max(stats1["global_l2_norm"], 1e-8),
-        )
-
-        magnitude_ratio = min(
-            stats1["global_magnitude"] / max(stats2["global_magnitude"], 1e-8),
-            stats2["global_magnitude"] / max(stats1["global_magnitude"], 1e-8),
-        )
-
-        # Add standard deviation ratio for additional sensitivity
-        std_ratio = min(
-            stats1["global_std"] / max(stats2["global_std"], 1e-8),
-            stats2["global_std"] / max(stats1["global_std"], 1e-8),
-        )
-
-        # Ensure no NaN values in similarity ratios
-        if np.isnan(l2_norm_ratio):
-            l2_norm_ratio = 1.0
-        if np.isnan(magnitude_ratio):
-            magnitude_ratio = 1.0
-        if np.isnan(std_ratio):
-            std_ratio = 1.0
-
-        similarities["l2_norm_ratio"] = l2_norm_ratio
-        similarities["magnitude_ratio"] = magnitude_ratio
-        similarities["std_ratio"] = std_ratio
-
-        self.logger.debug(
-            f"TRUST MONITOR {self.node_id}: Similarity between {update1.neighbor_id} and {update2.neighbor_id}:"
-        )
-        self.logger.debug(
-            f"TRUST MONITOR {self.node_id}:   L2 norms: {stats1['global_l2_norm']:.6f} vs {stats2['global_l2_norm']:.6f}, ratio: {l2_norm_ratio:.6f}"
-        )
-        self.logger.debug(
-            f"TRUST MONITOR {self.node_id}:   Magnitudes: {stats1['global_magnitude']:.6f} vs {stats2['global_magnitude']:.6f}, ratio: {magnitude_ratio:.6f}"
-        )
-        self.logger.debug(
-            f"TRUST MONITOR {self.node_id}:   Std devs: {stats1['global_std']:.6f} vs {stats2['global_std']:.6f}, ratio: {std_ratio:.6f}"
-        )
-
-        # Compute cosine similarity if possible
-        try:
-            # Flatten parameters for cosine similarity
-            params1_list: List[float] = []
-            params2_list: List[float] = []
-
-            for layer_name in update1.parameters.keys():
-                if layer_name in update2.parameters:
-                    p1 = update1.parameters[layer_name]
-                    p2 = update2.parameters[layer_name]
-
-                    if hasattr(p1, "cpu"):
-                        p1 = p1.cpu().numpy().flatten()
-                        p2 = p2.cpu().numpy().flatten()
-                    else:
-                        p1 = np.array(p1).flatten()
-                        p2 = np.array(p2).flatten()
-
-                    # Clean NaN/inf values
-                    p1 = np.nan_to_num(p1, nan=0.0, posinf=0.0, neginf=0.0)
-                    p2 = np.nan_to_num(p2, nan=0.0, posinf=0.0, neginf=0.0)
-
-                    params1_list.extend(p1.tolist())
-                    params2_list.extend(p2.tolist())
-
-            if params1_list and params2_list:
-                params1 = np.array(params1_list)
-                params2 = np.array(params2_list)
-
-                # Compute cosine similarity with NaN protection
-                cosine_sim = 1 - cosine(params1, params2)
-
-                # Check for NaN result
-                if np.isnan(cosine_sim):
-                    self.logger.warning(
-                        "Cosine similarity produced NaN, using default value"
-                    )
-                    cosine_sim = 0.0
-
-                similarities["cosine_similarity"] = float(cosine_sim)
-                self.logger.debug(
-                    f"TRUST MONITOR {self.node_id}:   Cosine similarity: {cosine_sim:.6f}"
-                )
-            else:
-                similarities["cosine_similarity"] = 0.0
-                self.logger.debug(
-                    f"TRUST MONITOR {self.node_id}:   Cosine similarity: 0.0 (no common parameters)"
-                )
-
-        except Exception as e:
-            self.logger.warning(f"Could not compute cosine similarity: {e}")
-            similarities["cosine_similarity"] = 0.0
-
-        return similarities
-
-    def _detect_anomalies_cusum(
-        self, neighbor_id: str, current_update: ParameterUpdate
-    ) -> Tuple[bool, float, Dict[str, Any]]:
-        """Detect anomalies using CUSUM algorithm on neighbor-relative metrics with training dynamics awareness."""
-        history_length = len(self.update_history[neighbor_id])
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: CUSUM detection for {neighbor_id}: history length = {history_length}"
-        )
-
-        # Need at least 1 historical update to compare against
-        if history_length < 1:
-            self.logger.debug(
-                f"Insufficient history for {neighbor_id} (need 1, have {history_length})"
-            )
-            return False, 0.0, {}
-
-        history = list(self.update_history[neighbor_id])
-
-        # Compute similarities with recent history
-        similarities = []
-        cosine_similarities = []
-        # Compare with up to 3 most recent historical updates (excluding current)
-        num_comparisons = min(3, history_length)
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Computing similarities for {neighbor_id} with last {num_comparisons} historical updates"
-        )
-
-        # Use historical updates only (not including current)
-        comparison_history = history[-num_comparisons:]
-        for i, past_update in enumerate(comparison_history):
-            sim_metrics = self._compute_update_similarity(current_update, past_update)
-
-            # Enhanced weighting that considers training dynamics
-            # Cosine similarity is most important for gradient manipulation detection
-            # L2 and magnitude ratios can vary naturally during training
-            combined_sim = (
-                sim_metrics["cosine_similarity"]
-                * 0.6  # Increased weight for cosine similarity
-                + sim_metrics["l2_norm_ratio"] * 0.2  # Reduced weight for L2 norm
-                + sim_metrics["magnitude_ratio"] * 0.15  # Reduced weight for magnitude
-                + sim_metrics["std_ratio"] * 0.05  # Minimal weight for std ratio
-            )
-            similarities.append(combined_sim)
-            cosine_similarities.append(sim_metrics["cosine_similarity"])
-
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}:   Similarity {i}: cosine={sim_metrics['cosine_similarity']:.6f}, l2_ratio={sim_metrics['l2_norm_ratio']:.6f}, mag_ratio={sim_metrics['magnitude_ratio']:.6f}, combined={combined_sim:.6f}"
-            )
-
-        # Enhanced CUSUM detection with training dynamics consideration
-        if len(similarities) >= 1:
-            # For proper anomaly detection, we need to compare current with historical
-            # If we have multiple similarities, compare current (last) with historical (all but last)
-            if len(similarities) > 1:
-                historical_similarities = similarities[:-1]
-                historical_cosines = cosine_similarities[:-1]
-                mean_sim = float(np.mean(historical_similarities))
-                std_sim = float(np.std(historical_similarities)) + 1e-8
-                mean_cosine = float(np.mean(historical_cosines))
-            else:
-                # Only one comparison, use it as both mean and current
-                mean_sim = float(similarities[0])
-                std_sim = 0.1  # Default std for single comparison
-                mean_cosine = float(cosine_similarities[0])
-
-            # Handle NaN values in similarity analysis
-            if np.isnan(mean_sim) or np.isnan(std_sim) or np.isnan(mean_cosine):
-                self.logger.warning(
-                    f"CUSUM analysis for {neighbor_id}: NaN values detected, skipping"
-                )
-                return (
-                    False,
-                    0.0,
-                    {"detection_method": "cusum_similarity", "error": "NaN values"},
-                )
-
-            # Current values are always the last comparison
-            current_sim = similarities[-1]
-            current_cosine = cosine_similarities[-1]
-
-            if np.isnan(current_sim) or np.isnan(current_cosine):
-                self.logger.warning(
-                    f"CUSUM analysis for {neighbor_id}: current similarity is NaN, skipping"
-                )
-                return (
-                    False,
-                    0.0,
-                    {
-                        "detection_method": "cusum_similarity",
-                        "error": "NaN current similarity",
-                    },
-                )
-
-            # Multi-criteria detection that balances sensitivity with false positive reduction
-            z_score = (mean_sim - current_sim) / std_sim  # Higher when current is lower
-            abs_z_score = abs(z_score)
-
-            # Gradient manipulation specific detection criteria
-            # 1. Low cosine similarity (< 0.7) indicates parameter manipulation
-            # 2. Consistent deviation from recent behavior (z_score > 1.2)
-            # 3. Combined similarity drop below threshold
-
-            cosine_threshold = (
-                0.7  # Cosine similarity threshold for gradient manipulation
-            )
-            z_threshold = 1.2  # Reduced from 1.5 for better sensitivity
-            combined_threshold = 0.6  # Combined similarity threshold
-
-            # Detection logic with multiple criteria
-            # Detect if cosine similarity dropped significantly
-            cosine_drop = mean_cosine - current_cosine
-            low_cosine_anomaly = (current_cosine < cosine_threshold) or (
-                cosine_drop > 0.3
-            )
-
-            # Statistical anomaly based on z-score
-            statistical_anomaly = abs_z_score > z_threshold
-
-            # Combined similarity drop
-            sim_drop = mean_sim - current_sim
-            combined_anomaly = (current_sim < combined_threshold) or (sim_drop > 0.2)
-
-            # Gradient manipulation is detected if any strong indicator is present
-            # More sensitive: detect if cosine similarity is very low OR there's a significant drop
-            is_anomaly = low_cosine_anomaly or (
-                statistical_anomaly and (combined_anomaly or current_cosine < 0.5)
-            )
-
-            # Calculate confidence score based on multiple factors
-            cosine_confidence = (
-                max(0.0, (cosine_threshold - current_cosine) / cosine_threshold)
-                if current_cosine < cosine_threshold
-                else 0.0
-            )
-            statistical_confidence = (
-                min(float(abs_z_score) / z_threshold, 2.0)
-                if abs_z_score > z_threshold
-                else 0.0
-            )
-            combined_confidence = (
-                max(0.0, (combined_threshold - current_sim) / combined_threshold)
-                if current_sim < combined_threshold
-                else 0.0
-            )
-
-            anomaly_score = float(
-                max(
-                    cosine_confidence,
-                    statistical_confidence * 0.7,
-                    combined_confidence * 0.5,
-                )
-            )
-
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: CUSUM analysis for {neighbor_id}:"
-            )
-            self.logger.info(
-                f"  mean_sim={mean_sim:.6f}, std_sim={std_sim:.6f}, current_sim={current_sim:.6f}"
-            )
-            self.logger.info(
-                f"  mean_cosine={mean_cosine:.6f}, current_cosine={current_cosine:.6f}"
-            )
-            self.logger.info(f"  z_score={z_score:.6f}, abs_z_score={abs_z_score:.6f}")
-            self.logger.info(
-                f"  low_cosine_anomaly={low_cosine_anomaly}, statistical_anomaly={statistical_anomaly}, combined_anomaly={combined_anomaly}"
-            )
-            self.logger.info(
-                f"  is_anomaly={is_anomaly}, anomaly_score={anomaly_score:.6f}"
-            )
-
-            evidence = {
-                "similarity_scores": similarities,
-                "cosine_similarities": cosine_similarities,
-                "mean_similarity": float(mean_sim),
-                "current_similarity": float(current_sim),
-                "mean_cosine": float(mean_cosine),
-                "current_cosine": float(current_cosine),
-                "z_score": float(z_score),
-                "abs_z_score": float(abs_z_score),
-                "low_cosine_anomaly": low_cosine_anomaly,
-                "statistical_anomaly": statistical_anomaly,
-                "combined_anomaly": combined_anomaly,
-                "detection_method": "cusum_gradient_manipulation",
-            }
-
-            return bool(is_anomaly), anomaly_score, evidence
-
-        return False, 0.0, {}
-
-    def _detect_label_flipping_statistical(self, neighbor_id: str, current_update: ParameterUpdate) -> Tuple[bool, float, Dict[str, Any]]:
-        """Detect label flipping through layer-wise update analysis."""
         
-        # 1. Compute layer-wise update magnitudes
-        layer_magnitudes = {}
-        classifier_layers = []
-        feature_layers = []
+        correlations = []
+        for i in range(len(layer_names) - 1):
+            try:
+                # Get flattened parameters
+                if hasattr(parameters[layer_names[i]], 'cpu'):
+                    layer1 = parameters[layer_names[i]].cpu().numpy().flatten()
+                    layer2 = parameters[layer_names[i+1]].cpu().numpy().flatten()
+                else:
+                    layer1 = np.array(parameters[layer_names[i]]).flatten()
+                    layer2 = np.array(parameters[layer_names[i+1]]).flatten()
+                
+                # Skip if layers are too different in size (correlation not meaningful)
+                size_ratio = max(len(layer1), len(layer2)) / min(len(layer1), len(layer2))
+                if size_ratio > 10:  # Skip if one layer is >10x larger
+                    continue
+                
+                # Take common length for correlation
+                min_len = min(len(layer1), len(layer2))
+                if min_len > 1000:  # Sample if too large
+                    min_len = 1000
+                
+                # Sample both arrays to same length
+                if len(layer1) > min_len:
+                    indices = np.random.choice(len(layer1), min_len, replace=False)
+                    layer1 = layer1[indices]
+                else:
+                    layer1 = layer1[:min_len]
+                    
+                if len(layer2) > min_len:
+                    indices = np.random.choice(len(layer2), min_len, replace=False)
+                    layer2 = layer2[indices]
+                else:
+                    layer2 = layer2[:min_len]
+                
+                # Compute correlation with same-length arrays
+                if len(layer1) > 0 and len(layer2) > 0 and len(layer1) == len(layer2):
+                    corr = np.corrcoef(layer1, layer2)[0, 1]
+                    if not np.isnan(corr):
+                        correlations.append(corr)
+            except Exception as e:
+                self.logger.debug(f"Correlation computation failed for layers {i}-{i+1}: {e}")
+                continue
         
-        for layer_name, params in current_update.parameters.items():
-            if hasattr(params, "cpu"):
+        return float(np.mean(correlations)) if correlations else 0.5
+    
+    def _compute_gradient_entropy(self, parameters: Dict[str, Any]) -> float:
+        """
+        Compute entropy of gradient distribution.
+        Higher entropy indicates potential label flipping.
+        """
+        all_gradients = []
+        
+        for layer_name, params in parameters.items():
+            if hasattr(params, 'cpu'):
                 param_array = params.cpu().numpy().flatten()
             else:
                 param_array = np.array(params).flatten()
-                
-            magnitude = float(np.linalg.norm(param_array))
-            layer_magnitudes[layer_name] = magnitude
             
-            # Classify layers
-            if any(term in layer_name.lower() for term in ['fc', 'classifier', 'head', 'output', 'linear']):
-                classifier_layers.append((layer_name, magnitude))
-            else:
-                feature_layers.append((layer_name, magnitude))
+            # Sample for efficiency
+            if len(param_array) > 1000:
+                param_array = np.random.choice(param_array, 1000, replace=False)
+            
+            all_gradients.extend(param_array.tolist())
         
-        # 2. Compute classifier vs feature layer ratio
-        if classifier_layers and feature_layers:
-            avg_classifier_magnitude = np.mean([m for _, m in classifier_layers])
-            avg_feature_magnitude = np.mean([m for _, m in feature_layers])
-            
-            # Label flipping causes disproportionate classifier updates
-            classifier_feature_ratio = avg_classifier_magnitude / (avg_feature_magnitude + 1e-8)
-            
-            # Historical comparison
-            if len(self.layer_ratio_history[neighbor_id]) >= 3:
-                historical_ratios = list(self.layer_ratio_history[neighbor_id])
-                mean_ratio = float(np.mean(historical_ratios))
-                std_ratio = float(np.std(historical_ratios)) + 1e-8
-                z_score = (classifier_feature_ratio - mean_ratio) / std_ratio
-                
-                # Label flipping detection - continuous scoring for trust evolution
-                # Use raw z-score for continuous trust evolution (no binary threshold)
-                is_suspicious = True  # Always apply trust evolution
-                confidence = min(1.0, max(0.0, abs(z_score) / 3.0))  # Continuous confidence from z-score magnitude
-                
-                self.logger.debug(
-                    f"TRUST MONITOR {self.node_id}: Label flip detection for {neighbor_id}: "
-                    f"ratio={classifier_feature_ratio:.3f}, z-score={z_score:.3f}"
-                )
-                
-                # Store current ratio
-                self.layer_ratio_history[neighbor_id].append(classifier_feature_ratio)
-                
-                return is_suspicious, confidence, {
-                    "method": "layer_ratio_analysis",
-                    "classifier_feature_ratio": float(classifier_feature_ratio),
-                    "historical_mean": float(mean_ratio),
-                    "z_score": float(z_score),
-                    "classifier_layers": len(classifier_layers),
-                    "feature_layers": len(feature_layers)
-                }
-            
-            # Store for history
-            self.layer_ratio_history[neighbor_id].append(classifier_feature_ratio)
+        if not all_gradients:
+            return 0.0
         
-        return False, 0.0, {}
-
-    def _detect_distribution_shift(self, neighbor_id: str, current_update: ParameterUpdate) -> Tuple[bool, float, Dict[str, Any]]:
-        """Detect label flipping through parameter distribution analysis."""
+        # Compute entropy using histogram
+        hist, _ = np.histogram(all_gradients, bins=30)
+        hist = hist / (hist.sum() + 1e-10)
         
-        # Extract all parameter values
+        # Shannon entropy
+        entropy = -np.sum(hist * np.log(hist + 1e-10))
+        return float(entropy)
+    
+    def _compute_spectral_signature(self, parameters: Dict[str, Any]) -> float:
+        """
+        Compute spectral energy concentration.
+        Gradient manipulation often changes spectral properties.
+        """
         all_params = []
-        for params in current_update.parameters.values():
-            if hasattr(params, "cpu"):
+        
+        for params in parameters.values():
+            if hasattr(params, 'cpu'):
                 param_array = params.cpu().numpy().flatten()
             else:
                 param_array = np.array(params).flatten()
+            
+            # Sample for efficiency
+            if len(param_array) > 2000:
+                param_array = np.random.choice(param_array, 2000, replace=False)
+            
             all_params.extend(param_array.tolist())
         
-        # Compute distribution statistics
-        params_array = np.array(all_params)
+        if len(all_params) < 10:
+            return 0.5
         
-        # Import scipy.stats for kurtosis and skew
-        from scipy import stats as scipy_stats
-        
-        # Key statistics that change with label flipping
-        stats_dict = {
-            'kurtosis': float(scipy_stats.kurtosis(params_array)),
-            'skewness': float(scipy_stats.skew(params_array)),
-            'std': float(np.std(params_array)),
-            'mean_abs': float(np.mean(np.abs(params_array)))
-        }
-        
-        # Compare with historical distribution
-        if len(self.distribution_history[neighbor_id]) >= 3:
-            history = list(self.distribution_history[neighbor_id])
+        # Simple spectral analysis using FFT
+        try:
+            fft_result = np.fft.fft(all_params[:1024])  # Use power of 2 for efficiency
+            power_spectrum = np.abs(fft_result) ** 2
             
-            # Compute divergence from historical pattern
-            historical_stats = {
-                key: [h[key] for h in history]
-                for key in stats_dict.keys()
-            }
+            # Measure energy concentration in low frequencies
+            total_energy = np.sum(power_spectrum)
+            low_freq_energy = np.sum(power_spectrum[:len(power_spectrum)//4])
             
-            divergence_scores = []
-            for key, value in stats_dict.items():
-                hist_mean = np.mean(historical_stats[key])
-                hist_std = np.std(historical_stats[key]) + 1e-8
-                divergence = abs(value - hist_mean) / hist_std
-                divergence_scores.append(divergence)
-            
-            # Combined divergence score - continuous scoring for trust evolution
-            total_divergence = float(np.mean(divergence_scores))
-            is_suspicious = True  # Always apply trust evolution
-            confidence = min(1.0, max(0.0, total_divergence / 3.0))
-            
-            self.logger.debug(
-                f"TRUST MONITOR {self.node_id}: Distribution shift for {neighbor_id}: "
-                f"divergence={total_divergence:.3f}"
-            )
-            
-            # Store current stats
-            self.distribution_history[neighbor_id].append(stats_dict)
-            
-            return is_suspicious, confidence, {
-                "method": "distribution_shift",
-                "divergence_score": total_divergence,
-                "stats": stats_dict
-            }
+            concentration = low_freq_energy / (total_energy + 1e-10)
+            return float(concentration)
+        except Exception:
+            return 0.5
+    
+    def _compute_magnitude_distribution(self, parameters: Dict[str, Any]) -> Dict[str, float]:
+        """
+        Compute distribution of update magnitudes across layers.
+        Helps detect layer-specific anomalies.
+        """
+        magnitudes = {}
         
-        self.distribution_history[neighbor_id].append(stats_dict)
-        return False, 0.0, {}
-
-    def _detect_update_inconsistency(self, neighbor_id: str, current_update: ParameterUpdate) -> Tuple[bool, float, Dict[str, Any]]:
-        """Detect label flipping through update direction consistency."""
-        
-        if len(self.update_history[neighbor_id]) < 2:
-            return False, 0.0, {}
-        
-        # Get previous update
-        prev_update = self.update_history[neighbor_id][-1]
-        
-        # Compute update directions (simplified to signs)
-        direction_similarity = 0.0
-        total_params = 0
-        
-        for layer_name in current_update.parameters.keys():
-            if layer_name in prev_update.parameters:
-                if hasattr(current_update.parameters[layer_name], "cpu"):
-                    curr_params = current_update.parameters[layer_name].cpu().numpy().flatten()
-                    prev_params = prev_update.parameters[layer_name].cpu().numpy().flatten()
-                else:
-                    curr_params = np.array(current_update.parameters[layer_name]).flatten()
-                    prev_params = np.array(prev_update.parameters[layer_name]).flatten()
-                
-                # Count sign consistency
-                sign_consistency = np.sum(np.sign(curr_params) == np.sign(prev_params))
-                direction_similarity += sign_consistency
-                total_params += len(curr_params)
-        
-        if total_params > 0:
-            consistency_ratio = float(direction_similarity / total_params)
-            
-            self.logger.debug(
-                f"TRUST MONITOR {self.node_id}: Update consistency for {neighbor_id}: "
-                f"ratio={consistency_ratio:.3f}"
-            )
-            
-            # Label flipping causes erratic updates - continuous scoring
-            # Lower consistency means higher anomaly score
-            confidence = max(0.0, 1.0 - consistency_ratio)  # Continuous confidence based on inconsistency
-            return True, confidence, {  # Always return for continuous trust evolution
-                "method": "update_consistency",
-                "consistency_ratio": consistency_ratio
-            }
-        
-        return False, 0.0, {}
-
-    def _detect_label_flipping_lightweight(self, neighbor_id: str, current_update: ParameterUpdate, round_num: int) -> Tuple[bool, float, Dict[str, Any]]:
-        """Combined lightweight detection for label flipping attacks."""
-        
-        detection_results = []
-        evidence_collection = {}
-        
-        with self._measure_trust_resource_usage("label_flipping_detection"):
-            # 1. Layer-wise magnitude analysis (most reliable)
-            layer_result = self._detect_label_flipping_statistical(neighbor_id, current_update)
-            if layer_result[0]:
-                detection_results.append(("layer_analysis", layer_result[1]))
-                evidence_collection["layer_analysis"] = layer_result[2]
-            
-            # 2. Distribution shift detection
-            dist_result = self._detect_distribution_shift(neighbor_id, current_update)
-            if dist_result[0]:
-                detection_results.append(("distribution", dist_result[1]))
-                evidence_collection["distribution"] = dist_result[2]
-            
-            # 3. Update consistency check (after round 3)
-            if round_num > 3:
-                consistency_result = self._detect_update_inconsistency(neighbor_id, current_update)
-                if consistency_result[0]:
-                    detection_results.append(("consistency", consistency_result[1]))
-                    evidence_collection["consistency"] = consistency_result[2]
-        
-        # Combine detections
-        if detection_results:
-            # Weight different detection methods
-            weights = {
-                "layer_analysis": 0.5,  # Most reliable for label flipping
-                "distribution": 0.3,
-                "consistency": 0.2
-            }
-            
-            total_score = sum(weights.get(method, 0.1) * score 
-                            for method, score in detection_results)
-            
-            is_malicious = total_score > 0.4  # Lower threshold for label flipping
-            
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Label flipping detection for {neighbor_id}: "
-                f"score={total_score:.3f}, detected={is_malicious}, methods={[m for m, _ in detection_results]}"
-            )
-            
-            return is_malicious, total_score, {
-                "detection_method": "label_flipping_lightweight",
-                "detection_results": detection_results,
-                "combined_score": float(total_score),
-                "evidence": evidence_collection
-            }
-        
-        return False, 0.0, {}
-
-    def _detect_loss_spoofing(
-        self, 
-        neighbor_id: str, 
-        reported_loss: Optional[float], 
-        neighbor_params: Dict[str, Any],
-        round_num: int
-    ) -> Tuple[bool, float, Dict[str, Any]]:
-        """Detect loss spoofing attacks using local validation with distribution-aware calibration."""
-        
-        if not self.config.enable_loss_spoofing_detection or reported_loss is None:
-            return False, 0.0, {"detection_method": "loss_spoofing", "status": "disabled_or_no_loss"}
-        
-        # Compute local validation loss
-        local_validation_loss = self._compute_local_validation_loss(neighbor_id, neighbor_params)
-        
-        if local_validation_loss is None:
-            return False, 0.0, {"detection_method": "loss_spoofing", "status": "validation_failed"}
-        
-        # Add loss to history
-        self.loss_history[neighbor_id].append((round_num, reported_loss))
-        
-        # Compute distribution adjustment baseline
-        baseline_adjustment = self._compute_distribution_adjustment(neighbor_id, round_num, 
-                                                                   reported_loss, local_validation_loss)
-        
-        # Apply baseline correction for non-IID distributions
-        adjusted_expected_loss = local_validation_loss * baseline_adjustment
-        
-        # Compute loss ratio (reported / expected)
-        loss_ratio = reported_loss / max(adjusted_expected_loss, 0.001)
-        
-        # Detection logic for spoofing
-        spoofing_score = 0.0
-        is_spoofing = False
-        detection_details = {}
-        
-        # Check for suspiciously low reported loss (most common spoofing)
-        if loss_ratio < self.config.min_loss_ratio_threshold:
-            spoofing_score = max(spoofing_score, 
-                                (self.config.min_loss_ratio_threshold - loss_ratio) / self.config.min_loss_ratio_threshold)
-            is_spoofing = True
-            detection_details["low_loss_spoofing"] = True
-        
-        # Check for suspiciously high reported loss (less common but possible)
-        elif loss_ratio > self.config.loss_ratio_tolerance:
-            spoofing_score = max(spoofing_score,
-                                min(1.0, (loss_ratio - self.config.loss_ratio_tolerance) / self.config.loss_ratio_tolerance))
-            is_spoofing = True
-            detection_details["high_loss_spoofing"] = True
-        
-        # Apply overall spoofing threshold
-        if spoofing_score > self.config.spoofing_detection_threshold:
-            is_spoofing = True
-        else:
-            is_spoofing = False
-            
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Loss spoofing analysis for {neighbor_id}:"
-        )
-        self.logger.info(
-            f"  reported_loss={reported_loss:.6f}, local_validation_loss={local_validation_loss:.6f}"
-        )
-        self.logger.info(
-            f"  baseline_adjustment={baseline_adjustment:.6f}, adjusted_expected={adjusted_expected_loss:.6f}"
-        )
-        self.logger.info(
-            f"  loss_ratio={loss_ratio:.6f}, spoofing_score={spoofing_score:.6f}"
-        )
-        self.logger.info(
-            f"  is_spoofing={is_spoofing}, detection_details={detection_details}"
-        )
-        
-        evidence = {
-            "reported_loss": float(reported_loss),
-            "local_validation_loss": float(local_validation_loss),
-            "baseline_adjustment": float(baseline_adjustment),
-            "adjusted_expected_loss": float(adjusted_expected_loss),
-            "loss_ratio": float(loss_ratio),
-            "spoofing_score": float(spoofing_score),
-            "detection_method": "loss_spoofing",
-            **detection_details
-        }
-        
-        return bool(is_spoofing), spoofing_score, evidence
-
-    def _compute_distribution_adjustment(
-        self, 
-        neighbor_id: str, 
-        round_num: int, 
-        reported_loss: float, 
-        local_validation_loss: float
-    ) -> float:
-        """Compute baseline adjustment factor for non-IID distributions."""
-        
-        current_ratio = reported_loss / max(local_validation_loss, 0.001)
-        
-        # During calibration phase, collect baseline ratios
-        if round_num <= self.config.baseline_calibration_rounds:
-            self.loss_ratio_history[neighbor_id].append(current_ratio)
-            # Return neutral adjustment during calibration
-            return 1.0
-        
-        # After calibration, use historical ratios to establish baseline
-        historical_ratios = list(self.loss_ratio_history[neighbor_id])
-        
-        if len(historical_ratios) >= 2:
-            # Use median of historical ratios as distribution baseline
-            baseline = float(np.median(historical_ratios))
-            self.distribution_baselines[neighbor_id] = baseline
-            return baseline
-        else:
-            # Fallback to stored baseline or neutral
-            return self.distribution_baselines.get(neighbor_id, 1.0)
-
-    def _compute_loss_pattern_anomalies(
-        self, 
-        neighbor_id: str, 
-        current_loss: float, 
-        round_num: int
-    ) -> Dict[str, float]:
-        """Detect data poisoning through loss trajectory analysis (enhanced from self-reported losses)."""
-        
-        if current_loss is None:
-            return {"loss_anomaly_score": 0.0}
-        
-        if len(self.loss_history[neighbor_id]) < 3:
-            return {"loss_anomaly_score": 0.0}
-        
-        # Extract loss values for analysis  
-        losses = [loss for _, loss in self.loss_history[neighbor_id]]
-        
-        # 1. Loss Stagnation Detection
-        recent_losses = losses[-3:]  # Last 3 rounds
-        loss_variance = float(np.var(recent_losses))
-        stagnation_score = 1.0 if loss_variance < 0.001 else 0.0
-        
-        # 2. Abnormal Loss Progression
-        if len(losses) >= 5:
-            # Check if loss is consistently increasing (bad sign)
-            loss_trend = float(np.polyfit(range(len(losses)), losses, 1)[0])
-            increasing_loss_score = max(0.0, loss_trend * 10)  # Normalize
-        else:
-            increasing_loss_score = 0.0
-        
-        # 3. Loss Outlier Detection
-        if len(losses) >= 5:
-            loss_mean = float(np.mean(losses[:-1]))  # Exclude current
-            loss_std = float(np.std(losses[:-1])) + 1e-8
-            z_score = abs((current_loss - loss_mean) / loss_std)
-            outlier_score = min(1.0, max(0.0, (z_score - 2.0) / 2.0))
-        else:
-            outlier_score = 0.0
-        
-        # 4. Loss vs Neighbor Consensus
-        neighbor_losses = []
-        for nid, history in self.loss_history.items():
-            if nid != neighbor_id and len(history) > 0:
-                neighbor_losses.append(history[-1][1])  # Most recent loss
-        
-        if len(neighbor_losses) >= 2:
-            neighbor_mean = float(np.mean(neighbor_losses))
-            neighbor_std = float(np.std(neighbor_losses)) + 1e-8
-            consensus_z = abs((current_loss - neighbor_mean) / neighbor_std)
-            consensus_score = min(1.0, max(0.0, (consensus_z - 1.5) / 1.5))
-        else:
-            consensus_score = 0.0
-        
-        # Combined loss anomaly score
-        loss_anomaly_score = max(
-            stagnation_score * 0.3,
-            increasing_loss_score * 0.4,
-            outlier_score * 0.2,
-            consensus_score * 0.5
-        )
-        
-        return {
-            "loss_anomaly_score": float(loss_anomaly_score),
-            "loss_stagnation": float(stagnation_score),
-            "loss_trend_anomaly": float(increasing_loss_score),
-            "loss_outlier": float(outlier_score),
-            "loss_consensus_anomaly": float(consensus_score),
-            "current_loss": float(current_loss)
-        }
-
-    def _detect_consensus_violations(
-        self, round_num: int, all_updates: Dict[str, ParameterUpdate]
-    ) -> Dict[str, Tuple[bool, float, Dict[str, Any]]]:
-        """Detect neighbors that violate consensus with majority."""
-        violations: Dict[str, Tuple[bool, float, Dict[str, Any]]] = {}
-
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Consensus detection with {len(all_updates)} updates (min required: {self.config.min_neighbors_for_consensus})"
-        )
-
-        if len(all_updates) < self.config.min_neighbors_for_consensus:
-            self.logger.debug("Not enough neighbors for consensus detection")
-            return violations
-
-        neighbor_ids = list(all_updates.keys())
-
-        # Compute pairwise similarities
-        similarity_matrix = {}
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Computing pairwise similarities for {len(neighbor_ids)} neighbors"
-        )
-        for i, neighbor1 in enumerate(neighbor_ids):
-            for j, neighbor2 in enumerate(neighbor_ids):
-                if i != j:
-                    sim_metrics = self._compute_update_similarity(
-                        all_updates[neighbor1], all_updates[neighbor2]
-                    )
-                    similarity_matrix[(neighbor1, neighbor2)] = sim_metrics[
-                        "cosine_similarity"
-                    ]
-
-        # Find consensus by computing average similarity for each neighbor
-        consensus_scores = {}
-        for neighbor in neighbor_ids:
-            similarities_to_others = [
-                similarity_matrix.get((neighbor, other), 0.0)
-                for other in neighbor_ids
-                if other != neighbor
-            ]
-            consensus_scores[neighbor] = (
-                np.mean(similarities_to_others) if similarities_to_others else 0.0
-            )
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Consensus score for {neighbor}: {consensus_scores[neighbor]:.6f} (from {len(similarities_to_others)} comparisons)"
-            )
-
-        # Detect outliers using relative thresholds
-        if len(consensus_scores) >= 2:
-            scores = list(consensus_scores.values())
-            scores_array = np.array(scores)
-            q1, q3 = np.percentile(scores_array, [25, 75])
-            iqr = q3 - q1
-            lower_bound = q1 - 1.0 * iqr  # More sensitive threshold
-            upper_bound = q3 + 1.0 * iqr  # More sensitive threshold
-
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Consensus outlier detection: Q1={q1:.6f}, Q3={q3:.6f}, IQR={iqr:.6f}, lower_bound={lower_bound:.6f}, upper_bound={upper_bound:.6f}"
-            )
-
-            for neighbor, score in consensus_scores.items():
-                # Check for both low and high outliers
-                is_low_outlier = (
-                    score < lower_bound and iqr > 0.01
-                )  # More sensitive threshold
-                is_high_outlier = (
-                    score > upper_bound and iqr > 0.01
-                )  # Also check for suspicious consistency
-
-                is_violation = is_low_outlier or is_high_outlier
-
-                if is_low_outlier:
-                    violation_score = float((lower_bound - score) / max(iqr, 0.05))
-                elif is_high_outlier:
-                    violation_score = float((score - upper_bound) / max(iqr, 0.05))
-                else:
-                    violation_score = 0.0
-
-                self.logger.info(
-                    f"TRUST MONITOR {self.node_id}: Neighbor {neighbor}: consensus_score={score:.6f}, is_low_outlier={is_low_outlier}, is_high_outlier={is_high_outlier}, violation_score={violation_score:.6f}"
-                )
-
-                evidence = {
-                    "consensus_score": float(score),
-                    "lower_bound": float(lower_bound),
-                    "upper_bound": float(upper_bound),
-                    "is_low_outlier": is_low_outlier,
-                    "is_high_outlier": is_high_outlier,
-                    "all_scores": {n: float(s) for n, s in consensus_scores.items()},
-                    "detection_method": "consensus_iqr_bidirectional",
-                }
-
-                violations[neighbor] = (is_violation, violation_score, evidence)
-
-        return violations
-
-    def update_trust_scores(
-        self, anomalies: Dict[str, Tuple[bool, float, Dict[str, Any]]], round_num: int
-    ) -> None:
-        """Update trust scores based on detected anomalies."""
-        score_changes = {}
-
-        for neighbor_id in self.trust_scores.keys():
-            if neighbor_id in anomalies:
-                is_anomaly, anomaly_score, evidence = anomalies[neighbor_id]
-
-                # Apply continuous trust decay based on anomaly score (no binary check)
-                old_score = self.trust_scores[neighbor_id]
-                self.trust_scores[neighbor_id] = self._calculate_trust_decay(
-                    neighbor_id, anomaly_score
-                )
-                score_changes[neighbor_id] = (
-                    self.trust_scores[neighbor_id] - old_score
-                )
-
-                # Track trust action for state-based weighting
-                self.last_trust_actions[neighbor_id] = "decay"
-                self.rounds_since_decay[neighbor_id] = 0
-
-                # Increment anomaly count based on score magnitude
-                if anomaly_score > 0.1:  # Only count significant anomalies
-                    self.anomaly_counts[neighbor_id] += 1
-
-                # Emit anomaly event for significant changes
-                if self.config.log_trust_events and abs(score_changes[neighbor_id]) > 0.01:
-                    self.logger.warning(
-                        f"Trust decay for neighbor {neighbor_id}: "
-                        f"anomaly_score={anomaly_score:.3f}, trust={self.trust_scores[neighbor_id]:.3f}, change={score_changes[neighbor_id]:.3f}"
-                    )
-
-                    # Determine anomaly type based on evidence
-                    anomaly_type = evidence.get("detection_method", "unknown")
-
-                    anomaly_event = TrustAnomalyEvent(
-                        node_id=self.node_id,
-                        round_num=round_num,
-                        trust_scores=self.trust_scores.copy(),
-                        suspected_neighbor=neighbor_id,
-                        anomaly_type=anomaly_type,
-                        anomaly_score=anomaly_score,
-                        evidence=evidence,
-                    )
-                    self._emit_event(anomaly_event)
-
-                else:
-                    # Recover trust score using polynomial recovery
-                    old_score = self.trust_scores[neighbor_id]
-                    self.trust_scores[neighbor_id] = self._calculate_trust_recovery(
-                        neighbor_id
-                    )
-                    score_changes[neighbor_id] = (
-                        self.trust_scores[neighbor_id] - old_score
-                    )
-                    
-                    # Track trust action for state-based weighting
-                    self.last_trust_actions[neighbor_id] = "recovery"
-                    if neighbor_id in self.rounds_since_decay:
-                        self.rounds_since_decay[neighbor_id] += 1
+        for layer_name, params in parameters.items():
+            if hasattr(params, 'cpu'):
+                param_array = params.cpu().numpy()
             else:
-                # No anomaly detected, slight recovery
-                old_score = self.trust_scores[neighbor_id]
-                self.trust_scores[neighbor_id] = self._calculate_trust_recovery(
-                    neighbor_id
+                param_array = np.array(params)
+            
+            # Compute L2 norm
+            magnitude = float(np.linalg.norm(param_array.flatten()))
+            magnitudes[layer_name] = magnitude
+        
+        # Normalize to distribution
+        total_magnitude = sum(magnitudes.values()) + 1e-10
+        distribution = {k: v/total_magnitude for k, v in magnitudes.items()}
+        
+        return distribution
+    
+    def _compute_layer_statistics(self, parameters: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
+        """Compute per-layer statistics for fine-grained analysis."""
+        layer_stats = {}
+        
+        for layer_name, params in parameters.items():
+            if hasattr(params, 'cpu'):
+                param_array = params.cpu().numpy().flatten()
+            else:
+                param_array = np.array(params).flatten()
+            
+            # Protect against NaN/Inf
+            param_array = np.nan_to_num(param_array, nan=0.0, posinf=0.0, neginf=0.0)
+            
+            stats = {
+                'mean': float(np.mean(param_array)),
+                'std': float(np.std(param_array)),
+                'skew': float(scipy_stats.skew(param_array)),
+                'kurtosis': float(scipy_stats.kurtosis(param_array))
+            }
+            
+            layer_stats[layer_name] = stats
+        
+        return layer_stats
+    
+    def compute_trust_signals(
+        self, 
+        neighbor_id: str, 
+        current_fingerprint: GradientFingerprint,
+        all_fingerprints: Dict[str, GradientFingerprint],
+        own_fingerprint: Optional[GradientFingerprint] = None
+    ) -> TrustSignals:
+        """
+        Compute anomaly signals from gradient fingerprints.
+        Uses self-referenced baseline when available for more accurate detection.
+        All signals are continuous [0, 1] with no thresholds.
+        """
+        signals = TrustSignals()
+        
+        # 1. Gradient divergence - Enhanced with self-referencing baseline
+        if own_fingerprint is not None:
+            # Self-referenced comparison: compare neighbor against known honest behavior
+            correlation_deviation = abs(current_fingerprint.cross_layer_correlation - own_fingerprint.cross_layer_correlation)
+            entropy_deviation = abs(current_fingerprint.gradient_entropy - own_fingerprint.gradient_entropy)
+            
+            # Additional spectral comparison for self-reference
+            spectral_deviation = abs(current_fingerprint.spectral_energy - own_fingerprint.spectral_energy)
+            
+            # Self-referenced divergence score (more sensitive to actual attacks)
+            signals.gradient_divergence = min(1.0, (correlation_deviation * 2.0 + entropy_deviation + spectral_deviation) / 3.0)
+            
+        elif len(self.fingerprint_history[neighbor_id]) >= 2:
+            # Fallback to historical comparison when self-reference unavailable
+            historical = list(self.fingerprint_history[neighbor_id])
+            
+            # Compare correlation patterns
+            hist_correlations = [fp.cross_layer_correlation for fp in historical]
+            correlation_deviation = abs(current_fingerprint.cross_layer_correlation - np.mean(hist_correlations))
+            
+            # Compare entropy
+            hist_entropy = [fp.gradient_entropy for fp in historical]
+            entropy_deviation = abs(current_fingerprint.gradient_entropy - np.mean(hist_entropy))
+            
+            # Normalized divergence score
+            signals.gradient_divergence = min(1.0, (correlation_deviation + entropy_deviation) / 2.0)
+        
+        # 2. Pattern shift detection (for label flipping)
+        if len(self.fingerprint_history[neighbor_id]) >= 3:
+            # Detect sudden changes in layer-wise distribution
+            historical_dists = [fp.update_magnitude_distribution for fp in self.fingerprint_history[neighbor_id]]
+            
+            # Compare current distribution with historical
+            pattern_shifts = []
+            for hist_dist in historical_dists[-3:]:
+                # Compute JS divergence between distributions
+                shift = self._compute_distribution_divergence(
+                    current_fingerprint.update_magnitude_distribution,
+                    hist_dist
                 )
-                score_changes[neighbor_id] = self.trust_scores[neighbor_id] - old_score
+                pattern_shifts.append(shift)
+            
+            signals.pattern_shift = min(1.0, np.mean(pattern_shifts))
+        
+        # 3. Consensus deviation - Enhanced with self-referencing
+        if own_fingerprint is not None and len(all_fingerprints) >= 2:
+            # Self-referenced consensus: compare neighbor against honest node + other neighbors
+            honest_correlation = own_fingerprint.cross_layer_correlation
+            other_correlations = [fp.cross_layer_correlation for fp in all_fingerprints.values() 
+                                 if fp != current_fingerprint]
+            
+            if other_correlations:
+                # Include honest node's correlation in consensus
+                all_correlations = [honest_correlation] + other_correlations
+                median_correlation = np.median(all_correlations)
+                deviation = abs(current_fingerprint.cross_layer_correlation - median_correlation)
                 
-                # Track trust action for state-based weighting
-                self.last_trust_actions[neighbor_id] = "recovery"
-                if neighbor_id in self.rounds_since_decay:
-                    self.rounds_since_decay[neighbor_id] += 1
-
-        # Emit trust score event
-        if score_changes:
-            score_event = TrustScoreEvent(
-                node_id=self.node_id,
-                round_num=round_num,
-                trust_scores=self.trust_scores.copy(),
-                score_changes=score_changes,
-                detection_method=self.config.anomaly_detection_method,
-            )
-            self._emit_event(score_event)
-
+                # Weight deviation by distance from honest baseline
+                honest_deviation = abs(current_fingerprint.cross_layer_correlation - honest_correlation)
+                signals.consensus_deviation = min(1.0, (deviation + honest_deviation) / 2.0)
+                
+        elif len(all_fingerprints) >= 3:
+            # Fallback to neighbor-only consensus
+            other_correlations = [fp.cross_layer_correlation for fp in all_fingerprints.values() 
+                                 if fp != current_fingerprint]
+            if other_correlations:
+                median_correlation = np.median(other_correlations)
+                deviation = abs(current_fingerprint.cross_layer_correlation - median_correlation)
+                signals.consensus_deviation = min(1.0, deviation * 2.0)
+        
+        # 4. Temporal inconsistency (erratic update patterns)
+        if neighbor_id in self.update_directions and len(self.update_directions[neighbor_id]) >= 2:
+            # Check consistency of update directions
+            directions = list(self.update_directions[neighbor_id])
+            consistencies = []
+            for i in range(len(directions) - 1):
+                # Cosine similarity between consecutive update directions
+                sim = 1 - cosine(directions[i], directions[i+1])
+                consistencies.append(sim)
+            
+            # Low consistency indicates erratic behavior
+            avg_consistency = np.mean(consistencies)
+            signals.temporal_inconsistency = max(0.0, 1.0 - avg_consistency)
+        
+        # 5. Layer asymmetry (characteristic of label flipping)
+        layer_stats = current_fingerprint.layer_wise_stats
+        if len(layer_stats) >= 2:
+            # Check if classifier layers have disproportionate updates
+            classifier_layers = [name for name in layer_stats.keys() 
+                               if any(term in name.lower() for term in ['fc', 'classifier', 'head', 'output'])]
+            feature_layers = [name for name in layer_stats.keys() if name not in classifier_layers]
+            
+            if classifier_layers and feature_layers:
+                classifier_stds = [layer_stats[name]['std'] for name in classifier_layers]
+                feature_stds = [layer_stats[name]['std'] for name in feature_layers]
+                
+                ratio = np.mean(classifier_stds) / (np.mean(feature_stds) + 1e-10)
+                # High ratio indicates potential label flipping
+                signals.layer_asymmetry = min(1.0, max(0.0, (ratio - 1.0) / 3.0))
+        
+        return signals
+    
+    def _compute_distribution_divergence(self, dist1: Dict[str, float], dist2: Dict[str, float]) -> float:
+        """Compute Jensen-Shannon divergence between two distributions."""
+        # Get common keys
+        all_keys = set(dist1.keys()) | set(dist2.keys())
+        
+        # Create aligned distributions
+        p = np.array([dist1.get(k, 0.0) for k in all_keys])
+        q = np.array([dist2.get(k, 0.0) for k in all_keys])
+        
+        # Normalize
+        p = p / (p.sum() + 1e-10)
+        q = q / (q.sum() + 1e-10)
+        
+        # JS divergence
+        m = (p + q) / 2
+        divergence = 0.5 * np.sum(p * np.log(p / (m + 1e-10) + 1e-10)) + \
+                    0.5 * np.sum(q * np.log(q / (m + 1e-10) + 1e-10))
+        
+        return float(min(1.0, divergence))
+    
+    def update_trust_scores(
+        self,
+        neighbor_id: str,
+        trust_signals: TrustSignals,
+        round_num: int
+    ) -> float:
+        """
+        Update trust score based on anomaly signals.
+        Smooth, continuous evolution without thresholds.
+        """
+        # Initialize if new neighbor
+        if neighbor_id not in self.trust_scores:
+            self.trust_scores[neighbor_id] = self.config.initial_trust_score
+            self.trust_velocities[neighbor_id] = 0.0
+        
+        current_trust = self.trust_scores[neighbor_id]
+        
+        # Combine signals with adaptive weighting
+        # Early rounds: focus on gradient divergence
+        # Later rounds: include more signals as patterns establish
+        signal_maturity = min(1.0, round_num / 10)
+        
+        total_anomaly = (
+            0.35 * trust_signals.gradient_divergence +
+            0.25 * trust_signals.pattern_shift * signal_maturity +
+            0.20 * trust_signals.consensus_deviation * signal_maturity +
+            0.10 * trust_signals.temporal_inconsistency +
+            0.10 * trust_signals.layer_asymmetry
+        )
+        
+        # Adaptive decay/recovery rates
+        # Decay faster for high anomaly, recover slower
+        decay_rate = 0.05 + 0.15 * total_anomaly  # [0.05, 0.20]
+        recovery_rate = 0.02 * (1.0 - total_anomaly)  # [0, 0.02]
+        
+        # Net trust change with momentum
+        trust_change = -decay_rate + recovery_rate
+        
+        # Apply momentum from previous velocity
+        momentum = 0.3
+        smoothed_change = momentum * self.trust_velocities[neighbor_id] + (1 - momentum) * trust_change
+        
+        # Update trust score
+        new_trust = np.clip(current_trust + smoothed_change, 0.01, 1.0)
+        
+        # Store velocity for next round
+        self.trust_velocities[neighbor_id] = smoothed_change
+        self.trust_scores[neighbor_id] = new_trust
+        
+        # Store trust trajectory for temporal clustering
+        self.trust_trajectories[neighbor_id].append(new_trust)
+        
+        self.logger.debug(
+            f"Trust update for {neighbor_id}: {current_trust:.3f} -> {new_trust:.3f} "
+            f"(anomaly: {total_anomaly:.3f}, change: {smoothed_change:.3f})"
+        )
+        
+        return new_trust
+    
+    def compute_influence_weight(self, trust_score: float, round_num: int) -> float:
+        """
+        Convert trust score to influence weight for aggregation.
+        Key innovation: Preserves minimum connectivity to prevent network fragmentation.
+        """
+        # Round-adaptive strictness
+        strictness = min(1.0, round_num / 20)
+        
+        # Minimum weight to preserve network connectivity
+        MIN_ROUTING_WEIGHT = 0.05 * (1 - strictness) + 0.02 * strictness
+        
+        if trust_score > 0.8:
+            # Highly trusted: full influence
+            return 1.0
+        elif trust_score > 0.6:
+            # Moderately trusted: proportional influence
+            # Maps [0.6, 0.8] to [0.6, 1.0]
+            return 0.6 + 2.0 * (trust_score - 0.6)
+        elif trust_score > 0.3:
+            # Suspicious: reduced influence
+            # Maps [0.3, 0.6] to [0.2, 0.6]
+            return 0.2 + 1.33 * (trust_score - 0.3)
+        else:
+            # Highly suspicious: minimal but non-zero influence
+            # Maps [0, 0.3] to [MIN_ROUTING_WEIGHT, 0.2]
+            return MIN_ROUTING_WEIGHT + (0.2 - MIN_ROUTING_WEIGHT) * (trust_score / 0.3)
+    
     def process_parameter_updates(
         self,
         round_num: int,
         neighbor_updates: Dict[str, Dict[str, Any]],
         neighbor_losses: Optional[Dict[str, float]] = None,
+        own_parameters: Optional[Dict[str, Any]] = None
     ) -> Dict[str, float]:
         """
-        Process parameter updates from neighbors and detect malicious behavior.
-
-        Args:
-            round_num: Current training round
-            neighbor_updates: Dict mapping neighbor_id to their parameter updates
-            neighbor_losses: Optional dict mapping neighbor_id to their reported training loss
-
-        Returns:
-            Dict mapping neighbor_id to current trust score
+        Process parameter updates and compute influence weights.
+        Returns influence weights for aggregation (not just trust scores).
         """
         if not self.config.enable_trust_monitoring:
             return {neighbor_id: 1.0 for neighbor_id in neighbor_updates.keys()}
-
+        
+        self.rounds_completed = round_num
+        
+        # Update network topology awareness
+        if self.network_topology_size is None:
+            self.network_topology_size = len(neighbor_updates)
+        
         self.logger.info(
-            f"TRUST MONITOR {self.node_id}: ========== ROUND {round_num} ==========="
+            f"TRUST MONITOR {self.node_id}: Processing round {round_num} with {len(neighbor_updates)} neighbors"
         )
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Processing {len(neighbor_updates)} neighbors: {list(neighbor_updates.keys())}"
-        )
-
-        # Log summary of parameter information
-        total_neighbors = len(neighbor_updates)
-        valid_neighbors = sum(1 for params in neighbor_updates.values() if params)
-        self.logger.debug(
-            f"TRUST MONITOR {self.node_id}: Processing {valid_neighbors}/{total_neighbors} valid neighbors"
-        )
-
-        # Initialize trust scores for new neighbors
-        for neighbor_id in neighbor_updates.keys():
-            if neighbor_id not in self.trust_scores:
-                self.trust_scores[neighbor_id] = self.config.initial_trust_score
-
-        # Create ParameterUpdate objects
-        current_updates = {}
+        
+        # Compute own fingerprint for self-referenced baseline
+        own_fingerprint = None
+        if own_parameters is not None:
+            own_fingerprint = self.compute_gradient_fingerprint(own_parameters)
+            self._last_own_fingerprint = own_fingerprint  # Store for detection method
+            self.logger.debug(
+                f"SELF-REFERENCE {self.node_id}: Own fingerprint computed - "
+                f"correlation={own_fingerprint.cross_layer_correlation:.3f}, "
+                f"entropy={own_fingerprint.gradient_entropy:.3f}, "
+                f"spectral={own_fingerprint.spectral_energy:.3f}"
+            )
+        
+        # Compute fingerprints for all neighbors
+        current_fingerprints = {}
         for neighbor_id, parameters in neighbor_updates.items():
-            param_stats = self._compute_parameter_stats(parameters)
-            reported_loss = (
-                neighbor_losses.get(neighbor_id) if neighbor_losses else None
+            fingerprint = self.compute_gradient_fingerprint(parameters)
+            current_fingerprints[neighbor_id] = fingerprint
+            
+            # Store update direction for temporal analysis
+            self._store_update_direction(neighbor_id, parameters)
+        
+        # Compute trust signals and update scores
+        for neighbor_id, fingerprint in current_fingerprints.items():
+            # Compute anomaly signals with self-referenced baseline
+            trust_signals = self.compute_trust_signals(
+                neighbor_id, 
+                fingerprint,
+                current_fingerprints,
+                own_fingerprint  # NEW: Pass honest node's fingerprint as baseline
             )
-
-            update = ParameterUpdate(
-                neighbor_id=neighbor_id,
-                round_num=round_num,
-                parameters=parameters,
-                parameter_stats=param_stats,
-                reported_loss=reported_loss,
-            )
-            current_updates[neighbor_id] = update
-
-            # Don't add to history yet - we need to detect anomalies first
-            # to avoid comparing with self
-
-        # Detect anomalies using multiple methods
-        all_anomalies = {}
-
-        self.logger.debug(
-            f"TRUST MONITOR {self.node_id}: Running CUSUM detection on {len(current_updates)} neighbors"
-        )
-
-        # 1. CUSUM-based detection for each neighbor
-        for neighbor_id, update in current_updates.items():
-            is_anomaly, score, evidence = self._detect_anomalies_cusum(
-                neighbor_id, update
-            )
-            self.logger.debug(
-                f"TRUST MONITOR {self.node_id}: CUSUM {neighbor_id} - anomaly={is_anomaly}, score={score:.3f}"
-            )
-            # Always include anomaly scores for continuous trust evolution
-            all_anomalies[neighbor_id] = (True, score, evidence)
-
-        # 2. Lightweight label flipping detection
-        self.logger.debug(
-            f"TRUST MONITOR {self.node_id}: Running lightweight label flipping detection on {len(current_updates)} neighbors"
-        )
-        for neighbor_id, update in current_updates.items():
-            is_label_flip, label_flip_score, label_flip_evidence = self._detect_label_flipping_lightweight(
-                neighbor_id, update, round_num
-            )
-            self.logger.debug(
-                f"TRUST MONITOR {self.node_id}: Label flipping {neighbor_id} - detected={is_label_flip}, score={label_flip_score:.3f}"
-            )
-            # Always combine label flipping scores for continuous trust evolution
-            if neighbor_id in all_anomalies:
-                existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
-                combined_score = max(existing_score, label_flip_score)
-                combined_evidence = {**existing_evidence, **label_flip_evidence}
-                all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
+            
+            # Update trust score
+            new_trust = self.update_trust_scores(neighbor_id, trust_signals, round_num)
+            
+            # Compute influence weight for aggregation
+            influence_weight = self.compute_influence_weight(new_trust, round_num)
+            self.influence_weights[neighbor_id] = influence_weight
+            
+            # Store fingerprint for next round
+            self.fingerprint_history[neighbor_id].append(fingerprint)
+            
+            # Enhanced logging with self-reference comparison
+            if own_fingerprint is not None:
+                # Compute relative anomaly compared to honest baseline
+                relative_anomaly = (
+                    trust_signals.gradient_divergence * 0.6 +
+                    trust_signals.consensus_deviation * 0.4
+                )
+                self.logger.info(
+                    f"TRUST MONITOR {self.node_id}: {neighbor_id} - "
+                    f"trust={new_trust:.3f}, influence={influence_weight:.3f}, "
+                    f"relative_anomaly={relative_anomaly:.3f}, "
+                    f"signals=(grad:{trust_signals.gradient_divergence:.2f}, "
+                    f"pattern:{trust_signals.pattern_shift:.2f}, "
+                    f"consensus:{trust_signals.consensus_deviation:.2f})"
+                )
             else:
-                all_anomalies[neighbor_id] = (True, label_flip_score, label_flip_evidence)
-
-        # 3. Loss pattern anomaly detection for each neighbor  
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Running loss pattern detection on {len(current_updates)} neighbors"
-        )
-        for neighbor_id, update in current_updates.items():
-            if update.reported_loss is not None:
-                loss_pattern_metrics = self._compute_loss_pattern_anomalies(
-                    neighbor_id, update.reported_loss, round_num
-                )
-                loss_anomaly_score = loss_pattern_metrics["loss_anomaly_score"]
-                
                 self.logger.info(
-                    f"TRUST MONITOR {self.node_id}: Loss pattern {neighbor_id} - anomaly_score={loss_anomaly_score:.3f}"
+                    f"TRUST MONITOR {self.node_id}: {neighbor_id} - "
+                    f"trust={new_trust:.3f}, influence={influence_weight:.3f}, "
+                    f"signals=(grad:{trust_signals.gradient_divergence:.2f}, "
+                    f"pattern:{trust_signals.pattern_shift:.2f}, "
+                    f"consensus:{trust_signals.consensus_deviation:.2f})"
                 )
-                
-                # Always include loss pattern scores for continuous trust evolution
-                if neighbor_id in all_anomalies:
-                    existing_anomaly, existing_score, existing_evidence = all_anomalies[neighbor_id]
-                    combined_score = max(existing_score, loss_anomaly_score)
-                    combined_evidence = {**existing_evidence, **loss_pattern_metrics}
-                    all_anomalies[neighbor_id] = (True, combined_score, combined_evidence)
-                else:
-                    all_anomalies[neighbor_id] = (True, loss_anomaly_score, loss_pattern_metrics)
-
-        self.logger.info(f"TRUST MONITOR {self.node_id}: Running consensus detection")
-
-        # 4. Consensus-based detection
-        consensus_violations = self._detect_consensus_violations(
-            round_num, current_updates
-        )
-        for neighbor_id, (
-            is_violation,
-            score,
-            evidence,
-        ) in consensus_violations.items():
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Consensus {neighbor_id} - violation={is_violation}, score={score:.3f}"
-            )
-            if is_violation:
-                # Combine with existing anomaly or create new one
-                if neighbor_id in all_anomalies:
-                    existing_anomaly, existing_score, existing_evidence = all_anomalies[
-                        neighbor_id
-                    ]
-                    combined_score = max(existing_score, score)
-                    combined_evidence = {**existing_evidence, **evidence}
-                    all_anomalies[neighbor_id] = (
-                        True,
-                        combined_score,
-                        combined_evidence,
-                    )
-                else:
-                    all_anomalies[neighbor_id] = (is_violation, score, evidence)
-
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: Total anomalies detected: {len(all_anomalies)}"
-        )
-
-        # Update trust scores
-        self.update_trust_scores(dict(all_anomalies), round_num)
-
-        # Now add current updates to history for next round
-        for neighbor_id, update in current_updates.items():
-            self.update_history[neighbor_id].append(update)
-
-        # Log all trust scores regardless of threshold
-        self.logger.info(f"TRUST MONITOR {self.node_id}: Updated trust scores:")
-        for neighbor_id, score in self.trust_scores.items():
-            self.logger.info(f"  {neighbor_id}: {score:.6f}")
-
-        # Use trust-only ranking-based detection (no thresholds)
-        suspicious_neighbors = self._detect_suspicious_neighbors_by_ranking()
-
-        if suspicious_neighbors:
-            trust_scores_str = [(n, f'{self.trust_scores[n]:.3f}') for n in suspicious_neighbors]
-            self.logger.warning(
-                f"TRUST MONITOR {self.node_id}: Round {round_num}: Suspicious neighbors (trust-based ranking): "
-                f"{trust_scores_str}"
-            )
-        else:
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: No suspicious neighbors detected using trust-based ranking"
-            )
-
-        return self.trust_scores.copy()
-
-    def _detect_suspicious_neighbors_by_ranking(self) -> List[str]:
-        """
-        Detect suspicious neighbors using trust-based ranking without thresholds.
         
-        Uses a combination of gap detection and adaptive percentile-based detection
-        for dataset-agnostic malicious node identification.
-        """
-        if len(self.trust_scores) < 2:
-            # Single neighbor - use conservative absolute threshold as fallback
-            suspicious = [
-                neighbor_id for neighbor_id, score in self.trust_scores.items()
-                if score < 0.5  # Very conservative threshold for single neighbor
-            ]
-            if suspicious:
-                self.logger.info(
-                    f"TRUST MONITOR {self.node_id}: Single neighbor detection: "
-                    f"flagged {suspicious[0]} with trust score {self.trust_scores[suspicious[0]]:.3f}"
-                )
-            return suspicious
-        
-        # Sort neighbors by trust score (lowest first = most suspicious)
-        sorted_neighbors = sorted(
-            self.trust_scores.items(), 
-            key=lambda x: x[1]
-        )
-        
-        neighbor_count = len(sorted_neighbors)
-        trust_values = [score for _, score in sorted_neighbors]
-        
-        # Strategy 1: Gap-based detection (most precise)
-        gap_detected = self._detect_by_trust_gap(sorted_neighbors, trust_values)
-        if gap_detected:
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Gap-based detection: "
-                f"found {len(gap_detected)} suspicious neighbors with significant trust gap"
-            )
-            return gap_detected
-        
-        # Strategy 2: Adaptive percentile-based detection
-        percentile_detected = self._detect_by_adaptive_percentile(sorted_neighbors, neighbor_count)
-        if percentile_detected:
-            self.logger.info(
-                f"TRUST MONITOR {self.node_id}: Percentile-based detection: "
-                f"flagged bottom {len(percentile_detected)} neighbors"
-            )
-            return percentile_detected
-        
-        # No suspicious neighbors detected
-        self.logger.info(
-            f"TRUST MONITOR {self.node_id}: No suspicious patterns detected in trust scores"
-        )
-        return []
-    
-    def _detect_by_trust_gap(self, sorted_neighbors: List[Tuple[str, float]], trust_values: List[float]) -> List[str]:
-        """Detect suspicious neighbors based on significant gaps in trust score distribution."""
-        if len(trust_values) < 3:  # Need at least 3 neighbors for gap detection
-            return []
-        
-        # Find the largest gap in trust scores
-        max_gap = 0.0
-        gap_index = -1
-        
-        for i in range(len(trust_values) - 1):
-            gap = trust_values[i + 1] - trust_values[i]
-            if gap > max_gap:
-                max_gap = gap
-                gap_index = i
-        
-        # Only flag if gap is significant (>= 0.15) and creates clear separation
-        if max_gap >= 0.15:
-            # Flag all neighbors below the gap
-            suspicious = [neighbor_id for neighbor_id, score in sorted_neighbors[:gap_index + 1]]
-            
-            # Additional validation: ensure we're not flagging too many neighbors
-            # Don't flag more than 50% of neighbors to avoid over-detection
-            max_flaggable = max(1, len(sorted_neighbors) // 2)
-            if len(suspicious) > max_flaggable:
-                # Only flag the most suspicious ones
-                suspicious = suspicious[:max_flaggable]
-            
-            return suspicious
-        
-        return []
-    
-    def _detect_by_adaptive_percentile(self, sorted_neighbors: List[Tuple[str, float]], neighbor_count: int) -> List[str]:
-        """Detect suspicious neighbors using adaptive percentile thresholds."""
-        
-        # Adaptive percentile based on network topology (neighbor count)
-        if neighbor_count >= 9:      # Complete topology (or nearly complete)
-            target_percentile = 15   # Bottom 15% (≈1-2 nodes out of 9+)
-        elif neighbor_count >= 4:    # Ring topology or similar
-            target_percentile = 25   # Bottom 25% (≈1 node out of 4-8)
-        else:                        # Line topology (2-3 neighbors)
-            target_percentile = 33   # Bottom 33% (≈1 node out of 2-3)
-        
-        # Calculate how many neighbors to flag
-        neighbors_to_flag = max(1, int(neighbor_count * target_percentile / 100))
-        
-        # But don't flag neighbors with very high trust scores (> 0.8)
-        # This prevents false positives when all neighbors are actually honest
-        candidates = [
-            (neighbor_id, score) for neighbor_id, score in sorted_neighbors[:neighbors_to_flag]
-            if score < 0.8  # Only flag if trust score is meaningfully low
-        ]
-        
-        return [neighbor_id for neighbor_id, _ in candidates]
-
-
-    def _calculate_trust_decay(self, neighbor_id: str, anomaly_score: float) -> float:
-        """Calculate trust decay using polynomial, exponential, or linear method."""
-        current_score = self.trust_scores[neighbor_id]
-        violation_count = self.anomaly_counts.get(neighbor_id, 0)
-
-        # Priority: Explicitly enabled methods take precedence over defaults
-        if self.config.enable_exponential_decay:
-            # Continuous exponential decay based on anomaly score magnitude
-            base_decay = self.config.exponential_decay_base ** (violation_count + 1)
-            # Scale decay by anomaly score for continuous evolution
-            anomaly_factor = min(1.0, anomaly_score)  # Cap at 1.0 to prevent over-decay
-            continuous_decay = base_decay * (1.0 - 0.1 * anomaly_factor)  # 0.1 = decay rate
-            new_score = current_score * continuous_decay
-            
-            self.logger.debug(
-                f"Continuous exponential decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
-                f"(violations: {violation_count}, anomaly_score: {anomaly_score:.3f}, decay: {continuous_decay:.6f})"
-            )
-            
-            return max(0.01, new_score)  # Minimum 0.01 to prevent complete exclusion
-            
-        elif self.config.enable_escalating_penalty_decay or self.config.enable_polynomial_decay:
-            # Escalating penalty decay: punishment increases with repeated violations
-            
-            # Base decay factor scaled by violation count and anomaly severity
-            # Support backward compatibility with old polynomial_decay parameters
-            base_factor = (self.config.escalating_penalty_base_factor or 
-                          self.config.polynomial_decay_base_factor or 0.95)
-            
-            # Calculate violation severity (1 + violation_count)^power
-            penalty_power = (self.config.escalating_penalty_power or 
-                           self.config.polynomial_decay_power or 2.0)
-            violation_severity = (1 + violation_count) ** penalty_power
-            
-            # Scale by anomaly score (higher anomaly score = more decay)
-            anomaly_multiplier = 1.0 + (anomaly_score * 0.5)  # Scale anomaly impact
-            
-            # Combined decay factor - gets smaller (more aggressive) with more violations
-            decay_factor = base_factor / (violation_severity * anomaly_multiplier)
-            
-            # Ensure minimum reasonable decay
-            decay_factor = max(decay_factor, 0.1)
-            
-            new_score = current_score * decay_factor
-            
-            decay_method = "Escalating penalty" if self.config.enable_escalating_penalty_decay else "Polynomial"
-            self.logger.debug(
-                f"{decay_method} decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
-                f"(violations: {violation_count}, anomaly: {anomaly_score:.3f}, "
-                f"power: {penalty_power}, decay: {decay_factor:.6f})"
-            )
-            
-            return max(0.0, new_score)
-            
-        else:
-            # Fallback: Linear decay
-            decay = self.config.trust_decay_factor ** (1 + anomaly_score * 0.1)
-            new_score = current_score * decay
-            
-            self.logger.debug(
-                f"Linear decay for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
-                f"(decay_factor: {self.config.trust_decay_factor}, decay: {decay:.6f})"
-            )
-            
-            return max(0.0, new_score)
-
-    def _calculate_trust_recovery(self, neighbor_id: str) -> float:
-        """Calculate trust recovery using polynomial or linear method."""
-        current_score = self.trust_scores[neighbor_id]
-
-        if self.config.enable_polynomial_recovery:
-            # Polynomial recovery: faster when trust is low, slower near 1.0
-            distance_to_full_trust = 1.0 - current_score
-
-            # Apply polynomial scaling to the distance
-            scaled_distance = (
-                distance_to_full_trust**self.config.polynomial_recovery_power
-            )
-
-            # Recovery step is proportional to the scaled distance
-            recovery_step = scaled_distance * (self.config.trust_recovery_factor - 1.0)
-            new_score = min(1.0, current_score + recovery_step)
-
-            self.logger.debug(
-                f"Polynomial recovery for {neighbor_id}: {current_score:.6f} -> {new_score:.6f} "
-                f"(distance: {distance_to_full_trust:.6f}, scaled: {scaled_distance:.6f}, step: {recovery_step:.6f})"
-            )
-
-            return new_score
-        else:
-            # Linear recovery (original method)
-            return min(1.0, current_score * self.config.trust_recovery_factor)
-
-    def get_last_trust_action(self, neighbor_id: str) -> str:
-        """Get the last trust action (decay/recovery/stable) for a neighbor."""
-        return self.last_trust_actions.get(neighbor_id, "unknown")
-    
-    def get_rounds_since_last_decay(self, neighbor_id: str) -> int:
-        """Get the number of rounds since the last decay action for a neighbor."""
-        return self.rounds_since_decay.get(neighbor_id, 999)  # Large number for "never decayed"
-
-    def get_trust_summary(self) -> Dict[str, Any]:
-        """Get comprehensive trust monitoring summary using trust-only ranking detection."""
-        # Use the new trust-only detection approach
-        suspicious_neighbors = self._detect_suspicious_neighbors_by_ranking()
-        
-        # Calculate trust score statistics for reporting
-        trust_stats = {}
-        if self.trust_scores:
-            scores = list(self.trust_scores.values())
-            trust_stats = {
-                "min_trust": min(scores),
-                "max_trust": max(scores),
-                "avg_trust": sum(scores) / len(scores),
-                "trust_variance": np.var(scores) if len(scores) > 1 else 0.0
+        # Emit trust score event if configured
+        if self.config.log_trust_events and self.event_callbacks:
+            score_changes = {
+                nid: self.trust_velocities.get(nid, 0.0) 
+                for nid in self.trust_scores.keys()
             }
-
-        return {
+            
+            event = TrustScoreEvent(
+                node_id=self.node_id,
+                round_num=round_num,
+                trust_scores=self.trust_scores.copy(),
+                score_changes=score_changes,
+                detection_method="adaptive_trust_scoring"
+            )
+            self._emit_event(event)
+        
+        # Note: Clustering-based detection removed - focusing on trust-weighted performance metrics
+        
+        # Return influence weights for aggregation
+        return self.influence_weights.copy()
+    
+    
+    
+    
+    def share_trust_statistics(self) -> TrustStatistics:
+        """Generate anonymized trust statistics for gossip sharing."""
+        if not self.trust_scores:
+            return TrustStatistics(
+                min_trust=1.0, max_trust=1.0, mean_trust=1.0, 
+                std_trust=0.0, node_count=0
+            )
+        
+        trust_values = list(self.trust_scores.values())
+        return TrustStatistics(
+            min_trust=float(np.min(trust_values)),
+            max_trust=float(np.max(trust_values)),
+            mean_trust=float(np.mean(trust_values)),
+            std_trust=float(np.std(trust_values)),
+            node_count=len(trust_values)
+        )
+    
+    def receive_trust_statistics(self, stats: TrustStatistics) -> None:
+        """Receive and store trust statistics from other nodes."""
+        self.network_trust_stats.append(stats)
+        self.logger.debug(
+            f"Received trust stats: mean={stats.mean_trust:.3f}, "
+            f"std={stats.std_trust:.3f}, nodes={stats.node_count}"
+        )
+    
+    def _store_update_direction(self, neighbor_id: str, parameters: Dict[str, Any]) -> None:
+        """Store normalized update direction for temporal consistency analysis."""
+        # Sample parameters to create direction vector
+        direction_vector = []
+        
+        for layer_name, params in list(parameters.items())[:5]:  # Use first 5 layers
+            if hasattr(params, 'cpu'):
+                param_array = params.cpu().numpy().flatten()
+            else:
+                param_array = np.array(params).flatten()
+            
+            # Sample for efficiency
+            if len(param_array) > 100:
+                param_array = param_array[:100]
+            
+            direction_vector.extend(param_array.tolist())
+        
+        if direction_vector:
+            # Normalize to unit vector
+            direction = np.array(direction_vector)
+            norm = np.linalg.norm(direction)
+            if norm > 0:
+                direction = direction / norm
+                self.update_directions[neighbor_id].append(direction)
+    
+    def get_trust_summary(self) -> Dict[str, Any]:
+        """Get trust monitoring summary focused on performance metrics."""
+        trust_values = list(self.trust_scores.values())
+        influence_values = list(self.influence_weights.values())
+        
+        summary = {
             "node_id": self.node_id,
+            "rounds_completed": self.rounds_completed,
             "trust_scores": self.trust_scores.copy(),
-            "anomaly_counts": dict(self.anomaly_counts),
-            "suspicious_neighbors": suspicious_neighbors,
-            "trust_statistics": trust_stats,
-            "detection_method": "trust_ranking",
+            "influence_weights": self.influence_weights.copy(),
+            "trust_velocities": self.trust_velocities.copy(),
             "monitoring_enabled": self.config.enable_trust_monitoring,
             "total_neighbors": len(self.trust_scores),
+        }
+        
+        # Trust statistics for performance analysis
+        if trust_values:
+            summary["trust_statistics"] = {
+                "mean_trust": float(np.mean(trust_values)),
+                "min_trust": float(np.min(trust_values)),
+                "max_trust": float(np.max(trust_values)),
+                "std_trust": float(np.std(trust_values)),
+                "mean_influence": float(np.mean(influence_values)) if influence_values else 1.0,
+            }
+        
+        # Simplified neighbor assessment - no detection, just trust-based influence
+        summary["low_trust_neighbors"] = [
+            nid for nid, score in self.trust_scores.items() 
+            if score < 0.7  # Configurable threshold for performance analysis
+        ]
+        
+        return summary
+
+    def _measure_trust_resource_usage(self, operation_name: str):
+        """Context manager for measuring trust monitoring resource usage."""
+        # Placeholder implementation - returns a no-op context manager
+        class NoOpContextManager:
+            def __enter__(self):
+                return self
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                return False
+        
+        return NoOpContextManager()
+    
+    def get_trust_resource_summary(self) -> Dict[str, Any]:
+        """Get trust monitoring resource usage summary."""
+        return {
+            "status": "no_resource_data",
+            "message": "Resource monitoring not implemented in adaptive trust monitor"
         }

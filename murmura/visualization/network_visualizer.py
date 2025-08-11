@@ -25,6 +25,11 @@ from murmura.attacks.attack_event import (
     AttackSummaryEvent,
     AttackDetectionEvent,
 )
+from murmura.trust_monitoring.trust_events import (
+    TrustEvent,
+    TrustAnomalyEvent, 
+    TrustScoreEvent,
+)
 from murmura.visualization.training_observer import TrainingObserver
 
 
@@ -83,6 +88,13 @@ class NetworkVisualizer(TrainingObserver):
         self.attack_history: Dict[int, List[Dict[str, Any]]] = {}  # Per-node attack history
         self.attack_intensity_history: Dict[int, List[float]] = {}  # Track intensity over time
         self.attack_detection_events: List[Dict[str, Any]] = []  # Detection events
+        
+        # Trust monitoring data structures  
+        self.trust_events: List[Dict[str, Any]] = []  # All trust events
+        self.trust_scores_history: Dict[str, Dict[int, Dict[str, float]]] = {}  # {observer_node: {round: {neighbor: trust_score}}}
+        self.influence_weights_history: Dict[str, Dict[int, Dict[str, float]]] = {}  # {observer_node: {round: {neighbor: influence_weight}}}
+        self.trust_anomalies: List[Dict[str, Any]] = []  # Trust anomaly events
+        self.trust_score_changes: Dict[str, Dict[int, Dict[str, float]]] = {}  # {observer_node: {round: {neighbor: change}}}
 
     def set_topology(self, topology_manager: TopologyManager) -> None:
         """
@@ -426,6 +438,13 @@ class NetworkVisualizer(TrainingObserver):
         
         elif isinstance(event, AttackDetectionEvent):
             self._handle_attack_detection(event, frame, event_data, description)
+            
+        # Handle trust monitoring events
+        elif isinstance(event, TrustAnomalyEvent):
+            self._handle_trust_anomaly(event, frame, event_data, description)
+        
+        elif isinstance(event, TrustScoreEvent):
+            self._handle_trust_score_update(event, frame, event_data, description)
 
         # Ensure all metrics data is available for all frames
         frame["all_metrics"] = self.round_metrics.copy()
@@ -1480,3 +1499,66 @@ class NetworkVisualizer(TrainingObserver):
         plt.close(fig)
 
         print(f"Summary plot saved to {os.path.join(self.output_dir, filename)}")
+        
+    def _handle_trust_anomaly(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle trust anomaly events."""
+        trust_anomaly_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.node_id,
+            "suspected_neighbor": event.suspected_neighbor,
+            "anomaly_type": event.anomaly_type,
+            "anomaly_score": event.anomaly_score,
+            "evidence": event.evidence,
+            "trust_scores": event.trust_scores.copy()
+        }
+        
+        self.trust_anomalies.append(trust_anomaly_record)
+        self.trust_events.append(trust_anomaly_record)
+        
+        frame["trust_anomaly"] = trust_anomaly_record
+        
+        event_data.update({
+            "observer_node": event.node_id,
+            "suspected_neighbor": event.suspected_neighbor,
+            "anomaly_type": event.anomaly_type,
+            "anomaly_score": event.anomaly_score,
+            "evidence": str(event.evidence),
+            "trust_scores": str(event.trust_scores)
+        })
+        
+    def _handle_trust_score_update(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle trust score update events."""
+        observer_node = event.node_id
+        round_num = event.round_num
+        
+        # Store trust scores history
+        if observer_node not in self.trust_scores_history:
+            self.trust_scores_history[observer_node] = {}
+        self.trust_scores_history[observer_node][round_num] = event.trust_scores.copy()
+        
+        # Store trust score changes
+        if observer_node not in self.trust_score_changes:
+            self.trust_score_changes[observer_node] = {}
+        self.trust_score_changes[observer_node][round_num] = event.score_changes.copy()
+        
+        # Create trust score event record
+        trust_score_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.node_id,
+            "trust_scores": event.trust_scores.copy(),
+            "score_changes": event.score_changes.copy(),
+            "detection_method": event.detection_method
+        }
+        
+        self.trust_events.append(trust_score_record)
+        
+        frame["trust_score_update"] = trust_score_record
+        
+        event_data.update({
+            "observer_node": event.node_id,
+            "trust_scores": str(event.trust_scores),
+            "score_changes": str(event.score_changes),
+            "detection_method": event.detection_method
+        })

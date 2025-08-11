@@ -125,8 +125,8 @@ def main() -> None:
     parser.add_argument(
         "--mixing_parameter",
         type=float,
-        default=0.5,
-        help="Mixing parameter for gossip averaging (0.0-1.0)",
+        default=0.25,
+        help="Mixing parameter for gossip averaging (0.25 = collaborative learning)",
     )
 
     # Training arguments
@@ -809,7 +809,7 @@ def main() -> None:
                         logger.info(f"Training summary plot saved to {vis_dir}")
 
                     if args.create_animation:
-                        visualizer.create_animation(fps=args.fps)
+                        visualizer.render_training_animation(fps=args.fps)
                         logger.info(f"Training animation saved to {vis_dir}")
 
                     logger.info(

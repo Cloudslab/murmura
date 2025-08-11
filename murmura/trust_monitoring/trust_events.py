@@ -3,16 +3,18 @@ Trust monitoring events for visualization and logging.
 """
 
 from typing import Dict, Any
-from murmura.visualization.training_event import TrainingEvent
+from datetime import datetime
 
 
-class TrustEvent(TrainingEvent):
+class TrustEvent:
     """Base class for trust monitoring events."""
     
     def __init__(self, node_id: str, round_num: int, trust_scores: Dict[str, float]):
-        super().__init__(round_num, "trust_monitoring")
         self.node_id = node_id
+        self.round_num = round_num
         self.trust_scores = trust_scores
+        self.timestamp = datetime.now()
+        self.step_name = "trust_monitoring"
     
     def to_dict(self) -> Dict[str, Any]:
         return {

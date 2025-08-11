@@ -126,36 +126,6 @@ class DecentralizedLearningProcess(LearningProcess):
         
         self.logger.info(f"Trust monitoring initialized for {len(self.trust_monitors)} honest nodes")
 
-    def _setup_local_validation_for_trust_monitors(self, model_template) -> None:
-        """Set up local validation data for trust monitors to enable loss spoofing detection."""
-        if not self.trust_monitors:
-            return
-            
-        self.logger.info("Setting up local validation data for trust monitors")
-        
-        # Set up validation data for each trust monitor
-        validation_ratio = self.trust_config.local_validation_split_ratio if self.trust_config else 0.1
-        
-        for node_idx, trust_monitor in self.trust_monitors.items():
-            try:
-                # Get validation data from the corresponding actor
-                actor = self.cluster_manager.actors[node_idx]
-                validation_data = ray.get(actor.create_validation_split.remote(validation_ratio))
-                
-                # Set up the trust monitor with validation data and model template
-                with trust_monitor._measure_trust_resource_usage("set_validation_data"):
-                    trust_monitor.set_local_validation_data(validation_data, model_template)
-                
-                self.logger.info(
-                    f"Local validation configured for node {node_idx} trust monitor "
-                    f"({validation_ratio:.1%} split)"
-                )
-                
-            except Exception as e:
-                self.logger.warning(
-                    f"Failed to setup local validation for node {node_idx}: {e}. "
-                    f"Trust monitor will skip loss spoofing detection."
-                )
 
     def _process_trust_monitoring(self, round_num: int, node_params: Dict[int, Dict[str, Any]], 
                                  train_metrics: List[Dict[str, float]], 
@@ -198,10 +168,13 @@ class DecentralizedLearningProcess(LearningProcess):
                 
                 # Process trust monitoring for this node
                 with trust_monitor._measure_trust_resource_usage("process_parameter_updates"):
+                    # Pass own parameters for self-referenced baseline detection
+                    own_params = node_params.get(node_idx)
                     trust_scores = trust_monitor.process_parameter_updates(
                         round_num=round_num,
                         neighbor_updates=neighbor_updates,
-                        neighbor_losses=neighbor_losses
+                        neighbor_losses=neighbor_losses,
+                        own_parameters=own_params  # NEW: Enable self-referenced detection
                     )
                 all_trust_scores[node_idx] = trust_scores
                 self.logger.info(f"Node {node_idx}: Trust scores: {trust_scores}")
@@ -209,11 +182,11 @@ class DecentralizedLearningProcess(LearningProcess):
                 # Get the actual detections from the trust monitor itself
                 with trust_monitor._measure_trust_resource_usage("get_trust_summary"):
                     trust_summary = trust_monitor.get_trust_summary()
-                suspicious_neighbors = trust_summary.get("suspicious_neighbors", [])
+                suspicious_neighbors = trust_summary.get("low_trust_neighbors", [])
                 
                 if suspicious_neighbors:
-                    self.logger.warning(f"Node {node_idx} detected suspicious neighbors: {suspicious_neighbors}")
-                    # Track actual detections
+                    self.logger.info(f"Node {node_idx} has low-trust neighbors: {suspicious_neighbors}")
+                    # Track nodes with reduced trust for performance analysis
                     if node_idx not in node_malicious_detections:
                         node_malicious_detections[node_idx] = set()
                     node_malicious_detections[node_idx].update(suspicious_neighbors)
@@ -285,10 +258,6 @@ class DecentralizedLearningProcess(LearningProcess):
 
         # Initialize trust monitoring for decentralized learning
         self._initialize_trust_monitoring()
-        
-        # Set up local validation data for trust monitors (if enabled)
-        if self.trust_monitors and self.trust_config and self.trust_config.enable_loss_spoofing_detection:
-            self._setup_local_validation_for_trust_monitors(self.model)
 
         round_metrics = []
         trust_monitoring_results = []
@@ -696,7 +665,7 @@ class DecentralizedLearningProcess(LearningProcess):
                 # Use actual detections from runtime instead of recalculating thresholds
                 if node_idx in node_malicious_detections:
                     actual_detections = list(node_malicious_detections[node_idx])
-                    summary["suspicious_neighbors"] = actual_detections
+                    summary["low_trust_neighbors"] = actual_detections
                     # Collect all suspicious neighbors globally
                     all_detected_suspicious.update(actual_detections)
                 

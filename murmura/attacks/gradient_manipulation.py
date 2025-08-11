@@ -126,13 +126,21 @@ class GradientManipulationAttack(BaseAttack):
             
             return parameter + noise
         else:
-            # NumPy array
-            param_std = np.std(parameter)
-            noise_scale = self.noise_scale * param_std * intensity
-            
-            noise = np.random.normal(0, noise_scale, parameter.shape)
-            
-            return parameter + noise
+            # NumPy array or scalar
+            if np.isscalar(parameter) or parameter.ndim == 0:
+                # Handle scalar case
+                param_std = abs(parameter) if parameter != 0 else 1.0
+                noise_scale = self.noise_scale * param_std * intensity
+                noise = np.random.normal(0, noise_scale)
+                return parameter + noise
+            else:
+                # Handle array case
+                param_std = np.std(parameter)
+                noise_scale = self.noise_scale * param_std * intensity
+                
+                noise = np.random.normal(0, noise_scale, parameter.shape)
+                
+                return parameter + noise
     
     def _flip_signs(self, parameter: Union[np.ndarray, torch.Tensor], intensity: float) -> Union[np.ndarray, torch.Tensor]:
         """Flip the signs of parameters based on probability."""
@@ -149,13 +157,21 @@ class GradientManipulationAttack(BaseAttack):
             
             return flipped_param
         else:
-            # NumPy array
-            flip_mask = np.random.random(parameter.shape) < effective_flip_prob
-            
-            flipped_param = parameter.copy()  # type: ignore
-            flipped_param[flip_mask] = -flipped_param[flip_mask]
-            
-            return flipped_param
+            # NumPy array or scalar
+            if np.isscalar(parameter) or parameter.ndim == 0:
+                # Handle scalar case
+                if np.random.random() < effective_flip_prob:
+                    return -parameter
+                else:
+                    return parameter
+            else:
+                # Handle array case
+                flip_mask = np.random.random(parameter.shape) < effective_flip_prob
+                
+                flipped_param = parameter.copy()  # type: ignore
+                flipped_param[flip_mask] = -flipped_param[flip_mask]
+                
+                return flipped_param
     
     def _scale_parameters(self, parameter: Union[np.ndarray, torch.Tensor], intensity: float) -> Union[np.ndarray, torch.Tensor]:
         """Scale parameters by malicious factors."""
