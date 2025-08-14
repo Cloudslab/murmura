@@ -28,6 +28,10 @@ class LabelFlippingAttack(BaseAttack):
         # Determine number of classes from config or infer later
         self.num_classes = attack_config.get("num_classes", None)
         
+        # Seed configuration for consistency
+        self.base_seed = attack_config.get("malicious_node_seed", None)
+        self.rng = None  # Will be initialized per round
+        
         # Attack mode tracking
         self.attack_mode = self._determine_attack_mode()
         
@@ -64,6 +68,16 @@ class LabelFlippingAttack(BaseAttack):
         if attack_intensity == 0.0:
             return features, labels
         
+        # Initialize RNG for this round using base_seed + round_num + client_id hash for consistency
+        # This ensures different malicious nodes produce different attacks in the same round
+        if self.base_seed is not None:
+            # Hash the client_id to get a stable integer
+            client_hash = hash(self.client_id) % (2**31)  # Keep it positive and reasonable size
+            round_seed = self.base_seed + round_num + client_hash
+            self.rng = np.random.RandomState(round_seed)
+        else:
+            self.rng = np.random.RandomState()
+        
         # Convert to numpy for processing
         labels_np = self._convert_to_numpy(labels)
         original_shape = labels_np.shape
@@ -82,8 +96,8 @@ class LabelFlippingAttack(BaseAttack):
         if num_to_poison == 0:
             return features, labels
         
-        # Select samples to poison
-        poison_indices = np.random.choice(num_samples, num_to_poison, replace=False)
+        # Select samples to poison using seeded RNG
+        poison_indices = self.rng.choice(num_samples, num_to_poison, replace=False)
         
         # Apply poisoning based on attack mode
         poisoned_labels = labels_flat.copy()
@@ -145,7 +159,8 @@ class LabelFlippingAttack(BaseAttack):
             # This ensures attack intensity directly corresponds to % of data corrupted
             available_labels = list(range(self.num_classes))
             available_labels.remove(original_label)
-            return np.random.choice(available_labels)
+            # Use seeded RNG for consistency
+            return self.rng.choice(available_labels) if self.rng is not None else np.random.choice(available_labels)
     
     def poison_gradients(
         self,

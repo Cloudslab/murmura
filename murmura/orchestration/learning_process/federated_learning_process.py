@@ -331,6 +331,9 @@ class FederatedLearningProcess(LearningProcess):
             self.logger.info(
                 f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
             )
+            self.logger.info(f"Global Model Test Precision: {test_metrics['precision']:.4f}")
+            self.logger.info(f"Global Model Test Recall: {test_metrics['recall']:.4f}")
+            self.logger.info(f"Global Model Test F1 Score: {test_metrics['f1_score']:.4f}")
 
             # Emit evaluation event
             self.training_monitor.emit_event(
@@ -371,6 +374,9 @@ class FederatedLearningProcess(LearningProcess):
                     "train_accuracy": avg_train_acc,
                     "test_loss": test_metrics["loss"],
                     "test_accuracy": test_metrics["accuracy"],
+                    "test_precision": test_metrics["precision"],
+                    "test_recall": test_metrics["recall"],
+                    "test_f1_score": test_metrics["f1_score"],
                 }
             )
 

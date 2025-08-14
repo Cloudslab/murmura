@@ -7,14 +7,15 @@ solving network fragmentation issues and eliminating the need for validation dat
 
 import logging
 import numpy as np
-from typing import Dict, Any, List, Optional, Tuple, Deque, Set
+from typing import Dict, Any, List, Optional, Deque
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from scipy.spatial.distance import cosine
 from scipy import stats as scipy_stats
+import copy
 
 from .trust_config import TrustMonitorConfig
-from .trust_events import TrustEvent, TrustScoreEvent, TrustAnomalyEvent
+from .trust_events import TrustEvent, TrustScoreEvent
 
 
 @dataclass
@@ -25,6 +26,16 @@ class GradientFingerprint:
     spectral_energy: float
     update_magnitude_distribution: Dict[str, float]
     layer_wise_stats: Dict[str, Dict[str, float]]
+    
+    def copy(self):
+        """Create a deep copy of the GradientFingerprint."""
+        return GradientFingerprint(
+            cross_layer_correlation=self.cross_layer_correlation,
+            gradient_entropy=self.gradient_entropy,
+            spectral_energy=self.spectral_energy,
+            update_magnitude_distribution=copy.deepcopy(self.update_magnitude_distribution),
+            layer_wise_stats=copy.deepcopy(self.layer_wise_stats)
+        )
 
 
 @dataclass 
@@ -60,10 +71,13 @@ class TrustMonitor:
     4. Smooth trust evolution without thresholds
     """
     
-    def __init__(self, node_id: str, config: TrustMonitorConfig):
+    def __init__(self, node_id: str, config: TrustMonitorConfig, seed: Optional[int] = None):
         self.node_id = node_id
         self.config = config
         self.logger = logging.getLogger(f"murmura.trust_monitor.{node_id}")
+        
+        # Set up RNG for reproducible sampling
+        self.rng = np.random.RandomState(seed) if seed is not None else np.random.RandomState()
         
         # Core trust state
         self.trust_scores: Dict[str, float] = {}
@@ -177,13 +191,13 @@ class TrustMonitor:
                 
                 # Sample both arrays to same length
                 if len(layer1) > min_len:
-                    indices = np.random.choice(len(layer1), min_len, replace=False)
+                    indices = self.rng.choice(len(layer1), min_len, replace=False)
                     layer1 = layer1[indices]
                 else:
                     layer1 = layer1[:min_len]
                     
                 if len(layer2) > min_len:
-                    indices = np.random.choice(len(layer2), min_len, replace=False)
+                    indices = self.rng.choice(len(layer2), min_len, replace=False)
                     layer2 = layer2[indices]
                 else:
                     layer2 = layer2[:min_len]
@@ -214,7 +228,7 @@ class TrustMonitor:
             
             # Sample for efficiency
             if len(param_array) > 1000:
-                param_array = np.random.choice(param_array, 1000, replace=False)
+                param_array = self.rng.choice(param_array, 1000, replace=False)
             
             all_gradients.extend(param_array.tolist())
         
@@ -244,7 +258,7 @@ class TrustMonitor:
             
             # Sample for efficiency
             if len(param_array) > 2000:
-                param_array = np.random.choice(param_array, 2000, replace=False)
+                param_array = self.rng.choice(param_array, 2000, replace=False)
             
             all_params.extend(param_array.tolist())
         
@@ -489,9 +503,6 @@ class TrustMonitor:
         eff_pattern = w_pattern * signal_maturity
         eff_temporal = w_temporal * signal_maturity
         
-        # Consensus deviation doesn't need history - uses current round data
-        eff_consensus = w_consensus  # No maturity scaling needed
-        
         # Redistribute the "lost" weight proportionally to immediate signals
         # Only pattern and temporal lose weight due to maturity
         lost_weight = (w_pattern + w_temporal) * (1.0 - signal_maturity)
@@ -707,6 +718,18 @@ class TrustMonitor:
             self._emit_event(event)
         
         # Note: Clustering-based detection removed - focusing on trust-weighted performance metrics
+        
+        # Emit aggregation weights event if configured
+        if self.event_callbacks:
+            from ..visualization.training_event import AggregationWeightsEvent
+            weights_event = AggregationWeightsEvent(
+                round_num=round_num,
+                observer_node=self.node_id,
+                influence_weights=self.influence_weights.copy(),
+                trust_scores=self.trust_scores.copy(),
+                aggregation_method="trust_weighted_gossip"
+            )
+            self._emit_event(weights_event)
         
         # Return influence weights for aggregation
         return self.influence_weights.copy()

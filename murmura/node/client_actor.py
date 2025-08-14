@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 from typing import Dict, Any, Optional, List, Tuple
 
 import numpy as np
@@ -106,6 +107,40 @@ class VirtualClientActor:
 
             log_level = os.environ.get("MURMURA_LOG_LEVEL", "INFO")
             self.logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
+    
+    def set_deterministic_seeds(self) -> None:
+        """Set seeds in Ray worker for deterministic behavior."""
+        try:
+            # Import modules inside the method to avoid serialization issues
+            import random
+            import numpy as np
+            import torch
+            import os
+            
+            # Get a deterministic seed based on client_id
+            client_seed = hash(self.client_id) % (2**31)
+            
+            # Set all random seeds
+            random.seed(client_seed)
+            np.random.seed(client_seed)
+            torch.manual_seed(client_seed)
+            torch.cuda.manual_seed(client_seed)
+            torch.cuda.manual_seed_all(client_seed)
+            
+            os.environ['PYTHONHASHSEED'] = str(client_seed)
+            
+            # Set deterministic behavior
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+            
+            self.logger.info(f"Set deterministic seeds with client_seed: {client_seed}")
+                
+        except Exception as e:
+            # Log but don't fail actor creation
+            if hasattr(self, 'logger'):
+                self.logger.warning(f"Failed to set worker seeds: {e}")
+            else:
+                print(f"Warning: Failed to set worker seeds: {e}")
 
     def get_node_info(self) -> Dict[str, Any]:
         """Return node information for this actor"""

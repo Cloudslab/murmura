@@ -1,6 +1,7 @@
 import argparse
 import os
 import logging
+import random
 import numpy as np
 import torch
 import torch.nn as nn
@@ -48,6 +49,19 @@ def setup_logging(log_level: str = "INFO") -> None:
             logging.FileHandler("dp_decentralized_eurosat.log"),
         ],
     )
+
+
+def set_all_seeds(seed: int) -> None:
+    """Set all random seeds for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # Ensure deterministic behavior
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 def main() -> None:
@@ -645,11 +659,9 @@ def main() -> None:
         partitioner = PartitionerFactory.create(config)
 
         logger.info("=== Creating EuroSAT Model ===")
-        # Set random seeds for reproducible model initialization
-        torch.manual_seed(config.model_seed)
-        torch.cuda.manual_seed_all(config.model_seed)
-        np.random.seed(config.model_seed)
-        logger.info(f"Set model initialization seeds to {config.model_seed}")
+        # Set ALL random seeds for full reproducibility
+        set_all_seeds(config.model_seed)
+        logger.info(f"Set ALL seeds (random, numpy, torch) to {config.model_seed} for full reproducibility")
 
         # Select model based on complexity
         # Use GroupNorm for many clients or when DP is enabled
@@ -681,6 +693,7 @@ def main() -> None:
                 input_shape=(3, 64, 64),
                 device=device,
                 data_preprocessor=preprocessor,
+                seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
         else:
             logger.info("Creating regular model wrapper")
@@ -692,6 +705,7 @@ def main() -> None:
                 optimizer_kwargs={"lr": args.lr},
                 input_shape=(3, 64, 64),
                 data_preprocessor=preprocessor,
+                seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
 
         logger.info("=== Setting Up Decentralized Learning Process ===")

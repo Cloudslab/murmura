@@ -19,6 +19,7 @@ from murmura.visualization.training_event import (
     NetworkStructureEvent,
     FingerprintEvent,
     TrustSignalsEvent,
+    AggregationWeightsEvent,
 )
 from murmura.attacks.attack_event import (
     AttackEvent,
@@ -28,7 +29,6 @@ from murmura.attacks.attack_event import (
     AttackDetectionEvent,
 )
 from murmura.trust_monitoring.trust_events import (
-    TrustEvent,
     TrustAnomalyEvent, 
     TrustScoreEvent,
 )
@@ -116,7 +116,7 @@ class NetworkVisualizer(TrainingObserver):
             event: The training event to process
         """
         if self.topology is None and not isinstance(
-            event, (InitialStateEvent, NetworkStructureEvent)
+            event, (InitialStateEvent, NetworkStructureEvent, AggregationWeightsEvent)
         ):
             return  # Can't visualize without topology information
 
@@ -453,6 +453,9 @@ class NetworkVisualizer(TrainingObserver):
             
         elif isinstance(event, TrustSignalsEvent):
             self._handle_trust_signals_event(event, frame, event_data, description)
+            
+        elif isinstance(event, AggregationWeightsEvent):
+            self._handle_aggregation_weights_event(event, frame, event_data, description)
 
         # Ensure all metrics data is available for all frames
         frame["all_metrics"] = self.round_metrics.copy()
@@ -950,7 +953,7 @@ class NetworkVisualizer(TrainingObserver):
 
         # 12. Export trust signals events to separate CSV
         if hasattr(self, 'trust_signals_events') and self.trust_signals_events:
-            trust_signals_csv_path = os.path.join(self.output_dir, f"trust_signals.csv")
+            trust_signals_csv_path = os.path.join(self.output_dir, "trust_signals.csv")
             with open(trust_signals_csv_path, "w", newline="", encoding="utf-8") as f:
                 # Get all possible field names from all trust signals events
                 all_fieldnames: set[str] = set()
@@ -963,9 +966,25 @@ class NetworkVisualizer(TrainingObserver):
                 writer.writerows(self.trust_signals_events)
             print(f"Trust signals exported to {trust_signals_csv_path}")
 
-        # 13. Export all trust-related events to consolidated trust_events.csv
+        # 13. Export aggregation weights data  
+        if hasattr(self, 'aggregation_weights_events') and self.aggregation_weights_events:
+            weights_csv_path = os.path.join(self.output_dir, "aggregation_weights.csv")
+            
+            with open(weights_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names
+                all_fieldnames: set[str] = set()
+                for event in self.aggregation_weights_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.aggregation_weights_events)
+            print(f"Aggregation weights exported to {weights_csv_path}")
+
+        # 14. Export all trust-related events to consolidated trust_events.csv
         if self.trust_events or (hasattr(self, 'trust_signals_events') and self.trust_signals_events):
-            trust_events_csv_path = os.path.join(self.output_dir, f"trust_events.csv")
+            trust_events_csv_path = os.path.join(self.output_dir, "trust_events.csv")
             all_trust_events = []
             
             # Add trust score events
@@ -979,6 +998,10 @@ class NetworkVisualizer(TrainingObserver):
             # Add fingerprint events
             if hasattr(self, 'fingerprint_events') and self.fingerprint_events:
                 all_trust_events.extend(self.fingerprint_events)
+            
+            # Add aggregation weights events
+            if hasattr(self, 'aggregation_weights_events') and self.aggregation_weights_events:
+                all_trust_events.extend(self.aggregation_weights_events)
             
             with open(trust_events_csv_path, "w", newline="", encoding="utf-8") as f:
                 # Get all possible field names from all events
@@ -1692,3 +1715,42 @@ class NetworkVisualizer(TrainingObserver):
         
         # Update event data for CSV export
         event_data.update(trust_signals_record)
+
+    def _handle_aggregation_weights_event(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle aggregation weights events and store weight data."""
+        
+        # Create aggregation weights record
+        weights_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.observer_node,
+            "aggregation_method": event.aggregation_method,
+        }
+        
+        # Add influence weights data
+        for node_id, weight in event.influence_weights.items():
+            weights_record[f"influence_weight_{node_id}"] = weight
+            
+        # Add trust scores data  
+        for node_id, score in event.trust_scores.items():
+            weights_record[f"trust_score_{node_id}"] = score
+        
+        # Store in influence weights history
+        observer_node = event.observer_node
+        round_num = event.round_num
+        
+        if observer_node not in self.influence_weights_history:
+            self.influence_weights_history[observer_node] = {}
+        
+        self.influence_weights_history[observer_node][round_num] = event.influence_weights.copy()
+        
+        # Store in events list (create if needed)
+        if not hasattr(self, 'aggregation_weights_events'):
+            self.aggregation_weights_events = []
+        self.aggregation_weights_events.append(weights_record)
+        
+        # Add to frame data
+        frame["aggregation_weights_event"] = weights_record
+        
+        # Update event data for CSV export
+        event_data.update(weights_record)

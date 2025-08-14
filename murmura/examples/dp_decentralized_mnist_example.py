@@ -1,6 +1,7 @@
 import argparse
 import os
 import logging
+import random
 import numpy as np
 import torch
 import torch.nn as nn
@@ -33,6 +34,19 @@ from murmura.attacks.attack_config import AttackConfig
 
 # Import trust monitoring components
 from murmura.trust_monitoring.trust_config import TrustMonitorConfig
+
+
+def set_all_seeds(seed: int) -> None:
+    """Set all random seeds for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # Ensure deterministic behavior
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 def create_mnist_preprocessor():
@@ -701,11 +715,9 @@ def main() -> None:
         partitioner = PartitionerFactory.create(config)
 
         logger.info("=== Creating MNIST Model ===")
-        # Set random seeds for reproducible model initialization
-        torch.manual_seed(config.model_seed)
-        torch.cuda.manual_seed_all(config.model_seed)
-        np.random.seed(config.model_seed)
-        logger.info(f"Set model initialization seeds to {config.model_seed}")
+        # Set ALL random seeds for full reproducibility
+        set_all_seeds(config.model_seed)
+        logger.info(f"Set ALL seeds (random, numpy, torch) to {config.model_seed} for full reproducibility")
         
         # Create the MNIST model
         model = MNISTModel(
@@ -732,6 +744,7 @@ def main() -> None:
                     input_shape=input_shape,
                     device=device,
                     data_preprocessor=mnist_preprocessor,
+                    seed=config.model_seed,  # Pass seed for reproducible DataLoader
                 )
             )
         else:
@@ -745,6 +758,7 @@ def main() -> None:
                 optimizer_kwargs={"lr": args.lr},
                 input_shape=input_shape,
                 data_preprocessor=mnist_preprocessor,
+                seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
 
         logger.info("=== Setting Up Decentralized Learning Process ===")

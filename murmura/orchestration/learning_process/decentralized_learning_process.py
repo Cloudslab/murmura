@@ -115,7 +115,9 @@ class DecentralizedLearningProcess(LearningProcess):
                 
             # Create trust monitor for this honest node
             node_id = f"node_{node_idx}"
-            trust_monitor = TrustMonitor(node_id, self.trust_config)
+            # Use model_seed + node_idx for trust monitor seed to ensure deterministic behavior
+            trust_seed = self.config.model_seed + node_idx if self.config.model_seed is not None else None
+            trust_monitor = TrustMonitor(node_id, self.trust_config, seed=trust_seed)
             
             # Register event callback to forward trust events to training monitor
             trust_monitor.add_event_callback(lambda event: self.training_monitor.emit_event(event))
@@ -477,6 +479,9 @@ class DecentralizedLearningProcess(LearningProcess):
             
             honest_accuracies = []
             honest_losses = []
+            honest_precisions = []
+            honest_recalls = []
+            honest_f1_scores = []
             
             self.logger.info(
                 f"Evaluating {len(honest_node_indices)} honest nodes "
@@ -495,10 +500,16 @@ class DecentralizedLearningProcess(LearningProcess):
                     
                     honest_accuracies.append(node_metrics['accuracy'])
                     honest_losses.append(node_metrics['loss'])
+                    honest_precisions.append(node_metrics['precision'])
+                    honest_recalls.append(node_metrics['recall'])
+                    honest_f1_scores.append(node_metrics['f1_score'])
                     
                     self.logger.debug(
                         f"Node {node_idx} - Loss: {node_metrics['loss']:.4f}, "
-                        f"Accuracy: {node_metrics['accuracy'] * 100:.2f}%"
+                        f"Accuracy: {node_metrics['accuracy'] * 100:.2f}%, "
+                        f"Precision: {node_metrics['precision']:.4f}, "
+                        f"Recall: {node_metrics['recall']:.4f}, "
+                        f"F1: {node_metrics['f1_score']:.4f}"
                     )
                     
                 except Exception as e:
@@ -508,11 +519,17 @@ class DecentralizedLearningProcess(LearningProcess):
             if honest_accuracies:
                 avg_accuracy = sum(honest_accuracies) / len(honest_accuracies)
                 avg_loss = sum(honest_losses) / len(honest_losses)
+                avg_precision = sum(honest_precisions) / len(honest_precisions)
+                avg_recall = sum(honest_recalls) / len(honest_recalls)
+                avg_f1_score = sum(honest_f1_scores) / len(honest_f1_scores)
                 
                 # Create aggregated test metrics
                 test_metrics = {
                     'accuracy': avg_accuracy,
-                    'loss': avg_loss
+                    'loss': avg_loss,
+                    'precision': avg_precision,
+                    'recall': avg_recall,
+                    'f1_score': avg_f1_score
                 }
                 
                 self.logger.info(
@@ -522,12 +539,27 @@ class DecentralizedLearningProcess(LearningProcess):
                     f"Average Test Accuracy (Honest Nodes): {avg_accuracy * 100:.2f}%"
                 )
                 self.logger.info(
+                    f"Average Test Precision (Honest Nodes): {avg_precision:.4f}"
+                )
+                self.logger.info(
+                    f"Average Test Recall (Honest Nodes): {avg_recall:.4f}"
+                )
+                self.logger.info(
+                    f"Average Test F1 Score (Honest Nodes): {avg_f1_score:.4f}"
+                )
+                self.logger.info(
                     f"Accuracy Range: {min(honest_accuracies) * 100:.2f}% - {max(honest_accuracies) * 100:.2f}%"
                 )
             else:
                 # Fallback if no honest nodes could be evaluated
                 self.logger.error("No honest nodes could be evaluated!")
-                test_metrics = {'accuracy': 0.0, 'loss': float('inf')}
+                test_metrics = {
+                    'accuracy': 0.0, 
+                    'loss': float('inf'),
+                    'precision': 0.0,
+                    'recall': 0.0,
+                    'f1_score': 0.0
+                }
 
             # Emit evaluation event
             self.training_monitor.emit_event(

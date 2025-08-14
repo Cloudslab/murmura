@@ -360,6 +360,9 @@ class ClusterManager:
                 raise
 
         self._apply_topology()
+        
+        # Set deterministic seeds on all actors after creation
+        self._set_actor_seeds()
 
         if self.aggregation_strategy and self.topology_manager:
             self._initialize_coordinator()
@@ -368,6 +371,21 @@ class ClusterManager:
         self._log_actor_distribution()
 
         return self.actors
+
+    def _set_actor_seeds(self) -> None:
+        """Set deterministic seeds on all actors after creation."""
+        try:
+            seed_tasks = []
+            for actor in self.actors:
+                task = actor.set_deterministic_seeds.remote()
+                seed_tasks.append(task)
+            
+            # Wait for all seed setting to complete
+            ray.get(seed_tasks, timeout=60)
+            logging.getLogger("murmura").info("Set deterministic seeds on all actors")
+            
+        except Exception as e:
+            logging.getLogger("murmura").warning(f"Failed to set seeds on some actors: {e}")
 
     def _log_actor_distribution(self) -> None:
         """Log how actors are distributed across nodes"""
