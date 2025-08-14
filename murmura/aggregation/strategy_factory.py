@@ -7,6 +7,7 @@ from murmura.aggregation.aggregation_config import (
 from murmura.aggregation.strategies.fed_avg import FedAvg
 from murmura.aggregation.strategies.gossip_avg import GossipAvg
 from murmura.aggregation.strategies.trimmed_mean import TrimmedMean
+from murmura.aggregation.strategies.trust_weighted_gossip import TrustWeightedGossip
 from murmura.aggregation.strategy_interface import AggregationStrategy
 from murmura.network_management.topology import TopologyConfig
 from murmura.network_management.topology_compatibility import (
@@ -47,6 +48,8 @@ class AggregationStrategyFactory:
             strategy_class = TrimmedMean
         elif strategy_type == AggregationStrategyType.GOSSIP_AVG:
             strategy_class = GossipAvg
+        elif strategy_type == AggregationStrategyType.TRUST_WEIGHTED_GOSSIP:
+            strategy_class = TrustWeightedGossip
         else:
             raise ValueError(f"Unsupported aggregation strategy: {strategy_type}")
 

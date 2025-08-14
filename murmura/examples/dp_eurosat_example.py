@@ -10,10 +10,11 @@ from murmura.aggregation.aggregation_config import (
     AggregationConfig,
     AggregationStrategyType,
 )
-from murmura.models.mnist_models import MNISTModel
+from murmura.models.eurosat_models import EuroSATModel, EuroSATModelComplex, EuroSATModelLite
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
+from murmura.data_processing.data_preprocessor import create_image_preprocessor
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
 from murmura.orchestration.learning_process.federated_learning_process import (
     FederatedLearningProcess,
@@ -52,17 +53,17 @@ def setup_logging(log_level: str = "INFO") -> None:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler("dp_mnist_federated.log"),
+            logging.FileHandler("dp_eurosat_federated.log"),
         ],
     )
 
 
 def main() -> None:
     """
-    MNIST Federated Learning with Differential Privacy
+    EuroSAT Federated Learning with Differential Privacy
     """
     parser = argparse.ArgumentParser(
-        description="Federated Learning for MNIST with Differential Privacy"
+        description="Federated Learning for EuroSAT with Differential Privacy"
     )
 
     # Core federated learning arguments
@@ -71,10 +72,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--partition_strategy",
-        choices=[
-            "dirichlet",
-            "iid",
-        ],
+        choices=["dirichlet", "iid"],
         default="dirichlet",
         help="Data partitioning strategy",
     )
@@ -84,7 +82,7 @@ def main() -> None:
     parser.add_argument(
         "--min_partition_size",
         type=int,
-        default=500,
+        default=100,
         help="Minimum samples per partition",
     )
     parser.add_argument(
@@ -113,6 +111,15 @@ def main() -> None:
         help="Aggregation strategy to use",
     )
 
+    # Model arguments
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["simple", "complex", "lite"],
+        default="simple",
+        help="Model architecture to use",
+    )
+
     # Topology arguments
     parser.add_argument(
         "--topology",
@@ -124,15 +131,15 @@ def main() -> None:
 
     # Training arguments
     parser.add_argument(
-        "--rounds", type=int, default=10, help="Number of federated learning rounds"
+        "--rounds", type=int, default=20, help="Number of federated learning rounds"
     )
     parser.add_argument(
-        "--epochs", type=int, default=1, help="Number of local epochs per round"
+        "--epochs", type=int, default=2, help="Number of local epochs per round"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=64, help="Batch size for training"
+        "--batch_size", type=int, default=32, help="Batch size for training"
     )
-    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument(
         "--device",
         type=str,
@@ -193,7 +200,7 @@ def main() -> None:
     parser.add_argument(
         "--save_path",
         type=str,
-        default="dp_mnist_federated_model.pt",
+        default="dp_eurosat_federated_model.pt",
         help="Path to save the final model",
     )
 
@@ -282,8 +289,8 @@ def main() -> None:
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations_phase1",
-        help="Directory to save visualizations_phase1",
+        default="./visualizations_eurosat",
+        help="Directory to save visualizations",
     )
     parser.add_argument(
         "--create_summary",
@@ -301,7 +308,7 @@ def main() -> None:
 
     # Set up logging
     setup_logging(args.log_level)
-    logger = logging.getLogger("murmura.dp_mnist_example")
+    logger = logging.getLogger("murmura.dp_eurosat_example")
 
     try:
         # Select device
@@ -338,7 +345,7 @@ def main() -> None:
                 dp_config.target_epsilon = total_epsilon_budget
             elif args.dp_preset == "medium_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=total_epsilon_budget,  # Use total budget
+                    target_epsilon=total_epsilon_budget,
                     target_delta=args.target_delta,
                     max_grad_norm=1.0,
                     enable_client_dp=True,
@@ -346,7 +353,7 @@ def main() -> None:
                 )
             elif args.dp_preset == "low_privacy":
                 dp_config = DPConfig(
-                    target_epsilon=total_epsilon_budget,  # Use total budget
+                    target_epsilon=total_epsilon_budget,
                     target_delta=1e-4,
                     max_grad_norm=2.0,
                     enable_client_dp=True,
@@ -354,7 +361,7 @@ def main() -> None:
                 )
             else:  # custom
                 dp_config = DPConfig(
-                    target_epsilon=total_epsilon_budget,  # Use total budget
+                    target_epsilon=total_epsilon_budget,
                     target_delta=args.target_delta,
                     max_grad_norm=args.max_grad_norm,
                     noise_multiplier=args.noise_multiplier,
@@ -429,22 +436,28 @@ def main() -> None:
         )
         resource_config = ResourceConfig()
 
-        logger.info("=== Loading MNIST Dataset ===")
-        # Load MNIST dataset
+        logger.info("=== Loading EuroSAT Dataset ===")
+        # Load EuroSAT dataset
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
-            dataset_name="ylecun/mnist",
+            dataset_name="cm93/eurosat",
             split=args.split,
         )
 
         test_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
-            dataset_name="ylecun/mnist",
+            dataset_name="cm93/eurosat",
             split=args.test_split,
         )
 
         # Merge test split into main dataset
         train_dataset.merge_splits(test_dataset)
+
+        # Create data preprocessor for EuroSAT
+        preprocessor = create_image_preprocessor(
+            normalize=True,
+            target_size=(64, 64)
+        )
 
         # Create configuration
         config = OrchestrationConfig(
@@ -459,7 +472,7 @@ def main() -> None:
             aggregation=AggregationConfig(
                 strategy_type=AggregationStrategyType(args.aggregation_strategy)
             ),
-            dataset_name="ylecun/mnist",
+            dataset_name="cm93/eurosat",
             ray_cluster=ray_cluster_config,
             resources=resource_config,
             feature_columns=["image"],
@@ -478,14 +491,27 @@ def main() -> None:
         logger.info("=== Creating Data Partitions ===")
         partitioner = PartitionerFactory.create(config)
 
-        logger.info("=== Creating MNIST Model ===")
+        logger.info("=== Creating EuroSAT Model ===")
         # Set ALL random seeds for full reproducibility
         set_all_seeds(config.model_seed)
         logger.info(f"Set ALL seeds (random, numpy, torch) to {config.model_seed} for full reproducibility")
         
-        model = MNISTModel(
-            use_dp_compatible_norm=True
-        )  # Use GroupNorm for DP compatibility
+        # Select model based on complexity
+        # Use GroupNorm for many clients or when DP is enabled
+        use_groupnorm = args.enable_dp or args.num_actors > 10
+
+        if args.model == "complex":
+            model = EuroSATModelComplex(
+                input_size=64, use_dp_compatible_norm=use_groupnorm
+            )
+        elif args.model == "lite":
+            model = EuroSATModelLite(
+                input_size=64, use_dp_compatible_norm=use_groupnorm
+            )
+        else:  # simple
+            model = EuroSATModel(
+                input_size=64, use_dp_compatible_norm=use_groupnorm
+            )
 
         # Create model wrapper (DP or regular)
         global_model: Union[DPTorchModelWrapper, TorchModelWrapper]
@@ -497,8 +523,9 @@ def main() -> None:
                 loss_fn=nn.CrossEntropyLoss(),
                 optimizer_class=torch.optim.SGD,  # SGD works better with DP
                 optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
-                input_shape=(1, 28, 28),
+                input_shape=(3, 64, 64),
                 device=device,
+                data_preprocessor=preprocessor,
                 seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
         else:
@@ -507,10 +534,10 @@ def main() -> None:
             global_model = TorchModelWrapper(
                 model=model,
                 loss_fn=nn.CrossEntropyLoss(),
-                optimizer_class=torch.optim.SGD,
-                optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
-                input_shape=(1, 28, 28),
-                device=device,
+                optimizer_class=torch.optim.Adam,
+                optimizer_kwargs={"lr": args.lr},
+                input_shape=(3, 64, 64),
+                data_preprocessor=preprocessor,
                 seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
 
@@ -530,7 +557,7 @@ def main() -> None:
             else:
                 vis_dir = os.path.join(
                     args.vis_dir,
-                    f"dp_mnist_{args.topology}_{args.aggregation_strategy}"
+                    f"dp_eurosat_{args.topology}_{args.aggregation_strategy}"
                     + ("_dp" if args.enable_dp else "_no_dp"),
                 )
             os.makedirs(vis_dir, exist_ok=True)
@@ -548,8 +575,9 @@ def main() -> None:
             )
 
             # Print experiment summary
-            logger.info("=== MNIST DP Federated Learning Setup ===")
-            logger.info("Dataset: MNIST")
+            logger.info("=== EuroSAT DP Federated Learning Setup ===")
+            logger.info("Dataset: EuroSAT")
+            logger.info(f"Model: {args.model}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Partitioning: {config.partition_strategy} (α={args.alpha})")
             logger.info(f"Aggregation: {config.aggregation.strategy_type}")
@@ -586,7 +614,7 @@ def main() -> None:
             # Execute learning process
             results = learning_process.execute()
 
-            # Display results_phase1
+            # Display results
             logger.info("=== Training Results ===")
             logger.info(
                 f"Initial accuracy: {results['initial_metrics']['accuracy']:.4f}"
@@ -660,7 +688,7 @@ def main() -> None:
             if visualizer and args.create_summary:
                 logger.info("=== Generating Visualization ===")
                 visualizer.render_summary_plot(
-                    filename=f"dp_mnist_{args.topology}_{args.aggregation_strategy}"
+                    filename=f"dp_eurosat_{args.model}_{args.topology}_{args.aggregation_strategy}"
                     + ("_dp" if args.enable_dp else "_no_dp")
                     + "_summary.png"
                 )
@@ -701,7 +729,7 @@ def main() -> None:
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"DP MNIST Learning Process failed: {str(e)}")
+        logger.error(f"DP EuroSAT Learning Process failed: {str(e)}")
         import traceback
 
         traceback.print_exc()

@@ -275,6 +275,78 @@ class NetworkStructureEvent(TrainingEvent):
         }
 
 
+class FingerprintEvent(TrainingEvent):
+    """Event for gradient fingerprint data collection"""
+
+    def __init__(
+        self, 
+        round_num: int, 
+        node_id: str, 
+        fingerprint_data: Dict[str, float]
+    ):
+        """
+        Args:
+            round_num (int): The current round number.
+            node_id (str): The ID of the node generating the fingerprint.
+            fingerprint_data (Dict[str, float]): Dictionary containing fingerprint metrics.
+        """
+        super().__init__(round_num, "gradient_fingerprint")
+        self.node_id = node_id
+        self.fingerprint_data = fingerprint_data
+
+
+class TrustSignalsEvent(TrainingEvent):
+    """Event for trust signal data collection"""
+
+    def __init__(
+        self,
+        round_num: int,
+        observer_node: str,
+        target_node: str,
+        trust_signals: Dict[str, float],
+        fingerprint_comparison: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Args:
+            round_num (int): The current round number.
+            observer_node (str): The ID of the node computing trust signals.
+            target_node (str): The ID of the node being evaluated.
+            trust_signals (Dict[str, float]): Dictionary containing all trust signals.
+            fingerprint_comparison (Optional[Dict[str, Any]]): Optional fingerprint comparison data.
+        """
+        super().__init__(round_num, "trust_signals")
+        self.observer_node = observer_node
+        self.target_node = target_node
+        self.trust_signals = trust_signals
+        self.fingerprint_comparison = fingerprint_comparison
+
+
+class AggregationWeightsEvent(TrainingEvent):
+    """Event for tracking final aggregation weights based on trust scores"""
+
+    def __init__(
+        self,
+        round_num: int,
+        observer_node: str,
+        influence_weights: Dict[str, float],
+        trust_scores: Dict[str, float],
+        aggregation_method: str = "trust_weighted"
+    ):
+        """
+        Args:
+            round_num (int): The current round number.
+            observer_node (str): The node performing the aggregation.
+            influence_weights (Dict[str, float]): Final weights used in aggregation.
+            trust_scores (Dict[str, float]): Trust scores that generated the weights.
+            aggregation_method (str): The aggregation method used.
+        """
+        super().__init__(round_num, "aggregation_weights")
+        self.observer_node = observer_node
+        self.influence_weights = influence_weights
+        self.trust_scores = trust_scores
+        self.aggregation_method = aggregation_method
+
+
 class InitialStateEvent(TrainingEvent):
     """Event for initial state process - kept for backward compatibility"""
 

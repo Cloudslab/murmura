@@ -208,6 +208,8 @@ class FederatedLearningProcess(LearningProcess):
 
             # UPDATED: Training with config parameters and client/data subsampling
             train_metrics = self.cluster_manager.train_models(
+                current_round=round_num,
+                total_rounds=self.config.rounds,
                 client_sampling_rate=self.config.client_sampling_rate,
                 data_sampling_rate=self.config.data_sampling_rate,
                 epochs=epochs,
@@ -235,7 +237,11 @@ class FederatedLearningProcess(LearningProcess):
             # Collect parameters for visualization
             node_params = {}
             for i, actor in enumerate(self.cluster_manager.actors):
-                params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
+                # Check if this actor index is malicious using cluster manager's tracking
+                if i in self.cluster_manager.malicious_client_indices:
+                    params = ray.get(actor.get_model_parameters.remote(current_round=round_num, total_rounds=rounds), timeout=1800)
+                else:
+                    params = ray.get(actor.get_model_parameters.remote(), timeout=1800)
                 node_params[i] = params
 
             # Create parameter summaries for visualization
@@ -325,6 +331,9 @@ class FederatedLearningProcess(LearningProcess):
             self.logger.info(
                 f"Global Model Test Accuracy: {test_metrics['accuracy'] * 100:.2f}%"
             )
+            self.logger.info(f"Global Model Test Precision: {test_metrics['precision']:.4f}")
+            self.logger.info(f"Global Model Test Recall: {test_metrics['recall']:.4f}")
+            self.logger.info(f"Global Model Test F1 Score: {test_metrics['f1_score']:.4f}")
 
             # Emit evaluation event
             self.training_monitor.emit_event(
@@ -365,6 +374,9 @@ class FederatedLearningProcess(LearningProcess):
                     "train_accuracy": avg_train_acc,
                     "test_loss": test_metrics["loss"],
                     "test_accuracy": test_metrics["accuracy"],
+                    "test_precision": test_metrics["precision"],
+                    "test_recall": test_metrics["recall"],
+                    "test_f1_score": test_metrics["f1_score"],
                 }
             )
 

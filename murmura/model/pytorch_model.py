@@ -36,6 +36,7 @@ class TorchModelWrapper(ModelInterface):
         device: Optional[str] = None,
         input_shape: Optional[Tuple[int, ...]] = None,
         data_preprocessor: Optional[GenericDataPreprocessor] = None,
+        seed: Optional[int] = None,
     ):
         """
         Initialize the PyTorch model wrapper.
@@ -54,6 +55,7 @@ class TorchModelWrapper(ModelInterface):
         self.optimizer_kwargs = optimizer_kwargs or {"lr": 0.001}
         self.input_shape = input_shape
         self.requested_device = device
+        self.seed = seed if seed is not None else 42  # Default seed for reproducibility
         if device is None:
             # We'll detect the actual device when the model is used
             self.device = "cpu"  # Initialize to CPU for safe serialization
@@ -156,8 +158,26 @@ class TorchModelWrapper(ModelInterface):
         else:
             dataset = TensorDataset(tensor_data)
 
-        return DataLoader(dataset, batch_size=batch_size, shuffle=(labels is not None))
+        # Create a generator with fixed seed for reproducible shuffling
+        generator = None
+        if labels is not None and self.seed is not None:
+            generator = torch.Generator()
+            generator.manual_seed(self.seed)
+        
+        return DataLoader(
+            dataset, 
+            batch_size=batch_size, 
+            shuffle=(labels is not None),
+            generator=generator,
+            worker_init_fn=self._worker_init_fn if self.seed is not None else None
+        )
 
+    def _worker_init_fn(self, worker_id: int) -> None:
+        """Initialize each worker with a unique but reproducible seed."""
+        worker_seed = self.seed + worker_id
+        np.random.seed(worker_seed)
+        torch.manual_seed(worker_seed)
+    
     @staticmethod
     def fallback_data_processing(data: Any) -> np.ndarray:
         """
@@ -297,7 +317,7 @@ class TorchModelWrapper(ModelInterface):
         :param kwargs: Additional parameters for evaluation:
                        - batch_size: Batch size for evaluation. (default: 32)
 
-        :return: Dictionary containing evaluation metrics (e.g., loss, accuracy).
+        :return: Dictionary containing evaluation metrics (e.g., loss, accuracy, precision, recall, f1_score).
         """
         # Ensure model is on the correct device before evaluation
         self.detect_and_set_device()
@@ -307,6 +327,10 @@ class TorchModelWrapper(ModelInterface):
 
         self.model.eval()
         total_loss, correct, total = 0.0, 0, 0
+        
+        # For precision, recall, F1 calculation
+        all_predictions = []
+        all_labels = []
 
         with torch.no_grad():
             for batch_data, batch_labels in dataloader:
@@ -324,10 +348,25 @@ class TorchModelWrapper(ModelInterface):
                 _, predicted = torch.max(outputs.data, 1)
                 total += batch_labels.size(0)
                 correct += cast(int, torch.eq(predicted, batch_labels).sum().item())
+                
+                # Store predictions and labels for detailed metrics
+                all_predictions.extend(predicted.cpu().numpy())
+                all_labels.extend(batch_labels.cpu().numpy())
+
+        # Calculate precision, recall, and F1 score
+        from sklearn.metrics import precision_score, recall_score, f1_score
+        
+        # Use macro averaging for multiclass scenarios
+        precision = precision_score(all_labels, all_predictions, average='macro', zero_division=0)
+        recall = recall_score(all_labels, all_predictions, average='macro', zero_division=0)
+        f1 = f1_score(all_labels, all_predictions, average='macro', zero_division=0)
 
         return {
             "loss": total_loss / total,
             "accuracy": correct / total,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
         }
 
     def predict(self, data: np.ndarray, **kwargs) -> np.ndarray:

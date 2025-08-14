@@ -40,6 +40,7 @@ class DPTorchModelWrapper(TorchModelWrapper):
         device: Optional[str] = None,
         input_shape: Optional[Tuple[int, ...]] = None,
         data_preprocessor=None,
+        seed: Optional[int] = None,
     ):
         """
         Initialize DP-aware model wrapper.
@@ -63,6 +64,7 @@ class DPTorchModelWrapper(TorchModelWrapper):
             device=device,
             input_shape=input_shape,
             data_preprocessor=data_preprocessor,
+            seed=seed,
         )
 
         if not OPACUS_AVAILABLE:
