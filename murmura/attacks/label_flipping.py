@@ -141,7 +141,8 @@ class LabelFlippingAttack(BaseAttack):
                 return original_label
         
         else:  # random mode
-            # Flip to any other label
+            # Flip to any other label (excluding original to ensure actual corruption)
+            # This ensures attack intensity directly corresponds to % of data corrupted
             available_labels = list(range(self.num_classes))
             available_labels.remove(original_label)
             return np.random.choice(available_labels)

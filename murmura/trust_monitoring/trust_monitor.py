@@ -77,7 +77,7 @@ class TrustMonitor:
         
         # Temporal consistency tracking
         self.update_directions: Dict[str, Deque[np.ndarray]] = defaultdict(
-            lambda: deque(maxlen=3)
+            lambda: deque(maxlen=config.history_window_size)
         )
         
         # Trust trajectory tracking for temporal clustering
@@ -354,13 +354,16 @@ class TrustMonitor:
             signals.gradient_divergence = min(1.0, (correlation_deviation + entropy_deviation) / 2.0)
         
         # 2. Pattern shift detection (for label flipping)
-        if len(self.fingerprint_history[neighbor_id]) >= 3:
+        history_len = len(self.fingerprint_history[neighbor_id])
+        if history_len >= 3:  # Need at least 3 historical points
             # Detect sudden changes in layer-wise distribution
             historical_dists = [fp.update_magnitude_distribution for fp in self.fingerprint_history[neighbor_id]]
             
-            # Compare current distribution with historical
+            # Use min(3, history_len) to max(history_len) for comparison
+            # This scales from 3 comparisons to full history window
+            lookback = min(history_len, self.config.history_window_size)
             pattern_shifts = []
-            for hist_dist in historical_dists[-3:]:
+            for hist_dist in historical_dists[-lookback:]:
                 # Compute JS divergence between distributions
                 shift = self._compute_distribution_divergence(
                     current_fingerprint.update_magnitude_distribution,
@@ -397,8 +400,9 @@ class TrustMonitor:
                 signals.consensus_deviation = min(1.0, deviation * 2.0)
         
         # 4. Temporal inconsistency (erratic update patterns)
-        if neighbor_id in self.update_directions and len(self.update_directions[neighbor_id]) >= 2:
-            # Check consistency of update directions
+        if neighbor_id in self.update_directions and len(self.update_directions[neighbor_id]) >= 3:
+            # Check consistency of update directions across rounds for this neighbor
+            # Need at least 3 directions to have meaningful temporal pattern
             directions = list(self.update_directions[neighbor_id])
             consistencies = []
             for i in range(len(directions) - 1):
@@ -468,14 +472,42 @@ class TrustMonitor:
         # Combine signals with adaptive weighting
         # Early rounds: focus on gradient divergence
         # Later rounds: include more signals as patterns establish
-        signal_maturity = min(1.0, round_num / 10)
+        # Use history window size from config as the baseline for maturity
+        maturity_rounds = self.config.history_window_size  # Default is 10
+        signal_maturity = min(1.0, round_num / maturity_rounds)  # Capped at 1.0 for proper weight distribution
+        
+        # Dynamic weight redistribution to maintain normalization
+        # Base weights when all signals are mature (sum to 1.0)
+        w_gradient = 0.35
+        w_pattern = 0.25
+        w_consensus = 0.20
+        w_temporal = 0.10
+        w_asymmetry = 0.10
+        
+        # Compute effective weights with maturity
+        # Only pattern_shift and temporal_inconsistency need history
+        eff_pattern = w_pattern * signal_maturity
+        eff_temporal = w_temporal * signal_maturity
+        
+        # Consensus deviation doesn't need history - uses current round data
+        eff_consensus = w_consensus  # No maturity scaling needed
+        
+        # Redistribute the "lost" weight proportionally to immediate signals
+        # Only pattern and temporal lose weight due to maturity
+        lost_weight = (w_pattern + w_temporal) * (1.0 - signal_maturity)
+        immediate_total = w_gradient + w_consensus + w_asymmetry
+        
+        # Scale up immediate signals to compensate
+        gradient_weight = w_gradient + lost_weight * (w_gradient / immediate_total)
+        consensus_weight = w_consensus + lost_weight * (w_consensus / immediate_total)
+        asymmetry_weight = w_asymmetry + lost_weight * (w_asymmetry / immediate_total)
         
         total_anomaly = (
-            0.35 * trust_signals.gradient_divergence +
-            0.25 * trust_signals.pattern_shift * signal_maturity +
-            0.20 * trust_signals.consensus_deviation * signal_maturity +
-            0.10 * trust_signals.temporal_inconsistency +
-            0.10 * trust_signals.layer_asymmetry
+            gradient_weight * trust_signals.gradient_divergence +
+            eff_pattern * trust_signals.pattern_shift +
+            consensus_weight * trust_signals.consensus_deviation +
+            eff_temporal * trust_signals.temporal_inconsistency +
+            asymmetry_weight * trust_signals.layer_asymmetry
         )
         
         # Adaptive decay/recovery rates
@@ -588,6 +620,41 @@ class TrustMonitor:
                 current_fingerprints,
                 own_fingerprint  # NEW: Pass honest node's fingerprint as baseline
             )
+            
+            # Emit trust signals event with detailed data
+            if self.event_callbacks:
+                # Prepare fingerprint comparison data
+                fingerprint_comparison = {
+                    "target_fingerprint": {
+                        "cross_layer_correlation": fingerprint.cross_layer_correlation,
+                        "gradient_entropy": fingerprint.gradient_entropy,
+                        "spectral_energy": fingerprint.spectral_energy,
+                    }
+                }
+                
+                if own_fingerprint is not None:
+                    fingerprint_comparison["own_fingerprint"] = {
+                        "cross_layer_correlation": own_fingerprint.cross_layer_correlation,
+                        "gradient_entropy": own_fingerprint.gradient_entropy,
+                        "spectral_energy": own_fingerprint.spectral_energy,
+                    }
+                
+                # Import and create the event
+                from ..visualization.training_event import TrustSignalsEvent
+                signals_event = TrustSignalsEvent(
+                    round_num=round_num,
+                    observer_node=self.node_id,
+                    target_node=neighbor_id,
+                    trust_signals={
+                        "gradient_divergence": trust_signals.gradient_divergence,
+                        "pattern_shift": trust_signals.pattern_shift,
+                        "consensus_deviation": trust_signals.consensus_deviation,
+                        "temporal_inconsistency": trust_signals.temporal_inconsistency,
+                        "layer_asymmetry": trust_signals.layer_asymmetry,
+                    },
+                    fingerprint_comparison=fingerprint_comparison
+                )
+                self._emit_event(signals_event)
             
             # Update trust score
             new_trust = self.update_trust_scores(neighbor_id, trust_signals, round_num)

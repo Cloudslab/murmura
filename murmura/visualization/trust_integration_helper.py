@@ -5,12 +5,14 @@ Helper functions for integrating trust monitoring with visualization.
 from typing import Dict, Any, Optional
 from murmura.trust_monitoring.trust_events import TrustScoreEvent
 from murmura.visualization.network_visualizer import NetworkVisualizer
+from murmura.visualization.training_event import FingerprintEvent
 
 
 def integrate_trust_monitoring_with_visualizer(
     visualizer: NetworkVisualizer,
     trust_monitors: Dict[str, Any],
-    round_num: int
+    round_num: int,
+    honest_nodes: Optional[list] = None
 ) -> None:
     """
     Integrate trust monitoring data with the network visualizer.
@@ -19,6 +21,7 @@ def integrate_trust_monitoring_with_visualizer(
         visualizer: The network visualizer instance
         trust_monitors: Dictionary of trust monitors {node_id: trust_monitor}
         round_num: Current training round
+        honest_nodes: List of honest node IDs for fingerprint collection
     """
     for node_id, trust_monitor in trust_monitors.items():
         if hasattr(trust_monitor, 'get_trust_summary'):
@@ -45,6 +48,25 @@ def integrate_trust_monitoring_with_visualizer(
                         round_num=round_num,
                         influence_weights=summary['influence_weights']
                     )
+            
+            # Collect fingerprint data for honest nodes
+            if honest_nodes and node_id in honest_nodes:
+                if hasattr(trust_monitor, 'compute_gradient_fingerprint'):
+                    # Get recent gradient data for fingerprinting
+                    if hasattr(trust_monitor, 'gradient_history') and trust_monitor.gradient_history:
+                        latest_gradients = trust_monitor.gradient_history[-1] if trust_monitor.gradient_history else None
+                        if latest_gradients:
+                            fingerprint_data = trust_monitor.compute_gradient_fingerprint(latest_gradients)
+                            
+                            # Create fingerprint event
+                            fingerprint_event = FingerprintEvent(
+                                round_num=round_num,
+                                node_id=node_id,
+                                fingerprint_data=fingerprint_data
+                            )
+                            
+                            # Process the fingerprint event through the visualizer
+                            visualizer.on_event(fingerprint_event)
 
 
 def create_trust_summary_for_round(

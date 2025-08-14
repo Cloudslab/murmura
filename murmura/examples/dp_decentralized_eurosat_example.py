@@ -253,8 +253,8 @@ def main() -> None:
     parser.add_argument(
         "--malicious_node_seed",
         type=int,
-        default=None,
-        help="Seed for reproducible malicious node selection (None = random)",
+        default=42,
+        help="Seed for reproducible malicious node selection",
     )
 
     # Trust monitoring arguments

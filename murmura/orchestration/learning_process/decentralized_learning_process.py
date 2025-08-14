@@ -12,6 +12,7 @@ from murmura.visualization.training_event import (
     AggregationEvent,
     ParameterTransferEvent,
     LocalTrainingEvent,
+    FingerprintEvent,
 )
 from murmura.trust_monitoring import TrustMonitor, TrustMonitorConfig
 
@@ -178,6 +179,20 @@ class DecentralizedLearningProcess(LearningProcess):
                     )
                 all_trust_scores[node_idx] = trust_scores
                 self.logger.info(f"Node {node_idx}: Trust scores: {trust_scores}")
+                
+                # Collect fingerprint data for honest nodes  
+                if hasattr(trust_monitor, 'compute_gradient_fingerprint') and own_params:
+                    try:
+                        fingerprint_data = trust_monitor.compute_gradient_fingerprint(own_params)
+                        fingerprint_event = FingerprintEvent(
+                            round_num=round_num,
+                            node_id=f"node_{node_idx}",
+                            fingerprint_data=fingerprint_data
+                        )
+                        self.training_monitor.emit_event(fingerprint_event)
+                        self.logger.debug(f"Node {node_idx}: Emitted fingerprint event with data: {fingerprint_data}")
+                    except Exception as e:
+                        self.logger.warning(f"Node {node_idx}: Failed to collect fingerprint data: {e}")
                 
                 # Get the actual detections from the trust monitor itself
                 with trust_monitor._measure_trust_resource_usage("get_trust_summary"):

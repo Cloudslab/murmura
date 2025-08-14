@@ -17,6 +17,8 @@ from murmura.visualization.training_event import (
     EvaluationEvent,
     InitialStateEvent,
     NetworkStructureEvent,
+    FingerprintEvent,
+    TrustSignalsEvent,
 )
 from murmura.attacks.attack_event import (
     AttackEvent,
@@ -445,6 +447,12 @@ class NetworkVisualizer(TrainingObserver):
         
         elif isinstance(event, TrustScoreEvent):
             self._handle_trust_score_update(event, frame, event_data, description)
+            
+        elif isinstance(event, FingerprintEvent):
+            self._handle_fingerprint_event(event, frame, event_data, description)
+            
+        elif isinstance(event, TrustSignalsEvent):
+            self._handle_trust_signals_event(event, frame, event_data, description)
 
         # Ensure all metrics data is available for all frames
         frame["all_metrics"] = self.round_metrics.copy()
@@ -940,7 +948,51 @@ class NetworkVisualizer(TrainingObserver):
                     })
             print(f"Malicious nodes summary exported to {malicious_csv_path}")
 
-        print(f"All training data (including attack data) exported to {self.output_dir}")
+        # 12. Export trust signals events to separate CSV
+        if hasattr(self, 'trust_signals_events') and self.trust_signals_events:
+            trust_signals_csv_path = os.path.join(self.output_dir, f"trust_signals.csv")
+            with open(trust_signals_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names from all trust signals events
+                all_fieldnames: set[str] = set()
+                for event in self.trust_signals_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.trust_signals_events)
+            print(f"Trust signals exported to {trust_signals_csv_path}")
+
+        # 13. Export all trust-related events to consolidated trust_events.csv
+        if self.trust_events or (hasattr(self, 'trust_signals_events') and self.trust_signals_events):
+            trust_events_csv_path = os.path.join(self.output_dir, f"trust_events.csv")
+            all_trust_events = []
+            
+            # Add trust score events
+            if self.trust_events:
+                all_trust_events.extend(self.trust_events)
+            
+            # Add trust signals events 
+            if hasattr(self, 'trust_signals_events') and self.trust_signals_events:
+                all_trust_events.extend(self.trust_signals_events)
+            
+            # Add fingerprint events
+            if hasattr(self, 'fingerprint_events') and self.fingerprint_events:
+                all_trust_events.extend(self.fingerprint_events)
+            
+            with open(trust_events_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names from all events
+                all_fieldnames: set[str] = set()
+                for event in all_trust_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(all_trust_events)
+            print(f"All trust events exported to {trust_events_csv_path}")
+
+        print(f"All training data (including attack and trust data) exported to {self.output_dir}")
 
     def render_training_animation(
         self, filename: str = "training_animation.mp4", fps: int = 1
@@ -1562,3 +1614,81 @@ class NetworkVisualizer(TrainingObserver):
             "score_changes": str(event.score_changes),
             "detection_method": event.detection_method
         })
+        
+    def _handle_fingerprint_event(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle gradient fingerprint events."""
+        node_id = event.node_id
+        round_num = event.round_num
+        
+        # Store fingerprint data history
+        if not hasattr(self, 'fingerprint_history'):
+            self.fingerprint_history = {}
+        if node_id not in self.fingerprint_history:
+            self.fingerprint_history[node_id] = {}
+        self.fingerprint_history[node_id][round_num] = event.fingerprint_data.copy()
+        
+        # Create fingerprint event record for CSV export
+        fingerprint_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "node_id": event.node_id,
+            "fingerprint_data": event.fingerprint_data.copy()
+        }
+        
+        # Store in events list (create if needed)
+        if not hasattr(self, 'fingerprint_events'):
+            self.fingerprint_events = []
+        self.fingerprint_events.append(fingerprint_record)
+        
+        # Add to frame data
+        frame["fingerprint_event"] = fingerprint_record
+        
+        # Update event data for CSV export
+        event_data.update({
+            "node_id": event.node_id,
+            "fingerprint_data": str(event.fingerprint_data)
+        })
+    
+    def _handle_trust_signals_event(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle trust signals events with detailed fingerprint comparisons."""
+        observer_node = event.observer_node
+        target_node = event.target_node
+        round_num = event.round_num
+        
+        # Store trust signals history
+        if not hasattr(self, 'trust_signals_history'):
+            self.trust_signals_history = {}
+        if observer_node not in self.trust_signals_history:
+            self.trust_signals_history[observer_node] = {}
+        if round_num not in self.trust_signals_history[observer_node]:
+            self.trust_signals_history[observer_node][round_num] = {}
+        self.trust_signals_history[observer_node][round_num][target_node] = event.trust_signals.copy()
+        
+        # Create trust signals event record for CSV export
+        trust_signals_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.observer_node,
+            "target_node": event.target_node,
+            **event.trust_signals  # Expand all signal values as columns
+        }
+        
+        # Add fingerprint comparison data if available
+        if event.fingerprint_comparison:
+            if "target_fingerprint" in event.fingerprint_comparison:
+                for key, value in event.fingerprint_comparison["target_fingerprint"].items():
+                    trust_signals_record[f"target_{key}"] = value
+            if "own_fingerprint" in event.fingerprint_comparison:
+                for key, value in event.fingerprint_comparison["own_fingerprint"].items():
+                    trust_signals_record[f"own_{key}"] = value
+        
+        # Store in events list (create if needed)
+        if not hasattr(self, 'trust_signals_events'):
+            self.trust_signals_events = []
+        self.trust_signals_events.append(trust_signals_record)
+        
+        # Add to frame data
+        frame["trust_signals_event"] = trust_signals_record
+        
+        # Update event data for CSV export
+        event_data.update(trust_signals_record)
