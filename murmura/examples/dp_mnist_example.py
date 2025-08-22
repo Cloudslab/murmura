@@ -1,6 +1,8 @@
 import argparse
 import os
 import logging
+import random
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -25,6 +27,22 @@ from murmura.privacy.dp_model_wrapper import DPTorchModelWrapper
 from murmura.privacy.privacy_accountant import PrivacyAccountant
 from murmura.model.pytorch_model import TorchModelWrapper
 from typing import Union
+
+# Import attack components
+from murmura.attacks.attack_config import AttackConfig
+
+
+def set_all_seeds(seed: int) -> None:
+    """Set all random seeds for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # Ensure deterministic behavior
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -56,9 +74,6 @@ def main() -> None:
         choices=[
             "dirichlet",
             "iid",
-            "sensitive_groups",
-            "topology_correlated",
-            "imbalanced_sensitive",
         ],
         default="dirichlet",
         help="Data partitioning strategy",
@@ -71,6 +86,18 @@ def main() -> None:
         type=int,
         default=500,
         help="Minimum samples per partition",
+    )
+    parser.add_argument(
+        "--data_partitioning_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible data partitioning across experiments",
+    )
+    parser.add_argument(
+        "--model_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible model initialization",
     )
     parser.add_argument(
         "--split", type=str, default="train", help="Dataset split to use"
@@ -189,6 +216,68 @@ def main() -> None:
         help="Enable privacy amplification by subsampling",
     )
 
+    # Attack configuration arguments
+    parser.add_argument(
+        "--malicious_clients_ratio",
+        type=float,
+        default=0.0,
+        help="Fraction of clients to make malicious (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--attack_type",
+        choices=["label_flipping", "gradient_manipulation", "fgsm", "pgd", "uap"],
+        default="label_flipping",
+        help="Type of poisoning attack to perform",
+    )
+    parser.add_argument(
+        "--attack_intensity_start",
+        type=float,
+        default=0.1,
+        help="Initial attack intensity (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--attack_intensity_end",
+        type=float,
+        default=1.0,
+        help="Final attack intensity (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--intensity_progression",
+        choices=["linear", "exponential", "step"],
+        default="linear",
+        help="How attack intensity increases over rounds",
+    )
+    parser.add_argument(
+        "--label_flip_target",
+        type=int,
+        default=None,
+        help="Target label for label flipping attacks",
+    )
+    parser.add_argument(
+        "--label_flip_source",
+        type=int,
+        default=None,
+        help="Source label for label flipping attacks",
+    )
+    parser.add_argument(
+        "--gradient_noise_scale",
+        type=float,
+        default=1.0,
+        help="Scale factor for gradient noise injection",
+    )
+    parser.add_argument(
+        "--gradient_sign_flip_prob",
+        type=float,
+        default=0.1,
+        help="Probability of flipping gradient signs",
+    )
+    parser.add_argument(
+        "--attack_start_round",
+        type=int,
+        default=1,
+        help="Round to start attacks",
+    )
+
     # Visualization arguments
     parser.add_argument(
         "--vis_dir",
@@ -298,6 +387,46 @@ def main() -> None:
         else:
             logger.info("Differential privacy is DISABLED")
 
+        # Create attack configuration if attacks are enabled
+        attack_config = None
+        if args.malicious_clients_ratio > 0.0:
+            logger.info("=== Configuring Model Poisoning Attacks ===")
+            attack_config = AttackConfig(
+                malicious_clients_ratio=args.malicious_clients_ratio,
+                attack_type=args.attack_type,
+                attack_intensity_start=args.attack_intensity_start,
+                attack_intensity_end=args.attack_intensity_end,
+                intensity_progression=args.intensity_progression,
+                label_flip_target=args.label_flip_target,
+                label_flip_source=args.label_flip_source,
+                gradient_noise_scale=args.gradient_noise_scale,
+                gradient_sign_flip_prob=args.gradient_sign_flip_prob,
+                attack_start_round=args.attack_start_round,
+                log_attack_details=True
+            )
+            
+            logger.info("Attack configuration created:")
+            logger.info(f"  - Malicious clients ratio: {args.malicious_clients_ratio}")
+            logger.info(f"  - Attack type: {args.attack_type}")
+            logger.info(f"  - Attack intensity: {args.attack_intensity_start} -> {args.attack_intensity_end}")
+            logger.info(f"  - Intensity progression: {args.intensity_progression}")
+            logger.info(f"  - Attack start round: {args.attack_start_round}")
+            
+            if args.attack_type == "label_flipping":
+                logger.info(f"  - Label flip target: {args.label_flip_target}")
+                logger.info(f"  - Label flip source: {args.label_flip_source}")
+            
+            if args.attack_type == "gradient_manipulation":
+                logger.info(f"  - Gradient noise scale: {args.gradient_noise_scale}")
+                logger.info(f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}")
+            
+            if args.attack_type in ["fgsm", "pgd", "uap"]:
+                logger.info(f"  - Gradient-based attack: {args.attack_type}")
+                logger.info("  - Attack parameters configured via AttackConfig")
+                
+        else:
+            logger.info("Model poisoning attacks are DISABLED")
+
         # Ray cluster configuration
         ray_cluster_config = RayClusterConfig(
             logging_level=args.log_level,
@@ -327,6 +456,8 @@ def main() -> None:
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
+            data_partitioning_seed=args.data_partitioning_seed,
+            model_seed=args.model_seed,
             split=args.split,
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
@@ -345,12 +476,17 @@ def main() -> None:
             client_sampling_rate=args.client_sampling_rate,
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
+            attack_config=attack_config,
         )
 
         logger.info("=== Creating Data Partitions ===")
         partitioner = PartitionerFactory.create(config)
 
         logger.info("=== Creating MNIST Model ===")
+        # Set ALL random seeds for full reproducibility
+        set_all_seeds(config.model_seed)
+        logger.info(f"Set ALL seeds (random, numpy, torch) to {config.model_seed} for full reproducibility")
+        
         model = MNISTModel(
             use_dp_compatible_norm=True
         )  # Use GroupNorm for DP compatibility
@@ -367,6 +503,7 @@ def main() -> None:
                 optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
                 input_shape=(1, 28, 28),
                 device=device,
+                seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
         else:
             logger.info("Creating regular model wrapper")
@@ -378,6 +515,7 @@ def main() -> None:
                 optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
                 input_shape=(1, 28, 28),
                 device=device,
+                seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
 
         logger.info("=== Setting Up Learning Process ===")

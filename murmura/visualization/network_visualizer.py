@@ -17,6 +17,20 @@ from murmura.visualization.training_event import (
     EvaluationEvent,
     InitialStateEvent,
     NetworkStructureEvent,
+    FingerprintEvent,
+    TrustSignalsEvent,
+    AggregationWeightsEvent,
+)
+from murmura.attacks.attack_event import (
+    AttackEvent,
+    LabelFlippingEvent,
+    GradientManipulationEvent,
+    AttackSummaryEvent,
+    AttackDetectionEvent,
+)
+from murmura.trust_monitoring.trust_events import (
+    TrustAnomalyEvent, 
+    TrustScoreEvent,
 )
 from murmura.visualization.training_observer import TrainingObserver
 
@@ -70,6 +84,20 @@ class NetworkVisualizer(TrainingObserver):
         self.geographic_info: Dict[int, Dict[str, float]] = {}
         self.organizational_hierarchy: Dict[int, Dict[str, str]] = {}
 
+        # Attack tracking data structures
+        self.attack_events: List[Dict[str, Any]] = []  # All attack events
+        self.malicious_nodes: set[int] = set()  # Track which nodes are malicious
+        self.attack_history: Dict[int, List[Dict[str, Any]]] = {}  # Per-node attack history
+        self.attack_intensity_history: Dict[int, List[float]] = {}  # Track intensity over time
+        self.attack_detection_events: List[Dict[str, Any]] = []  # Detection events
+        
+        # Trust monitoring data structures  
+        self.trust_events: List[Dict[str, Any]] = []  # All trust events
+        self.trust_scores_history: Dict[str, Dict[int, Dict[str, float]]] = {}  # {observer_node: {round: {neighbor: trust_score}}}
+        self.influence_weights_history: Dict[str, Dict[int, Dict[str, float]]] = {}  # {observer_node: {round: {neighbor: influence_weight}}}
+        self.trust_anomalies: List[Dict[str, Any]] = []  # Trust anomaly events
+        self.trust_score_changes: Dict[str, Dict[int, Dict[str, float]]] = {}  # {observer_node: {round: {neighbor: change}}}
+
     def set_topology(self, topology_manager: TopologyManager) -> None:
         """
         Set the network topology information.
@@ -88,7 +116,7 @@ class NetworkVisualizer(TrainingObserver):
             event: The training event to process
         """
         if self.topology is None and not isinstance(
-            event, (InitialStateEvent, NetworkStructureEvent)
+            event, (InitialStateEvent, NetworkStructureEvent, AggregationWeightsEvent)
         ):
             return  # Can't visualize without topology information
 
@@ -403,6 +431,32 @@ class NetworkVisualizer(TrainingObserver):
                 }
             )
 
+        # Handle attack events
+        elif isinstance(event, (LabelFlippingEvent, GradientManipulationEvent)):
+            self._handle_attack_event(event, frame, event_data, description)
+        
+        elif isinstance(event, AttackSummaryEvent):
+            self._handle_attack_summary(event, frame, event_data, description)
+        
+        elif isinstance(event, AttackDetectionEvent):
+            self._handle_attack_detection(event, frame, event_data, description)
+            
+        # Handle trust monitoring events
+        elif isinstance(event, TrustAnomalyEvent):
+            self._handle_trust_anomaly(event, frame, event_data, description)
+        
+        elif isinstance(event, TrustScoreEvent):
+            self._handle_trust_score_update(event, frame, event_data, description)
+            
+        elif isinstance(event, FingerprintEvent):
+            self._handle_fingerprint_event(event, frame, event_data, description)
+            
+        elif isinstance(event, TrustSignalsEvent):
+            self._handle_trust_signals_event(event, frame, event_data, description)
+            
+        elif isinstance(event, AggregationWeightsEvent):
+            self._handle_aggregation_weights_event(event, frame, event_data, description)
+
         # Ensure all metrics data is available for all frames
         frame["all_metrics"] = self.round_metrics.copy()
         # Add current metrics history to each frame for consistent animation
@@ -411,10 +465,123 @@ class NetworkVisualizer(TrainingObserver):
         frame["parameter_history"] = {
             node: history.copy() for node, history in self.parameter_history.items()
         }
+        
+        # Add attack data to all frames
+        frame["attack_events"] = self.attack_events.copy()
+        frame["malicious_nodes"] = list(self.malicious_nodes)
+        frame["attack_intensity_history"] = {
+            node: history.copy() for node, history in self.attack_intensity_history.items()
+        }
 
         self.frames.append(frame)
         self.frame_descriptions.append(description)
         self.event_log.append(event_data)
+
+    def _handle_attack_event(self, event: AttackEvent, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle label flipping and gradient manipulation attack events."""
+        # Track malicious nodes
+        self.malicious_nodes.update(event.malicious_clients)
+        
+        # Record attack intensity for each malicious client
+        for client_id in event.malicious_clients:
+            if client_id not in self.attack_intensity_history:
+                self.attack_intensity_history[client_id] = []
+            self.attack_intensity_history[client_id].append(event.attack_intensity)
+        
+        # Create attack event record
+        attack_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "attack_type": event.attack_type,
+            "malicious_clients": event.malicious_clients,
+            "attack_intensity": event.attack_intensity,
+            "num_malicious_clients": event.num_malicious_clients
+        }
+        
+        # Add specific attack details
+        if isinstance(event, LabelFlippingEvent):
+            attack_record.update({
+                "samples_poisoned": event.samples_poisoned,
+                "total_samples_poisoned": event.total_samples_poisoned,
+                "target_label": event.target_label,
+                "source_label": event.source_label
+            })
+            
+        elif isinstance(event, GradientManipulationEvent):
+            attack_record.update({
+                "parameters_modified": event.parameters_modified,
+                "total_parameters_modified": event.total_parameters_modified,
+                "noise_scale": event.noise_scale,
+                "sign_flip_prob": event.sign_flip_prob
+            })
+        
+        self.attack_events.append(attack_record)
+        
+        # Update frame data
+        frame["attack_active"] = True
+        frame["current_attack"] = attack_record
+        frame["malicious_nodes_current"] = event.malicious_clients
+        
+        # Update event data for CSV
+        event_data.update({
+            "attack_type": event.attack_type,
+            "malicious_clients": ",".join(map(str, event.malicious_clients)),
+            "attack_intensity": event.attack_intensity,
+            "num_malicious_clients": event.num_malicious_clients
+        })
+        
+        if isinstance(event, LabelFlippingEvent):
+            event_data.update({
+                "total_samples_poisoned": event.total_samples_poisoned,
+                "target_label": event.target_label,
+                "source_label": event.source_label
+            })
+        elif isinstance(event, GradientManipulationEvent):
+            event_data.update({
+                "total_parameters_modified": event.total_parameters_modified,
+                "noise_scale": event.noise_scale,
+                "sign_flip_prob": event.sign_flip_prob
+            })
+
+    def _handle_attack_summary(self, event: AttackSummaryEvent, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle attack summary events."""
+        attack_summary_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "attack_statistics": event.attack_statistics,
+            "global_attack_metrics": event.global_attack_metrics
+        }
+        
+        self.attack_events.append(attack_summary_record)
+        
+        frame["attack_summary"] = attack_summary_record
+        
+        event_data.update({
+            "attack_statistics": str(event.attack_statistics),
+            "global_attack_metrics": str(event.global_attack_metrics)
+        })
+
+    def _handle_attack_detection(self, event: AttackDetectionEvent, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle attack detection events."""
+        detection_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "suspected_malicious_clients": event.suspected_malicious_clients,
+            "detection_metrics": event.detection_metrics,
+            "detection_method": event.detection_method,
+            "confidence_scores": event.confidence_scores
+        }
+        
+        self.attack_detection_events.append(detection_record)
+        
+        frame["attack_detection"] = detection_record
+        
+        event_data.update({
+            "suspected_malicious_clients": ",".join(map(str, event.suspected_malicious_clients)),
+            "detection_method": event.detection_method,
+            "detection_metrics": str(event.detection_metrics),
+            "confidence_scores": str(event.confidence_scores)
+        })
 
     def export_to_csv(self, prefix: str = "training_data") -> None:
         """
@@ -722,7 +889,133 @@ class NetworkVisualizer(TrainingObserver):
                         writer.writerow(row)
                 print(f"Organizational hierarchy exported to {org_csv_path}")
 
-        print(f"All training data exported to {self.output_dir}")
+        # 8. Export attack events
+        if self.attack_events:
+            attack_csv_path = os.path.join(self.output_dir, f"{prefix}_attack_events.csv")
+            with open(attack_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names from all attack events
+                all_fieldnames: set[str] = set()
+                for event in self.attack_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.attack_events)
+            print(f"Attack events exported to {attack_csv_path}")
+
+        # 9. Export attack intensity history
+        if self.attack_intensity_history:
+            intensity_csv_path = os.path.join(self.output_dir, f"{prefix}_attack_intensity.csv")
+            with open(intensity_csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=["node_id", "round_num", "attack_intensity"])
+                writer.writeheader()
+                
+                for node_id, intensities in self.attack_intensity_history.items():
+                    for round_num, intensity in enumerate(intensities, 1):
+                        writer.writerow({
+                            "node_id": node_id,
+                            "round_num": round_num,
+                            "attack_intensity": intensity
+                        })
+            print(f"Attack intensity history exported to {intensity_csv_path}")
+
+        # 10. Export attack detection events
+        if self.attack_detection_events:
+            detection_csv_path = os.path.join(self.output_dir, f"{prefix}_attack_detection.csv")
+            with open(detection_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names from all detection events
+                all_fieldnames: set[str] = set()
+                for event in self.attack_detection_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.attack_detection_events)
+            print(f"Attack detection events exported to {detection_csv_path}")
+
+        # 11. Export malicious nodes summary
+        if self.malicious_nodes:
+            malicious_csv_path = os.path.join(self.output_dir, f"{prefix}_malicious_nodes.csv")
+            with open(malicious_csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=["node_id", "is_malicious"])
+                writer.writeheader()
+                
+                # Write all nodes with their malicious status
+                all_nodes = set(range(len(self.node_identifiers))) if self.node_identifiers else self.malicious_nodes
+                for node_id in all_nodes:
+                    writer.writerow({
+                        "node_id": node_id,
+                        "is_malicious": node_id in self.malicious_nodes
+                    })
+            print(f"Malicious nodes summary exported to {malicious_csv_path}")
+
+        # 12. Export trust signals events to separate CSV
+        if hasattr(self, 'trust_signals_events') and self.trust_signals_events:
+            trust_signals_csv_path = os.path.join(self.output_dir, "trust_signals.csv")
+            with open(trust_signals_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names from all trust signals events
+                all_fieldnames: set[str] = set()
+                for event in self.trust_signals_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.trust_signals_events)
+            print(f"Trust signals exported to {trust_signals_csv_path}")
+
+        # 13. Export aggregation weights data  
+        if hasattr(self, 'aggregation_weights_events') and self.aggregation_weights_events:
+            weights_csv_path = os.path.join(self.output_dir, "aggregation_weights.csv")
+            
+            with open(weights_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names
+                all_fieldnames: set[str] = set()
+                for event in self.aggregation_weights_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.aggregation_weights_events)
+            print(f"Aggregation weights exported to {weights_csv_path}")
+
+        # 14. Export all trust-related events to consolidated trust_events.csv
+        if self.trust_events or (hasattr(self, 'trust_signals_events') and self.trust_signals_events):
+            trust_events_csv_path = os.path.join(self.output_dir, "trust_events.csv")
+            all_trust_events = []
+            
+            # Add trust score events
+            if self.trust_events:
+                all_trust_events.extend(self.trust_events)
+            
+            # Add trust signals events 
+            if hasattr(self, 'trust_signals_events') and self.trust_signals_events:
+                all_trust_events.extend(self.trust_signals_events)
+            
+            # Add fingerprint events
+            if hasattr(self, 'fingerprint_events') and self.fingerprint_events:
+                all_trust_events.extend(self.fingerprint_events)
+            
+            # Add aggregation weights events
+            if hasattr(self, 'aggregation_weights_events') and self.aggregation_weights_events:
+                all_trust_events.extend(self.aggregation_weights_events)
+            
+            with open(trust_events_csv_path, "w", newline="", encoding="utf-8") as f:
+                # Get all possible field names from all events
+                all_fieldnames: set[str] = set()
+                for event in all_trust_events:
+                    all_fieldnames.update(event.keys())
+                
+                fieldnames = sorted(all_fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(all_trust_events)
+            print(f"All trust events exported to {trust_events_csv_path}")
+
+        print(f"All training data (including attack and trust data) exported to {self.output_dir}")
 
     def render_training_animation(
         self, filename: str = "training_animation.mp4", fps: int = 1
@@ -824,16 +1117,24 @@ class NetworkVisualizer(TrainingObserver):
                     width=2.0,
                 )
 
-            # Node colors based on activity
+            # Node colors based on activity and malicious status
             node_colors = []
             node_sizes = []
 
             for node in G.nodes():
-                if node in frame.get("active_nodes", []):
-                    node_colors.append("orange")
+                # Check if node is malicious
+                if node in frame.get("malicious_nodes", []):
+                    if node in frame.get("active_nodes", []):
+                        node_colors.append("darkred")  # Active malicious node
+                        node_sizes.append(1400)
+                    else:
+                        node_colors.append("red")  # Inactive malicious node
+                        node_sizes.append(1000)
+                elif node in frame.get("active_nodes", []):
+                    node_colors.append("orange")  # Active benign node
                     node_sizes.append(1200)
                 else:
-                    node_colors.append("skyblue")
+                    node_colors.append("skyblue")  # Inactive benign node
                     node_sizes.append(800)
 
             # Draw nodes
@@ -1024,11 +1325,19 @@ class NetworkVisualizer(TrainingObserver):
             node_sizes = []
 
             for node in G.nodes():
-                if node in frame.get("active_nodes", []):
-                    node_colors.append("orange")
-                    node_sizes.append(1000)
+                # Check if node is malicious
+                if node in frame.get("malicious_nodes", []):
+                    if node in frame.get("active_nodes", []):
+                        node_colors.append("darkred")  # Active malicious node
+                        node_sizes.append(1400)
+                    else:
+                        node_colors.append("red")  # Inactive malicious node
+                        node_sizes.append(1000)
+                elif node in frame.get("active_nodes", []):
+                    node_colors.append("orange")  # Active benign node
+                    node_sizes.append(1200)
                 else:
-                    node_colors.append("skyblue")
+                    node_colors.append("skyblue")  # Inactive benign node
                     node_sizes.append(800)
 
             # Draw nodes
@@ -1265,3 +1574,184 @@ class NetworkVisualizer(TrainingObserver):
         plt.close(fig)
 
         print(f"Summary plot saved to {os.path.join(self.output_dir, filename)}")
+        
+    def _handle_trust_anomaly(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle trust anomaly events."""
+        trust_anomaly_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.node_id,
+            "suspected_neighbor": event.suspected_neighbor,
+            "anomaly_type": event.anomaly_type,
+            "anomaly_score": event.anomaly_score,
+            "evidence": event.evidence,
+            "trust_scores": event.trust_scores.copy()
+        }
+        
+        self.trust_anomalies.append(trust_anomaly_record)
+        self.trust_events.append(trust_anomaly_record)
+        
+        frame["trust_anomaly"] = trust_anomaly_record
+        
+        event_data.update({
+            "observer_node": event.node_id,
+            "suspected_neighbor": event.suspected_neighbor,
+            "anomaly_type": event.anomaly_type,
+            "anomaly_score": event.anomaly_score,
+            "evidence": str(event.evidence),
+            "trust_scores": str(event.trust_scores)
+        })
+        
+    def _handle_trust_score_update(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle trust score update events."""
+        observer_node = event.node_id
+        round_num = event.round_num
+        
+        # Store trust scores history
+        if observer_node not in self.trust_scores_history:
+            self.trust_scores_history[observer_node] = {}
+        self.trust_scores_history[observer_node][round_num] = event.trust_scores.copy()
+        
+        # Store trust score changes
+        if observer_node not in self.trust_score_changes:
+            self.trust_score_changes[observer_node] = {}
+        self.trust_score_changes[observer_node][round_num] = event.score_changes.copy()
+        
+        # Create trust score event record
+        trust_score_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.node_id,
+            "trust_scores": event.trust_scores.copy(),
+            "score_changes": event.score_changes.copy(),
+            "detection_method": event.detection_method,
+            "debug_data": getattr(event, 'debug_data', {})
+        }
+        
+        self.trust_events.append(trust_score_record)
+        
+        frame["trust_score_update"] = trust_score_record
+        
+        event_data.update({
+            "observer_node": event.node_id,
+            "trust_scores": str(event.trust_scores),
+            "score_changes": str(event.score_changes),
+            "detection_method": event.detection_method
+        })
+        
+    def _handle_fingerprint_event(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle gradient fingerprint events."""
+        node_id = event.node_id
+        round_num = event.round_num
+        
+        # Store fingerprint data history
+        if not hasattr(self, 'fingerprint_history'):
+            self.fingerprint_history = {}
+        if node_id not in self.fingerprint_history:
+            self.fingerprint_history[node_id] = {}
+        self.fingerprint_history[node_id][round_num] = event.fingerprint_data.copy()
+        
+        # Create fingerprint event record for CSV export
+        fingerprint_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "node_id": event.node_id,
+            "fingerprint_data": event.fingerprint_data.copy()
+        }
+        
+        # Store in events list (create if needed)
+        if not hasattr(self, 'fingerprint_events'):
+            self.fingerprint_events = []
+        self.fingerprint_events.append(fingerprint_record)
+        
+        # Add to frame data
+        frame["fingerprint_event"] = fingerprint_record
+        
+        # Update event data for CSV export
+        event_data.update({
+            "node_id": event.node_id,
+            "fingerprint_data": str(event.fingerprint_data)
+        })
+    
+    def _handle_trust_signals_event(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle trust signals events with detailed fingerprint comparisons."""
+        observer_node = event.observer_node
+        target_node = event.target_node
+        round_num = event.round_num
+        
+        # Store trust signals history
+        if not hasattr(self, 'trust_signals_history'):
+            self.trust_signals_history = {}
+        if observer_node not in self.trust_signals_history:
+            self.trust_signals_history[observer_node] = {}
+        if round_num not in self.trust_signals_history[observer_node]:
+            self.trust_signals_history[observer_node][round_num] = {}
+        self.trust_signals_history[observer_node][round_num][target_node] = event.trust_signals.copy()
+        
+        # Create trust signals event record for CSV export
+        trust_signals_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.observer_node,
+            "target_node": event.target_node,
+            **event.trust_signals  # Expand all signal values as columns
+        }
+        
+        # Add fingerprint comparison data if available
+        if event.fingerprint_comparison:
+            if "target_fingerprint" in event.fingerprint_comparison:
+                for key, value in event.fingerprint_comparison["target_fingerprint"].items():
+                    trust_signals_record[f"target_{key}"] = value
+            if "own_fingerprint" in event.fingerprint_comparison:
+                for key, value in event.fingerprint_comparison["own_fingerprint"].items():
+                    trust_signals_record[f"own_{key}"] = value
+        
+        # Store in events list (create if needed)
+        if not hasattr(self, 'trust_signals_events'):
+            self.trust_signals_events = []
+        self.trust_signals_events.append(trust_signals_record)
+        
+        # Add to frame data
+        frame["trust_signals_event"] = trust_signals_record
+        
+        # Update event data for CSV export
+        event_data.update(trust_signals_record)
+
+    def _handle_aggregation_weights_event(self, event, frame: Dict[str, Any], event_data: Dict[str, Any], description: str) -> None:
+        """Handle aggregation weights events and store weight data."""
+        
+        # Create aggregation weights record
+        weights_record = {
+            "timestamp": event.timestamp,
+            "round_num": event.round_num,
+            "observer_node": event.observer_node,
+            "aggregation_method": event.aggregation_method,
+        }
+        
+        # Add influence weights data
+        for node_id, weight in event.influence_weights.items():
+            weights_record[f"influence_weight_{node_id}"] = weight
+            
+        # Add trust scores data  
+        for node_id, score in event.trust_scores.items():
+            weights_record[f"trust_score_{node_id}"] = score
+        
+        # Store in influence weights history
+        observer_node = event.observer_node
+        round_num = event.round_num
+        
+        if observer_node not in self.influence_weights_history:
+            self.influence_weights_history[observer_node] = {}
+        
+        self.influence_weights_history[observer_node][round_num] = event.influence_weights.copy()
+        
+        # Store in events list (create if needed)
+        if not hasattr(self, 'aggregation_weights_events'):
+            self.aggregation_weights_events = []
+        self.aggregation_weights_events.append(weights_record)
+        
+        # Add to frame data
+        frame["aggregation_weights_event"] = weights_record
+        
+        # Update event data for CSV export
+        event_data.update(weights_record)

@@ -2,6 +2,8 @@
 import argparse
 import os
 import logging
+import random
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -28,6 +30,12 @@ from murmura.visualization.network_visualizer import NetworkVisualizer
 from murmura.privacy.dp_config import DPConfig
 from murmura.privacy.dp_model_wrapper import DPTorchModelWrapper
 from murmura.privacy.privacy_accountant import PrivacyAccountant
+
+# Import attack components
+from murmura.attacks.attack_config import AttackConfig
+
+# Import trust monitoring components
+from murmura.trust_monitoring.trust_config import TrustMonitorConfig
 
 
 def create_ham10000_preprocessor():
@@ -65,6 +73,19 @@ def setup_logging(log_level: str = "INFO") -> None:
     )
 
 
+def set_all_seeds(seed: int) -> None:
+    """Set all random seeds for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # Ensure deterministic behavior
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ['PYTHONHASHSEED'] = str(seed)
+
+
 def main() -> None:
     """
     HAM10000 Decentralized Learning with Differential Privacy
@@ -82,13 +103,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--partition_strategy",
-        choices=[
-            "dirichlet",
-            "iid",
-            "sensitive_groups",
-            "topology_correlated",
-            "imbalanced_sensitive",
-        ],
+        choices=["dirichlet", "iid"],
         default="dirichlet",
         help="Data partitioning strategy",
     )
@@ -102,6 +117,18 @@ def main() -> None:
         help="Minimum samples per partition",
     )
     parser.add_argument(
+        "--data_partitioning_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible data partitioning",
+    )
+    parser.add_argument(
+        "--model_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible model initialization",
+    )
+    parser.add_argument(
         "--split", type=str, default="train", help="Dataset split to use"
     )
     parser.add_argument(
@@ -110,9 +137,9 @@ def main() -> None:
     parser.add_argument(
         "--aggregation_strategy",
         type=str,
-        choices=["gossip_avg"],
+        choices=["gossip_avg", "trust_weighted_gossip"],
         default="gossip_avg",
-        help="Aggregation strategy (gossip_avg for decentralized)",
+        help="Aggregation strategy (gossip_avg or trust_weighted_gossip for decentralized)",
     )
 
     # Topology arguments (excluding star for decentralized)
@@ -230,6 +257,110 @@ def main() -> None:
         help="Enable privacy amplification by subsampling",
     )
 
+    # Attack configuration arguments
+    parser.add_argument(
+        "--malicious_clients_ratio",
+        type=float,
+        default=0.0,
+        help="Fraction of clients to make malicious (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--attack_type",
+        choices=["label_flipping", "gradient_manipulation", "fgsm", "pgd", "uap"],
+        default="label_flipping",
+        help="Type of poisoning attack to perform",
+    )
+    parser.add_argument(
+        "--attack_intensity_start",
+        type=float,
+        default=0.1,
+        help="Initial attack intensity (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--attack_intensity_end",
+        type=float,
+        default=1.0,
+        help="Final attack intensity (0.0-1.0)",
+    )
+    parser.add_argument(
+        "--intensity_progression",
+        choices=["linear", "exponential", "step"],
+        default="linear",
+        help="How attack intensity increases over rounds",
+    )
+    parser.add_argument(
+        "--label_flip_target",
+        type=int,
+        default=None,
+        help="Target label for label flipping attacks",
+    )
+    parser.add_argument(
+        "--label_flip_source",
+        type=int,
+        default=None,
+        help="Source label for label flipping attacks",
+    )
+    parser.add_argument(
+        "--gradient_noise_scale",
+        type=float,
+        default=1.0,
+        help="Scale factor for gradient noise injection",
+    )
+    parser.add_argument(
+        "--gradient_sign_flip_prob",
+        type=float,
+        default=0.1,
+        help="Probability of flipping gradient signs",
+    )
+    parser.add_argument(
+        "--attack_start_round",
+        type=int,
+        default=1,
+        help="Round to start attacks",
+    )
+    parser.add_argument(
+        "--malicious_node_seed",
+        type=int,
+        default=42,
+        help="Seed for reproducible malicious node selection",
+    )
+
+    # Trust monitoring arguments
+    parser.add_argument(
+        "--enable_trust_monitoring",
+        action="store_true",
+        help="Enable trust monitoring for malicious behavior detection",
+    )
+    parser.add_argument(
+        "--enable_trust_weighted_aggregation",
+        action="store_true",
+        default=True,
+        help="Apply trust scores as weights during aggregation (default: True)",
+    )
+    parser.add_argument(
+        "--enable_exponential_decay",
+        action="store_true",
+        help="Use exponential decay for repeated trust violations (more aggressive)",
+    )
+    parser.add_argument(
+        "--exponential_decay_base",
+        type=float,
+        default=0.8,
+        help="Base for exponential decay (lower = more aggressive, default: 0.8)",
+    )
+    parser.add_argument(
+        "--trust_scaling_factor",
+        type=float,
+        default=1.0,
+        help="Scaling factor for trust-to-weight conversion (lower = more aggressive, default: 1.0)",
+    )
+    parser.add_argument(
+        "--trust_weight_exponent",
+        type=float,
+        default=1.0,
+        help="Exponent for trust score scaling (higher = more aggressive, default: 1.0)",
+    )
+
     # Decentralized-specific arguments
     parser.add_argument(
         "--gossip_rounds",
@@ -250,6 +381,16 @@ def main() -> None:
         type=str,
         default="./visualizations_phase1",
         help="Directory to save visualizations_phase1",
+    )
+    parser.add_argument(
+        "--create_animation",
+        action="store_true",
+        help="Create animation of the training process",
+    )
+    parser.add_argument(
+        "--create_frames",
+        action="store_true",
+        help="Create individual frames of the training process",
     )
     parser.add_argument(
         "--create_summary",
@@ -372,6 +513,63 @@ def main() -> None:
         else:
             logger.info("Differential privacy is DISABLED")
 
+        # Create attack configuration if attacks are enabled
+        attack_config = None
+        if args.malicious_clients_ratio > 0.0:
+            logger.info("=== Configuring Model Poisoning Attacks ===")
+            attack_config = AttackConfig(
+                malicious_clients_ratio=args.malicious_clients_ratio,
+                attack_type=args.attack_type,
+                attack_intensity_start=args.attack_intensity_start,
+                attack_intensity_end=args.attack_intensity_end,
+                intensity_progression=args.intensity_progression,
+                label_flip_target=args.label_flip_target,
+                label_flip_source=args.label_flip_source,
+                gradient_noise_scale=args.gradient_noise_scale,
+                gradient_sign_flip_prob=args.gradient_sign_flip_prob,
+                attack_start_round=args.attack_start_round,
+                malicious_node_seed=args.malicious_node_seed,
+                log_attack_details=True
+            )
+            
+            logger.info("Attack configuration created:")
+            logger.info(f"  - Malicious clients ratio: {args.malicious_clients_ratio}")
+            logger.info(f"  - Attack type: {args.attack_type}")
+            logger.info(f"  - Attack intensity: {args.attack_intensity_start} -> {args.attack_intensity_end}")
+            logger.info(f"  - Intensity progression: {args.intensity_progression}")
+            logger.info(f"  - Attack start round: {args.attack_start_round}")
+            logger.info(f"  - Malicious node seed: {args.malicious_node_seed}")
+            
+            if args.attack_type == "label_flipping":
+                logger.info(f"  - Label flip target: {args.label_flip_target}")
+                logger.info(f"  - Label flip source: {args.label_flip_source}")
+            
+            if args.attack_type == "gradient_manipulation":
+                logger.info(f"  - Gradient noise scale: {args.gradient_noise_scale}")
+                logger.info(f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}")
+            
+            if args.attack_type in ["fgsm", "pgd", "uap"]:
+                logger.info(f"  - Gradient-based attack: {args.attack_type}")
+                logger.info("  - Attack parameters configured via AttackConfig")
+                
+        else:
+            logger.info("Model poisoning attacks are DISABLED")
+
+        # Create trust monitoring configuration if enabled
+        trust_config = None
+        if args.enable_trust_monitoring:
+            logger.info("=== Trust monitoring ENABLED ===")
+            trust_config = TrustMonitorConfig(
+                enable_trust_monitoring=True,
+                enable_trust_weighted_aggregation=args.enable_trust_weighted_aggregation,
+                enable_exponential_decay=args.enable_exponential_decay,
+                exponential_decay_base=args.exponential_decay_base,
+                trust_scaling_factor=args.trust_scaling_factor,
+                trust_weight_exponent=args.trust_weight_exponent,
+            )
+        else:
+            logger.info("Trust monitoring is DISABLED")
+
         # Ray cluster configuration
         ray_cluster_config = RayClusterConfig(
             logging_level=args.log_level,
@@ -413,6 +611,8 @@ def main() -> None:
             partition_strategy=args.partition_strategy,
             alpha=args.alpha,
             min_partition_size=args.min_partition_size,
+            data_partitioning_seed=args.data_partitioning_seed,
+            model_seed=args.model_seed,
             split=args.split,
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
@@ -433,12 +633,18 @@ def main() -> None:
             client_sampling_rate=args.client_sampling_rate,
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
+            attack_config=attack_config,
+            trust_monitoring=trust_config,
         )
 
         logger.info("=== Creating Data Partitions ===")
         partitioner = PartitionerFactory.create(config)
 
         logger.info("=== Creating HAM10000 Model ===")
+        # Set ALL random seeds for full reproducibility
+        set_all_seeds(config.model_seed)
+        logger.info(f"Set ALL seeds (random, numpy, torch) to {config.model_seed} for full reproducibility")
+        
         # Select model based on complexity
         # Always use GroupNorm for federated learning with many clients to avoid
         # BatchNorm issues with small batches
@@ -476,6 +682,7 @@ def main() -> None:
                 input_shape=(3, args.image_size, args.image_size),
                 device=device,
                 data_preprocessor=image_preprocessor,
+                seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
         else:
             logger.info("Creating regular model wrapper")
@@ -489,6 +696,7 @@ def main() -> None:
                 input_shape=(3, args.image_size, args.image_size),
                 device=device,
                 data_preprocessor=image_preprocessor,
+                seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
 
         logger.info("=== Setting Up Decentralized Learning Process ===")
@@ -503,7 +711,7 @@ def main() -> None:
 
         # Set up visualization if requested
         visualizer = None
-        if args.create_summary:
+        if args.create_animation or args.create_frames or args.create_summary:
             logger.info("=== Setting Up Visualization ===")
             if args.experiment_name:
                 vis_dir = os.path.join(args.vis_dir, args.experiment_name)
@@ -642,14 +850,55 @@ def main() -> None:
             elif args.enable_dp:
                 logger.warning("Privacy metrics not available in results")
 
-            # Create visualization if requested
-            if visualizer and args.create_summary:
-                logger.info("=== Generating Visualization ===")
-                visualizer.render_summary_plot(
-                    filename=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}"
-                    + ("_dp" if args.enable_dp else "_no_dp")
-                    + "_summary.png"
-                )
+            # Display trust monitoring results if enabled
+            if args.enable_trust_monitoring:
+                logger.info("=== Trust Monitoring Results ===")
+                trust_results = results.get("trust_monitoring", {})
+                
+                if trust_results.get("enabled", False):
+                    trust_summary = trust_results.get("final_summary", {})
+                    global_suspicious = trust_results.get("global_suspicious_detected", [])
+                    
+                    logger.info(f"Trust monitoring enabled for {len(trust_summary)} honest nodes")
+                    
+                    # Show summary of suspicious behavior using relative detection
+                    if global_suspicious:
+                        logger.warning(f"⚠️  Trust monitoring detected {len(global_suspicious)} suspicious neighbors: {global_suspicious}")
+                        for node_idx, node_summary in trust_summary.items():
+                            suspicious = node_summary.get("suspicious_neighbors", [])
+                            if suspicious:
+                                detection_method = node_summary.get("detection_method", "unknown")
+                                trust_stats = node_summary.get("trust_statistics", {})
+                                min_trust = trust_stats.get("min_trust", "N/A")
+                                logger.warning(f"  Node {node_idx} flagged: {suspicious} (method: {detection_method}, min_trust: {min_trust:.3f})")
+                    else:
+                        logger.info("✓ No malicious behavior detected")
+                else:
+                    logger.info("Trust monitoring was not active during training")
+
+            # Generate visualizations if requested
+            if visualizer and (
+                args.create_animation or args.create_frames or args.create_summary
+            ):
+                logger.info("=== Generating Visualizations ===")
+                if args.create_animation:
+                    logger.info("Creating animation...")
+                    visualizer.render_training_animation(
+                        filename=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}"
+                        + ("_dp" if args.enable_dp else "_no_dp")
+                        + "_animation.mp4",
+                        fps=2
+                    )
+                if args.create_frames:
+                    logger.info("Creating individual frames...")
+                    visualizer.render_training_frames()
+                if args.create_summary:
+                    logger.info("Creating summary plot...")
+                    visualizer.render_summary_plot(
+                        filename=f"dp_decentralized_ham10000_{args.topology}_{args.aggregation_strategy}"
+                        + ("_dp" if args.enable_dp else "_no_dp")
+                        + "_summary.png"
+                    )
 
             # Save model
             logger.info("=== Saving Model ===")

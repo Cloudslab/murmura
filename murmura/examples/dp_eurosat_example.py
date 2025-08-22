@@ -10,17 +10,14 @@ from murmura.aggregation.aggregation_config import (
     AggregationConfig,
     AggregationStrategyType,
 )
-from murmura.models.cifar10_models import CIFAR10Model, ResNetCIFAR10Model
+from murmura.models.eurosat_models import EuroSATModel, EuroSATModelComplex, EuroSATModelLite
 from murmura.network_management.topology import TopologyConfig, TopologyType
 from murmura.data_processing.dataset import MDataset, DatasetSource
 from murmura.data_processing.partitioner_factory import PartitionerFactory
 from murmura.data_processing.data_preprocessor import create_image_preprocessor
 from murmura.node.resource_config import RayClusterConfig, ResourceConfig
-from murmura.orchestration.learning_process.decentralized_learning_process import (
-    DecentralizedLearningProcess,
-)
-from murmura.network_management.topology_compatibility import (
-    TopologyCompatibilityManager,
+from murmura.orchestration.learning_process.federated_learning_process import (
+    FederatedLearningProcess,
 )
 from murmura.orchestration.orchestration_config import OrchestrationConfig
 from murmura.visualization.network_visualizer import NetworkVisualizer
@@ -34,21 +31,6 @@ from typing import Union
 
 # Import attack components
 from murmura.attacks.attack_config import AttackConfig
-
-# Import trust monitoring components
-from murmura.trust_monitoring.trust_config import TrustMonitorConfig
-
-
-def setup_logging(log_level: str = "INFO") -> None:
-    """Set up logging configuration"""
-    logging.basicConfig(
-        level=getattr(logging, log_level.upper()),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler("dp_decentralized_cifar10.log"),
-        ],
-    )
 
 
 def set_all_seeds(seed: int) -> None:
@@ -64,17 +46,29 @@ def set_all_seeds(seed: int) -> None:
     os.environ['PYTHONHASHSEED'] = str(seed)
 
 
-def main() -> None:
-    """
-    CIFAR-10 Decentralized Learning with Differential Privacy
-    """
-    parser = argparse.ArgumentParser(
-        description="CIFAR-10 Decentralized Learning with Differential Privacy"
+def setup_logging(log_level: str = "INFO") -> None:
+    """Set up logging configuration"""
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler("dp_eurosat_federated.log"),
+        ],
     )
 
-    # Core learning arguments
+
+def main() -> None:
+    """
+    EuroSAT Federated Learning with Differential Privacy
+    """
+    parser = argparse.ArgumentParser(
+        description="Federated Learning for EuroSAT with Differential Privacy"
+    )
+
+    # Core federated learning arguments
     parser.add_argument(
-        "--num_actors", type=int, default=10, help="Total number of virtual clients"
+        "--num_actors", type=int, default=10, help="Number of virtual clients"
     )
     parser.add_argument(
         "--partition_strategy",
@@ -88,14 +82,14 @@ def main() -> None:
     parser.add_argument(
         "--min_partition_size",
         type=int,
-        default=500,
+        default=100,
         help="Minimum samples per partition",
     )
     parser.add_argument(
         "--data_partitioning_seed",
         type=int,
         default=42,
-        help="Seed for reproducible data partitioning",
+        help="Seed for reproducible data partitioning across experiments",
     )
     parser.add_argument(
         "--model_seed",
@@ -112,46 +106,40 @@ def main() -> None:
     parser.add_argument(
         "--aggregation_strategy",
         type=str,
-        choices=["gossip_avg", "trust_weighted_gossip"],  # Only decentralized strategies
-        default="gossip_avg",
-        help="Aggregation strategy to use (only decentralized strategies)",
-    )
-    parser.add_argument(
-        "--mixing_parameter",
-        type=float,
-        default=0.25,
-        help="Mixing parameter for gossip_avg strategy (0.25 = collaborative learning)",
+        choices=["fedavg", "trimmed_mean"],
+        default="fedavg",
+        help="Aggregation strategy to use",
     )
 
     # Model arguments
     parser.add_argument(
         "--model",
         type=str,
-        choices=["simple", "resnet"],
+        choices=["simple", "complex", "lite"],
         default="simple",
         help="Model architecture to use",
     )
 
-    # Topology arguments (only decentralized-compatible topologies)
+    # Topology arguments
     parser.add_argument(
         "--topology",
         type=str,
-        default="ring",  # Default to ring for decentralized learning
-        choices=["ring", "complete", "line", "custom"],
-        help="Network topology between clients (decentralized-compatible only)",
+        default="star",
+        choices=["star", "ring", "complete", "line"],
+        help="Network topology between clients",
     )
 
     # Training arguments
     parser.add_argument(
-        "--rounds", type=int, default=20, help="Number of learning rounds"
+        "--rounds", type=int, default=20, help="Number of federated learning rounds"
     )
     parser.add_argument(
         "--epochs", type=int, default=2, help="Number of local epochs per round"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=64, help="Batch size for training"
+        "--batch_size", type=int, default=32, help="Batch size for training"
     )
-    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument(
         "--device",
         type=str,
@@ -168,7 +156,7 @@ def main() -> None:
         "--target_epsilon_per_round",
         type=float,
         default=1.0,
-        help="Target privacy budget per round (epsilon)",
+        help="Per-round per-node privacy budget (epsilon) - total budget will be multiplied by number of rounds",
     )
     parser.add_argument(
         "--target_delta",
@@ -212,7 +200,7 @@ def main() -> None:
     parser.add_argument(
         "--save_path",
         type=str,
-        default="dp_decentralized_cifar10_model.pt",
+        default="dp_eurosat_federated_model.pt",
         help="Path to save the final model",
     )
 
@@ -296,70 +284,13 @@ def main() -> None:
         default=1,
         help="Round to start attacks",
     )
-    parser.add_argument(
-        "--malicious_node_seed",
-        type=int,
-        default=16,
-        help="Seed for reproducible malicious node selection (None = random)",
-    )
-
-    # Trust monitoring arguments
-    parser.add_argument(
-        "--enable_trust_monitoring",
-        action="store_true",
-        help="Enable trust monitoring for malicious behavior detection",
-    )
-    parser.add_argument(
-        "--enable_trust_weighted_aggregation",
-        action="store_true",
-        default=True,
-        help="Apply trust scores as weights during aggregation (default: True)",
-    )
-    parser.add_argument(
-        "--enable_exponential_decay",
-        action="store_true",
-        help="Use exponential decay for repeated trust violations (more aggressive)",
-    )
-    parser.add_argument(
-        "--exponential_decay_base",
-        type=float,
-        default=0.8,
-        help="Base for exponential decay (lower = more aggressive, default: 0.8)",
-    )
-    parser.add_argument(
-        "--trust_scaling_factor",
-        type=float,
-        default=1.0,
-        help="Scaling factor for trust-to-weight conversion (lower = more aggressive, default: 1.0)",
-    )
-    parser.add_argument(
-        "--trust_weight_exponent",
-        type=float,
-        default=1.0,
-        help="Exponent for trust score scaling (higher = more aggressive, default: 1.0)",
-    )
-    parser.add_argument(
-        "--enable_trust_resource_monitoring",
-        action="store_true",
-        help="Enable resource monitoring specifically for trust monitor operations",
-    )
 
     # Visualization arguments
     parser.add_argument(
         "--vis_dir",
         type=str,
-        default="./visualizations_decentralized_cifar10",
+        default="./visualizations_eurosat",
         help="Directory to save visualizations",
-    )
-    parser.add_argument(
-        "--create_animation",
-        action="store_true",
-        help="Create animation of the training process",
-    )
-    parser.add_argument(
-        "--create_frames",
-        action="store_true",
-        help="Create individual frames of the training process",
     )
     parser.add_argument(
         "--create_summary",
@@ -372,23 +303,12 @@ def main() -> None:
         default=None,
         help="Custom experiment name for visualization directory (overrides default naming)",
     )
-    parser.add_argument(
-        "--monitor_resources",
-        action="store_true",
-        help="Monitor and log resource usage during training",
-    )
-    parser.add_argument(
-        "--health_check_interval",
-        type=int,
-        default=5,
-        help="Interval for health checks in rounds",
-    )
 
     args = parser.parse_args()
 
     # Set up logging
     setup_logging(args.log_level)
-    logger = logging.getLogger("murmura.dp_decentralized_cifar10_example")
+    logger = logging.getLogger("murmura.dp_eurosat_example")
 
     try:
         # Select device
@@ -462,7 +382,7 @@ def main() -> None:
                 logger.info(f"Privacy amplification factor: {amplification_factor:.3f}")
 
             logger.info(
-                f"DP Configuration: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
+                f"DP Configuration: ε={dp_config.target_epsilon} (total), δ={dp_config.target_delta}"
             )
             logger.info(f"Max grad norm: {dp_config.max_grad_norm}")
             logger.info(
@@ -489,62 +409,30 @@ def main() -> None:
                 gradient_noise_scale=args.gradient_noise_scale,
                 gradient_sign_flip_prob=args.gradient_sign_flip_prob,
                 attack_start_round=args.attack_start_round,
-                malicious_node_seed=args.malicious_node_seed,
-                log_attack_details=True,
+                log_attack_details=True
             )
-
+            
             logger.info("Attack configuration created:")
             logger.info(f"  - Malicious clients ratio: {args.malicious_clients_ratio}")
             logger.info(f"  - Attack type: {args.attack_type}")
-            logger.info(
-                f"  - Attack intensity: {args.attack_intensity_start} -> {args.attack_intensity_end}"
-            )
+            logger.info(f"  - Attack intensity: {args.attack_intensity_start} -> {args.attack_intensity_end}")
             logger.info(f"  - Intensity progression: {args.intensity_progression}")
             logger.info(f"  - Attack start round: {args.attack_start_round}")
-            logger.info(f"  - Malicious node seed: {args.malicious_node_seed}")
-
+            
             if args.attack_type == "label_flipping":
                 logger.info(f"  - Label flip target: {args.label_flip_target}")
                 logger.info(f"  - Label flip source: {args.label_flip_source}")
-
+            
             if args.attack_type == "gradient_manipulation":
                 logger.info(f"  - Gradient noise scale: {args.gradient_noise_scale}")
-                logger.info(
-                    f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}"
-                )
-
+                logger.info(f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}")
+            
+            if args.attack_type in ["fgsm", "pgd", "uap"]:
+                logger.info(f"  - Gradient-based attack: {args.attack_type}")
+                logger.info("  - Attack parameters configured via AttackConfig")
+                
         else:
             logger.info("Model poisoning attacks are DISABLED")
-
-        # Create trust monitoring configuration if enabled
-        trust_config = None
-        if args.enable_trust_monitoring:
-            logger.info("=== Trust monitoring ENABLED ===")
-            trust_config = TrustMonitorConfig(
-                enable_trust_monitoring=True,
-                enable_trust_weighted_aggregation=args.enable_trust_weighted_aggregation,
-                enable_exponential_decay=args.enable_exponential_decay,
-                exponential_decay_base=args.exponential_decay_base,
-                trust_scaling_factor=args.trust_scaling_factor,
-                trust_weight_exponent=args.trust_weight_exponent,
-                enable_trust_resource_monitoring=args.enable_trust_resource_monitoring,
-            )
-            if args.enable_trust_weighted_aggregation:
-                logger.info("=== Trust-weighted aggregation ENABLED ===")
-                if args.enable_exponential_decay:
-                    logger.info(
-                        f"=== Exponential decay ENABLED (base: {args.exponential_decay_base}) ==="
-                    )
-                logger.info(
-                    f"=== Trust scaling factor: {args.trust_scaling_factor} ==="
-                )
-                logger.info(
-                    f"=== Trust weight exponent: {args.trust_weight_exponent} ==="
-                )
-            else:
-                logger.info("=== Trust-weighted aggregation DISABLED ===")
-        else:
-            logger.info("Trust monitoring is DISABLED")
 
         # Ray cluster configuration
         ray_cluster_config = RayClusterConfig(
@@ -552,28 +440,27 @@ def main() -> None:
         )
         resource_config = ResourceConfig()
 
-        logger.info("=== Loading CIFAR-10 Dataset ===")
-        # Load CIFAR-10 dataset
+        logger.info("=== Loading EuroSAT Dataset ===")
+        # Load EuroSAT dataset
         train_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
-            dataset_name="cifar10",
+            dataset_name="cm93/eurosat",
             split=args.split,
         )
 
         test_dataset = MDataset.load_dataset_with_multinode_support(
             DatasetSource.HUGGING_FACE,
-            dataset_name="cifar10",
+            dataset_name="cm93/eurosat",
             split=args.test_split,
         )
 
         # Merge test split into main dataset
         train_dataset.merge_splits(test_dataset)
 
-        # Create data preprocessor for CIFAR-10
+        # Create data preprocessor for EuroSAT
         preprocessor = create_image_preprocessor(
-            grayscale=False,  # CIFAR-10 is RGB
-            normalize=True,  # Normalize pixel values to [0,1]
-            target_size=(32, 32),  # CIFAR-10 native size
+            normalize=True,
+            target_size=(64, 64)
         )
 
         # Create configuration
@@ -587,64 +474,48 @@ def main() -> None:
             split=args.split,
             topology=TopologyConfig(topology_type=TopologyType(args.topology)),
             aggregation=AggregationConfig(
-                strategy_type=AggregationStrategyType(args.aggregation_strategy),
-                params={"mixing_parameter": args.mixing_parameter},
+                strategy_type=AggregationStrategyType(args.aggregation_strategy)
             ),
-            dataset_name="cifar10",
+            dataset_name="cm93/eurosat",
             ray_cluster=ray_cluster_config,
             resources=resource_config,
-            feature_columns=["img"],
+            feature_columns=["image"],
             label_column="label",
             rounds=args.rounds,
             epochs=args.epochs,
             batch_size=args.batch_size,
             learning_rate=args.lr,
             test_split=args.test_split,
-            monitor_resources=args.monitor_resources,
-            health_check_interval=args.health_check_interval,
             client_sampling_rate=args.client_sampling_rate,
             data_sampling_rate=args.data_sampling_rate,
             enable_subsampling_amplification=args.enable_subsampling_amplification,
             attack_config=attack_config,
-            trust_monitoring=trust_config,
         )
-
-        # Verify topology compatibility
-        logger.info("=== Verifying Topology Compatibility ===")
-
-        # Import the strategy class for compatibility checking
-        from murmura.aggregation.strategies.gossip_avg import GossipAvg
-
-        # Check compatibility of topology and strategy
-        if not TopologyCompatibilityManager.is_compatible(
-            GossipAvg, config.topology.topology_type
-        ):
-            compatible_topologies = (
-                TopologyCompatibilityManager.get_compatible_topologies(GossipAvg)
-            )
-            logger.error(
-                f"Strategy {config.aggregation.strategy_type} is not compatible with topology {config.topology.topology_type}"
-            )
-            logger.error(
-                f"Compatible topologies: {[t.value for t in compatible_topologies]}"
-            )
-            raise ValueError(
-                f"Strategy {config.aggregation.strategy_type} is not compatible with topology {config.topology.topology_type}"
-            )
 
         logger.info("=== Creating Data Partitions ===")
         partitioner = PartitionerFactory.create(config)
 
-        logger.info("=== Creating CIFAR-10 Model ===")
+        logger.info("=== Creating EuroSAT Model ===")
         # Set ALL random seeds for full reproducibility
         set_all_seeds(config.model_seed)
         logger.info(f"Set ALL seeds (random, numpy, torch) to {config.model_seed} for full reproducibility")
         
-        model: Union[CIFAR10Model, ResNetCIFAR10Model]
-        if args.model == "simple":
-            model = CIFAR10Model()
-        else:  # resnet
-            model = ResNetCIFAR10Model()
+        # Select model based on complexity
+        # Use GroupNorm for many clients or when DP is enabled
+        use_groupnorm = args.enable_dp or args.num_actors > 10
+
+        if args.model == "complex":
+            model = EuroSATModelComplex(
+                input_size=64, use_dp_compatible_norm=use_groupnorm
+            )
+        elif args.model == "lite":
+            model = EuroSATModelLite(
+                input_size=64, use_dp_compatible_norm=use_groupnorm
+            )
+        else:  # simple
+            model = EuroSATModel(
+                input_size=64, use_dp_compatible_norm=use_groupnorm
+            )
 
         # Create model wrapper (DP or regular)
         global_model: Union[DPTorchModelWrapper, TorchModelWrapper]
@@ -656,7 +527,7 @@ def main() -> None:
                 loss_fn=nn.CrossEntropyLoss(),
                 optimizer_class=torch.optim.SGD,  # SGD works better with DP
                 optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
-                input_shape=(3, 32, 32),
+                input_shape=(3, 64, 64),
                 device=device,
                 data_preprocessor=preprocessor,
                 seed=config.model_seed,  # Pass seed for reproducible DataLoader
@@ -667,16 +538,15 @@ def main() -> None:
             global_model = TorchModelWrapper(
                 model=model,
                 loss_fn=nn.CrossEntropyLoss(),
-                optimizer_class=torch.optim.SGD,
-                optimizer_kwargs={"lr": args.lr, "momentum": 0.9},
-                input_shape=(3, 32, 32),
-                device=device,
+                optimizer_class=torch.optim.Adam,
+                optimizer_kwargs={"lr": args.lr},
+                input_shape=(3, 64, 64),
                 data_preprocessor=preprocessor,
                 seed=config.model_seed,  # Pass seed for reproducible DataLoader
             )
 
-        logger.info("=== Setting Up Decentralized Learning Process ===")
-        learning_process = DecentralizedLearningProcess(
+        logger.info("=== Setting Up Learning Process ===")
+        learning_process = FederatedLearningProcess(
             config=config,
             dataset=train_dataset,
             model=global_model,
@@ -684,14 +554,14 @@ def main() -> None:
 
         # Set up visualization if requested
         visualizer = None
-        if args.create_animation or args.create_frames or args.create_summary:
+        if args.create_summary:
             logger.info("=== Setting Up Visualization ===")
             if args.experiment_name:
                 vis_dir = os.path.join(args.vis_dir, args.experiment_name)
             else:
                 vis_dir = os.path.join(
                     args.vis_dir,
-                    f"decentralized_cifar10_{args.model}_{args.topology}_{args.aggregation_strategy}"
+                    f"dp_eurosat_{args.topology}_{args.aggregation_strategy}"
                     + ("_dp" if args.enable_dp else "_no_dp"),
                 )
             os.makedirs(vis_dir, exist_ok=True)
@@ -700,7 +570,7 @@ def main() -> None:
 
         try:
             # Initialize learning process
-            logger.info("=== Initializing Decentralized Learning Process ===")
+            logger.info("=== Initializing Learning Process ===")
             learning_process.initialize(
                 num_actors=config.num_actors,
                 topology_config=config.topology,
@@ -709,14 +579,12 @@ def main() -> None:
             )
 
             # Print experiment summary
-            logger.info("=== CIFAR-10 Decentralized Learning Setup ===")
-            logger.info("Dataset: CIFAR-10")
-            logger.info("Learning Mode: Decentralized (Peer-to-Peer)")
+            logger.info("=== EuroSAT DP Federated Learning Setup ===")
+            logger.info("Dataset: EuroSAT")
             logger.info(f"Model: {args.model}")
             logger.info(f"Clients: {config.num_actors}")
             logger.info(f"Partitioning: {config.partition_strategy} (α={args.alpha})")
             logger.info(f"Aggregation: {config.aggregation.strategy_type}")
-            logger.info(f"Mixing parameter: {args.mixing_parameter}")
             logger.info(f"Topology: {config.topology.topology_type}")
             logger.info(f"Rounds: {config.rounds}")
             logger.info(f"Local epochs: {config.epochs}")
@@ -746,7 +614,7 @@ def main() -> None:
             else:
                 logger.info("Differential Privacy: DISABLED")
 
-            logger.info("=== Starting Decentralized Training ===")
+            logger.info("=== Starting Training ===")
             # Execute learning process
             results = learning_process.execute()
 
@@ -760,34 +628,52 @@ def main() -> None:
 
             # Display privacy results if DP was enabled
             privacy_spent = None
-            if args.enable_dp and "privacy_metrics" in results:
+            if args.enable_dp and results.get("privacy_metrics", {}).get(
+                "dp_enabled", False
+            ):
                 logger.info("=== Privacy Results ===")
-                privacy_spent = results["privacy_metrics"]
+                privacy_metrics = results["privacy_metrics"]
+
                 logger.info(
-                    f"Privacy spent: ε={privacy_spent['epsilon']:.3f}, δ={privacy_spent['delta']:.2e}"
+                    f"Privacy spent across {privacy_metrics['client_count']} clients:"
                 )
+                logger.info(
+                    f"Max privacy spent: ε={privacy_metrics['epsilon']:.3f}, δ={privacy_metrics['delta']:.2e}"
+                )
+                logger.info(
+                    f"Per-round per-node budget: ε={args.target_epsilon_per_round}"
+                )
+
                 if dp_config is not None:
                     logger.info(
-                        f"Per-round budget: ε={args.target_epsilon_per_round:.2f}"
+                        f"Total privacy budget per client: ε={dp_config.target_epsilon}, δ={dp_config.target_delta}"
                     )
-                    logger.info(
-                        f"Total budget per client: ε={dp_config.target_epsilon:.2f}"
-                    )
-                    logger.info(f"Total epochs: {total_epochs}")
 
-                    remaining_eps = dp_config.target_epsilon - privacy_spent["epsilon"]
+                    remaining_eps = (
+                        dp_config.target_epsilon - privacy_metrics["epsilon"]
+                    )
                     logger.info(f"Remaining budget: ε={remaining_eps:.3f}")
 
-                    if privacy_spent["epsilon"] > dp_config.target_epsilon:
+                    if privacy_metrics["epsilon"] > dp_config.target_epsilon:
                         logger.warning("Privacy budget exceeded!")
                     else:
                         logger.info("Privacy budget respected ✓")
 
-                    # Show budget utilization
-                    utilization = (
-                        privacy_spent["epsilon"] / dp_config.target_epsilon
-                    ) * 100
-                    logger.info(f"Privacy budget utilization: {utilization:.1f}%")
+                    # Show effective epsilon per round
+                    if args.rounds > 0:
+                        effective_eps_per_round = (
+                            privacy_metrics["epsilon"] / args.rounds
+                        )
+                        logger.info(
+                            f"Effective epsilon per round: ε={effective_eps_per_round:.3f}"
+                        )
+                        logger.info(
+                            f"Per-round budget: ε={args.target_epsilon_per_round:.2f}"
+                        )
+                        logger.info(
+                            f"Total budget per client: ε={dp_config.target_epsilon:.2f}"
+                        )
+                        logger.info(f"Total epochs: {total_epochs}")
 
                 # Get privacy summary from accountant
                 if "privacy_accountant" in locals():
@@ -796,63 +682,20 @@ def main() -> None:
                         f"Global privacy utilization: {privacy_summary['global_privacy']['utilization_percentage']:.1f}%"
                     )
 
-            # Display trust monitoring results if enabled
-            if args.enable_trust_monitoring:
-                logger.info("=== Trust Monitoring Results ===")
-                trust_results = results.get("trust_monitoring", {})
+                # Set privacy_spent for compatibility with checkpoint saving
+                privacy_spent = {
+                    "epsilon": privacy_metrics["epsilon"],
+                    "delta": privacy_metrics["delta"],
+                }
 
-                if trust_results.get("enabled", False):
-                    trust_summary = trust_results.get("final_summary", {})
-                    global_suspicious = trust_results.get(
-                        "global_suspicious_detected", []
-                    )
-
-                    logger.info(
-                        f"Trust monitoring enabled for {len(trust_summary)} honest nodes"
-                    )
-
-                    # Show summary of suspicious behavior using relative detection
-                    if global_suspicious:
-                        logger.warning(
-                            f"⚠️  Trust monitoring detected {len(global_suspicious)} suspicious neighbors: {global_suspicious}"
-                        )
-                        for node_idx, node_summary in trust_summary.items():
-                            suspicious = node_summary.get("suspicious_neighbors", [])
-                            if suspicious:
-                                detection_method = node_summary.get("detection_method", "unknown")
-                                trust_stats = node_summary.get("trust_statistics", {})
-                                min_trust = trust_stats.get("min_trust", "N/A")
-                                logger.warning(
-                                    f"  Node {node_idx} flagged: {suspicious} (method: {detection_method}, min_trust: {min_trust:.3f})"
-                                )
-                    else:
-                        logger.info("✓ No malicious behavior detected")
-                else:
-                    logger.info("Trust monitoring was not active during training")
-
-            # Generate visualizations if requested
-            if visualizer and (
-                args.create_animation or args.create_frames or args.create_summary
-            ):
-                logger.info("=== Generating Visualizations ===")
-                if args.create_animation:
-                    logger.info("Creating animation...")
-                    visualizer.render_training_animation(
-                        filename=f"dp_decentralized_cifar10_{args.topology}_{args.aggregation_strategy}"
-                        + ("_dp" if args.enable_dp else "_no_dp")
-                        + "_animation.mp4",
-                        fps=2,
-                    )
-                if args.create_frames:
-                    logger.info("Creating individual frames...")
-                    visualizer.render_training_frames()
-                if args.create_summary:
-                    logger.info("Creating summary plot...")
-                    visualizer.render_summary_plot(
-                        filename=f"decentralized_cifar10_{args.model}_{args.topology}_{args.aggregation_strategy}"
-                        + ("_dp" if args.enable_dp else "_no_dp")
-                        + "_summary.png"
-                    )
+            # Create visualization if requested
+            if visualizer and args.create_summary:
+                logger.info("=== Generating Visualization ===")
+                visualizer.render_summary_plot(
+                    filename=f"dp_eurosat_{args.model}_{args.topology}_{args.aggregation_strategy}"
+                    + ("_dp" if args.enable_dp else "_no_dp")
+                    + "_summary.png"
+                )
 
             # Save model
             logger.info("=== Saving Model ===")
@@ -874,10 +717,9 @@ def main() -> None:
                     "enabled": args.enable_dp,
                     "config": dp_config.model_dump() if dp_config else None,
                     "privacy_spent": privacy_spent
-                    if args.enable_dp and "privacy_metrics" in results
+                    if args.enable_dp and hasattr(global_model, "get_privacy_spent")
                     else None,
                 },
-                "learning_mode": "decentralized",
             }
 
             os.makedirs(
@@ -891,7 +733,7 @@ def main() -> None:
             learning_process.shutdown()
 
     except Exception as e:
-        logger.error(f"DP Decentralized CIFAR-10 Learning Process failed: {str(e)}")
+        logger.error(f"DP EuroSAT Learning Process failed: {str(e)}")
         import traceback
 
         traceback.print_exc()
