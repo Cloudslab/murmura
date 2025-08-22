@@ -15,6 +15,9 @@ from murmura.node.client_actor import get_node_id, get_node_info
 from murmura.attacks.attack_config import AttackConfig
 from murmura.attacks.label_flipping import LabelFlippingAttack
 from murmura.attacks.gradient_manipulation import GradientManipulationAttack
+from murmura.attacks.fgsm_attack import FGSMAttack
+from murmura.attacks.pgd_attack import PGDAttack
+from murmura.attacks.uap_attack import UAPAttack
 
 
 @ray.remote
@@ -128,14 +131,32 @@ class MaliciousClientActor:
             attack_dict["malicious_node_seed"] = self.attack_config.malicious_node_seed
 
         # Initialize label flipping attack
-        if self.attack_config.attack_type in ["label_flipping", "both"]:
+        if self.attack_config.attack_type == "label_flipping":
             self.attack_instances["label_flipping"] = LabelFlippingAttack(
                 self.client_id, attack_dict
             )
 
         # Initialize gradient manipulation attack
-        if self.attack_config.attack_type in ["gradient_manipulation", "both"]:
+        if self.attack_config.attack_type == "gradient_manipulation":
             self.attack_instances["gradient_manipulation"] = GradientManipulationAttack(
+                self.client_id, attack_dict
+            )
+        
+        # Initialize FGSM attack
+        if self.attack_config.attack_type == "fgsm":
+            self.attack_instances["fgsm"] = FGSMAttack(
+                self.client_id, attack_dict
+            )
+        
+        # Initialize PGD attack
+        if self.attack_config.attack_type == "pgd":
+            self.attack_instances["pgd"] = PGDAttack(
+                self.client_id, attack_dict
+            )
+        
+        # Initialize UAP attack
+        if self.attack_config.attack_type == "uap":
+            self.attack_instances["uap"] = UAPAttack(
                 self.client_id, attack_dict
             )
 

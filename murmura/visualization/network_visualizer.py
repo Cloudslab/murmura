@@ -1624,7 +1624,8 @@ class NetworkVisualizer(TrainingObserver):
             "observer_node": event.node_id,
             "trust_scores": event.trust_scores.copy(),
             "score_changes": event.score_changes.copy(),
-            "detection_method": event.detection_method
+            "detection_method": event.detection_method,
+            "debug_data": getattr(event, 'debug_data', {})
         }
         
         self.trust_events.append(trust_score_record)

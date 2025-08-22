@@ -225,7 +225,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--attack_type",
-        choices=["label_flipping", "gradient_manipulation", "both"],
+        choices=["label_flipping", "gradient_manipulation", "fgsm", "pgd", "uap"],
         default="label_flipping",
         help="Type of poisoning attack to perform",
     )
@@ -412,13 +412,17 @@ def main() -> None:
             logger.info(f"  - Intensity progression: {args.intensity_progression}")
             logger.info(f"  - Attack start round: {args.attack_start_round}")
             
-            if args.attack_type in ["label_flipping", "both"]:
+            if args.attack_type == "label_flipping":
                 logger.info(f"  - Label flip target: {args.label_flip_target}")
                 logger.info(f"  - Label flip source: {args.label_flip_source}")
             
-            if args.attack_type in ["gradient_manipulation", "both"]:
+            if args.attack_type == "gradient_manipulation":
                 logger.info(f"  - Gradient noise scale: {args.gradient_noise_scale}")
                 logger.info(f"  - Gradient sign flip prob: {args.gradient_sign_flip_prob}")
+            
+            if args.attack_type in ["fgsm", "pgd", "uap"]:
+                logger.info(f"  - Gradient-based attack: {args.attack_type}")
+                logger.info("  - Attack parameters configured via AttackConfig")
                 
         else:
             logger.info("Model poisoning attacks are DISABLED")

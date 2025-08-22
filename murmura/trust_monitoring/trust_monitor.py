@@ -521,13 +521,78 @@ class TrustMonitor:
             asymmetry_weight * trust_signals.layer_asymmetry
         )
         
-        # Adaptive decay/recovery rates
-        # Decay faster for high anomaly, recover slower
-        decay_rate = 0.05 + 0.15 * total_anomaly  # [0.05, 0.20]
-        recovery_rate = 0.02 * (1.0 - total_anomaly)  # [0, 0.02]
+        # Statistical Relative Anomaly-Based Trust Dynamics
+        # Use neighbor anomaly distribution to determine trust updates without fixed thresholds
+        
+        # We need to track anomaly levels across all neighbors for statistical comparison
+        # Store current neighbor's total anomaly in a temporary structure for comparison
+        if not hasattr(self, '_current_round_anomalies'):
+            self._current_round_anomalies = {}
+        
+        self._current_round_anomalies[neighbor_id] = total_anomaly
+        
+        # If we have multiple neighbors, use combined absolute and relative anomaly assessment
+        if len(self._current_round_anomalies) >= 3:
+            # Get all anomaly values from current round
+            all_anomalies = list(self._current_round_anomalies.values())
+            
+            # Absolute anomaly assessment: penalize consistently high anomalies
+            # Use historical baseline of "normal" behavior (approximated as 0.02-0.03 for honest nodes)
+            absolute_anomaly_penalty = 0
+            if total_anomaly > 0.05:  # Above typical honest node range
+                # Exponential penalty for high absolute anomalies
+                absolute_penalty_factor = (total_anomaly - 0.05) / 0.05  # Normalized excess
+                absolute_anomaly_penalty = -0.03 * (1 - np.exp(-2 * absolute_penalty_factor))
+            
+            # Relative anomaly assessment: compare within local neighborhood
+            anomaly_mean = np.mean(all_anomalies)
+            anomaly_std = np.std(all_anomalies)
+            
+            relative_change = 0
+            if anomaly_std > 1e-6:  # Avoid division by zero
+                anomaly_z = (total_anomaly - anomaly_mean) / anomaly_std
+                
+                # Sigmoid transformation for smooth relative updates
+                sigmoid_input = -anomaly_z  
+                trust_change_factor = 2 / (1 + np.exp(-sigmoid_input)) - 1
+                
+                # Scale by confidence in local anomaly distribution
+                anomaly_confidence = min(1.0, anomaly_std * 3)
+                relative_rate = 0.02 * anomaly_confidence
+                relative_change = relative_rate * trust_change_factor
+            
+            # Combined trust change: absolute penalty + relative adjustment
+            trust_change = absolute_anomaly_penalty + relative_change
+            
+            # Store debug data for visualization
+            self._debug_data[neighbor_id] = {
+                'total_anomaly': total_anomaly,
+                'absolute_penalty': absolute_anomaly_penalty,
+                'relative_change': relative_change,
+                'final_trust_change': trust_change,
+                'num_neighbors': len(all_anomalies),
+                'anomaly_mean': np.mean(all_anomalies),
+                'anomaly_std': np.std(all_anomalies)
+            }
+            
+        else:
+            # Not enough neighbors for statistical comparison yet
+            # Use simple approach: trust decreases with anomaly, but at a modest rate
+            # This creates initial separation without hard thresholds
+            normalized_anomaly = min(total_anomaly, 1.0)  # Cap at 1.0
+            trust_change = 0.01 * (0.5 - normalized_anomaly)  # Neutral at 0.5 anomaly
+            
+            # Store debug data for few-neighbor case
+            self._debug_data[neighbor_id] = {
+                'total_anomaly': total_anomaly,
+                'absolute_penalty': 0,
+                'relative_change': trust_change,
+                'final_trust_change': trust_change,
+                'num_neighbors': len(self._current_round_anomalies),
+                'fallback_mode': 'few_neighbors'
+            }
         
         # Net trust change with momentum
-        trust_change = -decay_rate + recovery_rate
         
         # Apply momentum from previous velocity
         momentum = 0.3
@@ -592,6 +657,10 @@ class TrustMonitor:
             return {neighbor_id: 1.0 for neighbor_id in neighbor_updates.keys()}
         
         self.rounds_completed = round_num
+        
+        # Reset anomaly tracking for current round (for statistical comparison)
+        self._current_round_anomalies = {}
+        self._debug_data = {}  # Track trust change details for debugging
         
         # Update network topology awareness
         if self.network_topology_size is None:
@@ -667,15 +736,55 @@ class TrustMonitor:
                 )
                 self._emit_event(signals_event)
             
-            # Update trust score
+            # Pre-calculate total anomaly for this neighbor (for collective analysis)
+            maturity_rounds = self.config.history_window_size
+            signal_maturity = min(1.0, round_num / maturity_rounds)
+            
+            w_gradient = 0.35
+            w_pattern = 0.25
+            w_consensus = 0.20
+            w_temporal = 0.10
+            w_asymmetry = 0.10
+            
+            eff_pattern = w_pattern * signal_maturity
+            eff_temporal = w_temporal * signal_maturity
+            lost_weight = (w_pattern + w_temporal) * (1.0 - signal_maturity)
+            immediate_total = w_gradient + w_consensus + w_asymmetry
+            
+            gradient_weight = w_gradient + lost_weight * (w_gradient / immediate_total)
+            consensus_weight = w_consensus + lost_weight * (w_consensus / immediate_total)
+            asymmetry_weight = w_asymmetry + lost_weight * (w_asymmetry / immediate_total)
+            
+            total_anomaly = (
+                gradient_weight * trust_signals.gradient_divergence +
+                eff_pattern * trust_signals.pattern_shift +
+                consensus_weight * trust_signals.consensus_deviation +
+                eff_temporal * trust_signals.temporal_inconsistency +
+                asymmetry_weight * trust_signals.layer_asymmetry
+            )
+            
+            # Store anomaly for collective analysis
+            self._current_round_anomalies[neighbor_id] = total_anomaly
+            
+            # Store fingerprint for next round
+            self.fingerprint_history[neighbor_id].append(fingerprint)
+        
+        # Now update trust scores with complete neighbor context
+        for neighbor_id, fingerprint in current_fingerprints.items():
+            # Get the trust signals we computed earlier
+            trust_signals = self.compute_trust_signals(
+                neighbor_id, 
+                fingerprint,
+                current_fingerprints,
+                own_fingerprint
+            )
+            
+            # Update trust score (now with complete anomaly distribution)
             new_trust = self.update_trust_scores(neighbor_id, trust_signals, round_num)
             
             # Compute influence weight for aggregation
             influence_weight = self.compute_influence_weight(new_trust, round_num)
             self.influence_weights[neighbor_id] = influence_weight
-            
-            # Store fingerprint for next round
-            self.fingerprint_history[neighbor_id].append(fingerprint)
             
             # Enhanced logging with self-reference comparison
             if own_fingerprint is not None:
@@ -713,7 +822,8 @@ class TrustMonitor:
                 round_num=round_num,
                 trust_scores=self.trust_scores.copy(),
                 score_changes=score_changes,
-                detection_method="adaptive_trust_scoring"
+                detection_method="adaptive_trust_scoring",
+                debug_data=self._debug_data.copy()
             )
             self._emit_event(event)
         

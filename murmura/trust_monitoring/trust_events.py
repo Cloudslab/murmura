@@ -56,17 +56,20 @@ class TrustScoreEvent(TrustEvent):
     """Event for tracking trust score changes over time."""
     
     def __init__(self, node_id: str, round_num: int, trust_scores: Dict[str, float],
-                 score_changes: Dict[str, float], detection_method: str):
+                 score_changes: Dict[str, float], detection_method: str,
+                 debug_data: Dict[str, Any] = None):
         super().__init__(node_id, round_num, trust_scores)
         self.step_name = "trust_score_update"
         self.score_changes = score_changes
         self.detection_method = detection_method
+        self.debug_data = debug_data or {}
     
     def to_dict(self) -> Dict[str, Any]:
         base_dict = super().to_dict()
         base_dict.update({
             "event_type": "trust_score_event", 
             "score_changes": self.score_changes,
-            "detection_method": self.detection_method
+            "detection_method": self.detection_method,
+            "debug_data": self.debug_data
         })
         return base_dict
