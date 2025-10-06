@@ -1,6 +1,0 @@
-node_id,node_identifier,bandwidth_mbps,compute_capability,cpu_cores,data_compliance,gpu_count,memory_gb,node_type,reliability_score,security_level,storage_gb
-0,hospital_000,10000,tier_1,32,PIPEDA,8,512,tier1_hospital,0.954,standard,10000
-1,clinic_001,5000,tier_2,64,GDPR,4,128,tier2_hospital,0.962,critical,5000
-2,research_center_002,10000,tier_3,128,PIPEDA,32,1024,research_center,0.999,standard,100000
-3,mobile_unit_003,1000,tier_1,8,PIPEDA,1,32,mobile_unit,0.887,critical,2000
-4,edge_device_004,50,tier_2,8,GDPR,1,16,edge_device,0.899,standard,2000

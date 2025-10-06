@@ -239,7 +239,7 @@ class PaperExperimentRunner:
         
         config_id = 2001  # Start phase 2 IDs at 2001 to distinguish from phase 1
         
-        self.logger.info("🎯 Generating Phase 2 (Sampling) configurations...")
+        self.logger.info("Generating Phase 2 (Sampling) configurations...")
         self.logger.info(f"   Sampling scenarios: {[s['name'] for s in sampling_scenarios]}")
         self.logger.info(f"   Focus datasets: {focus_datasets}")
         self.logger.info(f"   Focus attack strategies: {focus_attack_strategies}")
@@ -305,7 +305,7 @@ class PaperExperimentRunner:
         else:
             experiment_name = base_name
         
-        self.logger.info(f"🎯 Starting experiment {self.experiment_id}: {experiment_name}")
+        self.logger.info(f"Starting experiment {self.experiment_id}: {experiment_name}")
         
         # Log config details
         config_details = f"   Config: {config['attack_strategy']} attack, {config['node_count']} nodes, {config['dp_setting']['name']}"
@@ -385,10 +385,10 @@ class PaperExperimentRunner:
                 else:
                     error_msg = f"Training failed (return code {result.returncode}): {all_output[-1500:]}"
                 
-                self.logger.error(f"   ❌ {error_msg}")
+                self.logger.error(f"{error_msg}")
                 return self._create_failed_result(config, experiment_name, error_msg, start_time)
             
-            self.logger.info(f"   ✅ Training completed in {time.time() - start_time:.1f}s")
+            self.logger.info(f"Training completed in {time.time() - start_time:.1f}s")
             
             # Run attacks
             viz_dir = self.base_output_dir / f"visualizations_phase{self.phase}" / experiment_name
@@ -396,7 +396,7 @@ class PaperExperimentRunner:
                 attack_results = run_topology_attacks(str(viz_dir))
                 evaluation = self.evaluate_attack_comprehensive(attack_results, config)
                 
-                self.logger.info(f"   📊 Attack success: {'✅' if evaluation['attack_success'] else '❌'} "
+                self.logger.info(f"Attack success: {'Yes' if evaluation['attack_success'] else 'No'} "
                                f"(confidence: {evaluation['confidence_score']:.3f})")
                 
                 return self._create_success_result(config, experiment_name, attack_results, evaluation, start_time)
@@ -406,11 +406,11 @@ class PaperExperimentRunner:
                 
         except subprocess.TimeoutExpired:
             error_msg = f"Experiment timed out after {config['expected_runtime'] * 3}s"
-            self.logger.warning(f"   ⏰ {error_msg}")
+            self.logger.warning(f"{error_msg}")
             return self._create_failed_result(config, experiment_name, error_msg, start_time)
         except Exception as e:
             error_msg = f"Unexpected error: {str(e)}"
-            self.logger.error(f"   ❌ {error_msg}")
+            self.logger.error(f"{error_msg}")
             return self._create_failed_result(config, experiment_name, error_msg, start_time)
     
     def _build_command(self, script: str, config: Dict[str, Any], experiment_name: str) -> List[str]:
@@ -421,11 +421,11 @@ class PaperExperimentRunner:
             "--partition_strategy", config['attack_strategy'],
             "--topology", config['topology'],
             "--num_actors", str(config['node_count']),
-            "--rounds", "3",  # Keep training fast for large-scale experiments
-            "--epochs", "1",
+            "--rounds", "20",
+            "--epochs", "2",
             "--vis_dir", str(self.base_output_dir / f"visualizations_phase{self.phase}"),
-            "--create_summary",  # Enable visualization generation
-            "--experiment_name", experiment_name,  # Use custom experiment name
+            "--create_summary",
+            "--experiment_name", experiment_name,
         ]
         
         # Add sampling settings (phase 2 experiments)
@@ -694,10 +694,10 @@ class PaperExperimentRunner:
         
         # Generate configurations based on phase
         if phase == 2:
-            self.logger.info("🔬 Running Phase 2: Sampling Effects Experiments")
+            self.logger.info("Running Phase 2: Sampling Effects Experiments")
             all_configs = self.get_phase2_sampling_configurations(filters)
         else:
-            self.logger.info("🔬 Running Phase 1: Comprehensive Baseline Experiments")
+            self.logger.info("Running Phase 1: Comprehensive Baseline Experiments")
             all_configs = self.get_valid_configurations(dataset_filter, filters)
         
         # Handle resume functionality
@@ -709,7 +709,7 @@ class PaperExperimentRunner:
             all_configs = all_configs[resume_from - 1:]
             self.experiment_id = resume_from - 1  # Set starting experiment ID
             
-            self.logger.info(f"🔄 Resuming from experiment {resume_from}")
+            self.logger.info(f"Resuming from experiment {resume_from}")
             self.logger.info(f"   Skipping first {resume_from - 1} experiments")
             
             # Load previous results_phase1 if they exist
@@ -737,9 +737,9 @@ class PaperExperimentRunner:
             original_total = len(self.get_valid_configurations(dataset_filter, filters))
         
         if resume_from is not None:
-            self.logger.info(f"🚀 Resuming {total_experiments} remaining experiments (from {resume_from}/{original_total})")
+            self.logger.info(f"Resuming {total_experiments} remaining experiments (from {resume_from}/{original_total})")
         else:
-            self.logger.info(f"🚀 Starting {total_experiments} comprehensive experiments")
+            self.logger.info(f"Starting {total_experiments} comprehensive experiments")
         self.logger.info(f"   Max parallel: {max_parallel}")
         self.logger.info(f"   Output directory: {self.base_output_dir}")
         
@@ -796,7 +796,7 @@ class PaperExperimentRunner:
                         self.results.append(error_result)
         
         total_time = time.time() - start_time
-        self.logger.info(f"✅ All experiments completed in {total_time / 3600:.1f} hours")
+        self.logger.info(f"All experiments completed in {total_time / 3600:.1f} hours")
         
         # Final analysis
         self.save_final_results()
@@ -818,15 +818,14 @@ class PaperExperimentRunner:
             attack_success = evaluation['attack_success']
             confidence = evaluation['confidence_score']
             runtime = result['runtime_seconds']
-            
-            success_icon = "🎯" if attack_success else "🛡️"
-            self.logger.info(f"[{current_num}/{total_num}] {success_icon} {exp_desc} | {dp_desc} | {attack_desc} | "
+
+            self.logger.info(f"[{current_num}/{total_num}] {exp_desc} | {dp_desc} | {attack_desc} | "
                            f"Attack: {'SUCCESS' if attack_success else 'FAILED'} (conf:{confidence:.3f}) | "
                            f"Runtime: {runtime:.1f}s")
         else:
-            error_brief = result.get('error', 'Unknown error')[:100]  # First 100 chars of error
+            error_brief = result.get('error', 'Unknown error')[:100]
             runtime = result['runtime_seconds']
-            self.logger.info(f"[{current_num}/{total_num}] ❌ {exp_desc} | {dp_desc} | {attack_desc} | "
+            self.logger.info(f"[{current_num}/{total_num}] {exp_desc} | {dp_desc} | {attack_desc} | "
                            f"EXPERIMENT FAILED | Error: {error_brief} | Runtime: {runtime:.1f}s")
     
     def _convert_for_json(self, obj):
@@ -879,7 +878,7 @@ class PaperExperimentRunner:
         with open(results_file, 'w') as f:
             json.dump(serializable_results, f, indent=2)
         
-        self.logger.info(f"💾 Final results_phase1 saved to: {results_file}")
+        self.logger.info(f"Final results_phase1 saved to: {results_file}")
     
     def generate_comprehensive_analysis(self):
         """Generate comprehensive analysis for the paper."""
@@ -888,7 +887,7 @@ class PaperExperimentRunner:
         total_experiments = len(self.results)
         
         self.logger.info("\n" + "=" * 100)
-        self.logger.info("📊 COMPREHENSIVE PAPER ANALYSIS")
+        self.logger.info("COMPREHENSIVE PAPER ANALYSIS")
         self.logger.info("=" * 100)
         
         self.logger.info(f"Total experiments: {total_experiments}")
@@ -951,7 +950,7 @@ class PaperExperimentRunner:
         analysis_file = self.base_output_dir / "analysis" / "comprehensive_analysis.csv"
         df.to_csv(analysis_file, index=False)
         
-        self.logger.info(f"📊 Analysis data saved to: {analysis_file}")
+        self.logger.info(f"Analysis data saved to: {analysis_file}")
         
         # Generate key insights
         self._generate_key_insights(df)
@@ -959,7 +958,7 @@ class PaperExperimentRunner:
     def _generate_key_insights(self, df: pd.DataFrame):
         """Generate key insights for the paper."""
         
-        self.logger.info("\n🔑 KEY INSIGHTS FOR PAPER:")
+        self.logger.info("\nKEY INSIGHTS FOR PAPER:")
         
         # 1. Overall attack success rates
         overall_success_rate = df['attack_success'].mean()
@@ -1013,7 +1012,7 @@ class PaperExperimentRunner:
     def generate_paper_ready_outputs(self):
         """Generate publication-ready outputs."""
         
-        self.logger.info("\n📄 Generating paper-ready outputs...")
+        self.logger.info("\nGenerating paper-ready outputs...")
         
         successful_results = [r for r in self.results if r['status'] == 'success']
         
@@ -1030,7 +1029,7 @@ class PaperExperimentRunner:
         # Create experimental setup summary
         self._create_experimental_setup_summary()
         
-        self.logger.info(f"📄 Paper-ready outputs saved in: {self.base_output_dir / 'analysis'}")
+        self.logger.info(f"Paper-ready outputs saved in: {self.base_output_dir / 'analysis'}")
     
     def _create_paper_summary_tables(self):
         """Create summary tables for the paper."""
@@ -1160,14 +1159,13 @@ Topology & FL Type & DP & Nodes & Success Rate & Avg Confidence \\\\
                 "dp_settings": ["no_dp", "weak_dp", "medium_dp", "strong_dp", "very_strong_dp"]
             },
             "experimental_parameters": {
-                "training_rounds": 3,
-                "local_epochs": 1,
+                "training_rounds": 20,
+                "local_epochs": 2,
                 "attack_types": ["Communication Pattern", "Parameter Magnitude", "Topology Structure"],
                 "success_threshold": 0.3
             },
             "infrastructure": {
                 "max_parallel_experiments": 2,
-                "timeout_per_experiment": "3x estimated runtime",
                 "storage_location": str(self.base_output_dir)
             }
         }
@@ -1325,10 +1323,10 @@ def main():
     )
     
     phase_name = "Phase 1 (Baseline)" if args.phase == 1 else "Phase 2 (Sampling Effects)"
-    print(f"\n✅ {phase_name} paper experiments completed!")
-    print(f"📁 All data available in: {args.output_dir}")
-    print(f"📊 Analysis files in: {args.output_dir}/analysis")
-    print(f"📈 Visualization data in: {args.output_dir}/visualizations_phase{args.phase}")
+    print(f"\n{phase_name} paper experiments completed!")
+    print(f"All data available in: {args.output_dir}")
+    print(f"Analysis files in: {args.output_dir}/analysis")
+    print(f"Visualization data in: {args.output_dir}/visualizations_phase{args.phase}")
 
 
 if __name__ == "__main__":

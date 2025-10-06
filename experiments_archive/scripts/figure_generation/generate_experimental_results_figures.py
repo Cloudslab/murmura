@@ -434,74 +434,6 @@ def create_scalability_figure():
     plt.savefig('../../figures/phase4_figures/fig5_network_scaling.png', dpi=300, bbox_inches='tight')
     plt.close()
 
-def create_summary_results_table():
-    """Create comprehensive results summary table"""
-    
-    # Key results from analysis
-    results_data = {
-        'Phase': [
-            'Phase 1: Complete Knowledge',
-            'Phase 2: Realistic Knowledge', 
-            'Phase 3: Subsampling Effects',
-            'Phase 4: Enterprise Scale'
-        ],
-        'Communication Pattern': [
-            '84.1%',
-            '65.0% avg',
-            '62.3% avg', 
-            '68.7% avg'
-        ],
-        'Parameter Magnitude': [
-            '65.0%',
-            '55.4% avg',
-            '52.8% avg',
-            '55.9% avg'
-        ],
-        'Topology Structure': [
-            '47.2%',
-            '49.9% avg',
-            '45.1% avg',
-            '48.3% avg'
-        ],
-        'Key Finding': [
-            'Theoretical upper bounds',
-            '80% scenarios effective',
-            'Non-monotonic degradation',
-            'Scale independence'
-        ]
-    }
-    
-    df = pd.DataFrame(results_data)
-    
-    # Create table visualization
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-    ax.axis('tight')
-    ax.axis('off')
-    
-    # Create table
-    table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
-    table.auto_set_font_size(False)
-    table.set_fontsize(15)
-    table.scale(1.2, 2)
-    
-    # Style the table with salmon to aqua palette
-    for i in range(len(df.columns)):
-        table[(0, i)].set_facecolor(color_3[2])  # Aqua header
-        table[(0, i)].set_text_props(weight='bold', color='white')
-    
-    for i in range(1, len(df) + 1):
-        for j in range(len(df.columns)):
-            # Alternating light salmon and white rows
-            table[(i, j)].set_facecolor('#FFF5F5' if i % 2 == 0 else 'white')
-    
-    plt.title('Comprehensive Experimental Results Summary\n(Attack Success Rates Across All Four Phases)', 
-              fontsize=22, fontweight='bold', pad=20)
-    
-    plt.tight_layout()
-    plt.savefig('../../figures/results_summary_table.pdf', dpi=300, bbox_inches='tight')
-    plt.savefig('../../figures/results_summary_table.png', dpi=300, bbox_inches='tight')
-    plt.close()
-
 def main():
     """Generate all experimental results figures"""
     
@@ -529,10 +461,7 @@ def main():
         print("Creating Figure 5: Scalability Analysis...")
         create_scalability_figure()
         
-        print("Creating Results Summary Table...")
-        create_summary_results_table()
-        
-        print("\n✅ All experimental results figures generated successfully!")
+        print("\nAll experimental results figures generated successfully!")
         print("\nGenerated figures:")
         print("- fig1_attack_effectiveness.pdf/png - Baseline effectiveness across topologies")
         print("- fig2_realistic_scenarios.pdf/png - Realistic knowledge scenario heatmap")
@@ -542,7 +471,7 @@ def main():
         print("- results_summary_table.pdf/png - Comprehensive results summary")
         
     except Exception as e:
-        print(f"❌ Error generating figures: {e}")
+        print(f"Error generating figures: {e}")
         import traceback
         traceback.print_exc()
 

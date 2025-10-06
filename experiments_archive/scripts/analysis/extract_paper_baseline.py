@@ -4,8 +4,9 @@ Extract baseline performance statistics from original paper results.
 """
 
 import json
+
 import numpy as np
-from collections import defaultdict
+
 
 def extract_baseline_stats():
     """Extract baseline attack success rates from original paper results."""
@@ -66,27 +67,7 @@ def extract_baseline_stats():
                 "ci_upper": ci_upper
             }
     
-    # Extract paper-quoted values (from abstract)
-    paper_values = {
-        "Communication Pattern Attack": 0.841,  # 84.1%
-        "Parameter Magnitude Attack": 0.650,   # 65.0%
-        "Topology Structure Attack": 0.472     # 47.2%
-    }
-    
-    print("Paper Abstract Values (for comparison):")
-    print("="*50)
-    for attack_name, paper_value in paper_values.items():
-        if attack_name in baseline_stats:
-            empirical_value = baseline_stats[attack_name]["mean"]
-            difference = abs(empirical_value - paper_value)
-            
-            print(f"{attack_name}:")
-            print(f"  Paper Abstract: {paper_value:.3f} ({paper_value*100:.1f}%)")
-            print(f"  Empirical Data: {empirical_value:.3f} ({empirical_value*100:.1f}%)")
-            print(f"  Difference: {difference:.3f} ({difference*100:.1f}%)")
-            print()
-    
-    return baseline_stats, paper_values
+    return baseline_stats
 
 if __name__ == "__main__":
-    baseline_stats, paper_values = extract_baseline_stats()
+    baseline_stats = extract_baseline_stats()

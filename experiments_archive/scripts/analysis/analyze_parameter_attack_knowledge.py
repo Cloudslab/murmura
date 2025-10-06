@@ -50,17 +50,6 @@ def analyze_knowledge_impact():
                                 norms = [s["norm_mean"] for s in stats.values()]
                                 print(f"  Magnitude range: {min(norms):.3f} - {max(norms):.3f}")
                                 print(f"  Magnitude spread: {max(norms) - min(norms):.3f}")
-    
-    print("\n\nKey Insight:")
-    print("-" * 50)
-    print("The Parameter Magnitude Attack plateaus at 25% knowledge because:")
-    print("1. It only needs to observe a small sample of nodes to detect patterns")
-    print("2. Nodes with different data distributions have inherently different")
-    print("   parameter update magnitudes, visible even with partial observation")
-    print("3. The attack clusters nodes into groups - seeing 1-2 nodes from each")
-    print("   group is sufficient to achieve high success")
-    print("\nThis makes parameter-based attacks particularly dangerous as they")
-    print("require minimal topology knowledge to be effective!")
 
 
 if __name__ == "__main__":
