@@ -29,12 +29,11 @@ training:
   max_samples: 4500
 
 data:
-  adapter: "leaf.celeba"
+  adapter: "leaf.femnist"
   params:
-    data_path: "leaf/data/celeba/data"
-    image_size: 84
+    data_path: "leaf/data/femnist/data"
 
 model:
-  factory: "examples.leaf.LEAFCelebAModel"
+  factory: "examples.leaf.LEAFFEMNISTModel"
   params:
-    num_classes: 2
+    num_classes: 62

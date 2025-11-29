@@ -5,8 +5,8 @@ experiment:
   verbose: true
 
 topology:
-  type: "ring"
-  num_nodes: 10
+  type: "fully"
+  num_nodes: 5
 
 aggregation:
   algorithm: "fedavg"

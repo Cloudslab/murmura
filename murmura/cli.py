@@ -139,7 +139,12 @@ def _load_dataset_adapter(config):
         # LEAF dataset
         dataset_type = adapter_name.split(".")[1]
         from murmura.examples.leaf import load_leaf_adapter
-        return load_leaf_adapter(dataset_type, **config.data.params)
+        return load_leaf_adapter(
+            dataset_type,
+            num_nodes=config.topology.num_nodes,
+            seed=config.experiment.seed,
+            **config.data.params
+        )
     else:
         # Custom adapter - dynamically import
         module_path, class_name = adapter_name.rsplit(".", 1)

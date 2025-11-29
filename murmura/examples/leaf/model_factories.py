@@ -26,6 +26,6 @@ def get_leaf_model_factory(model_type: str, **kwargs) -> Callable[[], nn.Module]
 
     else:
         # Try model variant
-        dataset = kwargs.get("dataset", "femnist")
         variant = kwargs.get("variant", "baseline")
-        return lambda: get_model_variant(dataset, variant)
+        num_classes = kwargs.get("num_classes", 62)
+        return lambda: get_model_variant(variant, num_classes=num_classes)
