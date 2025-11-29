@@ -1,0 +1,40 @@
+experiment:
+  name: "ubar-gaussian-attack"
+  seed: 987654321
+  rounds: 10
+  verbose: true
+
+topology:
+  type: "erdos"
+  num_nodes: 20
+  p: 0.6
+
+aggregation:
+  algorithm: "ubar"
+  params:
+    rho: 0.8  # Assume 20% Byzantine nodes
+    alpha: 0.5
+
+attack:
+  enabled: true
+  type: "gaussian"
+  percentage: 0.2
+  params:
+    noise_std: 10.0
+
+training:
+  local_epochs: 3
+  batch_size: 64
+  lr: 0.001
+  max_samples: 4500
+
+data:
+  adapter: "leaf.celeba"
+  params:
+    data_path: "leaf/data/celeba/data"
+    image_size: 84
+
+model:
+  factory: "examples.leaf.LEAFCelebAModel"
+  params:
+    num_classes: 2

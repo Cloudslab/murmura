@@ -1,0 +1,32 @@
+experiment:
+  name: "basic-fedavg-test"
+  seed: 42
+  rounds: 20
+  verbose: true
+
+topology:
+  type: "ring"
+  num_nodes: 10
+
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 3
+  batch_size: 64
+  lr: 0.001
+  max_samples: null
+
+data:
+  adapter: "leaf.femnist"
+  params:
+    data_path: "leaf/data/femnist/data"
+
+model:
+  factory: "examples.leaf.LEAFFEMNISTModel"
+  params:
+    num_classes: 62

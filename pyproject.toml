@@ -1,51 +1,94 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "murmura"
 version = "0.1.0"
-description = "A decentralized federated learning library"
-license = "GPL-3.0-only"
-authors = [
-    {name = "Murtaza Rangwala",email = "murtazahatimr@icloud.com"}
-]
+description = "A modular framework for decentralized federated learning with Byzantine-resilient aggregation"
 readme = "README.md"
-repository = "https://github.com/murtazahr/murmura"
-requires-python = ">=3.11"
-dependencies = [
-    "pandas (>=2.2.3,<3.0.0)",
-    "datasets (>=3.2.0,<4.0.0)",
-    "pandas-stubs (>=2.2.3.241126,<3.0.0.0)",
-    "numpy (>=2.2.2,<3.0.0)",
-    "ray (>=2.41.0,<3.0.0)",
-    "pydantic (>=2.10.6,<3.0.0)",
-    "networkx (>=3.4.2,<4.0.0)",
-    "matplotlib (>=3.10.0,<4.0.0)",
-    "torch (>=2.6.0,<3.0.0)",
-    "seaborn (>=0.13.2,<0.14.0)",
-    "scikit-learn (>=1.6.1,<2.0.0)",
-    "torchvision (>=0.22.0,<0.23.0)",
-    "types-seaborn (>=0.13.2.20250516,<0.14.0.0)",
-    "types-tqdm (>=4.67.0.20250516,<5.0.0.0)",
-    "tqdm (>=4.67.1,<5.0.0)",
-    "opacus (>=1.5.2,<2.0.0)",
-    "psutil (>=7.0.0,<8.0.0)"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Murtaza Rangwala", email = "murtazahatimr@icloud.com" }
+]
+keywords = ["federated-learning", "decentralized-learning", "byzantine-resilient", "distributed-learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-ruff = "^0.9.3"
-mypy = "^1.14.1"
-pytest-cov = "^6.0.0"
+dependencies = [
+    "torch>=1.13.0",
+    "numpy>=1.20.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "Pillow>=9.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+    "ruff>=0.1.0",
+]
+
+examples = [
+    "Pillow>=9.0.0",
+    "matplotlib>=3.5.0",
+    "pandas>=1.5.0",
+    "seaborn>=0.12.0",
+]
+
+[project.scripts]
+murmura = "murmura.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/murmura"
+Repository = "https://github.com/yourusername/murmura"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
-markers = "integration: marks tests that require external resources (like HuggingFace datasets)"
-filterwarnings = ["ignore:DeprecationWarning"]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
 
-[tool.coverage.run]
-relative_files = true
+[tool.ruff]
+line-length = 100
+target-version = "py38"
 
-[[tool.mypy.overrides]]
-module = ["torch.*", "torch", "ray.*", "datasets.*", "matplotlib.*", "networkx.*"]
-ignore_missing_imports = true
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+    "ruff>=0.1.0",
+]

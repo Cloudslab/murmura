@@ -1,172 +1,360 @@
 # Murmura
-[![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Cloudslab/murmura/python-coverage-comment-action-data/endpoint.json)](https://htmlpreview.github.io/?https://github.com/Cloudslab/murmura/blob/python-coverage-comment-action-data/htmlcov/index.html)
-[![DOI](https://zenodo.org/badge/923861956.svg)](https://doi.org/10.5281/zenodo.15622123)
 
-**Murmura** is a comprehensive Ray-based framework for federated and decentralized machine learning. Built for researchers and developers, it provides production-ready tools for distributed machine learning with advanced privacy guarantees and flexible network topologies.
+A modular, config-driven framework for decentralized federated learning with Byzantine-resilient aggregation.
 
-## 🌐 What is Murmura?
+> **Quick Start**: See [QUICKSTART.md](QUICKSTART.md) to get running in 5 minutes!
 
-Murmura is a sophisticated federated learning framework that supports both centralized and fully decentralized learning environments. Built on Ray for distributed computing, it enables researchers to experiment with various network topologies, aggregation strategies, and privacy-preserving techniques across single-node and multi-node clusters.
+## Features
 
-## 🧩 Key Features
+- **Multiple Aggregation Algorithms**: FedAvg, Krum, BALANCE, Sketchguard, UBAR
+- **Flexible Topologies**: Ring, fully-connected, Erdős-Rényi, k-regular
+- **Byzantine Attack Simulation**: Gaussian noise, directed deviation
+- **Config-Driven**: YAML/JSON configuration for reproducible experiments
+- **Modular Design**: Easy to extend with custom datasets, models, and aggregators
+- **CLI & Python API**: Run experiments from command line or programmatically
 
-### Core Framework
-- 🏗️ **Ray-Based Distributed Computing**  
-  Multi-node cluster support with automatic actor lifecycle management and resource optimization
+## Installation
 
-- 🔄 **Flexible Learning Paradigms**  
-  Both centralized federated learning and fully decentralized peer-to-peer learning
+### Using uv (Recommended)
 
-- 🌐 **Multiple Network Topologies**  
-  Star, ring, complete graph, line, and custom topologies with automatic compatibility validation
-
-- ⚡ **Intelligent Resource Management**  
-  Automatic eager/lazy dataset loading, CPU/GPU allocation, and placement strategies
-
-### Privacy & Security
-- 🔐 **Comprehensive Differential Privacy**  
-  Client-level DP with Opacus integration, RDP privacy accounting, and automatic noise calibration
-
-- 🛡️ **Byzantine-Robust Aggregation**  
-  Trimmed mean and secure aggregation strategies for adversarial environments
-
-- 📊 **Privacy Budget Tracking**  
-  Real-time privacy budget monitoring across clients and training rounds
-
-### Data & Models
-- 📦 **Unified Dataset Interface**  
-  Seamless integration with HuggingFace datasets, PyTorch datasets, and custom data
-
-- 🎯 **Flexible Data Partitioning**  
-  IID and non-IID data distribution with Dirichlet and quantity-based partitioning
-
-- 🤖 **PyTorch Model Integration**  
-  Easy integration with existing PyTorch models and automatic DP adaptation
-
-### Monitoring & Visualization
-- 📈 **Real-Time Training Visualization**  
-  Network topology visualization, training progress tracking, and metrics export
-
-- 🔍 **Comprehensive Monitoring**  
-  Actor health checks, resource usage tracking, and event-driven architecture
-
-## 🚀 Quick Start
-
-### Installation
+[uv](https://github.com/astral-sh/uv) is an extremely fast Python package installer and resolver.
 
 ```bash
-# Install with Poetry
-poetry install
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Or with pip
-pip install murmura
+# Clone the repository
+git clone https://github.com/yourusername/murmura.git
+cd murmura
+
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install murmura in editable mode
+uv pip install -e .
+
+# Install with development dependencies
+uv sync --group dev
+
+# Install with example dependencies (for LEAF)
+uv pip install -e ".[examples]"
 ```
 
-### Basic Usage
+### Using pip
+
+```bash
+pip install -e .
+```
+
+## Quick Start
+
+### CLI Usage
+
+Run an experiment from a config file:
+
+```bash
+murmura run murmura/examples/configs/basic_fedavg.yaml
+
+# Or with uv run
+uv run murmura run murmura/examples/configs/basic_fedavg.yaml
+```
+
+List available components:
+
+```bash
+murmura list-components topologies
+murmura list-components aggregators
+murmura list-components attacks
+```
+
+### Python API Usage
 
 ```python
-from murmura.orchestration.learning_process import FederatedLearningProcess
-from murmura.orchestration.orchestration_config import OrchestrationConfig
-from murmura.aggregation.aggregation_config import AggregationConfig
+from murmura import Network, Config
+from murmura.topology import create_topology
+from murmura.aggregation import UBARAggregator
+from murmura.utils import set_seed, get_device
 
-# Configure federated learning
-config = OrchestrationConfig(
-    num_clients=10,
-    num_rounds=50,
-    topology_type="star",
-    aggregation_config=AggregationConfig(strategy="fedavg")
+# Load configuration
+config = Config.from_yaml("config.yaml")
+
+# Or create programmatically
+from murmura.config import ExperimentConfig, TopologyConfig, AggregationConfig
+
+config = Config(
+    experiment=ExperimentConfig(name="my-experiment", rounds=20),
+    topology=TopologyConfig(type="ring", num_nodes=10),
+    aggregation=AggregationConfig(algorithm="ubar", params={"rho": 0.6}),
+    # ... other configs
 )
 
-# Run federated learning
-process = FederatedLearningProcess(config)
-results = process.run()
+# Create and run network
+network = Network.from_config(
+    config=config,
+    model_factory=your_model_factory,
+    dataset_adapter=your_dataset_adapter,
+    aggregator_factory=your_aggregator_factory,
+    device=get_device()
+)
+
+results = network.train(rounds=20, local_epochs=3, lr=0.001)
 ```
 
-### Examples
+## Configuration
 
-Explore complete examples in the `murmura/examples/` directory:
+Example YAML configuration:
 
-- **`mnist_example.py`** - Basic federated learning with MNIST
-- **`dp_mnist_example.py`** - Differential privacy-enabled federated learning
-- **`decentralized_mnist_example.py`** - Fully decentralized learning without central server
-- **`skin_lesion_example.py`** - Medical imaging federated learning
+```yaml
+experiment:
+  name: "ubar-experiment"
+  seed: 42
+  rounds: 20
+  verbose: true
 
-## 🏗️ Architecture
+topology:
+  type: "ring"  # ring, fully, erdos, k-regular
+  num_nodes: 20
 
-### Core Components
+aggregation:
+  algorithm: "ubar"  # fedavg, krum, balance, sketchguard, ubar
+  params:
+    rho: 0.6
+    alpha: 0.5
 
-- **Learning Processes** - `FederatedLearningProcess` and `DecentralizedLearningProcess` for different learning paradigms
-- **Cluster Manager** - Ray-based distributed computing with multi-node support
-- **Aggregation Strategies** - FedAvg, TrimmedMean, GossipAvg with DP variants
-- **Network Topologies** - Flexible network structures for decentralized learning
-- **Privacy Framework** - Comprehensive differential privacy with Opacus integration
+attack:
+  enabled: true
+  type: "gaussian"  # gaussian, directed_deviation
+  percentage: 0.2
+  params:
+    noise_std: 10.0
 
-## 📊 Supported Aggregation Strategies
+training:
+  local_epochs: 3
+  batch_size: 64
+  lr: 0.001
 
-| Strategy       | Type          | Privacy-Enabled | Best For                    |
-|----------------|---------------|-----------------|------------------------------|
-| **FedAvg**     | Centralized   | ✅              | Standard federated learning  |
-| **TrimmedMean**| Centralized   | ✅              | Adversarial environments     |
-| **GossipAvg**  | Decentralized | ✅              | Peer-to-peer networks        |
+data:
+  adapter: "leaf.femnist"
+  params:
+    data_path: "leaf/data/femnist/data"
 
-## 🌐 Network Topologies
+model:
+  factory: "examples.leaf.models.LEAFFEMNISTModel"
+  params:
+    num_classes: 62
+```
 
-- **Star** - Central server with spoke clients (federated learning)
-- **Ring** - Circular peer-to-peer communication
-- **Complete** - Full mesh networking (all-to-all)
-- **Line** - Sequential peer communication
-- **Custom** - User-defined adjacency matrices
+## Aggregation Algorithms
 
-## 🛠️ Development
+### FedAvg
+Simple averaging of all neighbor models. Baseline for comparison.
 
-### Setup
+```python
+from murmura.aggregation import FedAvgAggregator
+aggregator = FedAvgAggregator()
+```
+
+### Krum
+Byzantine-resilient aggregation using distance-based selection.
+
+```python
+from murmura.aggregation import KrumAggregator
+aggregator = KrumAggregator(num_compromised=2)
+```
+
+### BALANCE
+Distance-based filtering with adaptive thresholds.
+
+```python
+from murmura.aggregation import BALANCEAggregator
+aggregator = BALANCEAggregator(
+    gamma=2.0,
+    kappa=1.0,
+    alpha=0.5,
+    total_rounds=20
+)
+```
+
+### Sketchguard
+Count-Sketch compression for lightweight Byzantine-resilience.
+
+```python
+from murmura.aggregation import SketchguardAggregator
+aggregator = SketchguardAggregator(
+    model_dim=1000000,
+    sketch_size=10000,
+    gamma=2.0,
+    total_rounds=20
+)
+```
+
+### UBAR
+Two-stage Byzantine-resilient (distance + loss evaluation).
+
+```python
+from murmura.aggregation import UBARAggregator
+aggregator = UBARAggregator(
+    rho=0.6,  # Expected fraction of honest neighbors
+    alpha=0.5
+)
+```
+
+## Network Topologies
+
+Create different network topologies:
+
+```python
+from murmura.topology import create_topology
+
+# Ring topology
+topology = create_topology("ring", num_nodes=10)
+
+# Fully connected
+topology = create_topology("fully", num_nodes=10)
+
+# Erdős-Rényi random graph
+topology = create_topology("erdos", num_nodes=10, p=0.3)
+
+# k-regular graph
+topology = create_topology("k-regular", num_nodes=10, k=4)
+```
+
+## Custom Datasets
+
+Integrate your own dataset using the adapter pattern:
+
+```python
+from torch.utils.data import Dataset
+from murmura.data import DatasetAdapter
+
+# Your PyTorch dataset
+my_dataset = MyPyTorchDataset()
+
+# Define client partitions (list of indices for each client)
+client_partitions = [
+    [0, 1, 2, 3],      # Client 0 gets samples 0-3
+    [4, 5, 6, 7],      # Client 1 gets samples 4-7
+    # ...
+]
+
+# Wrap in adapter
+dataset_adapter = DatasetAdapter(
+    dataset=my_dataset,
+    client_partitions=client_partitions
+)
+```
+
+## Custom Models
+
+Use any PyTorch model:
+
+```python
+import torch.nn as nn
+
+def my_model_factory():
+    return nn.Sequential(
+        nn.Linear(784, 128),
+        nn.ReLU(),
+        nn.Linear(128, 10)
+    )
+```
+
+## LEAF Benchmark Integration
+
+Murmura includes built-in support for LEAF benchmark datasets:
+
+```yaml
+data:
+  adapter: "leaf.femnist"  # or "leaf.celeba"
+  params:
+    data_path: "leaf/data/femnist/data"
+
+model:
+  factory: "examples.leaf.models.LEAFFEMNISTModel"
+  params:
+    num_classes: 62
+```
+
+## Project Structure
+
+```
+murmura/
+├── murmura/                  # Main package
+│   ├── core/                 # Core components (Node, Network)
+│   ├── topology/             # Network topologies
+│   ├── aggregation/          # Aggregation algorithms
+│   ├── attacks/              # Byzantine attacks
+│   ├── data/                 # Data adapters
+│   ├── config/               # Configuration system
+│   ├── utils/                # Utilities
+│   ├── examples/             # Usage examples
+│   │   ├── configs/          # Example configs
+│   │   └── leaf/             # LEAF benchmark integration
+│   └── cli.py                # CLI interface
+├── tests/                    # Unit tests
+└── pyproject.toml            # Project configuration
+```
+
+## Development
+
+### Install development dependencies
 
 ```bash
-poetry install
-poetry shell
+# Using dependency groups (recommended)
+uv sync --group dev
+
+# Or using optional dependencies
+uv pip install -e ".[dev]"
 ```
 
-### Testing
+### Run tests
 
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=murmura tests/
-
-# Run excluding integration tests
-pytest -m "not integration"
+pytest tests/
 ```
 
-### Code Quality
+### Format code
 
 ```bash
-ruff check          # Linting
-ruff format         # Code formatting
-mypy murmura/       # Type checking
+black murmura/
+isort murmura/
 ```
 
-## 🔮 Future Roadmap
+### Type checking
 
-- **Enhanced Privacy Techniques** - Homomorphic encryption and secure multi-party computation
-- **Advanced Network Simulation** - Realistic network conditions and fault injection
-- **AI Agent Integration** - Autonomous learning agents for dynamic environments
-- **Real-world Deployment Tools** - Production deployment and monitoring capabilities
+```bash
+mypy murmura/
+```
 
-## 🤝 Contributing
+### Using uv run (directly run commands without activating venv)
 
-We'd love your help building Murmura.  
-Start by checking out the [issues](https://github.com/murtazahr/murmura/issues) or submitting a [pull request](https://github.com/murtazahr/murmura/pulls).
+```bash
+uv run pytest tests/
+uv run black murmura/
+uv run murmura run config.yaml
+```
 
-## 📄 License
+## Citation
 
-Licensed under the **GNU GPLv3**. See [LICENSE](LICENSE) for more details.
+If you use Murmura in your research, please cite:
 
-## 📬 Contact
+```bibtex
+@software{murmura2024,
+  title={Murmura: A Modular Framework for Decentralized Federated Learning},
+  author={Your Name},
+  year={2024},
+  url={https://github.com/yourusername/murmura}
+}
+```
 
-For questions or feedback, [open an issue](https://github.com/murtazahr/murmura/issues) or email [mrangwala@student.unimelb.edu.au](mailto:mrangwala@student.unimelb.edu.au).
+## License
 
-## 📰 Stay Updated
+MIT License - see LICENSE file for details.
 
-Subscribe to our newsletter to receive updates on Murmura's development and be the first to know about new features and releases. Visit our [website](https://murmura-landing-page.vercel.app/) for more information.
+## Acknowledgments
+
+- LEAF benchmark framework: https://leaf.cmu.edu
+- BALANCE algorithm: [citation]
+- UBAR algorithm: [citation]
+- Sketchguard algorithm: [citation]
