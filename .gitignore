@@ -72,6 +72,8 @@ leaf/data/*/data/sampled_data/
 leaf/data/*/data/rem_user_data/
 leaf/data/*/data/intermediate/
 
+wearables_datasets/
+
 # Keep directory structure but ignore data
 !leaf/data/*/.gitkeep
 
