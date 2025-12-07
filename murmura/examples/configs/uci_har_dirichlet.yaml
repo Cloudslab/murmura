@@ -1,0 +1,44 @@
+# UCI HAR Dataset with Dirichlet Partitioning
+# Non-IID distribution controlled by alpha parameter
+# Lower alpha = more heterogeneous (non-IID)
+
+experiment:
+  name: "UCI-HAR-Dirichlet-FedAvg"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "ring"
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null  # Use all samples
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"  # Options: dirichlet, iid, natural
+    alpha: 0.5  # Dirichlet concentration (lower = more non-IID)
+    normalize: true
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3

@@ -97,15 +97,20 @@ def average_states(
         if not abs(sum(weights) - 1.0) < 1e-6:
             raise ValueError(f"weights must sum to 1.0, got {sum(weights)}")
 
-    # Initialize with zeros
+    # Initialize with zeros (or copy for non-float tensors)
     averaged = {}
     for key in states[0].keys():
-        averaged[key] = torch.zeros_like(states[0][key])
+        if states[0][key].is_floating_point():
+            averaged[key] = torch.zeros_like(states[0][key])
+        else:
+            # For non-float tensors (e.g., BatchNorm's num_batches_tracked), just copy
+            averaged[key] = states[0][key].clone()
 
-    # Weighted sum
+    # Weighted sum (only for float tensors)
     for state, weight in zip(states, weights):
         for key in averaged.keys():
-            averaged[key] += weight * state[key]
+            if state[key].is_floating_point():
+                averaged[key] += weight * state[key]
 
     return averaged
 
@@ -122,20 +127,29 @@ def compute_model_distance(state1: ModelState, state2: ModelState) -> float:
     """
     distance = 0.0
     for key in state1.keys():
-        distance += torch.norm(state1[key] - state2[key]).item() ** 2
+        t1, t2 = state1[key], state2[key]
+        # Skip non-float tensors (e.g., BatchNorm's num_batches_tracked)
+        if not t1.is_floating_point():
+            continue
+        distance += torch.norm(t1.float() - t2.float()).item() ** 2
     return distance ** 0.5
 
 
 def flatten_model_state(state: ModelState) -> torch.Tensor:
     """Flatten a model state dictionary into a 1D tensor.
 
+    Only includes floating-point tensors (skips BatchNorm's num_batches_tracked, etc.).
+
     Args:
         state: Model state dictionary
 
     Returns:
-        Flattened 1D tensor
+        Flattened 1D tensor of float parameters
     """
-    return torch.cat([param.flatten() for param in state.values()])
+    float_params = [param.flatten().float() for param in state.values() if param.is_floating_point()]
+    if not float_params:
+        raise ValueError("No floating-point parameters found in model state")
+    return torch.cat(float_params)
 
 
 def calculate_model_dimension(model: torch.nn.Module) -> int:

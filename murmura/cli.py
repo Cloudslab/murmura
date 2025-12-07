@@ -145,6 +145,16 @@ def _load_dataset_adapter(config):
             seed=config.experiment.seed,
             **config.data.params
         )
+    elif adapter_name.startswith("wearables."):
+        # Wearable dataset (uci_har, pamap2, extrasensory)
+        dataset_type = adapter_name.split(".")[1]
+        from murmura.examples.wearables import load_wearable_adapter
+        return load_wearable_adapter(
+            dataset_type=dataset_type,
+            num_nodes=config.topology.num_nodes,
+            seed=config.experiment.seed,
+            **config.data.params
+        )
     else:
         # Custom adapter - dynamically import
         module_path, class_name = adapter_name.rsplit(".", 1)
@@ -162,6 +172,11 @@ def _load_model_factory(config):
         from murmura.examples.leaf import get_leaf_model_factory
         model_type = factory_path.split(".")[-1]
         return get_leaf_model_factory(model_type, **config.model.params)
+    elif factory_path.startswith("examples.wearables."):
+        # Wearable evidential model
+        from murmura.examples.wearables import get_wearable_model_factory
+        dataset_type = factory_path.split(".")[-1]
+        return get_wearable_model_factory(dataset_type, **config.model.params)
     else:
         # Custom model factory
         module_path, factory_name = factory_path.rsplit(".", 1)

@@ -1,0 +1,47 @@
+# ExtraSensory Dataset with Dirichlet Partitioning
+# Mobile sensing with multi-label contextual annotations
+
+experiment:
+  name: "ExtraSensory-Dirichlet-FedAvg"
+  seed: 42
+  rounds: 30
+  verbose: true
+
+topology:
+  type: "ring"
+  num_nodes: 5
+  seed: 12345
+
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.001
+  max_samples: null
+
+data:
+  adapter: "wearables.extrasensory"
+  params:
+    data_path: "wearables_datasets/ExtraSensory"
+    partition_method: "dirichlet"
+    alpha: 0.5
+    # Classification settings
+    target_label: "FIX_walking"  # Single-label target
+    multi_label: false
+    normalize: true
+    handle_missing: "zero"  # Options: zero, mean, drop
+
+model:
+  factory: "examples.wearables.extrasensory"
+  params:
+    input_dim: 225  # Actual feature count in ExtraSensory dataset
+    hidden_dims: [256, 128, 64]
+    num_classes: 2  # Binary classification for single label
+    dropout: 0.3
+    multi_label: false
