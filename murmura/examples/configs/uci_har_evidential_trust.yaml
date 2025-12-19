@@ -1,0 +1,69 @@
+# UCI HAR with Evidential Trust Aggregation
+# Uses uncertainty-aware peer trust for Byzantine resilience
+# Based on: "Evidential Trust-Aware Model Personalization in DFL"
+
+experiment:
+  name: "UCI-HAR-EvidentialTrust"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"  # Fully connected for trust evaluation
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "evidential_trust"
+  params:
+    # Trust computation parameters
+    vacuity_threshold: 0.5     # τ_u: threshold for vacuity penalty
+    accuracy_weight: 0.5       # w_a: weight of local accuracy in trust
+    trust_threshold: 0.1       # τ_min: minimum trust to accept peer
+
+    # Personalization
+    self_weight: 0.5           # α: weight for own model (higher = more personalization)
+
+    # Adaptive trust dynamics
+    use_adaptive_trust: true   # Enable EMA smoothing
+    trust_momentum: 0.7        # γ: EMA momentum (higher = faster adaptation)
+
+    # BALANCE-style tightening threshold
+    use_tightening_threshold: true  # Start lenient, become strict as evidence accumulates
+    gamma: 0.5                 # Initial threshold multiplier (starts at γ * base)
+    kappa: 1.0                 # Tightening rate (higher = faster tightening)
+
+    # Efficiency
+    max_eval_samples: 100      # Limit validation samples per peer
+
+    # Statistics tracking
+    track_statistics: true     # Enable detailed trust statistics
+
+attack:
+  enabled: true
+  type: "gaussian"
+  percentage: 0.2  # 20% Byzantine nodes
+  params:
+    noise_std: 10.0
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.001   # Reduced for evidential models (more stable)
+  max_samples: null
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5  # Moderate non-IID
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3

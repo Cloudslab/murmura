@@ -1,0 +1,42 @@
+# ExtraSensory - Krum
+experiment:
+  name: "ExtraSensory-Krum"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "krum"
+  params:
+    f: 2
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+
+data:
+  adapter: "wearables.extrasensory"
+  params:
+    data_path: "wearables_datasets/ExtraSensory"
+    partition_method: "dirichlet"
+    alpha: 0.1
+    target_label: "FIX_walking"
+    multi_label: false
+
+model:
+  factory: "examples.wearables.extrasensory"
+  params:
+    input_dim: 225
+    hidden_dims: [256, 128, 64]
+    num_classes: 2
+    dropout: 0.3

@@ -1,0 +1,45 @@
+# Experiment 1.4: Baseline UBAR (No Attack)
+# Two-stage Byzantine resilience: distance + loss evaluation
+
+experiment:
+  name: "EXP1-Baseline-UBAR"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "ubar"
+  params:
+    rho: 0.5
+    alpha: 0.5
+    min_neighbors: 1
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3

@@ -1,0 +1,46 @@
+# Experiment 2: Byzantine Attack - Krum (40% Gaussian)
+
+experiment:
+  name: "EXP2-Attack40-Krum"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "krum"
+  params:
+    f: 4
+
+attack:
+  enabled: true
+  type: "gaussian"
+  percentage: 0.4
+  params:
+    noise_std: 10.0
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3

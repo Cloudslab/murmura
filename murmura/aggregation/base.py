@@ -153,12 +153,18 @@ def flatten_model_state(state: ModelState) -> torch.Tensor:
 
 
 def calculate_model_dimension(model: torch.nn.Module) -> int:
-    """Calculate total number of parameters in a model.
+    """Calculate total number of floating-point values in model state.
+
+    Counts all floating-point tensors in state_dict (parameters + buffers).
+    This matches what flatten_model_state returns.
 
     Args:
         model: PyTorch model
 
     Returns:
-        Total parameter count
+        Total count of floating-point values
     """
-    return sum(p.numel() for p in model.parameters())
+    return sum(
+        p.numel() for p in model.state_dict().values()
+        if p.is_floating_point()
+    )

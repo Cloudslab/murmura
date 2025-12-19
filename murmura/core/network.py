@@ -50,7 +50,11 @@ class Network:
             "std_accuracy": [],
             "mean_loss": [],
             "honest_accuracy": [],
-            "compromised_accuracy": []
+            "compromised_accuracy": [],
+            # Evidential uncertainty metrics (if using EDL)
+            "mean_vacuity": [],
+            "mean_entropy": [],
+            "mean_strength": [],
         }
 
     def train(
@@ -78,7 +82,7 @@ class Network:
                 print(f"\n=== Round {round_num + 1}/{rounds} ===")
 
             # Step 1: Local training on all nodes
-            self._local_training_step(local_epochs, lr, verbose)
+            self._local_training_step(local_epochs, lr, round_num, verbose)
 
             # Step 2: Exchange models and aggregate
             self._aggregation_step(round_num, verbose)
@@ -89,14 +93,14 @@ class Network:
 
         return self.history
 
-    def _local_training_step(self, epochs: int, lr: float, verbose: bool) -> None:
+    def _local_training_step(self, epochs: int, lr: float, round_num: int, verbose: bool) -> None:
         """Perform local training on all nodes."""
         for node in self.nodes:
             # Skip training for compromised nodes (they keep frozen models)
             if self.attack and self.attack.is_compromised(node.node_id):
                 continue
 
-            node.local_train(epochs=epochs, lr=lr)
+            node.local_train(epochs=epochs, lr=lr, round_num=round_num)
 
     def _aggregation_step(self, round_num: int, verbose: bool) -> None:
         """Perform decentralized aggregation across the network."""
@@ -141,6 +145,11 @@ class Network:
         honest_accuracies = []
         compromised_accuracies = []
 
+        # Evidential metrics
+        vacuities = []
+        entropies = []
+        strengths = []
+
         for node in self.nodes:
             eval_results = node.evaluate()
             acc = eval_results.get("accuracy", 0.0)
@@ -148,6 +157,12 @@ class Network:
 
             accuracies.append(acc)
             losses.append(loss)
+
+            # Collect evidential metrics if available
+            if "vacuity" in eval_results:
+                vacuities.append(eval_results["vacuity"])
+                entropies.append(eval_results["entropy"])
+                strengths.append(eval_results["strength"])
 
             # Separate honest vs compromised
             if self.attack:
@@ -167,11 +182,21 @@ class Network:
         if compromised_accuracies:
             self.history["compromised_accuracy"].append(np.mean(compromised_accuracies))
 
+        # Record evidential metrics if available
+        if vacuities:
+            self.history["mean_vacuity"].append(np.mean(vacuities))
+            self.history["mean_entropy"].append(np.mean(entropies))
+            self.history["mean_strength"].append(np.mean(strengths))
+
         if verbose:
             print(f"Round {round_num}: Mean Accuracy = {np.mean(accuracies):.4f} ± {np.std(accuracies):.4f}")
             if honest_accuracies and compromised_accuracies:
                 print(f"  Honest: {np.mean(honest_accuracies):.4f}, "
                       f"Compromised: {np.mean(compromised_accuracies):.4f}")
+            # Print evidential metrics
+            if vacuities:
+                print(f"  Uncertainty: Vacuity={np.mean(vacuities):.4f}, "
+                      f"Entropy={np.mean(entropies):.4f}, Strength={np.mean(strengths):.2f}")
 
     def get_node_statistics(self) -> Dict[int, Dict[str, Any]]:
         """Get statistics from all nodes' aggregators.
@@ -191,7 +216,9 @@ class Network:
         model_factory: Callable[[], nn.Module],
         dataset_adapter: Any,
         aggregator_factory: Callable[[int], Aggregator],
-        device: Optional[torch.device] = None
+        device: Optional[torch.device] = None,
+        criterion: Optional[nn.Module] = None,
+        evidential: bool = False,
     ) -> "Network":
         """Create network from configuration.
 
@@ -201,6 +228,8 @@ class Network:
             dataset_adapter: Dataset adapter with federated partitions
             aggregator_factory: Factory function that creates aggregator instances
             device: Device for computation
+            criterion: Optional custom loss function (e.g., EvidentialLoss)
+            evidential: Whether models are evidential (output Dirichlet params)
 
         Returns:
             Configured Network instance
@@ -267,7 +296,9 @@ class Network:
                 train_loader=train_loader,
                 test_loader=test_loader,
                 aggregator=aggregator,
-                device=device
+                device=device,
+                criterion=criterion,
+                evidential=evidential,
             )
             nodes.append(node)
 

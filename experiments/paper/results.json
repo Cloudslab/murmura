@@ -1,0 +1,2901 @@
+{
+  "metadata": {
+    "timestamp": "2025-12-19T14:35:16.203231",
+    "datasets": [
+      "uci_har",
+      "pamap2",
+      "extrasensory"
+    ],
+    "algorithms": [
+      "fedavg",
+      "krum",
+      "balance",
+      "ubar",
+      "sketchguard",
+      "evidential_trust"
+    ]
+  },
+  "results": {
+    "uci_har": {
+      "fedavg": {
+        "rounds": [
+          {
+            "round": 1,
+            "accuracy": 0.1214,
+            "std": 0.265,
+            "vacuity": 0.5882,
+            "entropy": 1.7917,
+            "strength": 10.2
+          },
+          {
+            "round": 2,
+            "accuracy": 0.1414,
+            "std": 0.2307,
+            "vacuity": 0.5873,
+            "entropy": 1.7917,
+            "strength": 10.22
+          },
+          {
+            "round": 3,
+            "accuracy": 0.4236,
+            "std": 0.3192,
+            "vacuity": 0.5862,
+            "entropy": 1.7912,
+            "strength": 10.24
+          },
+          {
+            "round": 4,
+            "accuracy": 0.499,
+            "std": 0.3546,
+            "vacuity": 0.5826,
+            "entropy": 1.7884,
+            "strength": 10.3
+          },
+          {
+            "round": 5,
+            "accuracy": 0.5148,
+            "std": 0.3645,
+            "vacuity": 0.5783,
+            "entropy": 1.7837,
+            "strength": 10.38
+          },
+          {
+            "round": 6,
+            "accuracy": 0.546,
+            "std": 0.3789,
+            "vacuity": 0.5751,
+            "entropy": 1.7798,
+            "strength": 10.44
+          },
+          {
+            "round": 7,
+            "accuracy": 0.5485,
+            "std": 0.381,
+            "vacuity": 0.5725,
+            "entropy": 1.7756,
+            "strength": 10.49
+          },
+          {
+            "round": 8,
+            "accuracy": 0.5482,
+            "std": 0.382,
+            "vacuity": 0.5703,
+            "entropy": 1.771,
+            "strength": 10.53
+          },
+          {
+            "round": 9,
+            "accuracy": 0.5525,
+            "std": 0.3823,
+            "vacuity": 0.5686,
+            "entropy": 1.7671,
+            "strength": 10.56
+          },
+          {
+            "round": 10,
+            "accuracy": 0.5546,
+            "std": 0.386,
+            "vacuity": 0.5657,
+            "entropy": 1.7607,
+            "strength": 10.62
+          },
+          {
+            "round": 11,
+            "accuracy": 0.5566,
+            "std": 0.3865,
+            "vacuity": 0.566,
+            "entropy": 1.7578,
+            "strength": 10.62
+          },
+          {
+            "round": 12,
+            "accuracy": 0.5603,
+            "std": 0.3877,
+            "vacuity": 0.5633,
+            "entropy": 1.7503,
+            "strength": 10.67
+          },
+          {
+            "round": 13,
+            "accuracy": 0.5687,
+            "std": 0.3821,
+            "vacuity": 0.5651,
+            "entropy": 1.7493,
+            "strength": 10.64
+          },
+          {
+            "round": 14,
+            "accuracy": 0.5797,
+            "std": 0.375,
+            "vacuity": 0.5641,
+            "entropy": 1.7429,
+            "strength": 10.66
+          },
+          {
+            "round": 15,
+            "accuracy": 0.5976,
+            "std": 0.3615,
+            "vacuity": 0.5648,
+            "entropy": 1.74,
+            "strength": 10.65
+          },
+          {
+            "round": 16,
+            "accuracy": 0.614,
+            "std": 0.3535,
+            "vacuity": 0.5628,
+            "entropy": 1.7313,
+            "strength": 10.69
+          },
+          {
+            "round": 17,
+            "accuracy": 0.6388,
+            "std": 0.3401,
+            "vacuity": 0.5651,
+            "entropy": 1.7304,
+            "strength": 10.65
+          },
+          {
+            "round": 18,
+            "accuracy": 0.6558,
+            "std": 0.3293,
+            "vacuity": 0.5666,
+            "entropy": 1.7272,
+            "strength": 10.62
+          },
+          {
+            "round": 19,
+            "accuracy": 0.6818,
+            "std": 0.3121,
+            "vacuity": 0.5672,
+            "entropy": 1.7216,
+            "strength": 10.61
+          },
+          {
+            "round": 20,
+            "accuracy": 0.6823,
+            "std": 0.3167,
+            "vacuity": 0.5646,
+            "entropy": 1.713,
+            "strength": 10.67
+          },
+          {
+            "round": 21,
+            "accuracy": 0.6894,
+            "std": 0.3218,
+            "vacuity": 0.5698,
+            "entropy": 1.7175,
+            "strength": 10.56
+          },
+          {
+            "round": 22,
+            "accuracy": 0.7159,
+            "std": 0.3087,
+            "vacuity": 0.5663,
+            "entropy": 1.7062,
+            "strength": 10.64
+          },
+          {
+            "round": 23,
+            "accuracy": 0.7286,
+            "std": 0.303,
+            "vacuity": 0.5671,
+            "entropy": 1.7018,
+            "strength": 10.63
+          },
+          {
+            "round": 24,
+            "accuracy": 0.7117,
+            "std": 0.318,
+            "vacuity": 0.5678,
+            "entropy": 1.6985,
+            "strength": 10.62
+          },
+          {
+            "round": 25,
+            "accuracy": 0.7453,
+            "std": 0.3025,
+            "vacuity": 0.5682,
+            "entropy": 1.6929,
+            "strength": 10.62
+          },
+          {
+            "round": 26,
+            "accuracy": 0.7475,
+            "std": 0.2869,
+            "vacuity": 0.567,
+            "entropy": 1.6885,
+            "strength": 10.66
+          },
+          {
+            "round": 27,
+            "accuracy": 0.754,
+            "std": 0.2785,
+            "vacuity": 0.5713,
+            "entropy": 1.6843,
+            "strength": 10.56
+          },
+          {
+            "round": 28,
+            "accuracy": 0.7755,
+            "std": 0.2628,
+            "vacuity": 0.5704,
+            "entropy": 1.6807,
+            "strength": 10.59
+          },
+          {
+            "round": 29,
+            "accuracy": 0.7953,
+            "std": 0.258,
+            "vacuity": 0.5693,
+            "entropy": 1.675,
+            "strength": 10.6
+          },
+          {
+            "round": 30,
+            "accuracy": 0.7491,
+            "std": 0.2739,
+            "vacuity": 0.5724,
+            "entropy": 1.6739,
+            "strength": 10.57
+          },
+          {
+            "round": 31,
+            "accuracy": 0.795,
+            "std": 0.2507,
+            "vacuity": 0.574,
+            "entropy": 1.6725,
+            "strength": 10.52
+          },
+          {
+            "round": 32,
+            "accuracy": 0.8067,
+            "std": 0.2353,
+            "vacuity": 0.5749,
+            "entropy": 1.6732,
+            "strength": 10.51
+          },
+          {
+            "round": 33,
+            "accuracy": 0.7982,
+            "std": 0.2361,
+            "vacuity": 0.573,
+            "entropy": 1.6659,
+            "strength": 10.56
+          },
+          {
+            "round": 34,
+            "accuracy": 0.8158,
+            "std": 0.2328,
+            "vacuity": 0.57,
+            "entropy": 1.6585,
+            "strength": 10.61
+          },
+          {
+            "round": 35,
+            "accuracy": 0.8085,
+            "std": 0.2322,
+            "vacuity": 0.5737,
+            "entropy": 1.6629,
+            "strength": 10.54
+          },
+          {
+            "round": 36,
+            "accuracy": 0.8083,
+            "std": 0.2321,
+            "vacuity": 0.5741,
+            "entropy": 1.6639,
+            "strength": 10.53
+          },
+          {
+            "round": 37,
+            "accuracy": 0.8217,
+            "std": 0.2195,
+            "vacuity": 0.5739,
+            "entropy": 1.659,
+            "strength": 10.54
+          },
+          {
+            "round": 38,
+            "accuracy": 0.7461,
+            "std": 0.2677,
+            "vacuity": 0.5689,
+            "entropy": 1.644,
+            "strength": 10.68
+          },
+          {
+            "round": 39,
+            "accuracy": 0.8299,
+            "std": 0.213,
+            "vacuity": 0.565,
+            "entropy": 1.6388,
+            "strength": 10.74
+          },
+          {
+            "round": 40,
+            "accuracy": 0.8381,
+            "std": 0.2074,
+            "vacuity": 0.5679,
+            "entropy": 1.6409,
+            "strength": 10.68
+          },
+          {
+            "round": 41,
+            "accuracy": 0.7363,
+            "std": 0.2685,
+            "vacuity": 0.5672,
+            "entropy": 1.6411,
+            "strength": 10.73
+          },
+          {
+            "round": 42,
+            "accuracy": 0.8294,
+            "std": 0.1984,
+            "vacuity": 0.5723,
+            "entropy": 1.6482,
+            "strength": 10.6
+          },
+          {
+            "round": 43,
+            "accuracy": 0.8296,
+            "std": 0.2118,
+            "vacuity": 0.562,
+            "entropy": 1.6264,
+            "strength": 10.8
+          },
+          {
+            "round": 44,
+            "accuracy": 0.8392,
+            "std": 0.1991,
+            "vacuity": 0.5648,
+            "entropy": 1.6291,
+            "strength": 10.74
+          },
+          {
+            "round": 45,
+            "accuracy": 0.8427,
+            "std": 0.1859,
+            "vacuity": 0.5638,
+            "entropy": 1.6258,
+            "strength": 10.78
+          },
+          {
+            "round": 46,
+            "accuracy": 0.8414,
+            "std": 0.192,
+            "vacuity": 0.556,
+            "entropy": 1.6177,
+            "strength": 10.95
+          },
+          {
+            "round": 47,
+            "accuracy": 0.8432,
+            "std": 0.1974,
+            "vacuity": 0.555,
+            "entropy": 1.6084,
+            "strength": 10.96
+          },
+          {
+            "round": 48,
+            "accuracy": 0.8045,
+            "std": 0.2208,
+            "vacuity": 0.5606,
+            "entropy": 1.6197,
+            "strength": 10.84
+          },
+          {
+            "round": 49,
+            "accuracy": 0.8508,
+            "std": 0.1982,
+            "vacuity": 0.5575,
+            "entropy": 1.6117,
+            "strength": 10.9
+          },
+          {
+            "round": 50,
+            "accuracy": 0.8529,
+            "std": 0.1959,
+            "vacuity": 0.5484,
+            "entropy": 1.5965,
+            "strength": 11.08
+          }
+        ],
+        "final_accuracy": 0.8529,
+        "final_std": 0.1959,
+        "peak_accuracy": 0.8529,
+        "convergence_round": 32,
+        "final_vacuity": 0.5484,
+        "final_entropy": 1.5965,
+        "final_strength": 11.08
+      },
+      "krum": {
+        "rounds": [
+          {
+            "round": 1,
+            "accuracy": 0.37,
+            "std": 0.2969,
+            "vacuity": 0.5624,
+            "entropy": 1.7807,
+            "strength": 10.69
+          },
+          {
+            "round": 2,
+            "accuracy": 0.2468,
+            "std": 0.27,
+            "vacuity": 0.5709,
+            "entropy": 1.7815,
+            "strength": 10.52
+          },
+          {
+            "round": 3,
+            "accuracy": 0.2473,
+            "std": 0.2688,
+            "vacuity": 0.5702,
+            "entropy": 1.7807,
+            "strength": 10.54
+          },
+          {
+            "round": 4,
+            "accuracy": 0.2757,
+            "std": 0.2783,
+            "vacuity": 0.569,
+            "entropy": 1.7756,
+            "strength": 10.56
+          },
+          {
+            "round": 5,
+            "accuracy": 0.3186,
+            "std": 0.3014,
+            "vacuity": 0.5629,
+            "entropy": 1.767,
+            "strength": 10.69
+          },
+          {
+            "round": 6,
+            "accuracy": 0.3209,
+            "std": 0.3042,
+            "vacuity": 0.5618,
+            "entropy": 1.7681,
+            "strength": 10.71
+          },
+          {
+            "round": 7,
+            "accuracy": 0.3581,
+            "std": 0.3226,
+            "vacuity": 0.5618,
+            "entropy": 1.76,
+            "strength": 10.71
+          },
+          {
+            "round": 8,
+            "accuracy": 0.3595,
+            "std": 0.3241,
+            "vacuity": 0.5604,
+            "entropy": 1.7619,
+            "strength": 10.74
+          },
+          {
+            "round": 9,
+            "accuracy": 0.3763,
+            "std": 0.331,
+            "vacuity": 0.5569,
+            "entropy": 1.7516,
+            "strength": 10.81
+          },
+          {
+            "round": 10,
+            "accuracy": 0.3681,
+            "std": 0.3289,
+            "vacuity": 0.5557,
+            "entropy": 1.7546,
+            "strength": 10.84
+          },
+          {
+            "round": 11,
+            "accuracy": 0.4009,
+            "std": 0.3501,
+            "vacuity": 0.5532,
+            "entropy": 1.7455,
+            "strength": 10.89
+          },
+          {
+            "round": 12,
+            "accuracy": 0.4014,
+            "std": 0.3503,
+            "vacuity": 0.5541,
+            "entropy": 1.7498,
+            "strength": 10.87
+          },
+          {
+            "round": 13,
+            "accuracy": 0.4108,
+            "std": 0.3569,
+            "vacuity": 0.5533,
+            "entropy": 1.7408,
+            "strength": 10.9
+          },
+          {
+            "round": 14,
+            "accuracy": 0.4106,
+            "std": 0.3534,
+            "vacuity": 0.5521,
+            "entropy": 1.7442,
+            "strength": 10.91
+          },
+          {
+            "round": 15,
+            "accuracy": 0.4169,
+            "std": 0.3588,
+            "vacuity": 0.5545,
+            "entropy": 1.7411,
+            "strength": 10.87
+          },
+          {
+            "round": 16,
+            "accuracy": 0.4202,
+            "std": 0.357,
+            "vacuity": 0.5566,
+            "entropy": 1.7448,
+            "strength": 10.82
+          },
+          {
+            "round": 17,
+            "accuracy": 0.4277,
+            "std": 0.3648,
+            "vacuity": 0.5541,
+            "entropy": 1.7414,
+            "strength": 10.87
+          },
+          {
+            "round": 18,
+            "accuracy": 0.4284,
+            "std": 0.3614,
+            "vacuity": 0.5547,
+            "entropy": 1.7438,
+            "strength": 10.85
+          },
+          {
+            "round": 19,
+            "accuracy": 0.4332,
+            "std": 0.3695,
+            "vacuity": 0.554,
+            "entropy": 1.7363,
+            "strength": 10.87
+          },
+          {
+            "round": 20,
+            "accuracy": 0.4379,
+            "std": 0.3692,
+            "vacuity": 0.5559,
+            "entropy": 1.7411,
+            "strength": 10.83
+          },
+          {
+            "round": 21,
+            "accuracy": 0.4368,
+            "std": 0.3725,
+            "vacuity": 0.5517,
+            "entropy": 1.7298,
+            "strength": 10.92
+          },
+          {
+            "round": 22,
+            "accuracy": 0.4391,
+            "std": 0.3724,
+            "vacuity": 0.5545,
+            "entropy": 1.733,
+            "strength": 10.86
+          },
+          {
+            "round": 23,
+            "accuracy": 0.4417,
+            "std": 0.3761,
+            "vacuity": 0.5535,
+            "entropy": 1.7302,
+            "strength": 10.88
+          },
+          {
+            "round": 24,
+            "accuracy": 0.4455,
+            "std": 0.3753,
+            "vacuity": 0.5572,
+            "entropy": 1.7331,
+            "strength": 10.81
+          },
+          {
+            "round": 25,
+            "accuracy": 0.4459,
+            "std": 0.3807,
+            "vacuity": 0.5501,
+            "entropy": 1.7179,
+            "strength": 10.96
+          },
+          {
+            "round": 26,
+            "accuracy": 0.4475,
+            "std": 0.3796,
+            "vacuity": 0.552,
+            "entropy": 1.7209,
+            "strength": 10.92
+          },
+          {
+            "round": 27,
+            "accuracy": 0.4491,
+            "std": 0.3759,
+            "vacuity": 0.5535,
+            "entropy": 1.7219,
+            "strength": 10.89
+          },
+          {
+            "round": 28,
+            "accuracy": 0.4425,
+            "std": 0.3752,
+            "vacuity": 0.5535,
+            "entropy": 1.7218,
+            "strength": 10.88
+          },
+          {
+            "round": 29,
+            "accuracy": 0.4475,
+            "std": 0.3758,
+            "vacuity": 0.5556,
+            "entropy": 1.7246,
+            "strength": 10.84
+          },
+          {
+            "round": 30,
+            "accuracy": 0.4524,
+            "std": 0.3814,
+            "vacuity": 0.5536,
+            "entropy": 1.7195,
+            "strength": 10.88
+          },
+          {
+            "round": 31,
+            "accuracy": 0.4565,
+            "std": 0.3777,
+            "vacuity": 0.5551,
+            "entropy": 1.7223,
+            "strength": 10.85
+          },
+          {
+            "round": 32,
+            "accuracy": 0.4585,
+            "std": 0.3827,
+            "vacuity": 0.5557,
+            "entropy": 1.7234,
+            "strength": 10.84
+          },
+          {
+            "round": 33,
+            "accuracy": 0.4619,
+            "std": 0.3791,
+            "vacuity": 0.5574,
+            "entropy": 1.7253,
+            "strength": 10.8
+          },
+          {
+            "round": 34,
+            "accuracy": 0.4649,
+            "std": 0.3766,
+            "vacuity": 0.5567,
+            "entropy": 1.7241,
+            "strength": 10.81
+          },
+          {
+            "round": 35,
+            "accuracy": 0.4626,
+            "std": 0.3828,
+            "vacuity": 0.554,
+            "entropy": 1.7197,
+            "strength": 10.87
+          },
+          {
+            "round": 36,
+            "accuracy": 0.4673,
+            "std": 0.3808,
+            "vacuity": 0.5537,
+            "entropy": 1.7206,
+            "strength": 10.87
+          },
+          {
+            "round": 37,
+            "accuracy": 0.4604,
+            "std": 0.3831,
+            "vacuity": 0.553,
+            "entropy": 1.7112,
+            "strength": 10.89
+          },
+          {
+            "round": 38,
+            "accuracy": 0.4661,
+            "std": 0.381,
+            "vacuity": 0.5529,
+            "entropy": 1.7122,
+            "strength": 10.89
+          },
+          {
+            "round": 39,
+            "accuracy": 0.473,
+            "std": 0.3789,
+            "vacuity": 0.5531,
+            "entropy": 1.7111,
+            "strength": 10.88
+          },
+          {
+            "round": 40,
+            "accuracy": 0.4645,
+            "std": 0.3829,
+            "vacuity": 0.5522,
+            "entropy": 1.7102,
+            "strength": 10.91
+          },
+          {
+            "round": 41,
+            "accuracy": 0.4669,
+            "std": 0.3806,
+            "vacuity": 0.5532,
+            "entropy": 1.7098,
+            "strength": 10.88
+          },
+          {
+            "round": 42,
+            "accuracy": 0.4666,
+            "std": 0.3829,
+            "vacuity": 0.5533,
+            "entropy": 1.7111,
+            "strength": 10.88
+          },
+          {
+            "round": 43,
+            "accuracy": 0.4693,
+            "std": 0.38,
+            "vacuity": 0.5543,
+            "entropy": 1.7095,
+            "strength": 10.86
+          },
+          {
+            "round": 44,
+            "accuracy": 0.4675,
+            "std": 0.3833,
+            "vacuity": 0.5551,
+            "entropy": 1.7096,
+            "strength": 10.84
+          },
+          {
+            "round": 45,
+            "accuracy": 0.4737,
+            "std": 0.381,
+            "vacuity": 0.5552,
+            "entropy": 1.7073,
+            "strength": 10.84
+          },
+          {
+            "round": 46,
+            "accuracy": 0.4653,
+            "std": 0.3847,
+            "vacuity": 0.552,
+            "entropy": 1.6984,
+            "strength": 10.91
+          },
+          {
+            "round": 47,
+            "accuracy": 0.4715,
+            "std": 0.382,
+            "vacuity": 0.55,
+            "entropy": 1.697,
+            "strength": 10.95
+          },
+          {
+            "round": 48,
+            "accuracy": 0.4663,
+            "std": 0.3847,
+            "vacuity": 0.5517,
+            "entropy": 1.7017,
+            "strength": 10.91
+          },
+          {
+            "round": 49,
+            "accuracy": 0.4729,
+            "std": 0.3831,
+            "vacuity": 0.552,
+            "entropy": 1.7002,
+            "strength": 10.9
+          },
+          {
+            "round": 50,
+            "accuracy": 0.4683,
+            "std": 0.3841,
+            "vacuity": 0.5518,
+            "entropy": 1.7012,
+            "strength": 10.91
+          }
+        ],
+        "final_accuracy": 0.4683,
+        "final_std": 0.3841,
+        "peak_accuracy": 0.4737,
+        "convergence_round": null,
+        "final_vacuity": 0.5518,
+        "final_entropy": 1.7012,
+        "final_strength": 10.91
+      },
+      "balance": {
+        "rounds": [
+          {
+            "round": 1,
+            "accuracy": 0.5865,
+            "std": 0.3802,
+            "vacuity": 0.5893,
+            "entropy": 1.791,
+            "strength": 10.18
+          },
+          {
+            "round": 2,
+            "accuracy": 0.6364,
+            "std": 0.4164,
+            "vacuity": 0.5863,
+            "entropy": 1.789,
+            "strength": 10.24
+          },
+          {
+            "round": 3,
+            "accuracy": 0.6381,
+            "std": 0.4185,
+            "vacuity": 0.5826,
+            "entropy": 1.7856,
+            "strength": 10.3
+          },
+          {
+            "round": 4,
+            "accuracy": 0.6394,
+            "std": 0.4075,
+            "vacuity": 0.5802,
+            "entropy": 1.7819,
+            "strength": 10.35
+          },
+          {
+            "round": 5,
+            "accuracy": 0.647,
+            "std": 0.3973,
+            "vacuity": 0.5781,
+            "entropy": 1.7785,
+            "strength": 10.39
+          },
+          {
+            "round": 6,
+            "accuracy": 0.6515,
+            "std": 0.3945,
+            "vacuity": 0.5763,
+            "entropy": 1.775,
+            "strength": 10.42
+          },
+          {
+            "round": 7,
+            "accuracy": 0.6642,
+            "std": 0.3847,
+            "vacuity": 0.577,
+            "entropy": 1.7739,
+            "strength": 10.41
+          },
+          {
+            "round": 8,
+            "accuracy": 0.7048,
+            "std": 0.3324,
+            "vacuity": 0.5773,
+            "entropy": 1.7725,
+            "strength": 10.4
+          },
+          {
+            "round": 9,
+            "accuracy": 0.7735,
+            "std": 0.2659,
+            "vacuity": 0.5777,
+            "entropy": 1.7711,
+            "strength": 10.39
+          },
+          {
+            "round": 10,
+            "accuracy": 0.8098,
+            "std": 0.2337,
+            "vacuity": 0.5767,
+            "entropy": 1.7666,
+            "strength": 10.41
+          },
+          {
+            "round": 11,
+            "accuracy": 0.8265,
+            "std": 0.2132,
+            "vacuity": 0.5768,
+            "entropy": 1.7642,
+            "strength": 10.41
+          },
+          {
+            "round": 12,
+            "accuracy": 0.8432,
+            "std": 0.1828,
+            "vacuity": 0.5752,
+            "entropy": 1.7582,
+            "strength": 10.45
+          },
+          {
+            "round": 13,
+            "accuracy": 0.8511,
+            "std": 0.1701,
+            "vacuity": 0.5767,
+            "entropy": 1.7586,
+            "strength": 10.42
+          },
+          {
+            "round": 14,
+            "accuracy": 0.826,
+            "std": 0.2195,
+            "vacuity": 0.5746,
+            "entropy": 1.7506,
+            "strength": 10.46
+          },
+          {
+            "round": 15,
+            "accuracy": 0.8348,
+            "std": 0.2126,
+            "vacuity": 0.5751,
+            "entropy": 1.75,
+            "strength": 10.45
+          },
+          {
+            "round": 16,
+            "accuracy": 0.8222,
+            "std": 0.2195,
+            "vacuity": 0.5739,
+            "entropy": 1.7438,
+            "strength": 10.47
+          },
+          {
+            "round": 17,
+            "accuracy": 0.8227,
+            "std": 0.2211,
+            "vacuity": 0.5748,
+            "entropy": 1.7432,
+            "strength": 10.46
+          },
+          {
+            "round": 18,
+            "accuracy": 0.8329,
+            "std": 0.216,
+            "vacuity": 0.574,
+            "entropy": 1.74,
+            "strength": 10.47
+          },
+          {
+            "round": 19,
+            "accuracy": 0.8237,
+            "std": 0.2174,
+            "vacuity": 0.5733,
+            "entropy": 1.7348,
+            "strength": 10.48
+          },
+          {
+            "round": 20,
+            "accuracy": 0.8245,
+            "std": 0.223,
+            "vacuity": 0.5727,
+            "entropy": 1.7296,
+            "strength": 10.5
+          },
+          {
+            "round": 21,
+            "accuracy": 0.8222,
+            "std": 0.2229,
+            "vacuity": 0.573,
+            "entropy": 1.7297,
+            "strength": 10.49
+          },
+          {
+            "round": 22,
+            "accuracy": 0.8121,
+            "std": 0.2296,
+            "vacuity": 0.5692,
+            "entropy": 1.7179,
+            "strength": 10.57
+          },
+          {
+            "round": 23,
+            "accuracy": 0.8201,
+            "std": 0.2266,
+            "vacuity": 0.5709,
+            "entropy": 1.7182,
+            "strength": 10.54
+          },
+          {
+            "round": 24,
+            "accuracy": 0.8217,
+            "std": 0.2314,
+            "vacuity": 0.5695,
+            "entropy": 1.7127,
+            "strength": 10.57
+          },
+          {
+            "round": 25,
+            "accuracy": 0.8221,
+            "std": 0.2315,
+            "vacuity": 0.569,
+            "entropy": 1.7081,
+            "strength": 10.58
+          },
+          {
+            "round": 26,
+            "accuracy": 0.8184,
+            "std": 0.2342,
+            "vacuity": 0.5715,
+            "entropy": 1.7113,
+            "strength": 10.53
+          },
+          {
+            "round": 27,
+            "accuracy": 0.8342,
+            "std": 0.1982,
+            "vacuity": 0.5674,
+            "entropy": 1.7034,
+            "strength": 10.62
+          },
+          {
+            "round": 28,
+            "accuracy": 0.831,
+            "std": 0.2044,
+            "vacuity": 0.57,
+            "entropy": 1.7019,
+            "strength": 10.56
+          },
+          {
+            "round": 29,
+            "accuracy": 0.8244,
+            "std": 0.204,
+            "vacuity": 0.5706,
+            "entropy": 1.699,
+            "strength": 10.55
+          },
+          {
+            "round": 30,
+            "accuracy": 0.8335,
+            "std": 0.2089,
+            "vacuity": 0.5673,
+            "entropy": 1.6912,
+            "strength": 10.62
+          },
+          {
+            "round": 31,
+            "accuracy": 0.8268,
+            "std": 0.1998,
+            "vacuity": 0.5661,
+            "entropy": 1.6869,
+            "strength": 10.64
+          },
+          {
+            "round": 32,
+            "accuracy": 0.8516,
+            "std": 0.177,
+            "vacuity": 0.5691,
+            "entropy": 1.6918,
+            "strength": 10.58
+          },
+          {
+            "round": 33,
+            "accuracy": 0.8483,
+            "std": 0.1789,
+            "vacuity": 0.566,
+            "entropy": 1.6853,
+            "strength": 10.65
+          },
+          {
+            "round": 34,
+            "accuracy": 0.8289,
+            "std": 0.2077,
+            "vacuity": 0.5644,
+            "entropy": 1.6788,
+            "strength": 10.68
+          },
+          {
+            "round": 35,
+            "accuracy": 0.8375,
+            "std": 0.209,
+            "vacuity": 0.567,
+            "entropy": 1.6841,
+            "strength": 10.62
+          },
+          {
+            "round": 36,
+            "accuracy": 0.8398,
+            "std": 0.2217,
+            "vacuity": 0.5653,
+            "entropy": 1.6813,
+            "strength": 10.67
+          },
+          {
+            "round": 37,
+            "accuracy": 0.8368,
+            "std": 0.2273,
+            "vacuity": 0.5656,
+            "entropy": 1.6776,
+            "strength": 10.66
+          },
+          {
+            "round": 38,
+            "accuracy": 0.8446,
+            "std": 0.2213,
+            "vacuity": 0.5614,
+            "entropy": 1.668,
+            "strength": 10.75
+          },
+          {
+            "round": 39,
+            "accuracy": 0.8316,
+            "std": 0.2342,
+            "vacuity": 0.5614,
+            "entropy": 1.668,
+            "strength": 10.75
+          },
+          {
+            "round": 40,
+            "accuracy": 0.8261,
+            "std": 0.2359,
+            "vacuity": 0.5601,
+            "entropy": 1.6642,
+            "strength": 10.77
+          },
+          {
+            "round": 41,
+            "accuracy": 0.8409,
+            "std": 0.2348,
+            "vacuity": 0.5583,
+            "entropy": 1.6566,
+            "strength": 10.83
+          },
+          {
+            "round": 42,
+            "accuracy": 0.8394,
+            "std": 0.2347,
+            "vacuity": 0.5614,
+            "entropy": 1.6655,
+            "strength": 10.75
+          },
+          {
+            "round": 43,
+            "accuracy": 0.846,
+            "std": 0.2289,
+            "vacuity": 0.5556,
+            "entropy": 1.6531,
+            "strength": 10.88
+          },
+          {
+            "round": 44,
+            "accuracy": 0.8312,
+            "std": 0.2352,
+            "vacuity": 0.5581,
+            "entropy": 1.6559,
+            "strength": 10.82
+          },
+          {
+            "round": 45,
+            "accuracy": 0.8393,
+            "std": 0.2424,
+            "vacuity": 0.5543,
+            "entropy": 1.6464,
+            "strength": 10.92
+          },
+          {
+            "round": 46,
+            "accuracy": 0.8362,
+            "std": 0.2364,
+            "vacuity": 0.5546,
+            "entropy": 1.6464,
+            "strength": 10.9
+          },
+          {
+            "round": 47,
+            "accuracy": 0.835,
+            "std": 0.2413,
+            "vacuity": 0.5518,
+            "entropy": 1.6406,
+            "strength": 10.96
+          },
+          {
+            "round": 48,
+            "accuracy": 0.8389,
+            "std": 0.242,
+            "vacuity": 0.5548,
+            "entropy": 1.6475,
+            "strength": 10.89
+          },
+          {
+            "round": 49,
+            "accuracy": 0.8242,
+            "std": 0.2616,
+            "vacuity": 0.5519,
+            "entropy": 1.6377,
+            "strength": 10.96
+          },
+          {
+            "round": 50,
+            "accuracy": 0.8368,
+            "std": 0.2499,
+            "vacuity": 0.5506,
+            "entropy": 1.6354,
+            "strength": 11.0
+          }
+        ],
+        "final_accuracy": 0.8368,
+        "final_std": 0.2499,
+        "peak_accuracy": 0.8516,
+        "convergence_round": 10,
+        "final_vacuity": 0.5506,
+        "final_entropy": 1.6354,
+        "final_strength": 11.0
+      },
+      "ubar": {
+        "rounds": [
+          {
+            "round": 1,
+            "accuracy": 0.5534,
+            "std": 0.3614,
+            "vacuity": 0.5882,
+            "entropy": 1.7903,
+            "strength": 10.2
+          },
+          {
+            "round": 2,
+            "accuracy": 0.7108,
+            "std": 0.3145,
+            "vacuity": 0.5815,
+            "entropy": 1.7859,
+            "strength": 10.32
+          },
+          {
+            "round": 3,
+            "accuracy": 0.7325,
+            "std": 0.3187,
+            "vacuity": 0.5733,
+            "entropy": 1.7744,
+            "strength": 10.48
+          },
+          {
+            "round": 4,
+            "accuracy": 0.7767,
+            "std": 0.234,
+            "vacuity": 0.5659,
+            "entropy": 1.7592,
+            "strength": 10.62
+          },
+          {
+            "round": 5,
+            "accuracy": 0.7666,
+            "std": 0.2238,
+            "vacuity": 0.5547,
+            "entropy": 1.7335,
+            "strength": 10.85
+          },
+          {
+            "round": 6,
+            "accuracy": 0.7889,
+            "std": 0.2286,
+            "vacuity": 0.5507,
+            "entropy": 1.7205,
+            "strength": 10.94
+          },
+          {
+            "round": 7,
+            "accuracy": 0.7923,
+            "std": 0.231,
+            "vacuity": 0.547,
+            "entropy": 1.7099,
+            "strength": 11.02
+          },
+          {
+            "round": 8,
+            "accuracy": 0.7827,
+            "std": 0.239,
+            "vacuity": 0.5423,
+            "entropy": 1.6947,
+            "strength": 11.13
+          },
+          {
+            "round": 9,
+            "accuracy": 0.7336,
+            "std": 0.3113,
+            "vacuity": 0.536,
+            "entropy": 1.6763,
+            "strength": 11.28
+          },
+          {
+            "round": 10,
+            "accuracy": 0.7298,
+            "std": 0.3193,
+            "vacuity": 0.5305,
+            "entropy": 1.6586,
+            "strength": 11.41
+          },
+          {
+            "round": 11,
+            "accuracy": 0.7202,
+            "std": 0.326,
+            "vacuity": 0.5379,
+            "entropy": 1.6717,
+            "strength": 11.24
+          },
+          {
+            "round": 12,
+            "accuracy": 0.6821,
+            "std": 0.3289,
+            "vacuity": 0.5358,
+            "entropy": 1.6596,
+            "strength": 11.31
+          },
+          {
+            "round": 13,
+            "accuracy": 0.7259,
+            "std": 0.3072,
+            "vacuity": 0.5315,
+            "entropy": 1.6432,
+            "strength": 11.43
+          },
+          {
+            "round": 14,
+            "accuracy": 0.727,
+            "std": 0.2858,
+            "vacuity": 0.5283,
+            "entropy": 1.632,
+            "strength": 11.51
+          },
+          {
+            "round": 15,
+            "accuracy": 0.7355,
+            "std": 0.267,
+            "vacuity": 0.5225,
+            "entropy": 1.6133,
+            "strength": 11.66
+          },
+          {
+            "round": 16,
+            "accuracy": 0.7155,
+            "std": 0.2835,
+            "vacuity": 0.517,
+            "entropy": 1.5981,
+            "strength": 11.78
+          },
+          {
+            "round": 17,
+            "accuracy": 0.7266,
+            "std": 0.3237,
+            "vacuity": 0.5172,
+            "entropy": 1.5949,
+            "strength": 11.8
+          },
+          {
+            "round": 18,
+            "accuracy": 0.7254,
+            "std": 0.3206,
+            "vacuity": 0.5144,
+            "entropy": 1.583,
+            "strength": 11.87
+          },
+          {
+            "round": 19,
+            "accuracy": 0.6875,
+            "std": 0.3335,
+            "vacuity": 0.5198,
+            "entropy": 1.5952,
+            "strength": 11.73
+          },
+          {
+            "round": 20,
+            "accuracy": 0.7329,
+            "std": 0.3348,
+            "vacuity": 0.5126,
+            "entropy": 1.5698,
+            "strength": 11.94
+          },
+          {
+            "round": 21,
+            "accuracy": 0.731,
+            "std": 0.3403,
+            "vacuity": 0.5106,
+            "entropy": 1.5613,
+            "strength": 12.02
+          },
+          {
+            "round": 22,
+            "accuracy": 0.7306,
+            "std": 0.34,
+            "vacuity": 0.5044,
+            "entropy": 1.5426,
+            "strength": 12.21
+          },
+          {
+            "round": 23,
+            "accuracy": 0.7297,
+            "std": 0.3355,
+            "vacuity": 0.5149,
+            "entropy": 1.5655,
+            "strength": 11.92
+          },
+          {
+            "round": 24,
+            "accuracy": 0.6901,
+            "std": 0.3342,
+            "vacuity": 0.5078,
+            "entropy": 1.5441,
+            "strength": 12.16
+          },
+          {
+            "round": 25,
+            "accuracy": 0.73,
+            "std": 0.3308,
+            "vacuity": 0.5091,
+            "entropy": 1.5442,
+            "strength": 12.08
+          },
+          {
+            "round": 26,
+            "accuracy": 0.7396,
+            "std": 0.3217,
+            "vacuity": 0.5086,
+            "entropy": 1.5368,
+            "strength": 12.16
+          },
+          {
+            "round": 27,
+            "accuracy": 0.7323,
+            "std": 0.3292,
+            "vacuity": 0.511,
+            "entropy": 1.5415,
+            "strength": 12.12
+          },
+          {
+            "round": 28,
+            "accuracy": 0.7486,
+            "std": 0.301,
+            "vacuity": 0.5084,
+            "entropy": 1.5353,
+            "strength": 12.2
+          },
+          {
+            "round": 29,
+            "accuracy": 0.7951,
+            "std": 0.243,
+            "vacuity": 0.5124,
+            "entropy": 1.5388,
+            "strength": 12.1
+          },
+          {
+            "round": 30,
+            "accuracy": 0.7628,
+            "std": 0.263,
+            "vacuity": 0.5072,
+            "entropy": 1.5286,
+            "strength": 12.24
+          },
+          {
+            "round": 31,
+            "accuracy": 0.7879,
+            "std": 0.242,
+            "vacuity": 0.512,
+            "entropy": 1.5342,
+            "strength": 12.13
+          },
+          {
+            "round": 32,
+            "accuracy": 0.8119,
+            "std": 0.2352,
+            "vacuity": 0.5216,
+            "entropy": 1.5462,
+            "strength": 11.92
+          },
+          {
+            "round": 33,
+            "accuracy": 0.8062,
+            "std": 0.2387,
+            "vacuity": 0.5135,
+            "entropy": 1.5336,
+            "strength": 12.05
+          },
+          {
+            "round": 34,
+            "accuracy": 0.8053,
+            "std": 0.2381,
+            "vacuity": 0.5151,
+            "entropy": 1.5298,
+            "strength": 12.0
+          },
+          {
+            "round": 35,
+            "accuracy": 0.8088,
+            "std": 0.2396,
+            "vacuity": 0.5183,
+            "entropy": 1.5337,
+            "strength": 11.93
+          },
+          {
+            "round": 36,
+            "accuracy": 0.8136,
+            "std": 0.2397,
+            "vacuity": 0.504,
+            "entropy": 1.5046,
+            "strength": 12.35
+          },
+          {
+            "round": 37,
+            "accuracy": 0.8089,
+            "std": 0.2391,
+            "vacuity": 0.5237,
+            "entropy": 1.5403,
+            "strength": 11.81
+          },
+          {
+            "round": 38,
+            "accuracy": 0.793,
+            "std": 0.2466,
+            "vacuity": 0.5233,
+            "entropy": 1.5408,
+            "strength": 11.82
+          },
+          {
+            "round": 39,
+            "accuracy": 0.7998,
+            "std": 0.2419,
+            "vacuity": 0.5178,
+            "entropy": 1.532,
+            "strength": 11.96
+          },
+          {
+            "round": 40,
+            "accuracy": 0.7814,
+            "std": 0.2611,
+            "vacuity": 0.5149,
+            "entropy": 1.5327,
+            "strength": 11.98
+          },
+          {
+            "round": 41,
+            "accuracy": 0.7828,
+            "std": 0.2588,
+            "vacuity": 0.5153,
+            "entropy": 1.5167,
+            "strength": 12.02
+          },
+          {
+            "round": 42,
+            "accuracy": 0.7883,
+            "std": 0.2555,
+            "vacuity": 0.516,
+            "entropy": 1.5122,
+            "strength": 12.03
+          },
+          {
+            "round": 43,
+            "accuracy": 0.7776,
+            "std": 0.2686,
+            "vacuity": 0.5068,
+            "entropy": 1.4939,
+            "strength": 12.3
+          },
+          {
+            "round": 44,
+            "accuracy": 0.7783,
+            "std": 0.2782,
+            "vacuity": 0.5223,
+            "entropy": 1.5221,
+            "strength": 11.88
+          },
+          {
+            "round": 45,
+            "accuracy": 0.778,
+            "std": 0.2784,
+            "vacuity": 0.5075,
+            "entropy": 1.4931,
+            "strength": 12.24
+          },
+          {
+            "round": 46,
+            "accuracy": 0.8394,
+            "std": 0.1939,
+            "vacuity": 0.5167,
+            "entropy": 1.5169,
+            "strength": 12.0
+          },
+          {
+            "round": 47,
+            "accuracy": 0.8084,
+            "std": 0.2337,
+            "vacuity": 0.5117,
+            "entropy": 1.5029,
+            "strength": 12.18
+          },
+          {
+            "round": 48,
+            "accuracy": 0.8241,
+            "std": 0.2297,
+            "vacuity": 0.5086,
+            "entropy": 1.5027,
+            "strength": 12.21
+          },
+          {
+            "round": 49,
+            "accuracy": 0.8214,
+            "std": 0.2434,
+            "vacuity": 0.5133,
+            "entropy": 1.5145,
+            "strength": 12.07
+          },
+          {
+            "round": 50,
+            "accuracy": 0.8345,
+            "std": 0.219,
+            "vacuity": 0.5067,
+            "entropy": 1.4876,
+            "strength": 12.27
+          }
+        ],
+        "final_accuracy": 0.8345,
+        "final_std": 0.219,
+        "peak_accuracy": 0.8394,
+        "convergence_round": 32,
+        "final_vacuity": 0.5067,
+        "final_entropy": 1.4876,
+        "final_strength": 12.27
+      },
+      "sketchguard": {
+        "rounds": [
+          {
+            "round": 1,
+            "accuracy": 0.4719,
+            "std": 0.3538,
+            "vacuity": 0.5885,
+            "entropy": 1.7907,
+            "strength": 10.2
+          },
+          {
+            "round": 2,
+            "accuracy": 0.6485,
+            "std": 0.3524,
+            "vacuity": 0.585,
+            "entropy": 1.7888,
+            "strength": 10.26
+          },
+          {
+            "round": 3,
+            "accuracy": 0.8065,
+            "std": 0.2417,
+            "vacuity": 0.5829,
+            "entropy": 1.7885,
+            "strength": 10.29
+          },
+          {
+            "round": 4,
+            "accuracy": 0.8042,
+            "std": 0.2463,
+            "vacuity": 0.5845,
+            "entropy": 1.7897,
+            "strength": 10.27
+          },
+          {
+            "round": 5,
+            "accuracy": 0.7903,
+            "std": 0.2439,
+            "vacuity": 0.586,
+            "entropy": 1.7902,
+            "strength": 10.24
+          },
+          {
+            "round": 6,
+            "accuracy": 0.8312,
+            "std": 0.2205,
+            "vacuity": 0.5847,
+            "entropy": 1.7884,
+            "strength": 10.26
+          },
+          {
+            "round": 7,
+            "accuracy": 0.8688,
+            "std": 0.2118,
+            "vacuity": 0.5829,
+            "entropy": 1.7857,
+            "strength": 10.29
+          },
+          {
+            "round": 8,
+            "accuracy": 0.869,
+            "std": 0.2129,
+            "vacuity": 0.582,
+            "entropy": 1.7834,
+            "strength": 10.31
+          },
+          {
+            "round": 9,
+            "accuracy": 0.8694,
+            "std": 0.2139,
+            "vacuity": 0.5806,
+            "entropy": 1.7795,
+            "strength": 10.34
+          },
+          {
+            "round": 10,
+            "accuracy": 0.8684,
+            "std": 0.2155,
+            "vacuity": 0.5784,
+            "entropy": 1.7742,
+            "strength": 10.38
+          },
+          {
+            "round": 11,
+            "accuracy": 0.8719,
+            "std": 0.2167,
+            "vacuity": 0.5789,
+            "entropy": 1.773,
+            "strength": 10.37
+          },
+          {
+            "round": 12,
+            "accuracy": 0.8718,
+            "std": 0.2158,
+            "vacuity": 0.5783,
+            "entropy": 1.7699,
+            "strength": 10.38
+          },
+          {
+            "round": 13,
+            "accuracy": 0.8698,
+            "std": 0.215,
+            "vacuity": 0.578,
+            "entropy": 1.7663,
+            "strength": 10.39
+          },
+          {
+            "round": 14,
+            "accuracy": 0.8712,
+            "std": 0.2146,
+            "vacuity": 0.5773,
+            "entropy": 1.7615,
+            "strength": 10.4
+          },
+          {
+            "round": 15,
+            "accuracy": 0.8678,
+            "std": 0.2132,
+            "vacuity": 0.5774,
+            "entropy": 1.7592,
+            "strength": 10.4
+          },
+          {
+            "round": 16,
+            "accuracy": 0.8683,
+            "std": 0.2138,
+            "vacuity": 0.5784,
+            "entropy": 1.7573,
+            "strength": 10.38
+          },
+          {
+            "round": 17,
+            "accuracy": 0.8676,
+            "std": 0.2117,
+            "vacuity": 0.5764,
+            "entropy": 1.7497,
+            "strength": 10.42
+          },
+          {
+            "round": 18,
+            "accuracy": 0.8678,
+            "std": 0.2119,
+            "vacuity": 0.5779,
+            "entropy": 1.7497,
+            "strength": 10.39
+          },
+          {
+            "round": 19,
+            "accuracy": 0.8735,
+            "std": 0.2121,
+            "vacuity": 0.5764,
+            "entropy": 1.7425,
+            "strength": 10.42
+          },
+          {
+            "round": 20,
+            "accuracy": 0.872,
+            "std": 0.2116,
+            "vacuity": 0.5778,
+            "entropy": 1.7377,
+            "strength": 10.4
+          },
+          {
+            "round": 21,
+            "accuracy": 0.8694,
+            "std": 0.2116,
+            "vacuity": 0.5787,
+            "entropy": 1.7408,
+            "strength": 10.38
+          },
+          {
+            "round": 22,
+            "accuracy": 0.8704,
+            "std": 0.2127,
+            "vacuity": 0.5781,
+            "entropy": 1.7363,
+            "strength": 10.39
+          },
+          {
+            "round": 23,
+            "accuracy": 0.8686,
+            "std": 0.2114,
+            "vacuity": 0.5773,
+            "entropy": 1.7294,
+            "strength": 10.41
+          },
+          {
+            "round": 24,
+            "accuracy": 0.8678,
+            "std": 0.2113,
+            "vacuity": 0.5784,
+            "entropy": 1.7295,
+            "strength": 10.39
+          },
+          {
+            "round": 25,
+            "accuracy": 0.874,
+            "std": 0.2122,
+            "vacuity": 0.578,
+            "entropy": 1.7252,
+            "strength": 10.4
+          },
+          {
+            "round": 26,
+            "accuracy": 0.8739,
+            "std": 0.2119,
+            "vacuity": 0.5791,
+            "entropy": 1.7238,
+            "strength": 10.38
+          },
+          {
+            "round": 27,
+            "accuracy": 0.874,
+            "std": 0.2117,
+            "vacuity": 0.577,
+            "entropy": 1.7151,
+            "strength": 10.43
+          },
+          {
+            "round": 28,
+            "accuracy": 0.8695,
+            "std": 0.2124,
+            "vacuity": 0.5769,
+            "entropy": 1.7136,
+            "strength": 10.43
+          },
+          {
+            "round": 29,
+            "accuracy": 0.8694,
+            "std": 0.2122,
+            "vacuity": 0.58,
+            "entropy": 1.7184,
+            "strength": 10.36
+          },
+          {
+            "round": 30,
+            "accuracy": 0.8708,
+            "std": 0.2127,
+            "vacuity": 0.5786,
+            "entropy": 1.7124,
+            "strength": 10.4
+          },
+          {
+            "round": 31,
+            "accuracy": 0.8693,
+            "std": 0.2125,
+            "vacuity": 0.5782,
+            "entropy": 1.711,
+            "strength": 10.4
+          },
+          {
+            "round": 32,
+            "accuracy": 0.8715,
+            "std": 0.2124,
+            "vacuity": 0.5804,
+            "entropy": 1.7064,
+            "strength": 10.37
+          },
+          {
+            "round": 33,
+            "accuracy": 0.8779,
+            "std": 0.2132,
+            "vacuity": 0.5739,
+            "entropy": 1.6974,
+            "strength": 10.49
+          },
+          {
+            "round": 34,
+            "accuracy": 0.8972,
+            "std": 0.1426,
+            "vacuity": 0.5759,
+            "entropy": 1.7006,
+            "strength": 10.45
+          },
+          {
+            "round": 35,
+            "accuracy": 0.8739,
+            "std": 0.2139,
+            "vacuity": 0.5727,
+            "entropy": 1.6952,
+            "strength": 10.51
+          },
+          {
+            "round": 36,
+            "accuracy": 0.8976,
+            "std": 0.1426,
+            "vacuity": 0.5725,
+            "entropy": 1.6889,
+            "strength": 10.52
+          },
+          {
+            "round": 37,
+            "accuracy": 0.8967,
+            "std": 0.143,
+            "vacuity": 0.5693,
+            "entropy": 1.682,
+            "strength": 10.59
+          },
+          {
+            "round": 38,
+            "accuracy": 0.8871,
+            "std": 0.1506,
+            "vacuity": 0.5728,
+            "entropy": 1.6885,
+            "strength": 10.51
+          },
+          {
+            "round": 39,
+            "accuracy": 0.8747,
+            "std": 0.1549,
+            "vacuity": 0.5686,
+            "entropy": 1.6787,
+            "strength": 10.6
+          },
+          {
+            "round": 40,
+            "accuracy": 0.8799,
+            "std": 0.2149,
+            "vacuity": 0.5692,
+            "entropy": 1.6784,
+            "strength": 10.59
+          },
+          {
+            "round": 41,
+            "accuracy": 0.8678,
+            "std": 0.2159,
+            "vacuity": 0.5669,
+            "entropy": 1.6743,
+            "strength": 10.63
+          },
+          {
+            "round": 42,
+            "accuracy": 0.8668,
+            "std": 0.2169,
+            "vacuity": 0.5699,
+            "entropy": 1.6765,
+            "strength": 10.58
+          },
+          {
+            "round": 43,
+            "accuracy": 0.8899,
+            "std": 0.147,
+            "vacuity": 0.5684,
+            "entropy": 1.6742,
+            "strength": 10.61
+          },
+          {
+            "round": 44,
+            "accuracy": 0.8881,
+            "std": 0.1452,
+            "vacuity": 0.5632,
+            "entropy": 1.6629,
+            "strength": 10.73
+          },
+          {
+            "round": 45,
+            "accuracy": 0.8899,
+            "std": 0.1475,
+            "vacuity": 0.5708,
+            "entropy": 1.6722,
+            "strength": 10.56
+          },
+          {
+            "round": 46,
+            "accuracy": 0.8814,
+            "std": 0.1519,
+            "vacuity": 0.5646,
+            "entropy": 1.6622,
+            "strength": 10.68
+          },
+          {
+            "round": 47,
+            "accuracy": 0.8983,
+            "std": 0.141,
+            "vacuity": 0.562,
+            "entropy": 1.6601,
+            "strength": 10.73
+          },
+          {
+            "round": 48,
+            "accuracy": 0.8849,
+            "std": 0.1513,
+            "vacuity": 0.5645,
+            "entropy": 1.664,
+            "strength": 10.69
+          },
+          {
+            "round": 49,
+            "accuracy": 0.8797,
+            "std": 0.1545,
+            "vacuity": 0.5607,
+            "entropy": 1.6541,
+            "strength": 10.76
+          },
+          {
+            "round": 50,
+            "accuracy": 0.8968,
+            "std": 0.1435,
+            "vacuity": 0.5652,
+            "entropy": 1.6571,
+            "strength": 10.69
+          }
+        ],
+        "final_accuracy": 0.8968,
+        "final_std": 0.1435,
+        "peak_accuracy": 0.8983,
+        "convergence_round": 3,
+        "final_vacuity": 0.5652,
+        "final_entropy": 1.6571,
+        "final_strength": 10.69
+      },
+      "evidential_trust": {
+        "rounds": [
+          {
+            "round": 1,
+            "accuracy": 0.6475,
+            "std": 0.3819,
+            "vacuity": 0.5882,
+            "entropy": 1.7912,
+            "strength": 10.2
+          },
+          {
+            "round": 2,
+            "accuracy": 0.7126,
+            "std": 0.3606,
+            "vacuity": 0.5866,
+            "entropy": 1.7905,
+            "strength": 10.23
+          },
+          {
+            "round": 3,
+            "accuracy": 0.8001,
+            "std": 0.2975,
+            "vacuity": 0.5851,
+            "entropy": 1.7893,
+            "strength": 10.25
+          },
+          {
+            "round": 4,
+            "accuracy": 0.801,
+            "std": 0.2991,
+            "vacuity": 0.5833,
+            "entropy": 1.787,
+            "strength": 10.29
+          },
+          {
+            "round": 5,
+            "accuracy": 0.8787,
+            "std": 0.1364,
+            "vacuity": 0.5823,
+            "entropy": 1.7845,
+            "strength": 10.31
+          },
+          {
+            "round": 6,
+            "accuracy": 0.8872,
+            "std": 0.1152,
+            "vacuity": 0.5801,
+            "entropy": 1.7792,
+            "strength": 10.35
+          },
+          {
+            "round": 7,
+            "accuracy": 0.8493,
+            "std": 0.2146,
+            "vacuity": 0.5789,
+            "entropy": 1.7737,
+            "strength": 10.37
+          },
+          {
+            "round": 8,
+            "accuracy": 0.8559,
+            "std": 0.2128,
+            "vacuity": 0.5789,
+            "entropy": 1.7681,
+            "strength": 10.37
+          },
+          {
+            "round": 9,
+            "accuracy": 0.8817,
+            "std": 0.1441,
+            "vacuity": 0.5751,
+            "entropy": 1.7617,
+            "strength": 10.44
+          },
+          {
+            "round": 10,
+            "accuracy": 0.8589,
+            "std": 0.2152,
+            "vacuity": 0.5767,
+            "entropy": 1.7629,
+            "strength": 10.41
+          },
+          {
+            "round": 11,
+            "accuracy": 0.859,
+            "std": 0.2154,
+            "vacuity": 0.574,
+            "entropy": 1.7539,
+            "strength": 10.47
+          },
+          {
+            "round": 12,
+            "accuracy": 0.8582,
+            "std": 0.2158,
+            "vacuity": 0.5745,
+            "entropy": 1.7525,
+            "strength": 10.46
+          },
+          {
+            "round": 13,
+            "accuracy": 0.8846,
+            "std": 0.148,
+            "vacuity": 0.5743,
+            "entropy": 1.7501,
+            "strength": 10.46
+          },
+          {
+            "round": 14,
+            "accuracy": 0.8608,
+            "std": 0.2166,
+            "vacuity": 0.5717,
+            "entropy": 1.7409,
+            "strength": 10.51
+          },
+          {
+            "round": 15,
+            "accuracy": 0.8611,
+            "std": 0.2166,
+            "vacuity": 0.5735,
+            "entropy": 1.7423,
+            "strength": 10.48
+          },
+          {
+            "round": 16,
+            "accuracy": 0.861,
+            "std": 0.2167,
+            "vacuity": 0.5729,
+            "entropy": 1.738,
+            "strength": 10.49
+          },
+          {
+            "round": 17,
+            "accuracy": 0.8623,
+            "std": 0.217,
+            "vacuity": 0.5734,
+            "entropy": 1.7354,
+            "strength": 10.48
+          },
+          {
+            "round": 18,
+            "accuracy": 0.8871,
+            "std": 0.1497,
+            "vacuity": 0.573,
+            "entropy": 1.7316,
+            "strength": 10.49
+          },
+          {
+            "round": 19,
+            "accuracy": 0.8875,
+            "std": 0.1478,
+            "vacuity": 0.5727,
+            "entropy": 1.7282,
+            "strength": 10.5
+          },
+          {
+            "round": 20,
+            "accuracy": 0.8924,
+            "std": 0.1499,
+            "vacuity": 0.5705,
+            "entropy": 1.7193,
+            "strength": 10.54
+          },
+          {
+            "round": 21,
+            "accuracy": 0.8907,
+            "std": 0.1489,
+            "vacuity": 0.5717,
+            "entropy": 1.7186,
+            "strength": 10.52
+          },
+          {
+            "round": 22,
+            "accuracy": 0.8932,
+            "std": 0.1512,
+            "vacuity": 0.5707,
+            "entropy": 1.7138,
+            "strength": 10.54
+          },
+          {
+            "round": 23,
+            "accuracy": 0.894,
+            "std": 0.1462,
+            "vacuity": 0.5735,
+            "entropy": 1.7161,
+            "strength": 10.49
+          },
+          {
+            "round": 24,
+            "accuracy": 0.8999,
+            "std": 0.1472,
+            "vacuity": 0.5725,
+            "entropy": 1.7115,
+            "strength": 10.51
+          },
+          {
+            "round": 25,
+            "accuracy": 0.8985,
+            "std": 0.1446,
+            "vacuity": 0.5684,
+            "entropy": 1.6984,
+            "strength": 10.6
+          },
+          {
+            "round": 26,
+            "accuracy": 0.9017,
+            "std": 0.1446,
+            "vacuity": 0.5714,
+            "entropy": 1.704,
+            "strength": 10.53
+          },
+          {
+            "round": 27,
+            "accuracy": 0.9055,
+            "std": 0.1448,
+            "vacuity": 0.5705,
+            "entropy": 1.6992,
+            "strength": 10.55
+          },
+          {
+            "round": 28,
+            "accuracy": 0.9054,
+            "std": 0.1445,
+            "vacuity": 0.573,
+            "entropy": 1.701,
+            "strength": 10.5
+          },
+          {
+            "round": 29,
+            "accuracy": 0.9153,
+            "std": 0.1416,
+            "vacuity": 0.5686,
+            "entropy": 1.6895,
+            "strength": 10.59
+          },
+          {
+            "round": 30,
+            "accuracy": 0.9152,
+            "std": 0.1416,
+            "vacuity": 0.5719,
+            "entropy": 1.696,
+            "strength": 10.52
+          },
+          {
+            "round": 31,
+            "accuracy": 0.9144,
+            "std": 0.1426,
+            "vacuity": 0.5709,
+            "entropy": 1.6913,
+            "strength": 10.55
+          },
+          {
+            "round": 32,
+            "accuracy": 0.9145,
+            "std": 0.1416,
+            "vacuity": 0.5679,
+            "entropy": 1.6801,
+            "strength": 10.61
+          },
+          {
+            "round": 33,
+            "accuracy": 0.9192,
+            "std": 0.1418,
+            "vacuity": 0.5707,
+            "entropy": 1.6883,
+            "strength": 10.55
+          },
+          {
+            "round": 34,
+            "accuracy": 0.914,
+            "std": 0.1419,
+            "vacuity": 0.5659,
+            "entropy": 1.676,
+            "strength": 10.65
+          },
+          {
+            "round": 35,
+            "accuracy": 0.915,
+            "std": 0.1411,
+            "vacuity": 0.5679,
+            "entropy": 1.6798,
+            "strength": 10.61
+          },
+          {
+            "round": 36,
+            "accuracy": 0.9231,
+            "std": 0.1427,
+            "vacuity": 0.5677,
+            "entropy": 1.6778,
+            "strength": 10.61
+          },
+          {
+            "round": 37,
+            "accuracy": 0.9493,
+            "std": 0.07,
+            "vacuity": 0.5655,
+            "entropy": 1.6694,
+            "strength": 10.67
+          },
+          {
+            "round": 38,
+            "accuracy": 0.9172,
+            "std": 0.1422,
+            "vacuity": 0.5659,
+            "entropy": 1.6619,
+            "strength": 10.68
+          },
+          {
+            "round": 39,
+            "accuracy": 0.9231,
+            "std": 0.1441,
+            "vacuity": 0.562,
+            "entropy": 1.6617,
+            "strength": 10.74
+          },
+          {
+            "round": 40,
+            "accuracy": 0.9524,
+            "std": 0.07,
+            "vacuity": 0.5638,
+            "entropy": 1.664,
+            "strength": 10.7
+          },
+          {
+            "round": 41,
+            "accuracy": 0.9521,
+            "std": 0.0707,
+            "vacuity": 0.5616,
+            "entropy": 1.6572,
+            "strength": 10.75
+          },
+          {
+            "round": 42,
+            "accuracy": 0.9218,
+            "std": 0.1427,
+            "vacuity": 0.562,
+            "entropy": 1.6572,
+            "strength": 10.73
+          },
+          {
+            "round": 43,
+            "accuracy": 0.9236,
+            "std": 0.1433,
+            "vacuity": 0.5607,
+            "entropy": 1.6533,
+            "strength": 10.76
+          },
+          {
+            "round": 44,
+            "accuracy": 0.9267,
+            "std": 0.1435,
+            "vacuity": 0.5595,
+            "entropy": 1.6505,
+            "strength": 10.79
+          },
+          {
+            "round": 45,
+            "accuracy": 0.9542,
+            "std": 0.0708,
+            "vacuity": 0.5596,
+            "entropy": 1.6503,
+            "strength": 10.79
+          },
+          {
+            "round": 46,
+            "accuracy": 0.9288,
+            "std": 0.1438,
+            "vacuity": 0.5555,
+            "entropy": 1.6421,
+            "strength": 10.87
+          },
+          {
+            "round": 47,
+            "accuracy": 0.9284,
+            "std": 0.144,
+            "vacuity": 0.5541,
+            "entropy": 1.6379,
+            "strength": 10.9
+          },
+          {
+            "round": 48,
+            "accuracy": 0.9284,
+            "std": 0.1439,
+            "vacuity": 0.5517,
+            "entropy": 1.6293,
+            "strength": 10.97
+          },
+          {
+            "round": 49,
+            "accuracy": 0.951,
+            "std": 0.07,
+            "vacuity": 0.5546,
+            "entropy": 1.6379,
+            "strength": 10.89
+          },
+          {
+            "round": 50,
+            "accuracy": 0.925,
+            "std": 0.1434,
+            "vacuity": 0.5538,
+            "entropy": 1.6348,
+            "strength": 10.91
+          }
+        ],
+        "final_accuracy": 0.925,
+        "final_std": 0.1434,
+        "peak_accuracy": 0.9542,
+        "convergence_round": 3,
+        "final_vacuity": 0.5538,
+        "final_entropy": 1.6348,
+        "final_strength": 10.91
+      }
+    },
+    "pamap2": {
+      "fedavg": {
+        "rounds": [
+          {
+            "round": 1,
+            "accuracy": 0.0785,
+            "std": 0.201,
+            "vacuity": 0.5933,
+            "entropy": 2.4849,
+            "strength": 20.23
+          },
+          {
+            "round": 2,
+            "accuracy": 0.3826,
+            "std": 0.2739,
+            "vacuity": 0.595,
+            "entropy": 2.4847,
+            "strength": 20.17
+          },
+          {
+            "round": 3,
+            "accuracy": 0.4056,
+            "std": 0.2688,
+            "vacuity": 0.597,
+            "entropy": 2.484,
+            "strength": 20.1
+          },
+          {
+            "round": 4,
+            "accuracy": 0.4047,
+            "std": 0.2583,
+            "vacuity": 0.5996,
+            "entropy": 2.4826,
+            "strength": 20.01
+          },
+          {
+            "round": 5,
+            "accuracy": 0.3952,
+            "std": 0.2624,
+            "vacuity": 0.6027,
+            "entropy": 2.4807,
+            "strength": 19.91
+          },
+          {
+            "round": 6,
+            "accuracy": 0.4031,
+            "std": 0.2593,
+            "vacuity": 0.6056,
+            "entropy": 2.4783,
+            "strength": 19.82
+          },
+          {
+            "round": 7,
+            "accuracy": 0.4026,
+            "std": 0.2633,
+            "vacuity": 0.6094,
+            "entropy": 2.4751,
+            "strength": 19.7
+          },
+          {
+            "round": 8,
+            "accuracy": 0.4169,
+            "std": 0.2665,
+            "vacuity": 0.6122,
+            "entropy": 2.4728,
+            "strength": 19.61
+          },
+          {
+            "round": 9,
+            "accuracy": 0.433,
+            "std": 0.2648,
+            "vacuity": 0.616,
+            "entropy": 2.4699,
+            "strength": 19.49
+          },
+          {
+            "round": 10,
+            "accuracy": 0.4469,
+            "std": 0.2657,
+            "vacuity": 0.6194,
+            "entropy": 2.4676,
+            "strength": 19.38
+          },
+          {
+            "round": 11,
+            "accuracy": 0.5007,
+            "std": 0.2622,
+            "vacuity": 0.6237,
+            "entropy": 2.4632,
+            "strength": 19.26
+          },
+          {
+            "round": 12,
+            "accuracy": 0.5395,
+            "std": 0.2719,
+            "vacuity": 0.627,
+            "entropy": 2.459,
+            "strength": 19.16
+          },
+          {
+            "round": 13,
+            "accuracy": 0.5689,
+            "std": 0.2788,
+            "vacuity": 0.63,
+            "entropy": 2.4555,
+            "strength": 19.07
+          },
+          {
+            "round": 14,
+            "accuracy": 0.5844,
+            "std": 0.2792,
+            "vacuity": 0.6326,
+            "entropy": 2.4531,
+            "strength": 18.99
+          },
+          {
+            "round": 15,
+            "accuracy": 0.6131,
+            "std": 0.2718,
+            "vacuity": 0.6368,
+            "entropy": 2.4475,
+            "strength": 18.87
+          },
+          {
+            "round": 16,
+            "accuracy": 0.6324,
+            "std": 0.2703,
+            "vacuity": 0.6393,
+            "entropy": 2.4441,
+            "strength": 18.8
+          },
+          {
+            "round": 17,
+            "accuracy": 0.6462,
+            "std": 0.2698,
+            "vacuity": 0.6423,
+            "entropy": 2.4401,
+            "strength": 18.72
+          },
+          {
+            "round": 18,
+            "accuracy": 0.6683,
+            "std": 0.2608,
+            "vacuity": 0.6466,
+            "entropy": 2.4346,
+            "strength": 18.6
+          },
+          {
+            "round": 19,
+            "accuracy": 0.6737,
+            "std": 0.2657,
+            "vacuity": 0.6484,
+            "entropy": 2.4319,
+            "strength": 18.55
+          },
+          {
+            "round": 20,
+            "accuracy": 0.689,
+            "std": 0.2571,
+            "vacuity": 0.652,
+            "entropy": 2.4216,
+            "strength": 18.45
+          },
+          {
+            "round": 21,
+            "accuracy": 0.6955,
+            "std": 0.2614,
+            "vacuity": 0.6526,
+            "entropy": 2.4231,
+            "strength": 18.43
+          },
+          {
+            "round": 22,
+            "accuracy": 0.7014,
+            "std": 0.265,
+            "vacuity": 0.6553,
+            "entropy": 2.4165,
+            "strength": 18.36
+          },
+          {
+            "round": 23,
+            "accuracy": 0.7146,
+            "std": 0.2584,
+            "vacuity": 0.657,
+            "entropy": 2.4093,
+            "strength": 18.31
+          },
+          {
+            "round": 24,
+            "accuracy": 0.7273,
+            "std": 0.2569,
+            "vacuity": 0.6586,
+            "entropy": 2.4019,
+            "strength": 18.27
+          },
+          {
+            "round": 25,
+            "accuracy": 0.7229,
+            "std": 0.2601,
+            "vacuity": 0.662,
+            "entropy": 2.3973,
+            "strength": 18.18
+          },
+          {
+            "round": 26,
+            "accuracy": 0.7352,
+            "std": 0.259,
+            "vacuity": 0.6623,
+            "entropy": 2.396,
+            "strength": 18.17
+          },
+          {
+            "round": 27,
+            "accuracy": 0.7489,
+            "std": 0.2581,
+            "vacuity": 0.6634,
+            "entropy": 2.3825,
+            "strength": 18.15
+          },
+          {
+            "round": 28,
+            "accuracy": 0.7481,
+            "std": 0.2572,
+            "vacuity": 0.6627,
+            "entropy": 2.3777,
+            "strength": 18.18
+          },
+          {
+            "round": 29,
+            "accuracy": 0.7538,
+            "std": 0.251,
+            "vacuity": 0.6625,
+            "entropy": 2.372,
+            "strength": 18.18
+          },
+          {
+            "round": 30,
+            "accuracy": 0.756,
+            "std": 0.2455,
+            "vacuity": 0.663,
+            "entropy": 2.3653,
+            "strength": 18.17
+          },
+          {
+            "round": 31,
+            "accuracy": 0.7754,
+            "std": 0.2269,
+            "vacuity": 0.6619,
+            "entropy": 2.3552,
+            "strength": 18.21
+          },
+          {
+            "round": 32,
+            "accuracy": 0.7923,
+            "std": 0.2026,
+            "vacuity": 0.6612,
+            "entropy": 2.3507,
+            "strength": 18.24
+          },
+          {
+            "round": 33,
+            "accuracy": 0.7927,
+            "std": 0.1918,
+            "vacuity": 0.6615,
+            "entropy": 2.3456,
+            "strength": 18.23
+          },
+          {
+            "round": 34,
+            "accuracy": 0.813,
+            "std": 0.1745,
+            "vacuity": 0.6603,
+            "entropy": 2.3312,
+            "strength": 18.28
+          },
+          {
+            "round": 35,
+            "accuracy": 0.8179,
+            "std": 0.1615,
+            "vacuity": 0.6591,
+            "entropy": 2.3295,
+            "strength": 18.31
+          },
+          {
+            "round": 36,
+            "accuracy": 0.8073,
+            "std": 0.1628,
+            "vacuity": 0.659,
+            "entropy": 2.3247,
+            "strength": 18.32
+          },
+          {
+            "round": 37,
+            "accuracy": 0.8429,
+            "std": 0.1227,
+            "vacuity": 0.6577,
+            "entropy": 2.3144,
+            "strength": 18.37
+          },
+          {
+            "round": 38,
+            "accuracy": 0.8437,
+            "std": 0.1144,
+            "vacuity": 0.6547,
+            "entropy": 2.3028,
+            "strength": 18.47
+          },
+          {
+            "round": 39,
+            "accuracy": 0.8545,
+            "std": 0.094,
+            "vacuity": 0.6539,
+            "entropy": 2.2984,
+            "strength": 18.5
+          },
+          {
+            "round": 40,
+            "accuracy": 0.8612,
+            "std": 0.0871,
+            "vacuity": 0.6543,
+            "entropy": 2.2955,
+            "strength": 18.49
+          },
+          {
+            "round": 41,
+            "accuracy": 0.8673,
+            "std": 0.0776,
+            "vacuity": 0.6531,
+            "entropy": 2.2887,
+            "strength": 18.53
+          },
+          {
+            "round": 42,
+            "accuracy": 0.8766,
+            "std": 0.0664,
+            "vacuity": 0.6499,
+            "entropy": 2.2783,
+            "strength": 18.64
+          },
+          {
+            "round": 43,
+            "accuracy": 0.8805,
+            "std": 0.0574,
+            "vacuity": 0.6471,
+            "entropy": 2.2692,
+            "strength": 18.73
+          },
+          {
+            "round": 44,
+            "accuracy": 0.8855,
+            "std": 0.0513,
+            "vacuity": 0.6454,
+            "entropy": 2.2614,
+            "strength": 18.8
+          },
+          {
+            "round": 45,
+            "accuracy": 0.889,
+            "std": 0.0504,
+            "vacuity": 0.6419,
+            "entropy": 2.2496,
+            "strength": 18.92
+          },
+          {
+            "round": 46,
+            "accuracy": 0.8945,
+            "std": 0.0392,
+            "vacuity": 0.6424,
+            "entropy": 2.2522,
+            "strength": 18.89
+          },
+          {
+            "round": 47,
+            "accuracy": 0.8936,
+            "std": 0.0412,
+            "vacuity": 0.6405,
+            "entropy": 2.2446,
+            "strength": 18.95
+          },
+          {
+            "round": 48,
+            "accuracy": 0.9014,
+            "std": 0.0373,
+            "vacuity": 0.6389,
+            "entropy": 2.2377,
+            "strength": 19.01
+          },
+          {
+            "round": 49,
+            "accuracy": 0.9003,
+            "std": 0.032,
+            "vacuity": 0.6384,
+            "entropy": 2.2365,
+            "strength": 19.03
+          },
+          {
+            "round": 50,
+            "accuracy": 0.9023,
+            "std": 0.0326,
+            "vacuity": 0.6347,
+            "entropy": 2.2221,
+            "strength": 19.16
+          }
+        ],
+        "final_accuracy": 0.9023,
+        "final_std": 0.0326,
+        "peak_accuracy": 0.9023,
+        "convergence_round": 34,
+        "final_vacuity": 0.6347,
+        "final_entropy": 2.2221,
+        "final_strength": 19.16
+      }
+    }
+  }
+}

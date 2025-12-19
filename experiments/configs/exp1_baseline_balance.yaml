@@ -1,0 +1,46 @@
+# Experiment 1.3: Baseline BALANCE (No Attack)
+# Distance-based filtering with adaptive thresholds
+
+experiment:
+  name: "EXP1-Baseline-BALANCE"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "balance"
+  params:
+    gamma: 0.5
+    kappa: 1.0
+    alpha: 0.5
+    min_neighbors: 1
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3

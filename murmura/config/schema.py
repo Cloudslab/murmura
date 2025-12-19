@@ -25,9 +25,9 @@ class TopologyConfig(BaseModel):
 
 class AggregationConfig(BaseModel):
     """Aggregation algorithm configuration."""
-    algorithm: Literal["fedavg", "krum", "balance", "sketchguard", "ubar"] = Field(
-        description="Aggregation algorithm"
-    )
+    algorithm: Literal[
+        "fedavg", "krum", "balance", "sketchguard", "ubar", "evidential_trust"
+    ] = Field(description="Aggregation algorithm")
     params: Dict[str, Any] = Field(
         default_factory=dict,
         description="Algorithm-specific parameters"

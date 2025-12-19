@@ -6,6 +6,7 @@ from murmura.aggregation.krum import KrumAggregator
 from murmura.aggregation.balance import BALANCEAggregator
 from murmura.aggregation.sketchguard import SketchguardAggregator
 from murmura.aggregation.ubar import UBARAggregator
+from murmura.aggregation.evidential_trust import EvidentialTrustAggregator
 
 __all__ = [
     "Aggregator",
@@ -14,4 +15,5 @@ __all__ = [
     "BALANCEAggregator",
     "SketchguardAggregator",
     "UBARAggregator",
+    "EvidentialTrustAggregator",
 ]

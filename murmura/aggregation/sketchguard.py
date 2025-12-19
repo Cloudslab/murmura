@@ -76,10 +76,16 @@ class SketchguardAggregator(Aggregator):
         return hash_table, sign_table
 
     def _flatten_model_state(self, model_state: ModelState) -> np.ndarray:
-        """Flatten model parameters into a single vector."""
+        """Flatten model parameters into a single vector.
+
+        Only includes floating-point tensors to match calculate_model_dimension.
+        Skips BatchNorm buffers (running_mean, running_var, num_batches_tracked).
+        """
         flattened_parts = []
         for param in model_state.values():
-            flattened_parts.append(param.detach().cpu().numpy().flatten())
+            # Only include floating-point tensors (skip integer tensors like num_batches_tracked)
+            if param.is_floating_point():
+                flattened_parts.append(param.detach().cpu().numpy().flatten())
         return np.concatenate(flattened_parts)
 
     def _count_sketch_compress(self, vector: np.ndarray) -> np.ndarray:

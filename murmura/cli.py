@@ -67,6 +67,23 @@ def run(
         # Create aggregator factory
         aggregator_factory = _create_aggregator_factory(config, model_factory, device)
 
+        # Check if using evidential models (wearables)
+        evidential = config.model.factory.startswith("examples.wearables.")
+        criterion = None
+        if evidential:
+            from murmura.examples.wearables import get_evidential_loss
+            num_classes = config.model.params.get("num_classes", 6)
+            # Use longer annealing period for FL (rounds, not epochs)
+            # and reduced KL weight for stability with aggregation
+            annealing_rounds = config.experiment.rounds // 2  # Anneal over first half
+            criterion = get_evidential_loss(
+                num_classes=num_classes,
+                annealing_epochs=annealing_rounds,  # In FL: rounds, not epochs
+                lambda_weight=0.1,  # Reduced KL weight for FL stability
+            )
+            console.print("[bold cyan]Using evidential deep learning with uncertainty quantification[/bold cyan]")
+            console.print(f"  KL annealing over {annealing_rounds} rounds, λ=0.1")
+
         # Create network
         console.print("\n[bold]Creating network...[/bold]")
         network = Network.from_config(
@@ -74,7 +91,9 @@ def run(
             model_factory=model_factory,
             dataset_adapter=dataset_adapter,
             aggregator_factory=aggregator_factory,
-            device=device
+            device=device,
+            criterion=criterion,
+            evidential=evidential,
         )
 
         # Run training
@@ -120,6 +139,7 @@ def list_components(
         console.print("  • balance - Distance-based filtering with adaptive thresholds")
         console.print("  • sketchguard - Count-Sketch compression for lightweight filtering")
         console.print("  • ubar - Two-stage Byzantine-resilient (distance + loss)")
+        console.print("  • evidential_trust - Uncertainty-aware trust aggregation (EDL-based)")
 
     elif component_type == "attacks":
         console.print("[bold]Available Attacks:[/bold]")
@@ -193,11 +213,12 @@ def _create_aggregator_factory(config, model_factory, device):
         BALANCEAggregator,
         SketchguardAggregator,
         UBARAggregator,
+        EvidentialTrustAggregator,
     )
     from murmura.aggregation.base import calculate_model_dimension
 
     agg_type = config.aggregation.algorithm.lower()
-    params = config.aggregation.params
+    params = dict(config.aggregation.params)  # Make a copy to avoid mutation
 
     # Calculate model dimension for Sketchguard
     if agg_type == "sketchguard":
@@ -206,8 +227,8 @@ def _create_aggregator_factory(config, model_factory, device):
         params["model_dim"] = model_dim
         params["total_rounds"] = config.experiment.rounds
 
-    # Common parameters
-    if agg_type in ["balance", "ubar"]:
+    # Common parameters for algorithms that need total_rounds
+    if agg_type in ["balance", "ubar", "evidential_trust"]:
         params["total_rounds"] = config.experiment.rounds
 
     def factory(node_id: int):
@@ -221,6 +242,8 @@ def _create_aggregator_factory(config, model_factory, device):
             return SketchguardAggregator(**params)
         elif agg_type == "ubar":
             return UBARAggregator(**params)
+        elif agg_type == "evidential_trust":
+            return EvidentialTrustAggregator(**params)
         else:
             raise ValueError(f"Unknown aggregation algorithm: {agg_type}")
 
@@ -229,12 +252,20 @@ def _create_aggregator_factory(config, model_factory, device):
 
 def _display_results(history, network):
     """Display training results in a table."""
+    # Check if we have evidential metrics
+    has_uncertainty = len(history.get("mean_vacuity", [])) > 0
+
     table = Table(title="Training Results")
     table.add_column("Round", style="cyan")
     table.add_column("Mean Acc", style="green")
     table.add_column("Std Acc", style="yellow")
     table.add_column("Honest Acc", style="blue")
     table.add_column("Compromised Acc", style="red")
+
+    if has_uncertainty:
+        table.add_column("Vacuity", style="magenta")
+        table.add_column("Entropy", style="cyan")
+        table.add_column("Strength", style="white")
 
     for i in range(len(history["round"])):
         round_num = history["round"][i]
@@ -244,15 +275,30 @@ def _display_results(history, network):
         honest_acc = history["honest_accuracy"][i] if i < len(history["honest_accuracy"]) else "-"
         comp_acc = history["compromised_accuracy"][i] if i < len(history["compromised_accuracy"]) else "-"
 
-        table.add_row(
+        row = [
             str(round_num),
             f"{mean_acc:.4f}",
             f"{std_acc:.4f}",
             f"{honest_acc:.4f}" if isinstance(honest_acc, float) else honest_acc,
             f"{comp_acc:.4f}" if isinstance(comp_acc, float) else comp_acc,
-        )
+        ]
+
+        if has_uncertainty:
+            vacuity = history["mean_vacuity"][i] if i < len(history["mean_vacuity"]) else 0
+            entropy = history["mean_entropy"][i] if i < len(history["mean_entropy"]) else 0
+            strength = history["mean_strength"][i] if i < len(history["mean_strength"]) else 0
+            row.extend([f"{vacuity:.4f}", f"{entropy:.4f}", f"{strength:.2f}"])
+
+        table.add_row(*row)
 
     console.print(table)
+
+    # Print interpretation for evidential metrics
+    if has_uncertainty:
+        console.print("\n[bold]Uncertainty Metrics:[/bold]")
+        console.print("  • [magenta]Vacuity[/magenta]: Epistemic uncertainty (lack of evidence). Lower = more confident.")
+        console.print("  • [cyan]Entropy[/cyan]: Aleatoric uncertainty (prediction entropy). Lower = more decisive.")
+        console.print("  • [white]Strength[/white]: Dirichlet strength (total evidence). Higher = more evidence accumulated.")
 
 
 if __name__ == "__main__":
