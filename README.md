@@ -1,16 +1,26 @@
 # Murmura
 
-A modular, config-driven framework for decentralized federated learning with Byzantine-resilient aggregation.
+A modular, config-driven framework for **Evidential Trust-Aware Decentralized Federated Learning** with Byzantine-resilient aggregation.
+
+> **Paper**: *Evidential Trust-Aware Model Personalization in Decentralized Federated Learning for Wearable IoT*
+> by Rangwala, Sinnott, Buyya - University of Melbourne
 
 > **Quick Start**: See [QUICKSTART.md](QUICKSTART.md) to get running in 5 minutes!
 
+## Key Contributions
+
+- **Evidential Trust-Aware Aggregation**: Novel algorithm leveraging Dirichlet-based uncertainty decomposition (epistemic vs. aleatoric) to identify and filter Byzantine peers
+- **Uncertainty-Driven Personalization**: Adaptive self-weighting based on local model confidence
+- **BALANCE-Style Threshold Dynamics**: Progressive trust threshold tightening as models converge
+
 ## Features
 
-- **Multiple Aggregation Algorithms**: FedAvg, Krum, BALANCE, Sketchguard, UBAR
-- **Flexible Topologies**: Ring, fully-connected, Erdős-Rényi, k-regular
+- **Aggregation Algorithms**: FedAvg, Krum, BALANCE, Sketchguard, UBAR, **Evidential Trust**
+- **Flexible Topologies**: Ring, fully-connected, Erdos-Renyi, k-regular
 - **Byzantine Attack Simulation**: Gaussian noise, directed deviation
+- **Wearable IoT Datasets**: UCI HAR, PAMAP2, PPG-DaLiA with natural user heterogeneity
+- **Evidential Deep Learning**: Built-in Dirichlet-based models with uncertainty quantification
 - **Config-Driven**: YAML/JSON configuration for reproducible experiments
-- **Modular Design**: Easy to extend with custom datasets, models, and aggregators
 - **CLI & Python API**: Run experiments from command line or programmatically
 
 ## Installation
@@ -37,7 +47,7 @@ uv pip install -e .
 # Install with development dependencies
 uv sync --group dev
 
-# Install with example dependencies (for LEAF)
+# Install with wearable examples
 uv pip install -e ".[examples]"
 ```
 
@@ -54,7 +64,11 @@ pip install -e .
 Run an experiment from a config file:
 
 ```bash
-murmura run murmura/examples/configs/basic_fedavg.yaml
+# Run evidential trust experiment on UCI HAR dataset
+murmura run experiments/paper/uci_har/evidential_trust.yaml
+
+# Run with attacks (30% Byzantine nodes)
+murmura run experiments/paper/attacks/uci_har/evidential_trust_directed_deviation_30pct.yaml
 
 # Or with uv run
 uv run murmura run murmura/examples/configs/basic_fedavg.yaml
@@ -73,21 +87,11 @@ murmura list-components attacks
 ```python
 from murmura import Network, Config
 from murmura.topology import create_topology
-from murmura.aggregation import UBARAggregator
+from murmura.aggregation import EvidentialTrustAggregator
 from murmura.utils import set_seed, get_device
 
 # Load configuration
 config = Config.from_yaml("config.yaml")
-
-# Or create programmatically
-from murmura.config import ExperimentConfig, TopologyConfig, AggregationConfig
-
-config = Config(
-    experiment=ExperimentConfig(name="my-experiment", rounds=20),
-    topology=TopologyConfig(type="ring", num_nodes=10),
-    aggregation=AggregationConfig(algorithm="ubar", params={"rho": 0.6}),
-    # ... other configs
-)
 
 # Create and run network
 network = Network.from_config(
@@ -98,54 +102,121 @@ network = Network.from_config(
     device=get_device()
 )
 
-results = network.train(rounds=20, local_epochs=3, lr=0.001)
+results = network.train(rounds=50, local_epochs=2, lr=0.01)
 ```
 
-## Configuration
+## Evidential Trust-Aware Aggregation
 
-Example YAML configuration:
+The core contribution of this framework is the **Evidential Trust-Aware Aggregator**, which leverages Dirichlet-based evidential deep learning to evaluate peer trustworthiness:
+
+### Key Insight
+
+Epistemic-aleatoric uncertainty decomposition directly indicates peer reliability:
+- **High epistemic uncertainty (vacuity)** -> Insufficient learning, possibly Byzantine
+- **High aleatoric uncertainty (entropy)** -> Inherent data ambiguity, still trustworthy
+
+### Algorithm Overview
+
+1. **Cross-Evaluation**: Evaluate each neighbor's model on local validation data
+2. **Trust Scoring**: Compute trust from uncertainty profile: `trust = (1 - vacuity) * (w_a * accuracy + (1 - w_a))`
+3. **Threshold Filtering**: Apply BALANCE-style tightening threshold to filter unreliable peers
+4. **Weighted Aggregation**: Combine filtered neighbors with personalization self-weight
+
+### Configuration
 
 ```yaml
-experiment:
-  name: "ubar-experiment"
-  seed: 42
-  rounds: 20
-  verbose: true
-
-topology:
-  type: "ring"  # ring, fully, erdos, k-regular
-  num_nodes: 20
-
 aggregation:
-  algorithm: "ubar"  # fedavg, krum, balance, sketchguard, ubar
+  algorithm: evidential_trust
   params:
-    rho: 0.6
-    alpha: 0.5
-
-attack:
-  enabled: true
-  type: "gaussian"  # gaussian, directed_deviation
-  percentage: 0.2
-  params:
-    noise_std: 10.0
-
-training:
-  local_epochs: 3
-  batch_size: 64
-  lr: 0.001
-
-data:
-  adapter: "leaf.femnist"
-  params:
-    data_path: "leaf/data/femnist/data"
-
-model:
-  factory: "examples.leaf.models.LEAFFEMNISTModel"
-  params:
-    num_classes: 62
+    vacuity_threshold: 0.5     # Threshold for vacuity penalty
+    accuracy_weight: 0.7       # Weight of accuracy in trust score
+    trust_threshold: 0.1       # Minimum trust to include peer
+    self_weight: 0.6           # Weight for own model (personalization)
 ```
 
-## Aggregation Algorithms
+### Python Usage
+
+```python
+from murmura.aggregation import EvidentialTrustAggregator
+
+aggregator = EvidentialTrustAggregator(
+    vacuity_threshold=0.5,      # tau_u - epistemic uncertainty threshold
+    accuracy_weight=0.7,         # w_a - accuracy contribution to trust
+    trust_threshold=0.1,         # tau_min - minimum trust threshold
+    self_weight=0.6,             # alpha - personalization weight
+    use_adaptive_trust=True,     # EMA smoothing on trust scores
+    use_tightening_threshold=True,  # BALANCE-style threshold dynamics
+)
+```
+
+## Wearable IoT Datasets
+
+Murmura includes built-in support for wearable sensor datasets with natural user heterogeneity:
+
+### UCI HAR (Human Activity Recognition)
+- **Source**: Smartphone accelerometer/gyroscope data
+- **Nodes**: 10 subjects
+- **Activities**: 6 classes (walking, sitting, standing, etc.)
+- **Features**: 561 hand-crafted features
+
+### PAMAP2 (Physical Activity Monitoring)
+- **Source**: Body-worn IMU sensors
+- **Nodes**: 9 subjects
+- **Activities**: 12 classes (cycling, ironing, rope jumping, etc.)
+- **Features**: 4000 (window-based from 3 IMUs)
+
+### PPG-DaLiA (Heart Rate Monitoring)
+- **Source**: Wrist-worn PPG, EDA, accelerometer, temperature
+- **Nodes**: 15 subjects
+- **Activities**: 7 classes (sitting, walking, cycling, driving, etc.)
+- **Features**: 192 (window-based physiological signals)
+
+### Configuration Example
+
+```yaml
+data:
+  adapter: wearables.uci_har  # or wearables.pamap2, wearables.ppg_dalia
+  params:
+    data_path: wearables_datasets/UCI HAR Dataset
+    partition_method: dirichlet
+    alpha: 0.5  # Data heterogeneity (lower = more heterogeneous)
+
+model:
+  factory: examples.wearables.uci_har
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3
+```
+
+## Byzantine Attack Simulation
+
+### Gaussian Noise Attack
+Adds Gaussian noise to model parameters:
+
+```yaml
+attack:
+  enabled: true
+  type: gaussian
+  percentage: 0.2  # 20% of nodes compromised
+  params:
+    noise_std: 10.0
+```
+
+### Directed Deviation Attack
+Scales parameters with negative factor:
+
+```yaml
+attack:
+  enabled: true
+  type: directed_deviation
+  percentage: 0.3  # 30% compromised
+  params:
+    lambda_param: -5.0
+```
+
+## Other Aggregation Algorithms
 
 ### FedAvg
 Simple averaging of all neighbor models. Baseline for comparison.
@@ -172,7 +243,7 @@ aggregator = BALANCEAggregator(
     gamma=2.0,
     kappa=1.0,
     alpha=0.5,
-    total_rounds=20
+    total_rounds=50
 )
 ```
 
@@ -185,7 +256,7 @@ aggregator = SketchguardAggregator(
     model_dim=1000000,
     sketch_size=10000,
     gamma=2.0,
-    total_rounds=20
+    total_rounds=50
 )
 ```
 
@@ -213,87 +284,83 @@ topology = create_topology("ring", num_nodes=10)
 # Fully connected
 topology = create_topology("fully", num_nodes=10)
 
-# Erdős-Rényi random graph
+# Erdos-Renyi random graph
 topology = create_topology("erdos", num_nodes=10, p=0.3)
 
 # k-regular graph
 topology = create_topology("k-regular", num_nodes=10, k=4)
 ```
 
-## Custom Datasets
+## Running Paper Experiments
 
-Integrate your own dataset using the adapter pattern:
+The `experiments/paper/` directory contains comprehensive experiment configurations:
 
-```python
-from torch.utils.data import Dataset
-from murmura.data import DatasetAdapter
+```bash
+# Generate all experiment configs (279 total)
+python experiments/paper/generate_all_configs.py
 
-# Your PyTorch dataset
-my_dataset = MyPyTorchDataset()
+# Run all experiments by category
+python experiments/paper/run_comprehensive.py
 
-# Define client partitions (list of indices for each client)
-client_partitions = [
-    [0, 1, 2, 3],      # Client 0 gets samples 0-3
-    [4, 5, 6, 7],      # Client 1 gets samples 4-7
-    # ...
-]
+# Run specific category
+python experiments/paper/run_comprehensive.py --category attacks
 
-# Wrap in adapter
-dataset_adapter = DatasetAdapter(
-    dataset=my_dataset,
-    client_partitions=client_partitions
-)
+# Run specific dataset within category
+python experiments/paper/run_comprehensive.py --category attacks --dataset uci_har
+
+# Generate summary reports
+python experiments/paper/run_comprehensive.py --summary-only
 ```
 
-## Custom Models
+### Experiment Categories
 
-Use any PyTorch model:
-
-```python
-import torch.nn as nn
-
-def my_model_factory():
-    return nn.Sequential(
-        nn.Linear(784, 128),
-        nn.ReLU(),
-        nn.Linear(128, 10)
-    )
-```
-
-## LEAF Benchmark Integration
-
-Murmura includes built-in support for LEAF benchmark datasets:
-
-```yaml
-data:
-  adapter: "leaf.femnist"  # or "leaf.celeba"
-  params:
-    data_path: "leaf/data/femnist/data"
-
-model:
-  factory: "examples.leaf.models.LEAFFEMNISTModel"
-  params:
-    num_classes: 62
-```
+| Category | Description | Configs |
+|----------|-------------|---------|
+| **baseline** | No attacks, fully connected, alpha=0.5 | 18 |
+| **heterogeneity** | Varying Dirichlet alpha in {0.1, 0.5, 1.0} | 54 |
+| **attacks** | Byzantine attacks at 10%, 20%, 30% | 108 |
+| **topologies** | Ring, fully, Erdos-Renyi, k-regular | 48 |
+| **ablation** | Hyperparameter sensitivity study | 51 |
 
 ## Project Structure
 
 ```
 murmura/
-├── murmura/                  # Main package
-│   ├── core/                 # Core components (Node, Network)
-│   ├── topology/             # Network topologies
-│   ├── aggregation/          # Aggregation algorithms
-│   ├── attacks/              # Byzantine attacks
-│   ├── data/                 # Data adapters
-│   ├── config/               # Configuration system
-│   ├── utils/                # Utilities
-│   ├── examples/             # Usage examples
-│   │   ├── configs/          # Example configs
-│   │   └── leaf/             # LEAF benchmark integration
-│   └── cli.py                # CLI interface
-├── tests/                    # Unit tests
-└── pyproject.toml            # Project configuration
+├── murmura/                      # Main package
+│   ├── core/                     # Core components (Node, Network)
+│   ├── topology/                 # Network topologies
+│   ├── aggregation/              # Aggregation algorithms
+│   │   ├── fedavg.py
+│   │   ├── krum.py
+│   │   ├── balance.py
+│   │   ├── sketchguard.py
+│   │   ├── ubar.py
+│   │   └── evidential_trust.py   # Main contribution
+│   ├── attacks/                  # Byzantine attacks
+│   ├── data/                     # Data adapters & partitioners
+│   ├── config/                   # Configuration system
+│   ├── utils/                    # Utilities
+│   ├── examples/
+│   │   ├── configs/              # Example configs
+│   │   ├── leaf/                 # LEAF benchmark integration
+│   │   └── wearables/            # Wearable IoT datasets
+│   │       ├── datasets.py       # UCI HAR, PAMAP2, PPG-DaLiA
+│   │       ├── models.py         # Evidential deep learning models
+│   │       └── adapter.py        # Dataset adapters
+│   └── cli.py                    # CLI interface
+├── experiments/
+│   └── paper/                    # Paper experiment configs
+│       ├── generate_all_configs.py
+│       ├── run_comprehensive.py
+│       ├── uci_har/
+│       ├── pamap2/
+│       ├── ppg_dalia/
+│       ├── attacks/
+│       ├── heterogeneity/
+│       ├── topologies/
+│       └── ablation/
+├── wearables_datasets/           # Downloaded datasets
+└── pyproject.toml
 ```
 
 ## Development
@@ -301,11 +368,7 @@ murmura/
 ### Install development dependencies
 
 ```bash
-# Using dependency groups (recommended)
 uv sync --group dev
-
-# Or using optional dependencies
-uv pip install -e ".[dev]"
 ```
 
 ### Run tests
@@ -327,24 +390,17 @@ isort murmura/
 mypy murmura/
 ```
 
-### Using uv run (directly run commands without activating venv)
-
-```bash
-uv run pytest tests/
-uv run black murmura/
-uv run murmura run config.yaml
-```
-
 ## Citation
 
 If you use Murmura in your research, please cite:
 
 ```bibtex
-@software{murmura2024,
-  title={Murmura: A Modular Framework for Decentralized Federated Learning},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/murmura}
+@inproceedings{rangwala2025evidential,
+  title={Evidential Trust-Aware Model Personalization in Decentralized Federated Learning for Wearable IoT},
+  author={Rangwala, Murtaza and Sinnott, Richard O. and Buyya, Rajkumar},
+  booktitle={},
+  year={2025},
+  organization={}
 }
 ```
 
@@ -355,6 +411,6 @@ MIT License - see LICENSE file for details.
 ## Acknowledgments
 
 - LEAF benchmark framework: https://leaf.cmu.edu
-- BALANCE algorithm: [citation]
-- UBAR algorithm: [citation]
-- Sketchguard algorithm: [citation]
+- UCI HAR Dataset: https://archive.ics.uci.edu/ml/datasets/human+activity+recognition+using+smartphones
+- PAMAP2 Dataset: https://archive.ics.uci.edu/ml/datasets/PAMAP2+Physical+Activity+Monitoring
+- PPG-DaLiA Dataset: https://ubicomp.eti.uni-siegen.de/home/datasets/sensors19/
