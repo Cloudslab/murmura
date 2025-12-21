@@ -78,7 +78,12 @@ class DirectedDeviationAttack:
 
         attacked_state = {}
         for key, param in model_state.items():
-            # Scale parameters by lambda (typically negative)
-            attacked_state[key] = param * self.lambda_param
+            # Only scale floating point parameters (not BatchNorm tracking stats)
+            # BatchNorm's num_batches_tracked is Long and should not be scaled
+            if param.dtype in (torch.float32, torch.float64, torch.float16):
+                attacked_state[key] = param * self.lambda_param
+            else:
+                # Keep non-float parameters unchanged (e.g., num_batches_tracked)
+                attacked_state[key] = param.clone()
 
         return attacked_state

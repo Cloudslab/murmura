@@ -77,6 +77,10 @@ class Node:
 
         for epoch in range(epochs):
             for inputs, targets in self.train_loader:
+                # Skip batches with fewer than 2 samples (BatchNorm requirement)
+                if inputs.size(0) < 2:
+                    continue
+
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
 
                 optimizer.zero_grad()

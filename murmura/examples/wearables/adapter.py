@@ -11,7 +11,7 @@ from murmura.data.partitioners import (
 from murmura.examples.wearables.datasets import (
     UCIHARDataset,
     PAMAP2Dataset,
-    ExtraSensoryDataset,
+    PPGDaLiADataset,
 )
 
 
@@ -29,7 +29,7 @@ def load_wearable_adapter(
     """Load a wearable dataset as a Murmura DatasetAdapter with configurable partitioning.
 
     Args:
-        dataset_type: Type of dataset ('uci_har', 'pamap2', 'extrasensory')
+        dataset_type: Type of dataset ('uci_har', 'pamap2', 'ppg_dalia')
         data_path: Path to the dataset directory
         num_nodes: Number of nodes/clients to partition data across
         partition_method: Partitioning strategy:
@@ -147,24 +147,24 @@ def _load_dataset(
         natural_ids = dataset.get_subjects()
         return dataset, labels, natural_ids
 
-    elif dataset_type == "extrasensory":
-        dataset = ExtraSensoryDataset(
+    elif dataset_type == "ppg_dalia":
+        dataset = PPGDaLiADataset(
             root=data_path,
-            users=kwargs.get("users"),
-            target_label=kwargs.get("target_label", "FIX_walking"),
-            multi_label=kwargs.get("multi_label", False),
-            label_columns=kwargs.get("label_columns"),
+            subjects=kwargs.get("subjects"),
+            activities=kwargs.get("activities"),
+            window_size=kwargs.get("window_size", 32),
+            window_stride=kwargs.get("window_stride", 16),
             normalize=kwargs.get("normalize", True),
-            handle_missing=kwargs.get("handle_missing", "zero"),
+            use_wrist_only=kwargs.get("use_wrist_only", True),
         )
         labels = dataset.get_labels()
-        natural_ids = dataset.get_users()
+        natural_ids = dataset.get_subjects()
         return dataset, labels, natural_ids
 
     else:
         raise ValueError(
             f"Unknown dataset type: {dataset_type}. "
-            f"Available: 'uci_har', 'pamap2', 'extrasensory'"
+            f"Available: 'uci_har', 'pamap2', 'ppg_dalia'"
         )
 
 
@@ -172,7 +172,7 @@ def get_wearable_dataset_info(dataset_type: str) -> dict:
     """Get information about a wearable dataset.
 
     Args:
-        dataset_type: Type of dataset ('uci_har', 'pamap2', 'extrasensory')
+        dataset_type: Type of dataset ('uci_har', 'pamap2', 'ppg_dalia')
 
     Returns:
         Dictionary with dataset metadata
@@ -194,13 +194,13 @@ def get_wearable_dataset_info(dataset_type: str) -> dict:
             "activities": list(PAMAP2Dataset.ACTIVITY_NAMES.values()),
             "description": "IMU-based activity recognition from 9 subjects",
         },
-        "extrasensory": {
-            "name": "ExtraSensory Mobile Sensing",
-            "num_features": 276,
-            "num_classes": "multi-label (51 binary labels)",
-            "natural_clients": "variable (depends on available files)",
-            "activities": ExtraSensoryDataset.ACTIVITY_LABELS,
-            "description": "Multi-sensor mobile sensing with contextual labels",
+        "ppg_dalia": {
+            "name": "PPG-DaLiA Activity Recognition",
+            "num_features": "variable (window_size * 6)",
+            "num_classes": 7,
+            "natural_clients": 15,
+            "activities": list(PPGDaLiADataset.ACTIVITY_NAMES.values()),
+            "description": "PPG/wearable-based activity recognition from 15 subjects",
         },
     }
 

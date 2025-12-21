@@ -301,140 +301,127 @@ class PAMAP2Dataset(Dataset):
         return len(self.activities)
 
 
-class ExtraSensoryDataset(Dataset):
-    """ExtraSensory Mobile Sensing Dataset.
+class PPGDaLiADataset(Dataset):
+    """PPG-DaLiA (PPG Dataset for Activity Recognition with Wearables).
 
-    Dataset from multiple users with smartphone and smartwatch sensors,
-    featuring multi-label activity, context, and location annotations.
+    Dataset from 15 subjects performing 8 activities while wearing
+    wrist-worn (Empatica E4) and chest-worn (RespiBAN) sensors.
+
+    Activities:
+        0: transient/no activity, 1: sitting, 2: ascending stairs,
+        3: descending stairs, 4: walking, 5: cycling, 6: driving,
+        7: table soccer
 
     Reference:
-        Yonatan Vaizman, et al. "Recognizing Detailed Human Context In-the-Wild
-        from Smartphones and Smartwatches." IEEE Pervasive Computing 2017.
+        Attila Reiss et al. "Deep PPG: Large-Scale Heart Rate Estimation
+        with Convolutional Neural Networks." Sensors 2019.
     """
 
-    # Activity labels for single-label classification
-    ACTIVITY_LABELS = [
-        "LYING_DOWN", "SITTING", "FIX_walking", "FIX_running",
-        "BICYCLING", "SLEEPING", "STROLLING",
-    ]
+    ACTIVITY_LABELS = [1, 2, 3, 4, 5, 6, 7]  # Exclude 0 (transient)
+    ACTIVITY_NAMES = {
+        0: "transient",
+        1: "sitting",
+        2: "ascending_stairs",
+        3: "descending_stairs",
+        4: "walking",
+        5: "cycling",
+        6: "driving",
+        7: "table_soccer",
+    }
+
+    # Wrist sensor sampling rates (Empatica E4)
+    WRIST_ACC_HZ = 32
+    WRIST_BVP_HZ = 64
+    WRIST_EDA_HZ = 4
+    WRIST_TEMP_HZ = 4
+
+    # Activity labels are at 4 Hz (0.25 sec per sample)
+    ACTIVITY_HZ = 4
 
     def __init__(
         self,
         root: str,
-        users: Optional[List[str]] = None,
-        target_label: str = "FIX_walking",  # Primary label for single-label mode
-        multi_label: bool = False,
-        label_columns: Optional[List[str]] = None,
+        subjects: Optional[List[int]] = None,
+        activities: Optional[List[int]] = None,
+        window_size: int = 32,  # 8 seconds at 4 Hz
+        window_stride: int = 16,  # 4 second stride
         normalize: bool = True,
-        handle_missing: str = "zero",  # 'zero', 'mean', or 'drop'
+        use_wrist_only: bool = True,  # Use only wrist sensors for simplicity
     ):
-        """Initialize ExtraSensory dataset.
+        """Initialize PPG-DaLiA dataset.
 
         Args:
-            root: Path to 'ExtraSensory' directory containing user CSV files
-            users: List of user file prefixes to include (e.g., ['user1', 'user2'])
-            target_label: Column name for single-label classification
-            multi_label: Whether to use multi-label classification
-            label_columns: List of label columns for multi-label mode
+            root: Path to 'PPG_FieldStudy' directory
+            subjects: List of subject IDs to include (default: all 1-15)
+            activities: List of activity IDs to include (default: 1-7)
+            window_size: Sliding window size in samples at 4 Hz
+            window_stride: Stride between windows
             normalize: Whether to normalize features
-            handle_missing: How to handle missing values ('zero', 'mean', 'drop')
+            use_wrist_only: Use only wrist sensors (simpler, fewer features)
         """
         self.root = Path(root)
-        self.target_label = target_label
-        self.multi_label = multi_label
+        self.subjects = subjects or list(range(1, 16))  # S1-S15
+        self.activities = activities or self.ACTIVITY_LABELS
+        self.window_size = window_size
+        self.window_stride = window_stride
         self.normalize = normalize
-        self.handle_missing = handle_missing
+        self.use_wrist_only = use_wrist_only
 
-        # Find all user files
-        self._discover_users(users)
-
-        # Discover label columns
-        self._discover_labels(label_columns)
+        # Create activity to index mapping
+        self.activity_to_idx = {a: i for i, a in enumerate(self.activities)}
 
         self._load_data()
 
-    def _discover_users(self, users: Optional[List[str]]) -> None:
-        """Discover user CSV files in the root directory."""
-        if users is not None:
-            self.user_files = [
-                self.root / f"{u}.features_labels.csv" for u in users
-            ]
-        else:
-            self.user_files = sorted(self.root.glob("*.features_labels.csv"))
-
-        if not self.user_files:
-            raise ValueError(f"No user CSV files found in {self.root}")
-
-    def _discover_labels(self, label_columns: Optional[List[str]]) -> None:
-        """Discover available label columns from first file."""
-        import pandas as pd
-
-        # Read first file to get column names
-        sample_df = pd.read_csv(self.user_files[0], nrows=1)
-
-        # Label columns are those that start with "label:"
-        metadata_cols = {"timestamp", "label_source"}
-        self.all_columns = list(sample_df.columns)
-
-        # Identify label columns (binary labels from the dataset)
-        self.available_labels = [
-            col for col in self.all_columns
-            if col.startswith("label:") and col not in metadata_cols
-        ]
-
-        if label_columns is not None:
-            self.label_columns = label_columns
-        else:
-            self.label_columns = self.available_labels
-
-        # Feature columns are everything else (not labels, not metadata)
-        self.feature_columns = [
-            col for col in self.all_columns
-            if not col.startswith("label:") and col not in metadata_cols
-        ]
-
-        # Resolve target_label: add "label:" prefix if needed
-        if not self.target_label.startswith("label:"):
-            self.target_label = f"label:{self.target_label}"
-
     def _load_data(self) -> None:
-        """Load and preprocess data from all users."""
-        import pandas as pd
+        """Load and preprocess data from all subjects."""
+        import pickle
 
         all_features = []
         all_labels = []
-        all_users = []
+        all_subjects = []
 
-        for user_idx, user_file in enumerate(self.user_files):
-            df = pd.read_csv(user_file)
+        for subject_id in self.subjects:
+            pkl_path = self.root / f"S{subject_id}" / f"S{subject_id}.pkl"
+            if not pkl_path.exists():
+                continue
 
-            # Extract features
-            features = df[self.feature_columns].values.astype(np.float32)
+            with open(pkl_path, 'rb') as f:
+                data = pickle.load(f, encoding='latin1')
 
-            # Handle missing values
-            features = self._handle_missing_values(features)
+            # Extract features from wrist sensors at 4 Hz (EDA and TEMP native rate)
+            features = self._extract_features(data)
+            activities = data['activity'].flatten().astype(int)
 
-            if self.multi_label:
-                # Multi-label: stack selected label columns
-                labels = df[self.label_columns].values.astype(np.float32)
-                labels = np.nan_to_num(labels, nan=0.0)  # Convert NaN to 0
-            else:
-                # Single-label: use target label column
-                if self.target_label not in df.columns:
-                    raise ValueError(f"Target label '{self.target_label}' not found")
-                labels = df[self.target_label].values.astype(np.float32)
-                labels = np.nan_to_num(labels, nan=0.0)
+            # Ensure features and activities align
+            min_len = min(len(features), len(activities))
+            features = features[:min_len]
+            activities = activities[:min_len]
 
-            user_ids = np.full(len(features), user_idx)
+            # Filter by valid activities
+            valid_mask = np.isin(activities, self.activities)
+            features = features[valid_mask]
+            activities = activities[valid_mask]
 
-            all_features.append(features)
-            all_labels.append(labels)
-            all_users.append(user_ids)
+            if len(features) == 0:
+                continue
+
+            # Create sliding windows
+            windows, labels, subjects = self._create_windows(
+                features, activities, subject_id
+            )
+
+            if len(windows) > 0:
+                all_features.append(windows)
+                all_labels.append(labels)
+                all_subjects.append(subjects)
+
+        if not all_features:
+            raise ValueError(f"No valid data found in {self.root}")
 
         # Concatenate all data
         self.features = np.vstack(all_features)
-        self.labels = np.vstack(all_labels) if self.multi_label else np.concatenate(all_labels)
-        self.user_ids = np.concatenate(all_users)
+        self.labels = np.concatenate(all_labels)
+        self.subject_ids = np.concatenate(all_subjects)
 
         # Normalize if requested
         if self.normalize:
@@ -442,54 +429,96 @@ class ExtraSensoryDataset(Dataset):
 
         # Convert to tensors
         self.features = torch.tensor(self.features, dtype=torch.float32)
-        if self.multi_label:
-            self.labels = torch.tensor(self.labels, dtype=torch.float32)
-        else:
-            self.labels = torch.tensor(self.labels, dtype=torch.long)
+        self.labels = torch.tensor(self.labels, dtype=torch.long)
 
-    def _handle_missing_values(self, features: np.ndarray) -> np.ndarray:
-        """Handle missing/NaN values in features."""
-        if self.handle_missing == "zero":
-            return np.nan_to_num(features, nan=0.0)
-        elif self.handle_missing == "mean":
-            col_means = np.nanmean(features, axis=0)
-            col_means = np.nan_to_num(col_means, nan=0.0)
-            inds = np.where(np.isnan(features))
-            features[inds] = np.take(col_means, inds[1])
-            return features
-        elif self.handle_missing == "drop":
-            # Mark rows with any NaN for later filtering
-            valid_rows = ~np.any(np.isnan(features), axis=1)
-            return features[valid_rows]
-        else:
-            raise ValueError(f"Unknown handle_missing mode: {self.handle_missing}")
+    def _extract_features(self, data: Dict) -> np.ndarray:
+        """Extract and downsample features from sensor data.
+
+        Returns features at 4 Hz (matching activity label rate).
+        """
+        wrist = data['signal']['wrist']
+
+        # Get raw signals
+        eda = wrist['EDA'].flatten()  # Already at 4 Hz
+        temp = wrist['TEMP'].flatten()  # Already at 4 Hz
+
+        # Downsample ACC from 32 Hz to 4 Hz (take every 8th sample)
+        acc = wrist['ACC']  # Shape: (N*8, 3)
+        acc_downsampled = acc[::8, :]  # Downsample to 4 Hz
+
+        # Downsample BVP from 64 Hz to 4 Hz (take every 16th sample)
+        bvp = wrist['BVP'].flatten()
+        bvp_downsampled = bvp[::16]
+
+        # Align all signals to minimum length
+        min_len = min(len(eda), len(temp), len(acc_downsampled), len(bvp_downsampled))
+        eda = eda[:min_len]
+        temp = temp[:min_len]
+        acc_downsampled = acc_downsampled[:min_len]
+        bvp_downsampled = bvp_downsampled[:min_len]
+
+        # Stack features: [EDA, TEMP, ACC_x, ACC_y, ACC_z, BVP] = 6 features
+        features = np.column_stack([
+            eda,
+            temp,
+            acc_downsampled,
+            bvp_downsampled,
+        ])
+
+        # Handle NaN values
+        features = np.nan_to_num(features, nan=0.0)
+
+        return features.astype(np.float32)
+
+    def _create_windows(
+        self, features: np.ndarray, activities: np.ndarray, subject_id: int
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Create sliding windows from continuous data."""
+        windows = []
+        labels = []
+        subjects = []
+
+        num_samples = len(features)
+        for start in range(0, num_samples - self.window_size + 1, self.window_stride):
+            end = start + self.window_size
+            window = features[start:end]
+
+            # Use majority activity in window as label
+            window_activities = activities[start:end]
+            activity, counts = np.unique(window_activities, return_counts=True)
+            majority_activity = activity[np.argmax(counts)]
+
+            if majority_activity in self.activity_to_idx:
+                # Flatten window: (window_size, num_features) -> (window_size * num_features,)
+                windows.append(window.flatten())
+                labels.append(self.activity_to_idx[majority_activity])
+                subjects.append(subject_id)
+
+        if not windows:
+            return np.array([]), np.array([]), np.array([])
+
+        return np.array(windows), np.array(labels), np.array(subjects)
 
     def _normalize_features(self) -> None:
         """Normalize features to zero mean and unit variance."""
-        self.mean = np.nanmean(self.features, axis=0)
-        self.std = np.nanstd(self.features, axis=0)
+        self.mean = self.features.mean(axis=0)
+        self.std = self.features.std(axis=0)
         self.std[self.std == 0] = 1  # Avoid division by zero
         self.features = (self.features - self.mean) / self.std
 
     def __len__(self) -> int:
-        return len(self.features)
+        return len(self.labels)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.features[idx], self.labels[idx]
 
     def get_labels(self) -> np.ndarray:
-        """Get all labels as numpy array for partitioning.
+        """Get all labels as numpy array for partitioning."""
+        return self.labels.numpy()
 
-        For multi-label, returns the first label column for partitioning purposes.
-        """
-        labels = self.labels.numpy() if isinstance(self.labels, torch.Tensor) else self.labels
-        if self.multi_label:
-            return labels[:, 0].astype(np.int64)
-        return labels.astype(np.int64)
-
-    def get_users(self) -> np.ndarray:
-        """Get all user IDs as numpy array for natural partitioning."""
-        return self.user_ids
+    def get_subjects(self) -> np.ndarray:
+        """Get all subject IDs as numpy array for natural partitioning."""
+        return self.subject_ids
 
     @property
     def num_features(self) -> int:
@@ -498,7 +527,5 @@ class ExtraSensoryDataset(Dataset):
 
     @property
     def num_classes(self) -> int:
-        """Get number of classes/labels."""
-        if self.multi_label:
-            return len(self.label_columns)
-        return 2  # Binary classification for single label
+        """Get number of activity classes."""
+        return len(self.activities)

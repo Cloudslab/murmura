@@ -166,7 +166,7 @@ def _load_dataset_adapter(config):
             **config.data.params
         )
     elif adapter_name.startswith("wearables."):
-        # Wearable dataset (uci_har, pamap2, extrasensory)
+        # Wearable dataset (uci_har, pamap2, ppg_dalia)
         dataset_type = adapter_name.split(".")[1]
         from murmura.examples.wearables import load_wearable_adapter
         return load_wearable_adapter(

@@ -2,7 +2,7 @@
 """Run all paper experiments and collect results.
 
 This script runs comprehensive experiments across three wearable datasets
-(UCI HAR, PAMAP2, ExtraSensory) with six aggregation algorithms.
+(UCI HAR, PAMAP2, PPG-DaLiA) with six aggregation algorithms.
 
 Usage:
     python experiments/paper/run_all_experiments.py
@@ -25,7 +25,7 @@ import argparse
 
 
 # Experiment configurations
-DATASETS = ["uci_har", "pamap2", "extrasensory"]
+DATASETS = ["uci_har", "pamap2", "ppg_dalia"]
 ALGORITHMS = ["fedavg", "krum", "balance", "ubar", "sketchguard", "evidential_trust"]
 
 PAPER_DIR = Path(__file__).parent
@@ -207,7 +207,7 @@ def generate_summary_table(results: Dict) -> str:
     lines.append("\\label{tab:personalization_all}")
     lines.append("\\begin{tabular}{l|cccc|cccc|cccc}")
     lines.append("\\toprule")
-    lines.append(" & \\multicolumn{4}{c|}{\\textbf{UCI HAR}} & \\multicolumn{4}{c|}{\\textbf{PAMAP2}} & \\multicolumn{4}{c}{\\textbf{ExtraSensory}} \\\\")
+    lines.append(" & \\multicolumn{4}{c|}{\\textbf{UCI HAR}} & \\multicolumn{4}{c|}{\\textbf{PAMAP2}} & \\multicolumn{4}{c}{\\textbf{PPG-DaLiA}} \\\\")
     lines.append("\\textbf{Algorithm} & Acc & Std & Conv & Peak & Acc & Std & Conv & Peak & Acc & Std & Conv & Peak \\\\")
     lines.append("\\midrule")
 

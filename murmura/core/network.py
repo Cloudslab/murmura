@@ -273,16 +273,23 @@ class Network:
 
             # Get node's data
             train_dataset = dataset_adapter.get_client_data(node_id)
+
+            # Ensure batch size is valid for this node's data
+            # BatchNorm requires at least 2 samples; also ensure we have at least 1 batch
+            num_samples = len(train_dataset)
+            effective_batch_size = min(config.training.batch_size, max(2, num_samples))
+
             train_loader = DataLoader(
                 train_dataset,
-                batch_size=config.training.batch_size,
-                shuffle=True
+                batch_size=effective_batch_size,
+                shuffle=True,
+                drop_last=num_samples > effective_batch_size,  # Only drop if we have extra samples
             )
 
             # For simplicity, use same data for test (in practice, separate test set)
             test_loader = DataLoader(
                 train_dataset,
-                batch_size=config.training.batch_size,
+                batch_size=effective_batch_size,
                 shuffle=False
             )
 

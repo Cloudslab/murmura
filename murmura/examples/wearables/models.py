@@ -286,23 +286,22 @@ class EvidentialPAMAP2Classifier(nn.Module):
         return predictions, uncertainty
 
 
-class EvidentialExtraSensoryClassifier(nn.Module):
-    """Evidential classifier for ExtraSensory dataset.
+class EvidentialPPGDaLiAClassifier(nn.Module):
+    """Evidential MLP classifier for PPG-DaLiA dataset.
 
-    Supports both single-label and multi-label classification with
-    uncertainty quantification.
+    Architecture: Input(window*6) -> FC(256) -> FC(128) -> FC(64) -> Evidential(7)
+
+    Designed for activity recognition from wrist-worn PPG/accelerometer sensors.
     """
 
     def __init__(
         self,
-        input_dim: int = 225,  # 225 sensor features (excluding labels and metadata)
+        input_dim: int = 192,  # 32 window * 6 features (default)
         hidden_dims: Tuple[int, ...] = (256, 128, 64),
-        num_classes: int = 2,
+        num_classes: int = 7,
         dropout: float = 0.3,
-        multi_label: bool = False,
     ):
         super().__init__()
-        self.multi_label = multi_label
 
         layers = []
         prev_dim = input_dim
@@ -317,45 +316,34 @@ class EvidentialExtraSensoryClassifier(nn.Module):
             prev_dim = hidden_dim
 
         self.feature_extractor = nn.Sequential(*layers)
-
-        if multi_label:
-            # For multi-label, use separate binary evidential heads
-            self.evidential_heads = nn.ModuleList([
-                EvidentialHead(prev_dim, 2) for _ in range(num_classes)
-            ])
-        else:
-            self.evidential_head = EvidentialHead(prev_dim, num_classes)
-
+        self.evidential_head = EvidentialHead(prev_dim, num_classes)
         self.num_classes = num_classes
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        features = self.feature_extractor(x)
+        """Forward pass returning Dirichlet alpha parameters.
 
-        if self.multi_label:
-            # Stack binary evidential outputs
-            alphas = [head(features) for head in self.evidential_heads]
-            return torch.stack(alphas, dim=1)  # (batch, num_labels, 2)
-        else:
-            return self.evidential_head(features)
+        Args:
+            x: Input features (batch_size, input_dim)
+
+        Returns:
+            Dirichlet alpha parameters (batch_size, num_classes)
+        """
+        features = self.feature_extractor(x)
+        alpha = self.evidential_head(features)
+        return alpha
 
     def predict(self, x: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        """Predict with uncertainty quantification.
+
+        Args:
+            x: Input features
+
+        Returns:
+            Tuple of (predicted_classes, uncertainty_dict)
+        """
         alpha = self.forward(x)
-
-        if self.multi_label:
-            # For multi-label, predict positive class for each label
-            predictions = alpha[:, :, 1] > alpha[:, :, 0]  # (batch, num_labels)
-            # Compute uncertainty per label
-            uncertainties = []
-            for i in range(self.num_classes):
-                uncertainties.append(compute_uncertainty(alpha[:, i, :]))
-            uncertainty = {
-                'vacuity': torch.stack([u['vacuity'] for u in uncertainties], dim=1),
-                'entropy': torch.stack([u['entropy'] for u in uncertainties], dim=1),
-            }
-        else:
-            uncertainty = compute_uncertainty(alpha)
-            predictions = alpha.argmax(dim=-1)
-
+        uncertainty = compute_uncertainty(alpha)
+        predictions = alpha.argmax(dim=-1)
         return predictions, uncertainty
 
 
@@ -414,31 +402,28 @@ def create_pamap2_model(
     )
 
 
-def create_extrasensory_model(
-    input_dim: int = 225,  # 225 sensor features in ExtraSensory
+def create_ppg_dalia_model(
+    input_dim: int = 192,  # 32 window * 6 features (default)
     hidden_dims: Tuple[int, ...] = (256, 128, 64),
-    num_classes: int = 2,
+    num_classes: int = 7,
     dropout: float = 0.3,
-    multi_label: bool = False,
 ) -> nn.Module:
-    """Create an evidential ExtraSensory classifier model.
+    """Create an evidential PPG-DaLiA classifier model.
 
     Args:
-        input_dim: Number of input features
+        input_dim: Number of input features (window_size * num_sensor_features)
         hidden_dims: Tuple of hidden layer sizes
-        num_classes: Number of output classes/labels
+        num_classes: Number of activity classes
         dropout: Dropout probability
-        multi_label: Whether to use multi-label classification
 
     Returns:
-        EvidentialExtraSensoryClassifier model instance
+        EvidentialPPGDaLiAClassifier model instance
     """
-    return EvidentialExtraSensoryClassifier(
+    return EvidentialPPGDaLiAClassifier(
         input_dim=input_dim,
         num_classes=num_classes,
         hidden_dims=hidden_dims,
         dropout=dropout,
-        multi_label=multi_label,
     )
 
 
@@ -449,7 +434,7 @@ def get_wearable_model_factory(
     """Get a model factory function for a wearable dataset.
 
     Args:
-        dataset_type: Type of dataset ('uci_har', 'pamap2', 'extrasensory')
+        dataset_type: Type of dataset ('uci_har', 'pamap2', 'ppg_dalia')
         **kwargs: Model-specific parameters
 
     Returns:
@@ -465,12 +450,12 @@ def get_wearable_model_factory(
         return lambda: create_har_model(**kwargs)
     elif dataset_type == "pamap2":
         return lambda: create_pamap2_model(**kwargs)
-    elif dataset_type == "extrasensory":
-        return lambda: create_extrasensory_model(**kwargs)
+    elif dataset_type == "ppg_dalia":
+        return lambda: create_ppg_dalia_model(**kwargs)
     else:
         raise ValueError(
             f"Unknown dataset type: {dataset_type}. "
-            f"Available: 'uci_har', 'pamap2', 'extrasensory'"
+            f"Available: 'uci_har', 'pamap2', 'ppg_dalia'"
         )
 
 

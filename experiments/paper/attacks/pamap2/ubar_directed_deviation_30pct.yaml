@@ -1,0 +1,43 @@
+experiment:
+  name: PAMAP2-Ubar-directed_deviation_30pct
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: fully
+  num_nodes: 9
+  seed: 12345
+aggregation:
+  algorithm: ubar
+  params:
+    rho: 0.5
+    sample_fraction: 0.2
+attack:
+  enabled: true
+  type: directed_deviation
+  percentage: 0.3
+  params:
+    lambda_param: -5.0
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+data:
+  adapter: wearables.pamap2
+  params:
+    data_path: wearables_datasets/PAMAP2_Dataset
+    partition_method: dirichlet
+    alpha: 0.5
+    window_size: 100
+    window_stride: 50
+model:
+  factory: examples.wearables.pamap2
+  params:
+    input_dim: 4000
+    hidden_dims:
+    - 512
+    - 256
+    - 128
+    num_classes: 12
+    dropout: 0.3

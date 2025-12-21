@@ -78,17 +78,13 @@ class GaussianAttack:
 
         attacked_state = {}
         for key, param in model_state.items():
-            # Generate Gaussian noise
-            if param.dtype in [torch.long, torch.int, torch.int32, torch.int64, torch.int8, torch.int16]:
-                # For integer tensors, create float noise
-                noise = torch.randn(param.shape, device=param.device, dtype=torch.float32) * self.noise_std
-            else:
+            # Only add noise to floating point parameters (not BatchNorm tracking stats)
+            # BatchNorm's num_batches_tracked is Long and should not be modified
+            if param.dtype in (torch.float32, torch.float64, torch.float16):
                 noise = torch.randn_like(param) * self.noise_std
-
-            # Add noise to parameters
-            if param.dtype == noise.dtype:
                 attacked_state[key] = param + noise
             else:
-                attacked_state[key] = param + noise.to(param.dtype)
+                # Keep non-float parameters unchanged (e.g., num_batches_tracked)
+                attacked_state[key] = param.clone()
 
         return attacked_state
