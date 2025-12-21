@@ -1,0 +1,44 @@
+experiment:
+  name: PPGDALIA-Evidential_Trust-trust_threshold_01
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: fully
+  num_nodes: 15
+  seed: 12345
+aggregation:
+  algorithm: evidential_trust
+  params:
+    vacuity_threshold: 0.5
+    accuracy_weight: 0.7
+    trust_threshold: 0.1
+    self_weight: 0.6
+attack:
+  enabled: false
+  type: gaussian
+  percentage: 0.2
+  params: {}
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+data:
+  adapter: wearables.ppg_dalia
+  params:
+    data_path: wearables_datasets/PPG_FieldStudy
+    partition_method: dirichlet
+    alpha: 0.5
+    window_size: 32
+    window_stride: 16
+model:
+  factory: examples.wearables.ppg_dalia
+  params:
+    input_dim: 192
+    hidden_dims:
+    - 256
+    - 128
+    - 64
+    num_classes: 7
+    dropout: 0.3

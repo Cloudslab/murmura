@@ -1,0 +1,46 @@
+# PAMAP2 Dataset with Dirichlet Partitioning
+# Physical activity monitoring from body-worn sensors
+
+experiment:
+  name: "PAMAP2-Dirichlet-FedAvg"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"  # Fully connected for smaller node count
+  num_nodes: 9   # Matches natural subject count
+  seed: 12345
+
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.001
+  max_samples: null
+
+data:
+  adapter: "wearables.pamap2"
+  params:
+    data_path: "wearables_datasets/PAMAP2_Dataset"
+    partition_method: "dirichlet"  # Options: dirichlet, iid, natural
+    alpha: 0.3  # More non-IID distribution
+    # Sliding window parameters
+    window_size: 100     # 1 second at 100Hz
+    window_stride: 50    # 50% overlap
+    include_heart_rate: true
+    normalize: true
+
+model:
+  factory: "examples.wearables.pamap2"
+  params:
+    input_dim: 4000  # 100 window * 40 features
+    hidden_dims: [512, 256, 128]
+    num_classes: 12
+    dropout: 0.3

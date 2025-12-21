@@ -1,0 +1,44 @@
+experiment:
+  name: PAMAP2-Evidential_Trust-alpha05
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: fully
+  num_nodes: 9
+  seed: 12345
+aggregation:
+  algorithm: evidential_trust
+  params:
+    vacuity_threshold: 0.5
+    accuracy_weight: 0.7
+    trust_threshold: 0.1
+    self_weight: 0.6
+attack:
+  enabled: false
+  type: gaussian
+  percentage: 0.2
+  params: {}
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+data:
+  adapter: wearables.pamap2
+  params:
+    data_path: wearables_datasets/PAMAP2_Dataset
+    partition_method: dirichlet
+    alpha: 0.5
+    window_size: 100
+    window_stride: 50
+model:
+  factory: examples.wearables.pamap2
+  params:
+    input_dim: 4000
+    hidden_dims:
+    - 512
+    - 256
+    - 128
+    num_classes: 12
+    dropout: 0.3

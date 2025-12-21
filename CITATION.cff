@@ -6,7 +6,7 @@ authors:
     orcid: "https://orcid.org/0009-0003-4578-8671"
     email: "murtazahatimr@icloud.com"
     affiliation: "University of Melbourne"
-title: "Murmura: A Ray-based Framework for Federated and Decentralized Machine Learning"
+title: "Murmura: A Framework for Federated and Decentralized Machine Learning"
 version: v1.0.1-beta
 doi: 10.5281/zenodo.15622123
 date-released: 2025-06-09
@@ -19,7 +19,6 @@ keywords:
   - distributed computing
   - privacy-preserving machine learning
   - differential privacy
-  - ray
   - peer-to-peer learning
 type: software
-abstract: "Murmura is a comprehensive Ray-based framework for federated and decentralized machine learning. Built for researchers and developers, it provides production-ready tools for distributed machine learning with advanced privacy guarantees and flexible network topologies. The framework supports both centralized federated learning and fully decentralized peer-to-peer learning environments, with features including multiple network topologies, Byzantine-robust aggregation strategies, comprehensive differential privacy support, and intelligent resource management."
+abstract: "Murmura is a comprehensive Rframework for federated and decentralized machine learning. Built for researchers and developers, it provides production-ready tools for distributed machine learning with advanced privacy guarantees and flexible network topologies. The framework supports both centralized federated learning and fully decentralized peer-to-peer learning environments, with features including multiple network topologies, Byzantine-robust aggregation strategies, comprehensive differential privacy support, and intelligent resource management."

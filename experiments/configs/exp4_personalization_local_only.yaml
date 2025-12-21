@@ -1,0 +1,51 @@
+# Experiment 4: Personalization Study - Local Only (Upper bound baseline)
+# No collaboration - each node trains on its own data only
+# This shows the "pure personalization" upper bound
+
+experiment:
+  name: "EXP4-Personalization-LocalOnly"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "ring"  # Minimal connectivity
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "evidential_trust"
+  params:
+    vacuity_threshold: 0.5
+    accuracy_weight: 0.5
+    trust_threshold: 1.0     # Very high threshold - reject all neighbors
+    self_weight: 1.0         # 100% self-weight = local only
+    use_adaptive_trust: false
+    use_tightening_threshold: false
+    max_eval_samples: 100
+    track_statistics: true
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.1  # Extreme non-IID
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3

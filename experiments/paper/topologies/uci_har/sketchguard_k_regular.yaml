@@ -1,0 +1,41 @@
+experiment:
+  name: UCIHAR-Sketchguard-topo_k-regular
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: k-regular
+  num_nodes: 10
+  seed: 12345
+  k: 4
+aggregation:
+  algorithm: sketchguard
+  params:
+    num_buckets: 1000
+    num_hashes: 5
+    threshold_multiplier: 2.0
+attack:
+  enabled: false
+  type: gaussian
+  percentage: 0.2
+  params: {}
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+data:
+  adapter: wearables.uci_har
+  params:
+    data_path: wearables_datasets/UCI HAR Dataset
+    partition_method: dirichlet
+    alpha: 0.5
+model:
+  factory: examples.wearables.uci_har
+  params:
+    input_dim: 561
+    hidden_dims:
+    - 256
+    - 128
+    num_classes: 6
+    dropout: 0.3

@@ -1,0 +1,42 @@
+# Experiment 3: Heterogeneity Study - Mild Non-IID (alpha=1.0)
+# FedAvg baseline under mild data heterogeneity
+
+experiment:
+  name: "EXP3-Heterog-Mild-FedAvg"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 1.0  # Mild non-IID (closer to IID)
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3

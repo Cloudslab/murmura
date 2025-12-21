@@ -1,6 +1,87 @@
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-.idea
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# uv
+uv.lock
+.python-version
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
 
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Experiment results
+results/
+raw_data/
+figures/
+*.log
+*.csv
+!examples/**/*.csv
+
+# Data directories (large datasets)
+leaf/data/*/data/train/
+leaf/data/*/data/test/
+leaf/data/*/data/all_data/
+leaf/data/*/data/sampled_data/
+leaf/data/*/data/rem_user_data/
+leaf/data/*/data/intermediate/
+
+wearables_datasets/
+
+# Keep directory structure but ignore data
+!leaf/data/*/.gitkeep
+
+# Model checkpoints
+*.pth
 *.pt
+checkpoints/
+
+# Logs
+logs/
+*.out
