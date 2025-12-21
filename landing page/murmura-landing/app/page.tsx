@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Network, Shield, Code2, Settings, BarChart3, BrainCircuit, Check, Activity, Watch, Zap, Target, TrendingUp, AlertTriangle, CheckCircle, Database } from "lucide-react"
+import { Network, Shield, Settings, BrainCircuit, Watch, Target, TrendingUp, AlertTriangle, CheckCircle, Database } from "lucide-react"
 import Link from "next/link"
 import NewsletterForm from "@/components/newsletter-form"
 import { ReactNode } from 'react'
@@ -8,11 +8,6 @@ interface FeatureCardProps {
   icon: ReactNode;
   title: string;
   description: string;
-}
-
-interface StatusItemProps {
-  text: string;
-  status: 'completed' | 'in-progress' | 'planned';
 }
 
 interface DatasetCardProps {
@@ -77,8 +72,8 @@ export default function Home() {
               <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
                 <div className="flex flex-col justify-center space-y-4">
                   <div className="inline-flex items-center rounded-lg bg-muted px-3 py-1 text-sm max-w-fit">
-                    <span className="mr-2 rounded-md bg-purple-600 px-2 py-0.5 text-xs text-white">IEEE ICC 2025</span>
-                    <span className="text-muted-foreground">Paper accepted</span>
+                    <span className="mr-2 rounded-md bg-purple-600 px-2 py-0.5 text-xs text-white">Research</span>
+                    <span className="text-muted-foreground">University of Melbourne</span>
                   </div>
                   <div className="space-y-2">
                     <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
@@ -292,60 +287,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Development Status Section */}
-          <section id="status" className="bg-slate-50 dark:bg-slate-900 py-16 md:py-24">
-            <div className="container px-4 md:px-6">
-              <div className="mx-auto grid max-w-5xl items-center gap-6 lg:grid-cols-2 lg:gap-12">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center rounded-lg bg-muted px-3 py-1 text-sm">
-                    <span className="text-purple-600 font-medium">Experiments</span>
-                  </div>
-                  <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">Comprehensive Evaluation</h2>
-                  <p className="text-muted-foreground md:text-lg">
-                    279 experiment configurations covering heterogeneity levels, attack scenarios, network topologies,
-                    and ablation studies across three wearable IoT datasets.
-                  </p>
-                  <ul className="space-y-2">
-                    <StatusItem text="Baseline experiments (no attacks)" status="completed" />
-                    <StatusItem text="Heterogeneity study (alpha in 0.1, 0.5, 1.0)" status="completed" />
-                    <StatusItem text="Byzantine attacks (10%, 20%, 30%)" status="completed" />
-                    <StatusItem text="Topology study (ring, fully, erdos, k-regular)" status="completed" />
-                    <StatusItem text="Ablation study (hyperparameter sensitivity)" status="completed" />
-                    <StatusItem text="Evidential uncertainty analysis" status="completed" />
-                  </ul>
-                </div>
-                <div className="flex justify-center">
-                  <div className="relative h-[300px] w-[300px] md:h-[400px] md:w-[400px]">
-                    <ExperimentGraphic />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Citation Section */}
-          <section className="py-16 md:py-24">
-            <div className="container px-4 md:px-6">
-              <div className="mx-auto max-w-3xl text-center">
-                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl mb-6">Citation</h2>
-                <p className="text-muted-foreground mb-8">If you use Murmura in your research, please cite:</p>
-                <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-6 text-left font-mono text-sm overflow-x-auto">
-                  <pre>{`@inproceedings{rangwala2025evidential,
-  title={Evidential Trust-Aware Model Personalization
-         in Decentralized Federated Learning
-         for Wearable IoT},
-  author={Rangwala, Murtaza and Sinnott, Richard O.
-          and Buyya, Rajkumar},
-  booktitle={Proceedings of the IEEE International
-             Conference on Communications (ICC)},
-  year={2025},
-  organization={IEEE}
-}`}</pre>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* Newsletter Section */}
           <section className="bg-gradient-to-r from-blue-600 to-purple-600 py-16 md:py-24">
             <div className="container px-4 md:px-6">
@@ -409,25 +350,6 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
   )
 }
 
-function StatusItem({ text, status }: StatusItemProps) {
-  return (
-      <li className="flex items-center gap-2">
-        <div
-            className={`h-2 w-2 rounded-full ${
-                status === "completed" ? "bg-green-500" : status === "in-progress" ? "bg-yellow-500" : "bg-blue-500"
-            }`}
-        />
-        <span className="text-sm">{text}</span>
-        <span
-            className={`ml-auto text-xs ${
-                status === "completed" ? "text-green-500" : status === "in-progress" ? "text-yellow-500" : "text-blue-500"
-            }`}
-        >
-        {status === "completed" ? "Completed" : status === "in-progress" ? "In Progress" : "Planned"}
-      </span>
-      </li>
-  )
-}
 
 function DatasetCard({ name, source, nodes, activities, features }: DatasetCardProps) {
   return (
@@ -475,7 +397,28 @@ function NetworkGraphic() {
   return (
       <div className="relative h-full w-full">
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 400 400">
-          {/* Central node with trust indicator */}
+          {/* Peer connections (background) */}
+          <line x1="100" y1="100" x2="80" y2="200" stroke="rgba(124, 58, 237, 0.3)" strokeWidth="1" />
+          <line x1="300" y1="120" x2="320" y2="200" stroke="rgba(124, 58, 237, 0.3)" strokeWidth="1" />
+          <line x1="120" y1="300" x2="80" y2="200" stroke="rgba(124, 58, 237, 0.3)" strokeWidth="1" />
+
+          {/* Trust connections (solid for trusted) */}
+          <line x1="200" y1="200" x2="100" y2="100" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
+          <line x1="200" y1="200" x2="300" y2="120" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
+          <line x1="200" y1="200" x2="80" y2="200" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
+          <line x1="200" y1="200" x2="120" y2="300" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
+          <line x1="200" y1="200" x2="320" y2="200" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
+
+          {/* Filtered connection (dashed red) */}
+          <line x1="200" y1="200" x2="280" y2="300" stroke="rgba(239, 68, 68, 0.5)" strokeWidth="2" strokeDasharray="8,4" />
+
+          {/* Animated trust pulse (behind central node) */}
+          <circle cx="200" cy="200" r="45" fill="none" stroke="rgba(124, 58, 237, 0.4)" strokeWidth="2">
+            <animate attributeName="r" from="45" to="80" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" from="0.8" to="0" dur="2s" repeatCount="indefinite" />
+          </circle>
+
+          {/* Central node with trust indicator (in front) */}
           <circle cx="200" cy="200" r="35" fill="rgba(124, 58, 237, 0.9)" />
           <text x="200" y="205" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">Trust</text>
 
@@ -488,62 +431,8 @@ function NetworkGraphic() {
 
           {/* Byzantine nodes (red, filtered) */}
           <circle cx="280" cy="300" r="18" fill="rgba(239, 68, 68, 0.6)" strokeDasharray="4,4" stroke="rgba(239, 68, 68, 0.8)" strokeWidth="2" />
-
-          {/* Trust connections (solid for trusted) */}
-          <line x1="200" y1="200" x2="100" y2="100" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
-          <line x1="200" y1="200" x2="300" y2="120" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
-          <line x1="200" y1="200" x2="80" y2="200" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
-          <line x1="200" y1="200" x2="120" y2="300" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
-          <line x1="200" y1="200" x2="320" y2="200" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="3" />
-
-          {/* Filtered connection (dashed red) */}
-          <line x1="200" y1="200" x2="280" y2="300" stroke="rgba(239, 68, 68, 0.5)" strokeWidth="2" strokeDasharray="8,4" />
-
-          {/* Peer connections */}
-          <line x1="100" y1="100" x2="80" y2="200" stroke="rgba(124, 58, 237, 0.3)" strokeWidth="1" />
-          <line x1="300" y1="120" x2="320" y2="200" stroke="rgba(124, 58, 237, 0.3)" strokeWidth="1" />
-          <line x1="120" y1="300" x2="80" y2="200" stroke="rgba(124, 58, 237, 0.3)" strokeWidth="1" />
-
-          {/* Animated trust pulse */}
-          <circle cx="200" cy="200" r="45" fill="none" stroke="rgba(124, 58, 237, 0.4)" strokeWidth="2">
-            <animate attributeName="r" from="45" to="80" dur="2s" repeatCount="indefinite" />
-            <animate attributeName="opacity" from="0.8" to="0" dur="2s" repeatCount="indefinite" />
-          </circle>
         </svg>
       </div>
   )
 }
 
-function ExperimentGraphic() {
-  return (
-      <div className="relative h-full w-full">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="grid grid-cols-3 gap-4">
-            {/* Experiment categories represented as blocks */}
-            <div className="h-16 w-16 rounded-lg bg-green-500/80 flex items-center justify-center text-white">
-              <Activity className="h-8 w-8" />
-            </div>
-            <div className="h-16 w-16 rounded-lg bg-green-500/80 flex items-center justify-center text-white">
-              <Shield className="h-8 w-8" />
-            </div>
-            <div className="h-16 w-16 rounded-lg bg-green-500/80 flex items-center justify-center text-white">
-              <Network className="h-8 w-8" />
-            </div>
-            <div className="h-16 w-16 rounded-lg bg-green-500/80 flex items-center justify-center text-white">
-              <BarChart3 className="h-8 w-8" />
-            </div>
-            <div className="h-16 w-16 rounded-lg bg-green-500/80 flex items-center justify-center text-white">
-              <Settings className="h-8 w-8" />
-            </div>
-            <div className="h-16 w-16 rounded-lg bg-green-500/80 flex items-center justify-center text-white">
-              <BrainCircuit className="h-8 w-8" />
-            </div>
-            <div className="col-span-3 text-center mt-4">
-              <span className="text-2xl font-bold text-purple-600">279</span>
-              <span className="text-muted-foreground ml-2">experiments</span>
-            </div>
-          </div>
-        </div>
-      </div>
-  )
-}
