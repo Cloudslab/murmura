@@ -395,12 +395,14 @@ mypy murmura/
 If you use Murmura in your research, please cite:
 
 ```bibtex
-@inproceedings{rangwala2025evidential,
-  title={Evidential Trust-Aware Model Personalization in Decentralized Federated Learning for Wearable IoT},
-  author={Rangwala, Murtaza and Sinnott, Richard O. and Buyya, Rajkumar},
-  booktitle={},
-  year={2025},
-  organization={}
+@misc{rangwala2025evidentialtrustawaremodelpersonalization,
+      title={Evidential Trust-Aware Model Personalization in Decentralized Federated Learning for Wearable IoT}, 
+      author={Murtaza Rangwala and Richard O. Sinnott and Rajkumar Buyya},
+      year={2025},
+      eprint={2512.19131},
+      archivePrefix={arXiv},
+      primaryClass={cs.DC},
+      url={https://arxiv.org/abs/2512.19131}, 
 }
 ```
 
