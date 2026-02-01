@@ -26,7 +26,8 @@ class TopologyConfig(BaseModel):
 class AggregationConfig(BaseModel):
     """Aggregation algorithm configuration."""
     algorithm: Literal[
-        "fedavg", "krum", "balance", "sketchguard", "ubar", "evidential_trust"
+        "fedavg", "krum", "balance", "sketchguard", "ubar", "evidential_trust",
+        "fedransel", "dp_fedavg", "topk"
     ] = Field(description="Aggregation algorithm")
     params: Dict[str, Any] = Field(
         default_factory=dict,
@@ -76,6 +77,14 @@ class ModelConfig(BaseModel):
     )
 
 
+class NetworkConfig(BaseModel):
+    """Network mode configuration."""
+    mode: Literal["decentralized", "centralized"] = Field(
+        default="decentralized",
+        description="Network mode: decentralized (peer-to-peer) or centralized (server-based)"
+    )
+
+
 class Config(BaseModel):
     """Main configuration object."""
     experiment: ExperimentConfig
@@ -85,6 +94,7 @@ class Config(BaseModel):
     training: TrainingConfig
     data: DataConfig
     model: ModelConfig
+    network: NetworkConfig = Field(default_factory=NetworkConfig)
 
     class Config:
         """Pydantic configuration."""

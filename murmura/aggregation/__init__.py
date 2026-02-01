@@ -7,6 +7,9 @@ from murmura.aggregation.balance import BALANCEAggregator
 from murmura.aggregation.sketchguard import SketchguardAggregator
 from murmura.aggregation.ubar import UBARAggregator
 from murmura.aggregation.evidential_trust import EvidentialTrustAggregator
+from murmura.aggregation.fedransel import FedRanselAggregator
+from murmura.aggregation.dp_fedavg import DPFedAvgAggregator
+from murmura.aggregation.topk import TopKAggregator
 
 __all__ = [
     "Aggregator",
@@ -16,4 +19,7 @@ __all__ = [
     "SketchguardAggregator",
     "UBARAggregator",
     "EvidentialTrustAggregator",
+    "FedRanselAggregator",
+    "DPFedAvgAggregator",
+    "TopKAggregator",
 ]

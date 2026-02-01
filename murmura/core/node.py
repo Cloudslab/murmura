@@ -8,7 +8,7 @@ from torch.optim import SGD
 
 from murmura.core.types import ModelState
 from murmura.aggregation.base import Aggregator, get_model_state, set_model_state
-from murmura.utils.metrics import evaluate_model
+from murmura.utils.metrics import evaluate_model, evaluate_model_comprehensive
 
 
 class Node:
@@ -108,8 +108,12 @@ class Node:
             "epochs": epochs
         }
 
-    def evaluate(self) -> Dict[str, Any]:
+    def evaluate(self, comprehensive: bool = True) -> Dict[str, Any]:
         """Evaluate model on test data.
+
+        Args:
+            comprehensive: If True, compute all metrics (precision, recall, F1, AUC).
+                          If False, compute only accuracy and loss.
 
         Returns:
             Dictionary with evaluation metrics. For evidential models,
@@ -120,6 +124,10 @@ class Node:
 
         if self.evidential:
             return self._evaluate_evidential()
+        elif comprehensive:
+            return evaluate_model_comprehensive(
+                self.model, self.test_loader, self.device
+            )
         else:
             accuracy, loss, correct, total = evaluate_model(
                 self.model, self.test_loader, self.device

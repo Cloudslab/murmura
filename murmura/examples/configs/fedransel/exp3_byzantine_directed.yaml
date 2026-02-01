@@ -1,0 +1,49 @@
+# Experiment 3: Byzantine Robustness - Directed Deviation Attack
+# Claims validated: Theorem 2
+#
+# Vary Byzantine fraction f in {0, 0.1, 0.2, 0.3}
+# Vary tau in {1, 5, 15}
+
+experiment:
+  name: "exp3-byzantine-directed"
+  seed: 42
+  rounds: 100
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 50
+
+network:
+  mode: "centralized"
+
+aggregation:
+  algorithm: "fedransel"
+  params:
+    T_l: 0.5
+    T_g: 1.0
+    tau: 5        # Higher tau for Byzantine resilience. Grid: [1, 5, 15]
+
+attack:
+  enabled: true
+  type: "directed_deviation"
+  percentage: 0.2    # Grid: [0, 0.1, 0.2, 0.3]
+  params:
+    lambda_param: -5.0    # Negative scaling for directional attack
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.01
+
+data:
+  adapter: "cifar10"
+  params:
+    data_path: "./data/cifar10"
+    partition_method: "iid"
+    normalize: true
+
+model:
+  factory: "examples.cifar10.resnet18"
+  params:
+    num_classes: 10

@@ -1,0 +1,55 @@
+# Experiment 2: Privacy-Utility Tradeoff Template
+# Claims validated: Theorem 1 (privacy bound), practical tradeoff characterization
+#
+# Run this template with different parameter combinations:
+# T_l in {0.3, 0.5, 0.7}
+# T_g in {0.5, 0.7, 1.0}
+# tau in {1, N/4=12}
+#
+# Total: 3 x 3 x 2 = 18 configurations
+
+experiment:
+  name: "exp2-privacy-grid"
+  seed: 42
+  rounds: 100
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 50
+
+network:
+  mode: "centralized"
+
+aggregation:
+  algorithm: "fedransel"
+  params:
+    # Grid parameters - modify these for each run:
+    T_l: 0.5      # Grid: [0.3, 0.5, 0.7]
+    T_g: 0.7      # Grid: [0.5, 0.7, 1.0]
+    tau: 1        # Grid: [1, 12]
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.01
+
+data:
+  adapter: "cifar10"
+  params:
+    data_path: "./data/cifar10"
+    partition_method: "iid"
+    normalize: true
+
+model:
+  factory: "examples.cifar10.resnet18"
+  params:
+    num_classes: 10
+
+# Metrics to track:
+# - Final accuracy
+# - Empirical exposure rate (from aggregator statistics)
+# - Compare to Theorem 1 bound: P(exposed) <= (1+T_l)/2 * P(c_j >= tau) * T_g

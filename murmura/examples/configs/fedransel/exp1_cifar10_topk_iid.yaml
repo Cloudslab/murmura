@@ -1,0 +1,40 @@
+# Experiment 1: Baseline - CIFAR-10 IID with Top-K (10%)
+# Communication baseline
+
+experiment:
+  name: "exp1-cifar10-topk-iid"
+  seed: 42
+  rounds: 300
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 50
+
+network:
+  mode: "decentralized"
+
+aggregation:
+  algorithm: "topk"
+  params:
+    k_ratio: 0.1    # Select top 10% of parameters
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.01
+
+data:
+  adapter: "cifar10"
+  params:
+    data_path: "./data/cifar10"
+    partition_method: "iid"
+    normalize: true
+
+model:
+  factory: "examples.cifar10.resnet18"
+  params:
+    num_classes: 10

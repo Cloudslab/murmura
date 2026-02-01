@@ -1,0 +1,40 @@
+# Experiment 1: FEMNIST IID with FedRansel
+# Established FL benchmark, natural heterogeneity
+
+experiment:
+  name: "exp1-femnist-fedransel-iid"
+  seed: 42
+  rounds: 300
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 50
+
+network:
+  mode: "centralized"
+
+aggregation:
+  algorithm: "fedransel"
+  params:
+    T_l: 0.5
+    T_g: 1.0
+    tau: 1
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.01
+
+data:
+  adapter: "leaf.femnist"
+  params:
+    data_path: "leaf/data/femnist/data"
+
+model:
+  factory: "examples.leaf.LEAFFEMNISTModel"
+  params:
+    num_classes: 62

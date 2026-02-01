@@ -1,0 +1,47 @@
+# Experiment 1: PAMAP2 IID with FedRansel
+# Natural per-subject split, realistic FL scenario
+
+experiment:
+  name: "exp1-pamap2-fedransel-iid"
+  seed: 42
+  rounds: 300
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 50
+
+network:
+  mode: "centralized"
+
+aggregation:
+  algorithm: "fedransel"
+  params:
+    T_l: 0.5
+    T_g: 1.0
+    tau: 1
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.01
+
+data:
+  adapter: "wearables.pamap2"
+  params:
+    data_path: "wearables_datasets/PAMAP2_Dataset"
+    partition_method: "iid"
+    window_size: 100
+    window_stride: 50
+    normalize: true
+    include_heart_rate: true
+
+model:
+  factory: "examples.wearables.pamap2"
+  params:
+    input_dim: 4000    # 100 window size * 40 features
+    hidden_dims: [512, 256]
+    num_classes: 12

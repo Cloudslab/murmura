@@ -1,6 +1,6 @@
 """Network orchestrator for decentralized federated learning."""
 
-from typing import List, Optional, Dict, Any, Callable
+from typing import List, Optional, Dict, Any, Callable, Literal
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -24,7 +24,8 @@ class Network:
         self,
         nodes: List[Node],
         topology: Topology,
-        attack: Optional[Attack] = None
+        attack: Optional[Attack] = None,
+        mode: Literal["decentralized", "centralized"] = "decentralized"
     ):
         """Initialize network.
 
@@ -32,6 +33,7 @@ class Network:
             nodes: List of Node instances
             topology: Network topology defining neighbor relationships
             attack: Optional Byzantine attack mechanism
+            mode: Network mode - decentralized (peer-to-peer) or centralized (server-based)
         """
         if len(nodes) != topology.num_nodes:
             raise ValueError(
@@ -42,6 +44,7 @@ class Network:
         self.nodes = nodes
         self.topology = topology
         self.attack = attack
+        self.mode = mode
 
         # Training history
         self.history: Dict[str, List[Any]] = {
@@ -51,11 +54,25 @@ class Network:
             "mean_loss": [],
             "honest_accuracy": [],
             "compromised_accuracy": [],
+            # Comprehensive metrics
+            "mean_precision": [],
+            "mean_recall": [],
+            "mean_f1": [],
+            "mean_auc": [],
             # Evidential uncertainty metrics (if using EDL)
             "mean_vacuity": [],
             "mean_entropy": [],
             "mean_strength": [],
+            # Communication metrics (for FedRansel)
+            "communication_cost": [],
         }
+
+        # Detailed per-round per-node metrics storage
+        self.detailed_metrics: List[Dict[str, Any]] = []
+
+        # Parameter tracking (can be large - optional)
+        self.track_parameters: bool = False
+        self.parameter_history: List[Dict[str, Any]] = []
 
     def train(
         self,
@@ -84,8 +101,11 @@ class Network:
             # Step 1: Local training on all nodes
             self._local_training_step(local_epochs, lr, round_num, verbose)
 
-            # Step 2: Exchange models and aggregate
-            self._aggregation_step(round_num, verbose)
+            # Step 2: Exchange models and aggregate (based on mode)
+            if self.mode == "centralized":
+                self._centralized_aggregation_step(round_num, verbose)
+            else:
+                self._aggregation_step(round_num, verbose)
 
             # Step 3: Evaluate
             if (round_num + 1) % eval_every == 0:
@@ -138,10 +158,66 @@ class Network:
         for node, aggregated_state in zip(self.nodes, aggregated_states):
             node.apply_aggregated_state(aggregated_state)
 
+    def _centralized_aggregation_step(self, round_num: int, verbose: bool) -> None:
+        """Perform centralized aggregation (all nodes -> server -> all nodes).
+
+        In centralized mode, all node states are collected and sent to a single
+        aggregator (server), which computes the global aggregate and broadcasts
+        the result to all nodes. This is used for algorithms like FedRansel.
+        """
+        # Collect all current states
+        current_states = {
+            node.node_id: node.get_state()
+            for node in self.nodes
+        }
+
+        # Apply attacks if enabled
+        if self.attack:
+            for node_id in current_states:
+                if self.attack.is_compromised(node_id):
+                    current_states[node_id] = self.attack.apply_attack(
+                        node_id=node_id,
+                        model_state=current_states[node_id],
+                        round_num=round_num
+                    )
+
+        # Use first node's aggregator as the "server" aggregator
+        # In centralized mode, all nodes share the same aggregator type
+        server_aggregator = self.nodes[0].aggregator
+
+        # Reference state for structure (any node's state)
+        reference_state = current_states[0]
+
+        # Server aggregates ALL node states
+        # Pass node_id=-1 to indicate server, all states as neighbor_states
+        aggregated_state = server_aggregator.aggregate(
+            node_id=-1,  # Server ID
+            own_state=reference_state,
+            neighbor_states=current_states,
+            round_num=round_num,
+            train_loader=self.nodes[0].train_loader,
+            model_template=self.nodes[0].model,
+            device=self.nodes[0].device,
+        )
+
+        # Track communication cost if aggregator provides it
+        if hasattr(server_aggregator, 'communication_costs') and server_aggregator.communication_costs:
+            self.history["communication_cost"].append(
+                server_aggregator.communication_costs[-1]
+            )
+
+        # Broadcast aggregated state to ALL nodes (same state for all)
+        for node in self.nodes:
+            node.apply_aggregated_state(aggregated_state)
+
     def _evaluation_step(self, round_num: int, verbose: bool) -> None:
         """Evaluate all nodes and record metrics."""
         accuracies = []
         losses = []
+        precisions = []
+        recalls = []
+        f1_scores = []
+        auc_scores = []
         honest_accuracies = []
         compromised_accuracies = []
 
@@ -150,13 +226,23 @@ class Network:
         entropies = []
         strengths = []
 
+        # Per-node detailed metrics for this round
+        per_node_metrics = {}
+
         for node in self.nodes:
-            eval_results = node.evaluate()
+            eval_results = node.evaluate(comprehensive=True)
             acc = eval_results.get("accuracy", 0.0)
             loss = eval_results.get("loss", 0.0)
 
             accuracies.append(acc)
             losses.append(loss)
+
+            # Collect comprehensive metrics
+            if "precision" in eval_results:
+                precisions.append(eval_results["precision"])
+                recalls.append(eval_results["recall"])
+                f1_scores.append(eval_results["f1"])
+                auc_scores.append(eval_results.get("auc", 0.5))
 
             # Collect evidential metrics if available
             if "vacuity" in eval_results:
@@ -171,11 +257,21 @@ class Network:
                 else:
                     honest_accuracies.append(acc)
 
+            # Store per-node metrics
+            per_node_metrics[node.node_id] = eval_results
+
         # Record statistics
         self.history["round"].append(round_num)
         self.history["mean_accuracy"].append(np.mean(accuracies))
         self.history["std_accuracy"].append(np.std(accuracies))
         self.history["mean_loss"].append(np.mean(losses))
+
+        # Record comprehensive metrics
+        if precisions:
+            self.history["mean_precision"].append(np.mean(precisions))
+            self.history["mean_recall"].append(np.mean(recalls))
+            self.history["mean_f1"].append(np.mean(f1_scores))
+            self.history["mean_auc"].append(np.mean(auc_scores))
 
         if honest_accuracies:
             self.history["honest_accuracy"].append(np.mean(honest_accuracies))
@@ -188,8 +284,17 @@ class Network:
             self.history["mean_entropy"].append(np.mean(entropies))
             self.history["mean_strength"].append(np.mean(strengths))
 
+        # Store detailed per-node metrics
+        self.detailed_metrics.append({
+            "round": round_num,
+            "per_node": per_node_metrics,
+        })
+
         if verbose:
-            print(f"Round {round_num}: Mean Accuracy = {np.mean(accuracies):.4f} ± {np.std(accuracies):.4f}")
+            print(f"Round {round_num}: Acc={np.mean(accuracies):.4f}±{np.std(accuracies):.4f}", end="")
+            if precisions:
+                print(f", P={np.mean(precisions):.4f}, R={np.mean(recalls):.4f}, F1={np.mean(f1_scores):.4f}, AUC={np.mean(auc_scores):.4f}", end="")
+            print()
             if honest_accuracies and compromised_accuracies:
                 print(f"  Honest: {np.mean(honest_accuracies):.4f}, "
                       f"Compromised: {np.mean(compromised_accuracies):.4f}")
@@ -208,6 +313,52 @@ class Network:
         for node in self.nodes:
             stats[node.node_id] = node.get_aggregator_statistics()
         return stats
+
+    def enable_parameter_tracking(self, enabled: bool = True) -> None:
+        """Enable or disable full parameter tracking.
+
+        Warning: This can consume significant memory for large models.
+
+        Args:
+            enabled: Whether to track full parameters each round
+        """
+        self.track_parameters = enabled
+
+    def get_detailed_metrics(self) -> List[Dict[str, Any]]:
+        """Get detailed per-round per-node metrics.
+
+        Returns:
+            List of dicts with per-round metrics for each node
+        """
+        return self.detailed_metrics
+
+    def get_aggregator_detailed_history(self) -> Dict[str, Any]:
+        """Get detailed history from the aggregator (for FedRansel, DP-FedAvg, etc.).
+
+        Returns:
+            Dictionary with aggregator-specific detailed history
+        """
+        if not self.nodes:
+            return {}
+
+        aggregator = self.nodes[0].aggregator
+        if aggregator is None:
+            return {}
+
+        result = {"algorithm": type(aggregator).__name__}
+
+        # Get FedRansel detailed history
+        if hasattr(aggregator, 'get_detailed_history'):
+            result["detailed_history"] = aggregator.get_detailed_history()
+
+        # Get DP-FedAvg budget history
+        if hasattr(aggregator, 'get_budget_history'):
+            result["budget_history"] = aggregator.get_budget_history()
+
+        # Get general statistics
+        result["statistics"] = aggregator.get_statistics()
+
+        return result
 
     @classmethod
     def from_config(
@@ -309,4 +460,9 @@ class Network:
             )
             nodes.append(node)
 
-        return cls(nodes=nodes, topology=topology, attack=attack)
+        # Get network mode (default to decentralized for backward compatibility)
+        mode = "decentralized"
+        if hasattr(config, 'network') and hasattr(config.network, 'mode'):
+            mode = config.network.mode
+
+        return cls(nodes=nodes, topology=topology, attack=attack, mode=mode)

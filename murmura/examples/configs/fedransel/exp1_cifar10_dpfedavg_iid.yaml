@@ -1,0 +1,42 @@
+# Experiment 1: Baseline - CIFAR-10 IID with DP-FedAvg (epsilon=4)
+# Privacy baseline
+
+experiment:
+  name: "exp1-cifar10-dpfedavg-iid"
+  seed: 42
+  rounds: 300
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 50
+
+network:
+  mode: "decentralized"
+
+aggregation:
+  algorithm: "dp_fedavg"
+  params:
+    epsilon: 4.0
+    delta: 1e-5
+    clip_norm: 1.0
+
+attack:
+  enabled: false
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.01
+
+data:
+  adapter: "cifar10"
+  params:
+    data_path: "./data/cifar10"
+    partition_method: "iid"
+    normalize: true
+
+model:
+  factory: "examples.cifar10.resnet18"
+  params:
+    num_classes: 10

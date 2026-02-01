@@ -1,0 +1,54 @@
+# Experiment 3: Byzantine Robustness - Gaussian Attack
+# Claims validated: Theorem 2
+#
+# Vary Byzantine fraction f in {0, 0.1, 0.2, 0.3}
+# Vary tau in {1, 5, 15}
+
+experiment:
+  name: "exp3-byzantine-gaussian"
+  seed: 42
+  rounds: 100
+  verbose: true
+
+topology:
+  type: "fully"
+  num_nodes: 50
+
+network:
+  mode: "centralized"
+
+aggregation:
+  algorithm: "fedransel"
+  params:
+    T_l: 0.5
+    T_g: 1.0
+    tau: 5        # Higher tau for Byzantine resilience. Grid: [1, 5, 15]
+
+attack:
+  enabled: true
+  type: "gaussian"
+  percentage: 0.2    # Grid: [0, 0.1, 0.2, 0.3]
+  params:
+    noise_std: 10.0
+
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.01
+
+data:
+  adapter: "cifar10"
+  params:
+    data_path: "./data/cifar10"
+    partition_method: "iid"
+    normalize: true
+
+model:
+  factory: "examples.cifar10.resnet18"
+  params:
+    num_classes: 10
+
+# Theorem 2 bound validation:
+# |Honest nodes| >= ceil(2*tau / (1 + T_l))
+# With tau=5, T_l=0.5: need >= ceil(10/1.5) = 7 honest nodes
+# At 20% Byzantine (10 compromised), we have 40 honest nodes - should be robust

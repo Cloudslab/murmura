@@ -140,6 +140,9 @@ def list_components(
         console.print("  • sketchguard - Count-Sketch compression for lightweight filtering")
         console.print("  • ubar - Two-stage Byzantine-resilient (distance + loss)")
         console.print("  • evidential_trust - Uncertainty-aware trust aggregation (EDL-based)")
+        console.print("  • fedransel - FedRansel random parameter selection (privacy-preserving)")
+        console.print("  • dp_fedavg - Differentially Private FedAvg (Gaussian mechanism)")
+        console.print("  • topk - Top-K parameter selection by magnitude (communication-efficient)")
 
     elif component_type == "attacks":
         console.print("[bold]Available Attacks:[/bold]")
@@ -175,6 +178,14 @@ def _load_dataset_adapter(config):
             seed=config.experiment.seed,
             **config.data.params
         )
+    elif adapter_name.startswith("cifar10"):
+        # CIFAR-10 dataset
+        from murmura.examples.cifar10 import load_cifar10_adapter
+        return load_cifar10_adapter(
+            num_nodes=config.topology.num_nodes,
+            seed=config.experiment.seed,
+            **config.data.params
+        )
     else:
         # Custom adapter - dynamically import
         module_path, class_name = adapter_name.rsplit(".", 1)
@@ -197,6 +208,11 @@ def _load_model_factory(config):
         from murmura.examples.wearables import get_wearable_model_factory
         dataset_type = factory_path.split(".")[-1]
         return get_wearable_model_factory(dataset_type, **config.model.params)
+    elif factory_path.startswith("examples.cifar10."):
+        # CIFAR-10 model
+        from murmura.examples.cifar10 import get_cifar10_model_factory
+        model_type = factory_path.split(".")[-1]
+        return get_cifar10_model_factory(model_type, **config.model.params)
     else:
         # Custom model factory
         module_path, factory_name = factory_path.rsplit(".", 1)
@@ -214,6 +230,9 @@ def _create_aggregator_factory(config, model_factory, device):
         SketchguardAggregator,
         UBARAggregator,
         EvidentialTrustAggregator,
+        FedRanselAggregator,
+        DPFedAvgAggregator,
+        TopKAggregator,
     )
     from murmura.aggregation.base import calculate_model_dimension
 
@@ -231,6 +250,11 @@ def _create_aggregator_factory(config, model_factory, device):
     if agg_type in ["balance", "ubar", "evidential_trust"]:
         params["total_rounds"] = config.experiment.rounds
 
+    # Add seed for aggregators that need it
+    if agg_type in ["fedransel", "dp_fedavg", "topk"]:
+        if "seed" not in params:
+            params["seed"] = config.experiment.seed
+
     def factory(node_id: int):
         if agg_type == "fedavg":
             return FedAvgAggregator(**params)
@@ -244,6 +268,12 @@ def _create_aggregator_factory(config, model_factory, device):
             return UBARAggregator(**params)
         elif agg_type == "evidential_trust":
             return EvidentialTrustAggregator(**params)
+        elif agg_type == "fedransel":
+            return FedRanselAggregator(**params)
+        elif agg_type == "dp_fedavg":
+            return DPFedAvgAggregator(**params)
+        elif agg_type == "topk":
+            return TopKAggregator(**params)
         else:
             raise ValueError(f"Unknown aggregation algorithm: {agg_type}")
 
