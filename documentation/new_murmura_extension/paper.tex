@@ -1,0 +1,925 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+% \usepackage{amsmath}
+% \usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, shapes.geometric, patterns}
+
+% Custom environment for new content added in this revision (shown in blue).
+% Usage: \begin{added} ... \end{added}
+\definecolor{addedcolor}{RGB}{0,85,165}
+\newenvironment{added}{\begingroup\color{addedcolor}}{\endgroup}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\title{Trust-Aware Topology Learning for Dynamic Decentralized Federated Learning under Adversaries}
+\author{Shubham~Vaishnav, Murtaza~Rangwala, Sindri~Magnússon, and~Rajkumar~Buyya
+        % <-this % stops a space
+\thanks{M. Rangwala and R.Buyya are with the Cloud Computing and Distributed Systems (CLOUDS) Laboratory at the University of Melbourne, Australia (e-mail: murtaza.rangwala@student.unimelb.edu.au; rbuyya@unimelb.edu.au).}
+\thanks{S. Vaishnav and S. Magn\'usson are with the Department of Computer and System Science, Stockholm University, Sweden (e-mail: shubham.vaishnav@dsv.su.se; sindri.magnusson@dsv.su.se).}
+}
+\date{April 10, 2026}
+
+\begin{document}
+\maketitle
+
+% Abstract to be written once experimental results are available.
+
+\section{Introduction}
+
+\texttt{MURMURA} \cite{rangwala2025evidential} addresses the question of whom to trust among already visible peers, but it does not solve the  systems-level question of how peers discover and maintain knowledge of a changing network topology in the first place. This gap becomes particularly sharp in dynamic decentralized federated learning (DFL), where connectivity varies over time due to mobility, failures, or adversarial behavior.
+
+Existing \texttt{MURMURA} evaluations assume fixed graph structures and synchronous rounds. In contrast, dynamic topology works such as Soft-DSGD and ToLRDUL either rely on link reliability models that do not consider malicious topology reports or assume globally coordinated topology updates that are too strong for fully decentralized environments \cite{rangwala2025evidential,ye2022decentralized,wu2024topology}. Therefore, there is a need for dynamic \texttt{MURMURA} with adversary-aware topology trust.
+
+Beyond practicality, there are also strong theoretical reasons why this gap has persisted. Nesterenko and Tixeuil show that under Byzantine faults, weak topology discovery requires at least
+$k+1$-connectivity, while strong topology discovery requires more than $2k+1$-connectivity to tolerate
+$k$ Byzantine nodes \cite{nesterenko2009discovering}.
+
+These requirements make exact global topology agreement impractical for sparse wearable, IoT, or mobile FL deployments. As a result, the appropriate target is not exact topology discovery, but rather a confidence-weighted topology view: exact for direct neighbors, reasonably reliable for two-hop structure, and probabilistic beyond that.
+
+This work proposes a decentralized personalized FL framework that extends \texttt{MURMURA} beyond a fixed-neighborhood setting. It maintains a confidence-weighted topology state built from direct observation, signed claims, corroboration, and uncertainty-aware source trust. It then uses this trusted graph to choose collaborators using evidential trust. The proposed system can be viewed as \texttt{MURMURA} augmented with a trustworthy topology memory. The design separates the problem into three distinct layers as shown in table \ref{tab:three_layers}.
+
+\begin{table}[t]
+\centering
+\caption{Three-layer separation between reachability, topology trust, and collaboration}
+\label{tab:three_layers}
+\begin{tabular}{@{}p{0.28\columnwidth} p{0.66\columnwidth}@{}}
+\toprule
+\textbf{Layer} & \textbf{Description} \\
+\midrule
+
+\textbf{Direct reachability} &
+Tracks which peers can be contacted in the current epoch based on local observations such as authenticated beacons and packet acknowledgments~\cite{ye2022decentralized}. \\[0.6ex]
+
+\textbf{Topology trust} &
+Maintains confidence in topology claims using signed reports, corroboration across multiple witnesses, historical consistency, and path diversity~\cite{nesterenko2009discovering,gaucher2410unified}. \\[0.6ex]
+
+\textbf{Collaboration graph} &
+Determines which reachable and trustworthy peers should influence local training, combining \texttt{MURMURA} model trust, topology trust, and communication cost~\cite{rangwala2025evidential,kharrat2024decentralized,liu2024decentralized}. \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+This separation is necessary because:
+\begin{itemize}[leftmargin=2em]
+\item A node may be reachable but untrustworthy.
+\item A node may be trustworthy but currently unreachable.
+\item A node may be both reachable and trustworthy but still unhelpful for personalization.
+\end{itemize}
+
+\begin{added}
+\paragraph{Contributions.}
+This paper makes the following contributions.
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{DMTT protocol.}
+        We define and analyze a four-algorithm DMTT protocol comprising link-reliability tracking, signed topology-claim processing with witness-weighted edge confidence, source trust via Beta-distributed evidence, and trust-aware collaborator selection via a composite score that integrates model compatibility, topology trust, and link reliability. We prove that the induced mixing matrices confine Byzantine influence to a bounded residual term that shrinks as the screening mechanism accumulates evidence.
+  \item \textbf{Fully distributed \texttt{MURMURA} framework.}
+        We redesign \texttt{MURMURA} from a single-process simulation into a multi-process ZeroMQ-based framework in which each client runs as an independent OS process. Round synchronisation uses a shared wall-clock epoch without any central coordinator. A passive PULL-only monitor collects per-round metrics without influencing the learning protocol.
+  \item \textbf{Dynamic topology and topology-liar attack.}
+        We develop a deterministic random-walk mobility model that generates the time-varying graph $\mathcal{G}^t$ identically across all node processes from a shared seed, enabling fully decentralised topology reconstruction without inter-process communication. We introduce a topology-liar Byzantine attack in which compromised nodes inject falsified neighbourhood claims into the \texttt{TOPO\_CLAIM} channel, providing a controlled stress test for the DMTT screening pipeline.
+  \item \textbf{Empirical validation.}
+        We conduct a three-condition comparison across static MURMURA, dynamic MURMURA without trust, and full DMTT, under a 30\% topology-liar Byzantine fraction, demonstrating the benefit of trust-aware collaborator selection under dynamic adversarial topology conditions.
+\end{enumerate}
+\end{added}
+
+\section{Problem Formulation}
+\label{sec:problem}
+
+This section states the system, data, and adversary model, identifies the local state each client must maintain, and writes down the optimization problem that the protocol of Section~\ref{sec:protocol} solves. Concrete update rules and equations for each state variable are deferred to Section~\ref{sec:protocol}.
+
+\subsection{System and Communication Model}
+
+We consider a decentralized personalized FL system with a fixed set of clients
+$$
+\mathcal V = \{1,2,\dots,N\}.
+$$
+Client identities are persistent, but client positions vary over time. Let ${\bf r}_i^t$ denote the position of client $i$ at epoch $t$. Mobility induces a time-varying communication topology
+$$
+\mathcal G^t = (\mathcal V,\mathcal E^t),
+$$
+where $(i,j)\in\mathcal E^t$ if clients $i$ and $j$ are physically able to communicate at epoch $t$. The node set is fixed; the edge set changes due to motion, channel variation, or obstruction. This is the dynamic-topology extension beyond the fixed-neighborhood setting of \texttt{MURMURA}~\cite{rangwala2025evidential}, and it follows the standard time-varying graph model used in decentralized optimization~\cite{ye2022decentralized,wu2024topology}.
+
+\subsection{Local Data and Personalized Objective}
+
+Each client $i\in\mathcal V$ holds a private dataset $\mathcal D_i = \mathcal D_i^{tr} \cup \mathcal D_i^{val}$ drawn from a client-specific distribution $P_i$. The distributions $\{P_i\}$ are generally non-IID, so the system seeks not a single global model but a collection of personalized models $\Theta = \{\theta_1,\dots,\theta_N\}$ with $\theta_i\in\mathbb R^d$, following the personalization principle of \texttt{MURMURA}~\cite{rangwala2025evidential}. The local population risk at client $i$ is
+$$
+F_i(\theta_i) = \mathbb E_{(x,y)\sim P_i}\big[\ell(f(x;\theta_i),y)\big],
+$$
+and the population objective is
+$$
+\min_{\Theta}\; \sum_{i=1}^{N} F_i(\theta_i).
+$$
+Unlike conventional DFL, client $i$ cannot safely collaborate with every other client at every epoch: communication feasibility and topology trust are both time-varying.
+
+\subsection{Adversary Model}
+\label{sec:adversary}
+
+Let $\mathcal H \subseteq \mathcal V$ denote the honest clients and $\mathcal B = \mathcal V \setminus \mathcal H$ the Byzantine clients. The Byzantine set is fixed over the training horizon, although Byzantine clients move like honest ones. Honest clients follow the prescribed protocol. Byzantine clients may behave arbitrarily, including issuing false edge-addition or edge-removal claims, replaying stale topology states, flooding the network with weak claims, or sending misleading model updates. The formulation therefore separates topology trust from model usefulness so that topology misinformation is filtered before collaboration decisions are made.
+
+\subsection{Local State to Be Maintained}
+\label{sec:local_state}
+
+At every epoch $t$, each client $i$ must maintain four pieces of local state. We \emph{name} them here and specify their role; their update rules are given in Section~\ref{sec:protocol}.
+
+\paragraph{(i) Direct reachability and link reliability.}
+Through authenticated hello beacons and transport-level acknowledgments, client $i$ observes the set of one-hop neighbors
+$$
+N_i^{dir,t} = \{j\in\mathcal V : (i,j)\in\mathcal E^t\},
+$$
+and tracks a scalar link-reliability estimate $\hat p_{ij}^t \in [0,1]$ for each $j\in N_i^{dir,t}$. This estimate captures direct communication quality only; it does \emph{not} measure whether $j$ is a trustworthy source of topology information, which is a separate question~\cite{ye2022decentralized}.
+
+\paragraph{(ii) Signed topology claims and witness evidence.}
+When a client observes a local topology event, it emits a signed topology claim
+$$
+c=(u,v,\sigma,\nu,\tau,\pi_u),
+$$
+where $(u,v)$ is the reported edge, $\sigma\in\{\mathrm{add},\mathrm{remove}\}$ is the event type, $\nu$ is a monotone version number, $\tau$ is a timestamp, and $\pi_u$ is the source signature. Received claims about edge $e$ are not committed immediately; client $i$ aggregates them in supporting and opposing witness buffers $\mathcal W_i^{+,t}(e),\mathcal W_i^{-,t}(e)$, which the protocol summarises into an edge-confidence score $\chi_i^t(e)\in[0,1]$.
+
+\paragraph{(iii) Source-trust state.}
+For each peer $j$, client $i$ maintains a Beta-style evidence state $(\alpha_{ij}^t,\beta_{ij}^t)$ tracking the long-run reliability of $j$ as a reporter of topology information. The protocol turns $(\alpha_{ij}^t,\beta_{ij}^t)$ into a posterior mean reputation $R_{ij}^t$, an epistemic uncertainty $U_{ij}^t$, and a final topology-trust score $T_{ij}^{topo,t}\in[0,1]$. This is the topology-side analogue of the model-side evidential trust used in \texttt{MURMURA}~\cite{rangwala2025evidential}.
+
+\paragraph{(iv) Trusted local topology view.}
+By accepting an edge $e$ only when its confidence $\chi_i^t(e)$ and corroboration are sufficient, client $i$ maintains a confidence-weighted local topology view
+$$
+\hat{\mathcal G}_i^t = (\mathcal V,\hat{\mathcal E}_i^t).
+$$
+The target is therefore not exact global topology discovery under Byzantine faults — which is impractical in sparse dynamic systems, since strong Byzantine topology discovery requires more than $2k+1$-connectivity~\cite{nesterenko2009discovering} — but a sufficiently accurate local view for safe collaboration.
+
+\subsection{Trusted Feasible Set and Effective Learning Graph}
+
+Given the local state above, the protocol must induce, at every epoch, a \emph{trusted feasible neighbor set}
+$$
+\mathcal F_i^t \subseteq N_i^{dir,t},
+$$
+restricted to peers that are simultaneously reachable (sufficient $\hat p_{ij}^t$) and trustworthy as topology reporters (sufficient $T_{ij}^{topo,t}$), and an \emph{active collaborator set}
+$$
+C_i^t \subseteq \mathcal F_i^t,\qquad |C_i^t| \le B,
+$$
+within an edge budget $B$, as in budgeted decentralized personalized graph learning~\cite{kharrat2024decentralized}. The corresponding aggregation weights $\{w_{ij}^t\}$ define a row-stochastic, time-varying \emph{screened mixing matrix} $W^t = [w_{ij}^t]_{i,j=1}^N$ with
+$$
+w_{ij}^t = 0 \;\text{if}\; j\notin C_i^t\cup\{i\},\quad
+\sum_{j} w_{ij}^t = 1,\quad w_{ij}^t \ge 0.
+$$
+Hence the effective learning graph is not the raw physical graph $\mathcal G^t$ but a client-specific, time-varying, trust-screened graph. This connects the formulation to standard analyses of decentralized learning over time-varying graphs, where topology enters through the support and spectral properties of the mixing matrices.
+
+\subsection{Optimization Problem}
+
+The problem addressed in this work is to jointly design four protocol rules:
+\begin{enumerate}[leftmargin=2em,itemsep=0.2ex]
+  \item the topology-claim processing rule, producing $\hat{\mathcal G}_i^t$;
+  \item the source-trust update rule, producing $T_{ij}^{topo,t}$;
+  \item the trusted-feasible-neighbor selection rule, producing $\mathcal F_i^t$ and $C_i^t$;
+  \item the personalized aggregation rule, producing $W^t$ and $\theta_i^{t+1}$.
+\end{enumerate}
+Over a horizon of $T$ epochs, the goal is to minimize the time-averaged aggregate personalized risk
+$$
+\min_{\{\theta_i^t\},\,\Pi_{topo},\,\Pi_{collab}}\;
+\frac{1}{T}\sum_{t=1}^{T}\sum_{i=1}^{N} \mathbb E\big[F_i(\theta_i^t)\big],
+$$
+subject, for every epoch $t$ and client $i$, to
+$$
+C_i^t \subseteq \mathcal F_i^t \subseteq N_i^{dir,t},\qquad |C_i^t|\le B,
+$$
+the row-stochastic mixing-matrix constraints above, and the requirement that topology information may influence collaboration only through the screened local topology state $(\hat{\mathcal G}_i^t, T_{ij}^{topo,t})$.
+
+In words, the proposed method — Dynamic \texttt{MURMURA} with Trusted Topology (DMTT) — must maintain a trustworthy, confidence-weighted topology view and perform personalized decentralized learning only over the resulting trusted feasible graph. Section~\ref{sec:protocol} specifies the four rules above and gives the equations defining $\hat p_{ij}^t$, $\chi_i^t(e)$, $T_{ij}^{topo,t}$, and $W^t$.
+
+\section{Proposed Approach}
+\label{sec:protocol}
+
+The proposed method is a decentralized training protocol with an explicit topology-trust layer. Instead of trusting a topology claim on arrival, each node first grounds its network view in direct neighbor observations, then verifies signed claims for freshness and authenticity, accumulates corroborating and opposing witness evidence, updates long-term trust in each reporting source, and limits forwarding through trust thresholds, hop limits, and rate budgets. Only after this topology-filtering stage does the node invoke \texttt{MURMURA}-style model trust to decide which reachable peers should influence training.
+% This separation is important because a malicious or stale topology report is a different failure mode from an unhelpful model update.
+
+The protocol contains six logical steps, but for clarity they are grouped into four algorithmic modules. Algorithm~\ref{alg:main} integrates direct reachability estimation, signed topology-claim generation, local model training, model exchange, and collaborator selection. Topology-claim processing and edge-confidence computation are handled by Algorithm~\ref{alg:claim}. Controlled forwarding is handled by Algorithm~\ref{alg:forward}. Source-trust updating is handled by Algorithm~\ref{alg:trust}.
+% This organization follows the main state-update modules of the method rather than presenting the protocol only as a step-by-step list.
+
+\textbf{Local State at Node $i$:} Each node $i$ maintains the local state summarized in Table~\ref{tab:notation}. These variables track direct link quality, topology trust, witness evidence, and model-level collaboration scores. Algorithm~\ref{alg:main} gives the overall decentralized protocol. Each node executes the same routine locally and in parallel at every epoch.
+
+
+\begin{table}[t]
+\centering
+\caption{Main notation used in the protocol}
+\label{tab:notation}
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\theta_i^t$ & Local model at node $i$ at epoch $t$ \\
+$\theta_i^{t+\frac{1}{2}}$ & Intermediate model after local training \\
+$\mathcal{D}_i$ & Local dataset at node $i$ \\
+$N_i^{dir,t}$ & Direct neighbors heard by node $i$ at epoch $t$ \\
+$\hat{p}_{ij}^t$ & Link-reliability estimate from $i$ to $j$ \\
+$\mathrm{ack}_{ij}^t$ & Recent communication success indicator \\
+$c=(u,v,\sigma,\nu,\tau,\pi_u)$ & Signed topology claim \\
+$\sigma$ & Edge event type, add or remove \\
+$\nu$ & Monotone version number \\
+$\tau$ & Timestamp \\
+$\pi_u$ & Source signature \\
+$\mathcal{W}_i(e)$ & Witness buffer for edge claim $e$ \\
+$\mathcal{W}_i^{+,t}(e)$ & Supporting witnesses for edge $e$ \\
+$\mathcal{W}_i^{-,t}(e)$ & Opposing witnesses for edge $e$ \\
+$\psi_{ij}^t(e)$ & Witness weight assigned by node $i$ to source $j$ \\
+$h_{ij}^t(e)$ & Hop count traveled by claim about edge $e$ \\
+$S_i^{+,t}(e)$ & Weighted support total for edge $e$ \\
+$S_i^{-,t}(e)$ & Weighted opposition total for edge $e$ \\
+$\chi_i^t(e)$ & Confidence that edge $e$ is valid \\
+$\alpha_{ij}^t$ & Positive evidence count for source $j$ \\
+$\beta_{ij}^t$ & Negative evidence count for source $j$ \\
+$R_{ij}^t$ & Posterior mean reputation of source $j$ \\
+$U_{ij}^t$ & Uncertainty of the reputation estimate \\
+$T_{ij}^{\text{topo},t}$ & Topology-trust score assigned to source $j$ \\
+$s_{ij}^{\text{model},t}$ & \texttt{MURMURA} model compatibility score \\
+$c_{ij}^{\text{comm},t}$ & Communication cost of collaborating with $j$ \\
+$q_{ij}^t$ & Final collaboration score for neighbor $j$ \\
+$C_i^t$ & Active collaborator set at node $i$ \\
+$B$ & Edge budget for collaborator selection \\
+$H$ & Hop limit for forwarding \\
+$\tau_{add}$ & Edge-acceptance threshold \\
+$\tau_{fwd}$ & Forwarding trust threshold \\
+$\tau_U$ & Uncertainty tolerance threshold \\
+$\rho$ & Smoothing parameter for link reliability \\
+$\xi$ & Hop-penalty parameter for witness weighting \\
+$\lambda$ & Forgetting factor for trust updates \\
+$\lambda_1,\lambda_2,\lambda_3,\lambda_4$ & Weights in the collaboration score \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{algorithm}[t]
+\caption{DMTT: Dynamic \texttt{MURMURA} with Trusted Topology}
+\label{alg:main}
+\begin{algorithmic}[1]
+\State Initialize local model $\theta_i^0$
+\State Initialize direct-neighbor set $N_i^{dir}$
+\State Initialize trust state $\{\alpha_{ij},\beta_{ij},T_{ij}^{topo}\}_j$
+\State Initialize witness buffers $\mathcal{W}_i(e)$ and edge confidences $\chi_i(e)$
+\State Initialize collaborator set $C_i$
+\For{each epoch $t$ executed in parallel at all nodes}
+    \For{each authenticated neighbor $j$ heard in epoch $t$}
+        \State Add $j$ to $N_i^{dir,t}$
+        \State $\hat{p}_{ij}^{t+1} \gets (1-\rho)\hat{p}_{ij}^{t} + \rho \cdot \mathrm{ack}_{ij}^{t}$
+    \EndFor
+    \State Remove stale neighbors from $N_i^{dir,t}$ if timeout expires
+    \If{node $i$ observes addition or removal of edge $e=(u,v)$}
+        \State Construct signed claim $c \gets (u,v,\sigma,\nu,\tau,\pi_u)$
+        \State Broadcast $c$ to current direct neighbors
+    \EndIf
+    \For{each received claim $c$ about edge $e$}
+        \State \Call{ProcessTopologyClaim}{$i,c,e,t$}
+    \EndFor
+    \For{each source $j$ with new evidence}
+        \State \Call{UpdateSourceTrust}{$i,j,t$}
+    \EndFor
+    \For{each received claim $c$}
+        \State \Call{ControlledForward}{$i,c,t$}
+    \EndFor
+    \State Perform $E$ local SGD steps to obtain $\theta_i^{t+\frac{1}{2}}$
+    \State Exchange candidate models or updates with currently reachable, topology-screened neighbors
+     \State Evaluate received peer models on local validation data
+    \State Compute validation accuracy $a_{ij}^t$ and mean epistemic uncertainty $\bar{u}_{ij}^t$
+    \State Compute \texttt{MURMURA}-style compatibility scores $s_{ij}^{model,t}$
+    \For{each currently reachable and topology-screened neighbor $j$}
+        \State $q_{ij}^t \gets \lambda_1 s_{ij}^{model,t} + \lambda_2 T_{ij}^{topo,t} + \lambda_3 \hat{p}_{ij}^{t} - \lambda_4 c_{ij}^{comm,t}$
+    \EndFor
+    \State $C_i^t \gets \operatorname{TopB}_j \; q_{ij}^t$
+    \State Aggregate over $C_i^t$ and update $\theta_i^{t+1}$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Direct Reachability and Signed Topology Claims}
+
+The protocol starts from direct observations rather than an assumed global topology. As shown in Algorithm~\ref{alg:main}, each node discovers direct neighbors through authenticated hello beacons and transport-level acknowledgments. For a direct link $(i,j)$, node $i$ updates a local reliability score in the spirit of unreliable link estimation in Soft-DSGD, but without assuming a global reliability matrix \cite{ye2022decentralized}:
+\begin{equation}
+\hat{p}_{ij}^{t+1} = (1-\rho)\hat{p}_{ij}^{t} + \rho \cdot \text{ack}_{ij}^{t}.
+\end{equation}
+
+Here, $\rho \in (0,1)$ is a smoothing parameter and $\text{ack}_{ij}^{t} \in \{0,1\}$ records recent communication success. This quantity captures link quality, not trust \cite{ye2022decentralized}. It provides the local connectivity view on which the later filtering stages build.
+
+When a node observes a local topology event, it emits the signed claim $c$ defined in Section~\ref{sec:local_state}. For direct-neighbor claims, the preferred form is bilateral attestation, meaning both endpoints sign the same event when possible. One-sided claims are allowed but start with lower confidence. Each node may also periodically send a compact signed digest of its current neighbor list (similar to sketching \cite{rangwala2025sketchguard}).
+
+\begin{algorithm}[t]
+\caption{Topology claim processing and edge-confidence update}
+\label{alg:claim}
+\begin{algorithmic}[1]
+\State Extract source $j$ and hop count $h_{ij}^t(e)$ from $c$
+\If{signature invalid or version stale}
+    \State Reject $c$ and return
+\EndIf
+\State Add source $j$ to witness buffer $\mathcal{W}_i(e)$
+\State $\psi_{ij}^t(e) \gets T_{ij}^{topo,t}\exp(-\xi h_{ij}^t(e))$
+\If{$c$ supports existence of edge $e$}
+    \State Add $\psi_{ij}^t(e)$ to support pool
+\Else
+    \State Add $\psi_{ij}^t(e)$ to opposition pool
+\EndIf
+\State $S_i^{+,t}(e) \gets \sum_{j \in \mathcal{W}_i^{+,t}(e)} \psi_{ij}^t(e)$
+\State $S_i^{-,t}(e) \gets \sum_{j \in \mathcal{W}_i^{-,t}(e)} \psi_{ij}^t(e)$
+\State $\chi_i^t(e) \gets \dfrac{S_i^{+,t}(e)}{S_i^{+,t}(e)+S_i^{-,t}(e)+\varepsilon}$
+\If{$c$ is an edge addition}
+    \If{$\chi_i^t(e)\ge \tau_{add}$ and witness diversity conditions hold}
+        \State Accept edge addition
+    \EndIf
+\Else
+    \If{$1-\chi_i^t(e)\ge \tau_{add}$ and witness diversity conditions hold}
+        \State Accept edge removal
+    \EndIf
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Topology Claim Processing and Edge Confidence}
+
+Received topology claims are not committed immediately. Instead, as shown in Algorithm~\ref{alg:claim}, node $i$ stores each claim in a witness buffer and treats it as weighted evidence about the reported edge. This is the primary defense against malicious topology gossip.
+
+When node $i$ receives a topology claim from source $j$, it computes the witness weight
+\begin{equation}
+\begin{aligned}
+\psi_{ij}^t(e)
+&= T_{ij}^{\text{topo},t}
+   \exp\!\left(-\xi h_{ij}^t(e)\right) \\
+&\quad \cdot \mathbf{1}\{\text{valid signature}\}
+       \cdot \mathbf{1}\{\text{fresh version}\}.
+\end{aligned}
+\end{equation}
+Here, $T_{ij}^{\text{topo},t}$ is trust in source $j$, $h_{ij}^t(e)$ is the hop count traveled by the claim before reaching $i$, and $\xi$ penalizes distant claims. Thus, a witness counts more if the source is trusted, the claim traveled fewer hops, the signature is valid, and the claim is fresh. Signed stale claims are ignored.
+
+For each edge $e$, node $i$ maintains separate support and opposition totals:
+\begin{align}
+S_i^{+,t}(e) &= \sum_{j \in \mathcal{W}_i^{+,t}(e)} \psi_{ij}^t(e), \\
+S_i^{-,t}(e) &= \sum_{j \in \mathcal{W}_i^{-,t}(e)} \psi_{ij}^t(e).
+\end{align}
+The opposition total is therefore the weighted sum of all witnesses that argue against the edge claim. From these totals, node $i$ defines edge confidence as
+\begin{equation}
+\chi_i^t(e) =
+\frac{S_i^{+,t}(e)}{S_i^{+,t}(e)+S_i^{-,t}(e)+\varepsilon}.
+\end{equation}
+
+An edge addition is accepted only if three conditions hold:
+\begin{itemize}[leftmargin=2em]
+\item $\chi_i^t(e) \ge \tau_{add}$,
+\item support comes from at least $m$ distinct first-hop witnesses,
+\item in high-assurance mode, support arrives through at least $k+1$ internally node-disjoint paths when the graph is connected enough to make that meaningful \cite{nesterenko2009discovering}.
+\end{itemize}
+An edge removal uses the symmetric rule with $1-\chi_i^t(e)$. Thus, a single liar may inject a claim, but that claim is not committed unless enough independent, trusted evidence accumulates.
+
+\begin{algorithm}[t]
+\caption{Controlled forwarding}
+\label{alg:forward}
+\begin{algorithmic}[1]
+\State Extract source $j$ from $c$
+\If{signature invalid or version stale}
+    \State Drop $c$
+\ElsIf{$T_{ij}^{topo,t} < \tau_{fwd}$}
+    \State Drop $c$
+\ElsIf{forwarding budget for source $j$ exhausted}
+    \State Drop $c$
+\ElsIf{hop count of $c \ge H$}
+    \State Drop $c$
+\Else
+    \State Forward $c$ to eligible direct neighbors
+    \State Decrement forwarding budget for source $j$
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Controlled Forwarding}
+
+Even a locally observed claim should not be forwarded without restriction. As shown in Algorithm~\ref{alg:forward}, a node forwards a topology claim only if the signature is valid, the version is newer than the local record, the trust score satisfies $T_{ij}^{\text{topo},t} \ge \tau_{\text{fwd}}$, the forwarding budget for that source has not been exceeded \cite{gupta2025fully}, and the claim has not crossed a hop limit $H$.
+
+The forwarding budget is important. Gupta et al. \cite{gupta2025fully} show that rate limiting and verification matter even before one considers learning quality. In the present design, repeated flooding of unconfirmed or stale claims contributes negative evidence in the trust update, so forwarding control not only limits immediate spread but also reduces the long-run influence of abusive sources.
+
+\begin{algorithm}[t]
+\caption{Source-trust update}
+\label{alg:trust}
+\begin{algorithmic}[1]
+\State Observe evidence events $d_{ij}^t,c_{ij}^t,f_{ij}^t,x_{ij}^t,q_{ij}^t,z_{ij}^t$
+\State $\alpha_{ij}^{t+1} \gets \lambda \alpha_{ij}^{t} + w_d d_{ij}^t + w_c c_{ij}^t + w_f f_{ij}^t$
+\State $\beta_{ij}^{t+1} \gets \lambda \beta_{ij}^{t} + w_x x_{ij}^t + w_q q_{ij}^t + w_s z_{ij}^t$
+\State $R_{ij}^{t+1} \gets \dfrac{\alpha_{ij}^{t+1}}{\alpha_{ij}^{t+1}+\beta_{ij}^{t+1}}$
+\State $U_{ij}^{t+1} \gets \sqrt{\dfrac{\alpha_{ij}^{t+1}\beta_{ij}^{t+1}}
+{(\alpha_{ij}^{t+1}+\beta_{ij}^{t+1})^2(\alpha_{ij}^{t+1}+\beta_{ij}^{t+1}+1)}}$
+\State $T_{ij}^{topo,t+1} \gets R_{ij}^{t+1}\exp\!\left(-\eta \max\{0,U_{ij}^{t+1}-\tau_U\}\right)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Source Trust Update}
+
+The claim-processing stage in Algorithm~\ref{alg:claim} relies on the current trust score $T_{ij}^{\text{topo},t}$, so this quantity must be updated explicitly over time. As shown in Algorithm~\ref{alg:trust}, node $i$ maintains trust in each source $j$ with a Beta-style evidence tracker.
+
+Positive evidence for $j$ comes from three events: directly observed claims from $j$ about incident edges later match local handshakes, claims from $j$ are corroborated by independent trusted witnesses, and claims from $j$ remain fresh and internally consistent over time. Negative evidence comes from three events: a claim from $j$ is contradicted by later direct observation, a claim from $j$ is contradicted by a trusted quorum, or $j$ floods stale or conflicting topology updates.
+
+A concrete update is
+\begin{align}
+\alpha_{ij}^{t+1} &= \lambda \alpha_{ij}^t + w_d d_{ij}^t + w_c c_{ij}^t + w_f f_{ij}^t, \\
+\beta_{ij}^{t+1}  &= \lambda \beta_{ij}^t + w_x x_{ij}^t + w_q q_{ij}^t + w_s z_{ij}^t,
+\end{align}
+where $\lambda \in (0, 1]$ is a forgetting factor, $d$ is direct confirmation, $c$ is corroboration, $f$ is freshness consistency, $x$ is contradiction, $q$ is spam or rate violation, and $z$ is severe conflict with the eventually committed local view.
+
+The posterior mean reputation is
+\begin{equation}
+R_{ij}^{t+1} =
+\frac{\alpha_{ij}^{t+1}}{\alpha_{ij}^{t+1} + \beta_{ij}^{t+1}}.
+\end{equation}
+The epistemic uncertainty of this reputation is taken from the Beta variance:
+\begin{equation}
+U_{ij}^{t+1} =
+\sqrt{
+\frac{\alpha_{ij}^{t+1}\beta_{ij}^{t+1}}
+{(\alpha_{ij}^{t+1}+\beta_{ij}^{t+1})^2(\alpha_{ij}^{t+1}+\beta_{ij}^{t+1}+1)}
+}.
+\end{equation}
+Similar to \texttt{MURMURA} \cite{rangwala2025evidential}, the final topology trust score is the reputation mean with an uncertainty penalty:
+\begin{equation}
+T_{ij}^{\text{topo},t+1}
+=
+R_{ij}^{t+1} \cdot
+\exp\!\left(-\eta \max\{0, U_{ij}^{t+1}-\tau_U\}\right).
+\end{equation}
+
+This mirrors \texttt{MURMURA}’s uncertainty penalization principle. A node is trusted not only when its claims are often correct, but when that correctness is established with enough evidence. A malicious node that alternates between truthful and false claims may retain a moderate mean reputation, but its uncertainty remains high, keeping its topology influence small.
+
+\subsection{Distributed Local Training and Trust-Aware Collaborator Selection}
+\label{sec:collab_score}
+
+The previous modules determine which topology information is credible and which neighbors remain eligible for collaboration. The learning procedure itself is decentralized and runs in parallel across nodes. As shown in Algorithm~\ref{alg:main}, each node performs local training at every epoch, exchanges models or updates only with currently reachable neighbors that survive topology filtering, and then selects a sparse collaborator set for personalized aggregation.
+
+At epoch $t$, node $i$ first performs $E$ local optimization steps on its own data to obtain an intermediate model
+\begin{equation}
+\theta_i^{t+\frac{1}{2}} = \mathrm{LocalUpdate}(\theta_i^t,\mathcal{D}_i,E),
+\end{equation}
+where $\mathcal{D}_i$ is the local dataset. After topology filtering, node $i$ exchanges candidate models or updates only with currently reachable and topology-screened neighbors. For those neighbors, it computes the \texttt{MURMURA} model compatibility score $s_{ij}^{\text{model},t}$ from local validation accuracy and epistemic uncertainty \cite{rangwala2025evidential}. Let $a_{ij}^t$ denote the validation accuracy of peer $j$'s model on node $i$'s local validation data, and let $\bar{u}_{ij}^t$ denote the corresponding mean epistemic uncertainty. Following \texttt{MURMURA}, the epistemic uncertainty for a $K$-class evidential model is
+\begin{equation}
+u = \frac{K}{S},
+\end{equation}
+where $S=\sum_{k=1}^K \alpha_k$ is the Dirichlet strength. Averaging this quantity over node $i$'s validation samples for peer $j$ gives $\bar{u}_{ij}^t$.
+
+The base compatibility score is then defined as
+\begin{equation}
+s_{ij,\text{base}}^t
+=
+\left(1-\bar{u}_{ij}^t\right)
+\left(w_a a_{ij}^t + (1-w_a)\right),
+\end{equation}
+where $w_a \in [0,1]$ controls the contribution of validation accuracy.
+
+The final Murmura-style compatibility score applies an uncertainty penalty when the mean uncertainty exceeds a threshold $\tau_u$:
+\begin{equation}
+s_{ij}^{\text{model},t}
+=
+\begin{cases}
+s_{ij,\text{base}}^t \exp\!\left(-(\bar{u}_{ij}^t-\tau_u)\right), & \bar{u}_{ij}^t > \tau_u, \\[4pt]
+s_{ij,\text{base}}^t, & \bar{u}_{ij}^t \le \tau_u.
+\end{cases}
+\end{equation}
+
+The final collaboration score is
+\begin{equation}
+q_{ij}^t =
+\lambda_1 s_{ij}^{\text{model},t}
++ \lambda_2 T_{ij}^{\text{topo},t}
++ \lambda_3 \hat{p}_{ij}^t
+- \lambda_4 c_{ij}^{\text{comm},t}.
+\end{equation}
+The collaborator set is then
+\begin{equation}
+C_i^t = \operatorname{TopB}_j \; q_{ij}^t,
+\end{equation}
+subject to an edge budget $B$, as in budgeted decentralized personalized graph learning \cite{kharrat2024decentralized}. Node $i$ aggregates only the intermediate models or updates received from neighbors in $C_i^t$, together with its own model, using \texttt{MURMURA}-style trust-aware weighting:
+\begin{equation}
+\theta_i^{t+1}
+=
+w_{ii}^t \theta_i^{t+\frac{1}{2}}
++
+\sum_{j \in C_i^t} w_{ij}^t \theta_j^{t+\frac{1}{2}},
+\qquad
+\sum_{j \in C_i^t \cup \{i\}} w_{ij}^t = 1,
+\end{equation}
+where the aggregation weights depend on the selected collaboration scores and the \texttt{MURMURA} trust-normalization rule.
+
+This final stage keeps the topology and model layers distinct. $T_{ij}^{\text{topo},t}$ answers whether topology information from $j$ should be believed, $\hat{p}_{ij}^t$ answers whether the link is currently usable, and $s_{ij}^{\text{model},t}$ answers whether $j$ is useful for personalization. The result is a distributed learning policy in which all nodes train in parallel, but only credible, reachable, and useful neighbors influence the local model.
+
+The method blocks malicious topology propagation by forcing every topology claim to pass multiple filters before it can affect collaboration. Direct observations give each node a reliable local view of which neighbors are currently reachable. Signed claims stop forged or replayed topology events from being accepted. Witness weighting and edge-confidence updates make sure that a claim is not committed unless enough supporting evidence is available. Source-trust updates gradually reduce the influence of nodes that repeatedly send contradictory, stale, or spammy information. Controlled forwarding then limits how far weakly supported claims can spread through the network.
+ As a result, false topology information is filtered at several stages before it can shape the feasible collaboration graph.
+
+\section{Distributed System Implementation}
+\label{sec:implementation}
+
+\begin{added}
+The theoretical protocol described in Section~\ref{sec:protocol} requires a concrete execution substrate: independent client processes that exchange messages, maintain local state, and synchronise rounds without any central coordinator.
+This section describes the system architecture constructed to run DMTT experiments on real hardware, and to serve as a reusable open-source extension of the \texttt{MURMURA} framework.
+
+\subsection{Architecture Design Principles}
+
+Three principles guided the design.
+
+\textbf{No coordinator in the learning path.}
+A central coordinator introduces a single point of failure and contradicts the DFL threat model, since a compromised coordinator could suppress or fabricate round signals, undermining the decentralised guarantee.
+To eliminate this dependency, round $k$ at node $i$ begins at the absolute wall-clock time
+\begin{equation}
+  t_k = t_{\mathrm{start}} + k \cdot \Delta,
+  \label{eq:wall_clock}
+\end{equation}
+where $t_{\mathrm{start}}$ is a shared epoch announced once at experiment start and $\Delta$ is the round budget.
+Each node independently sleeps until $t_k$ and then proceeds without waiting for any signal.
+A passive monitor, implemented as a PULL-only process, collects per-round accuracy and loss metrics without sending any messages.
+Because it has no send socket, it cannot influence the learning protocol, and its failure leaves training unaffected.
+
+\textbf{ZeroMQ P2P transport.}
+Model weights are exchanged peer-to-peer using ZeroMQ PUSH/PULL socket pairs.
+Each node $i$ binds one PULL socket (its receiving endpoint) and maintains one PUSH socket per current collaborator.
+This design avoids the fixed process-group requirement of \texttt{torch.distributed} and permits the dynamic collaborator set $C_i^t$ to change every round without re-initialisation.
+For single-machine experiments, all sockets use IPC transport; for multi-machine deployments, the same code switches to TCP by changing a single configuration field.
+
+\textbf{Deterministic shared mobility model.}
+The time-varying graph $\mathcal{G}^t$ must be consistent across all node processes without inter-process communication.
+This is achieved by defining $\mathcal{G}^t$ through a random-walk mobility model parameterised by a shared seed: given the same seed, every process computes identical node positions and therefore identical edge sets at every round.
+\end{added}
+
+\subsection{ZeroMQ Socket Layout}
+\label{sec:zmq_layout}
+
+\begin{added}
+\begin{figure*}[t]
+\centering
+% Source: documentation/new_murmura_extension/murmura_architecture.mmd
+% To export: mmdc -i murmura_architecture.mmd -o murmura_architecture.png -w 1400
+% Then replace this placeholder with: \includegraphics[width=\textwidth]{murmura_architecture.png}
+\fbox{\parbox{0.95\textwidth}{\centering\vspace{1.8cm}%
+\textit{[Figure placeholder: run \texttt{mmdc -i murmura\_architecture.mmd -o murmura\_architecture.png -w 1400}
+and replace this block with \texttt{\textbackslash{}includegraphics\{murmura\_architecture.png\}}.]}%
+\vspace{1.8cm}}}
+\caption{Updated \texttt{MURMURA} architecture. \emph{Left:} the unchanged simulation backend (single OS process, shared memory). \emph{Right:} the new distributed backend, in which each client and the passive monitor run as independent OS processes. Model weights travel via \texttt{MODEL\_STATE} PUSH/PULL pairs; DMTT nodes additionally exchange signed neighbourhood observations as \texttt{TOPO\_CLAIM} messages. Round boundaries are set by a shared wall-clock epoch; no coordinator is involved. Byzantine nodes send both poisoned model weights and falsified topology claims.}
+\label{fig:architecture}
+\end{figure*}
+
+Each node process uses three logical channels, as shown in Fig.~\ref{fig:architecture}.
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{PULL (bind):} Receives \texttt{MODEL\_STATE} and \texttt{TOPO\_CLAIM} messages from neighbours. A single socket handles both message types, distinguished by a 1-byte type field in the header.
+  \item \textbf{PUSH $\times |C_i^t|$ (connect):} Sends \texttt{MODEL\_STATE} and \texttt{TOPO\_CLAIM} to each current collaborator. Sockets are created on first use so that the collaborator set can change without re-binding.
+  \item \textbf{PUSH (monitor, connect):} Sends \texttt{METRICS} to the passive monitor after each round evaluation. The monitor never replies.
+\end{itemize}
+
+All messages use a two-frame ZMQ multipart format:
+\begin{equation*}
+  \underbrace{[\,\text{msg\_type}\,(1\text{ B})\;\|\;\text{sender\_id}\,(4\text{ B})\,]}_{\text{frame 0 (header)}}
+  \;\Big|\;
+  \underbrace{[\,\text{payload}\,]}_{\text{frame 1}}
+\end{equation*}
+Three message types are defined: \texttt{MODEL\_STATE} (serialised PyTorch state dict), \texttt{METRICS} (pickled evaluation dict containing a \texttt{round\_idx} key for the monitor's ordering buffer), and \texttt{TOPO\_CLAIM} (pickled neighbourhood assertion used exclusively by DMTT nodes).
+\end{added}
+
+\subsection{Mobility Model}
+\label{sec:mobility_impl}
+
+\begin{added}
+Client mobility is modelled as a bounded random walk on a 2-D torus of side length $A$.
+At each round, the position of client $i$ is updated as
+\begin{equation}
+  \mathbf{r}_i^{t+1} = \bigl(\mathbf{r}_i^t + \boldsymbol{\delta}_i^t\bigr) \bmod A,
+  \label{eq:random_walk}
+\end{equation}
+where $\boldsymbol{\delta}_i^t \sim \mathrm{Uniform}([-v_{\max}, v_{\max}]^2)$ is an independent per-round displacement drawn from a shared random generator initialised with the shared seed.
+An edge $(i,j) \in \mathcal{E}^t$ exists whenever the torus distance between $\mathbf{r}_i^t$ and $\mathbf{r}_j^t$ falls below the communication range $r_c$:
+\begin{equation}
+  (i,j)\in\mathcal{E}^t \iff d_{\mathrm{torus}}(\mathbf{r}_i^t,\mathbf{r}_j^t) < r_c.
+  \label{eq:edge_condition}
+\end{equation}
+An optional connectivity guarantee connects any isolated node to its nearest peer, ensuring that Assumption~4 (uniform connectivity) is not violated by unlucky mobility realisations.
+
+Because both the initial positions and the displacement sequence are derived deterministically from the shared seed, every node process reconstructs $\mathcal{G}^t$ locally without any out-of-band communication, at the cost of maintaining one random-generator state per round.
+\end{added}
+
+\subsection{DMTTNodeProcess Round Protocol}
+
+\begin{added}
+The \texttt{DMTTNodeProcess} class extends the base \texttt{NodeProcess} with the following per-round steps, which together instantiate Algorithm~\ref{alg:main} in a fully distributed setting:
+
+\begin{enumerate}[leftmargin=2em, label=\arabic*.]
+  \item \textbf{Sleep} until wall-clock time $t_k$ (Eq.~\eqref{eq:wall_clock}).
+  \item \textbf{Local training} for $E$ epochs using SGD on local data $\mathcal{D}_i$.
+  \item \textbf{Construct TOPO\_CLAIM:} Honest nodes report their true mobility-model neighbourhood $\mathcal{N}_i^{\mathrm{dir},t}$; topology-liar Byzantine nodes inject the identities of other Byzantine nodes into the claimed list.
+  \item \textbf{Push} \texttt{MODEL\_STATE} and \texttt{TOPO\_CLAIM} to every node in $C_i^{t-1}$ (or $\mathcal{N}_i^{\mathrm{dir},0}$ at $t=0$).
+  \item \textbf{Collect} \texttt{MODEL\_STATE} and \texttt{TOPO\_CLAIM} from expected senders until the round deadline $t_k + \Delta$ or until all expected messages arrive.
+  \item \textbf{Update link reliability:} For each expected sender $j$, set $\mathrm{ack}_{ij}^t = \mathbf{1}[j\text{ responded}]$ and apply the EMA in Algorithm~\ref{alg:main}.
+  \item \textbf{Evaluate neighbour models:} Load each received state dict into a fresh model instance and evaluate on the local test loader to obtain $a_{ij}^t$; compute $s_{ij}^{\mathrm{model},t}$ using Section~\ref{sec:collab_score}.
+  \item \textbf{Verify topology claims:} For each claimed neighbour $u$ of sender $j$, check whether $(j,u) \in \mathcal{E}^t$ according to the local mobility model. Accumulate $d_{ij}^t$ (confirmations) and $x_{ij}^t$ (contradictions) and apply Algorithm~\ref{alg:trust}.
+  \item \textbf{Aggregate} with the received states using the trust-weighted mixing rule described in Section~\ref{sec:collab_score}.
+  \item \textbf{Select collaborators:} Compute $q_{ij}^t$ for all $j \in \mathcal{N}_i^{\mathrm{dir},t}$ and set $C_i^t = \mathrm{TopB}_j\,q_{ij}^t$.
+  \item \textbf{Push METRICS} (accuracy, loss, round index) to the passive monitor.
+\end{enumerate}
+
+Steps 6--8 run in $\mathcal{O}(|C_i^{t-1}|)$ time and involve no additional network communication beyond what is already required for model exchange.
+The foreign-model evaluation in Step~7 is the most compute-intensive additional cost relative to the static MURMURA baseline; it scales as $\mathcal{O}(|C_i^{t-1}| \cdot |\mathcal{D}_i^{\mathrm{test}}| / b)$ forward passes.
+\end{added}
+
+\subsection{Topology-Liar Attack Implementation}
+
+\begin{added}
+The \texttt{TopologyLiarAttack} concretises the adversary model of Section~\ref{sec:adversary}.
+A Byzantine node $b$ sends the following falsified TOPO\_CLAIM:
+\begin{equation}
+  \widehat{\mathcal{N}}_b^t = \mathcal{N}_b^{\mathrm{dir},t} \cup \bigl(\mathcal{B} \setminus \{b\}\bigr),
+  \label{eq:liar_claim}
+\end{equation}
+where $\mathcal{B}$ is the set of all Byzantine nodes.
+This forces any honest node $i \in \mathcal{N}_b^{\mathrm{dir},t}$ to believe that the other Byzantine nodes are within communication range of $b$, potentially adding them to $F_i^t$ and hence to the collaboration graph.
+The honest node's mobility model detects the fabrication: for any $u \in \mathcal{B} \setminus \{b\}$ claimed by $b$, the check $(b,u) \in \mathcal{E}^t$ fails whenever $u$ is actually out of range, yielding a contradiction $x_{ib}^t \mathrel{+}= 1$ that gradually raises $\beta_{ib}$ and suppresses $T_{ib}^{\mathrm{topo},t}$.
+
+In addition to topology falsification, the liar optionally applies a Gaussian model-state attack (configurable via \texttt{model\_attack\_type: gaussian}), matching the combined threat model described in Section~\ref{sec:adversary}.
+\end{added}
+
+\section{Experimental Evaluation}
+\label{sec:experiments}
+
+\begin{added}
+\subsection{Experimental Conditions}
+
+We compare three conditions that isolate the individual contributions of the dynamic topology and the DMTT trust protocol:
+
+\begin{enumerate}[leftmargin=2em, label=\textbf{C\arabic*.}]
+  \item \textbf{Static MURMURA.} Fixed fully-connected topology; FedAvg aggregation; topology-liar + Gaussian model attack on 30\% of nodes. Run on the simulation backend (single-process, fastest). This reproduces the threat faced by unmodified \texttt{MURMURA} when topology is wrongly assumed static.
+  \item \textbf{Dynamic MURMURA without trust.} Same attack fraction; dynamic topology $\mathcal{G}^t$ from the mobility model; each node collaborates with all $\mathcal{N}_i^{\mathrm{dir},t}$ without filtering. Run on the distributed ZMQ backend. This isolates the cost of mobility from the benefit of trust.
+  \item \textbf{Full DMTT.} Same attack fraction and mobility model as C2; DMTT trust protocol active (Beta trust, TopB collaborator selection, TOPO\_CLAIM verification). Run on the distributed ZMQ backend. This measures the net benefit of DMTT relative to C2.
+\end{enumerate}
+
+\subsection{Dataset and Model}
+
+\textcolor{red}{[Dataset to be determined. The dataset will be partitioned across clients using a Dirichlet distribution with concentration $\alpha = 0.5$ to simulate realistic non-IID data heterogeneity. Model architecture and classification task to be specified once the dataset is selected.]}
+
+\subsection{Setup}
+
+\begin{table}[t]
+\centering
+\caption{Experimental hyperparameters shared across all three conditions.}
+\label{tab:exp_setup}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Number of clients $N$           & 10 \\
+Byzantine fraction              & 30\% (3 nodes) \\
+Attack type                     & Topology liar + Gaussian ($\sigma = 10$) \\
+Training rounds                 & 50 \\
+Local epochs $E$                & 2 \\
+Batch size                      & 32 \\
+Learning rate                   & 0.01 \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Mobility model (C2 and C3 only)}} \\
+Arena $A$                       & $100 \times 100$ \\
+Communication range $r_c$       & 40 \\
+Max speed $v_{\max}$            & 8 per round \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{DMTT protocol (C3 only)}} \\
+Budget $B$                      & 5 \\
+EMA rate $\rho$                 & 0.1 \\
+Forgetting factor $\lambda$     & 0.9 \\
+Trust weights $(w_d, w_x)$      & $(1.0,\;1.0)$ \\
+Uncertainty threshold $\tau_U$  & 0.3 \\
+Score weights $(\lambda_1,\lambda_2,\lambda_3,\lambda_4)$ & $(0.4,\;0.3,\;0.2,\;0.1)$ \\
+Round budget $\Delta$           & 120\,s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Metrics}
+
+We record mean accuracy across all clients, mean accuracy restricted to honest clients, and mean accuracy restricted to Byzantine clients (which indicates model degradation relative to their true data), all computed at the end of each round by evaluating each node's current model on a held-out local test partition.
+
+\subsection{Results}
+
+\textcolor{red}{[Experimental results to be inserted. Expected outcomes: C3 (DMTT) maintains higher honest-node accuracy than C2 (dynamic no trust) under sustained topology-liar attack, demonstrating that trust-aware collaborator selection suppresses the influence of Byzantine neighbours even as the topology evolves. C1 (static MURMURA) serves as a lower bound showing the effect of ignoring topology dynamics.]}
+\end{added}
+
+\section{Theoretical Analysis}
+\label{sec:theory}
+
+This section presents a theoretical analysis of DMTT. The goal is not to prove exact Byzantine topology discovery. Instead, the analysis focuses on the learning dynamics induced by the trusted feasible graph maintained by each client. The presented analysis is inspired by and consistent with existing works on decentralized optimization over time-varying graphs \cite{koloskova2020unified, nedic2014distributed, 7405263}, topology--heterogeneity coupling \cite{le2023refined}, and Byzantine-resilient decentralized learning \cite{he2022byzantine, 10208131}.
+
+\subsection{Effective collaboration matrix}
+
+We adopt the system model, notation, and adversary model of Section~\ref{sec:problem}, and the protocol of Section~\ref{sec:protocol}. In particular, $\mathcal G^t=(\mathcal V,\mathcal E^t)$ is the time-varying communication graph, $F_i$ is the local objective at client $i$, $\theta_i^{t+\frac12}$ is the intermediate model after local training, and $W^t=[w_{ij}^t]_{i,j=1}^N$ is the screened mixing matrix induced by the active collaborator sets $\{C_i^t\}$. By construction, $w_{ij}^t=0$ whenever $j\notin C_i^t\cup\{i\}$. Thus, DMTT can be viewed as decentralized learning over a time-varying screened graph.
+
+For the analysis, it is convenient to define the average iterate
+$$
+\bar{\theta}^t = \frac{1}{N}\sum_{i=1}^N \theta_i^t
+$$
+and the average objective
+$$
+f(x)=\frac{1}{N}\sum_{i=1}^N F_i(x).
+$$
+This does not collapse the method into a global-model formulation. It is only an analytical device, standard in decentralized SGD analyses on changing graphs \cite{koloskova2020unified, nedic2014distributed, 7405263}.
+
+\subsection{Theory-local notation}
+
+In addition to the symbols introduced in Sections~\ref{sec:problem}--\ref{sec:protocol}, the analysis uses the following quantities:
+
+\begin{itemize}
+    \item $\widetilde W^t$: ideal honest mixing matrix induced by the true feasible graph at epoch $t$
+    \item $B_{\mathrm{conn}}$: connectivity-window length
+    \item $p\in(0,1]$: consensus-rate parameter of the screened graph sequence, in the sense of \cite{koloskova2020unified}
+    \item $\bar\tau_{\mathrm{scr}}^2$: screened neighborhood heterogeneity
+    \item $\Delta_{\mathrm{scr}}^2$: screening-error level
+    \item $\delta_{\max}$: maximum surviving Byzantine weight after screening
+\end{itemize}
+
+\subsection{Assumptions}
+
+The theorem statements below treat the link-reliability update, witness-weight rule, Beta trust update, edge-confidence rule, and collaborator score as part of the DMTT mechanism, not as standalone assumptions.
+
+\paragraph{Assumption 1: Smooth local objectives.}
+For each client $i$, the function $F_i$ is $L$-smooth:
+$$
+\|\nabla F_i(x)-\nabla F_i(y)\| \le L\|x-y\|,
+\qquad
+\forall x,y\in\mathbb R^d.
+$$
+
+\paragraph{Assumption 2: Unbiased stochastic gradients with bounded variance.}
+Each client has access to a stochastic gradient oracle $g_i(x,\xi_i)$ such that
+$$
+\mathbb E[g_i(x,\xi_i)] = \nabla F_i(x),
+\qquad
+\mathbb E\|g_i(x,\xi_i)-\nabla F_i(x)\|^2 \le \sigma^2.
+$$
+
+\paragraph{Assumption 3: Screened mixing matrices.}
+At each epoch $t$, the DMTT aggregation step induces a matrix $W^t=[w_{ij}^t]$ satisfying
+$$
+W^t\mathbf 1 = \mathbf 1,
+\qquad
+w_{ij}^t \ge 0,
+\qquad
+w_{ij}^t = 0 \text{ if } j\notin C_i^t\cup\{i\}.
+$$
+\textcolor{red}{For the cleanest theory, we assume that $W^t$ is doubly stochastic, or that the analysis uses a doubly stochastic surrogate supported on the same screened graph. This is the most direct way to inherit the standard time-varying decentralized SGD template of \cite{koloskova2020unified}. If one insists on a fully asymmetric collaboration matrix, then a push-sum or gradient-tracking treatment would be more appropriate \cite{nedic2014distributed, 7405263}.}
+
+\paragraph{Assumption 4: Uniform connectivity of the screened honest graph.}
+There exists an integer $B_{\mathrm{conn}}\ge 1$ such that, for every window of $B_{\mathrm{conn}}$ consecutive epochs, the union of screened edges among honest clients is connected. We further assume that the resulting sequence of screened mixing matrices admits a consensus-rate parameter $p\in(0,1]$ in the sense of \cite{koloskova2020unified}.
+
+\paragraph{Assumption 5: Bounded screened heterogeneity.}
+Define
+$$
+\bar\tau_{\mathrm{scr}}^2
+=
+\frac{1}{N}
+\sum_{i=1}^N
+\mathbb E
+\left\|
+\sum_{j=1}^N w_{ij}^t \nabla F_j(x)
+-
+\frac{1}{N}\sum_{j=1}^N \nabla F_j(x)
+\right\|^2.
+$$
+Assume $\bar\tau_{\mathrm{scr}}^2$ is uniformly bounded over the region visited by the iterates. This is the natural heterogeneity term for a topology-dependent collaboration rule \cite{le2023refined}.
+
+\paragraph{Assumption 6: Bounded screening error and surviving Byzantine influence.}
+Let $\widetilde W^t$ denote the ideal honest mixing matrix induced by the true feasible graph, and let $W^t$ denote the actual DMTT screened matrix. Assume
+$$
+\mathbb E\|W^t-\widetilde W^t\|_F^2 \le \Delta_{\mathrm{scr}}^2.
+$$
+Also define
+$$
+\delta_{\max}
+=
+\sup_t \max_{i\in\mathcal H}\sum_{j\in\mathcal B} w_{ij}^t.
+$$
+Assume $\delta_{\max}$ is uniformly bounded and sufficiently small relative to the connectivity of the screened honest graph.
+
+\subsection{A basic structural lemma}
+
+\begin{lemma}
+For each epoch $t$, DMTT induces a screened collaboration matrix $W^t$ whose support is contained in the trusted feasible graph. Moreover, if the aggregation weights are normalized over $C_i^t\cup\{i\}$, then each row of $W^t$ sums to one. \textcolor{red}{If a symmetric or doubly stochastic surrogate is used for analysis, it can be constructed on the same screened support.}
+\end{lemma}
+
+\begin{proof}
+\textcolor{red}{To be completed. The row-stochastic part follows directly from the normalization of the aggregation weights. The surrogate construction depends on the exact normalization rule adopted in the theorem section.}
+\end{proof}
+
+\subsection{Main theorem under perfect screening}
+\textcolor{red}{The theorem below is the core learning result that this paper should aim to prove. It is a DMTT-specialized target theorem, obtained by adapting the changing-topology decentralized SGD analysis of \cite{koloskova2020unified} and the topology--heterogeneity viewpoint of \cite{le2023refined}. A complete proof remains to be written.}
+
+\begin{theorem}
+Suppose Assumptions 1--A hold and the screening is perfect, i.e.,
+$$
+\Delta_{\mathrm{scr}}=0,
+\qquad
+\delta_{\max}=0.
+$$
+Let $\eta_t=\eta$ be a constant stepsize small enough for the screened graph sequence and the smoothness constant $L$. Then, for any horizon $T\ge 1$,
+$$
+\frac{1}{T}\sum_{t=0}^{T-1}\mathbb E\|\nabla f(\bar\theta^t)\|^2
+\le
+\frac{c_0\big(f(\bar\theta^0)-f^\star\big)}{\eta T}
++
+\frac{c_1\eta\sigma^2}{N}
++
+\frac{c_2\eta\bar\tau_{\mathrm{scr}}^2}{p},
+$$
+where $f^\star=\inf_x f(x)$, $p$ is the consensus-rate parameter of the screened graph sequence, and $c_0,c_1,c_2>0$ are constants depending on $L$ and regularity parameters of the screened dynamics.
+\end{theorem}
+
+\begin{proof}
+\textcolor{red}{To be completed. The intended route is to adapt the time-varying decentralized SGD framework of \cite{koloskova2020unified} to the screened matrix sequence $\{W^t\}$, while replacing topology-independent heterogeneity by the screened neighborhood heterogeneity term $\bar\tau_{\mathrm{scr}}^2$ following \cite{le2023refined}.}
+\end{proof}
+
+\begin{remark}
+The theorem is intentionally stated for the perfect-screening case. This separates the learning dynamics of the screened graph from the additional perturbation introduced by topology errors and surviving Byzantine influence. It also avoids overstating what has been proved at this stage.
+\end{remark}
+
+\subsection{Perturbation from imperfect screening}
+
+\textcolor{red}{The next proposition records the form of the perturbation one expects when the topology layer is not perfect. The statement is included as a transparent target proposition rather than as a completed result.}
+
+\begin{proposition}
+Suppose Assumptions 1--6 hold. Then the DMTT disagreement recursion differs from that of the ideal honest screened process by an additive perturbation controlled by $\Delta_{\mathrm{scr}}^2$ and $\delta_{\max}$. In particular, one expects a bound of the form
+\begin{equation}
+\begin{aligned}
+\frac{1}{T}\sum_{t=0}^{T-1}\mathbb E\|\nabla f(\bar\theta^t)\|^2
+\le\;&
+\frac{c_0\big(f(\bar\theta^0)-f^\star\big)}{\eta T}
++
+\frac{c_1\eta\sigma^2}{N} \\
+&+
+\frac{c_2\eta\bar\tau_{\mathrm{scr}}^2}{p}
++
+\frac{c_3\eta\Delta_{\mathrm{scr}}^2}{p}
++
+c_4\eta\,\mathcal R_{\mathrm{byz}}(\delta_{\max}).
+\end{aligned}
+\end{equation}
+where $\mathcal R_{\mathrm{byz}}(\delta_{\max})$ is a nondecreasing function of $\delta_{\max}$ satisfying $\mathcal R_{\mathrm{byz}}(0)=0$.
+\end{proposition}
+
+\begin{proof}
+\textcolor{red}{To be completed. The first additional term should follow from a perturbation argument comparing $W^t$ and $\widetilde W^t$. The Byzantine term should follow from a local bounded-influence argument in the spirit of \cite{he2022byzantine}, while taking care not to introduce the virtual-matrix bias issues emphasized in \cite{10208131}.}
+\end{proof}
+
+\begin{remark}
+A sharper explicit dependence of the residual term on graph connectivity may be possible. Results such as \cite{he2022byzantine} suggest that a robustness radius can scale inversely with honest-graph connectivity and increase with surviving adversarial weight. \textcolor{red}{We do not claim such a rate here without a full proof.}
+\end{remark}
+
+\subsection{Why screening can help learning}
+
+The next corollary is immediate from the structure of the main bound, but it is useful because it explains the role of DMTT beyond safety alone.
+
+\begin{corollary}
+Under the conditions of Theorem 1, if the screened collaboration rule satisfies
+$$
+\bar\tau_{\mathrm{scr}}^2 \le \bar\tau_{\mathrm{raw}}^2
+$$
+while preserving the same order of consensus-rate parameter $p$, then the heterogeneity-dependent part of the convergence bound improves relative to the raw feasible graph.
+\end{corollary}
+
+\begin{proof}
+\textcolor{red}{This follows directly from the dependence of the bound on $\bar\tau_{\mathrm{scr}}^2$. The interpretation is consistent with the topology--heterogeneity coupling identified in \cite{le2023refined}.}
+\end{proof}
+
+\subsection{Discussion}
+
+\textcolor{red}{The theory developed here deliberately abstracts away several protocol details. In particular, the Beta-style trust update, the witness-weight rule, the edge-confidence rule, and the exact MURMURA score shaping are treated as algorithmic mechanisms that induce the screened matrix $W^t$, not as objects to be analyzed directly. This is important because MURMURA itself combines principled uncertainty estimates with empirical score shaping and thresholding \cite{rangwala2025evidential}. A theorem section that tries to prove every detail of that pipeline would be considerably heavier and less defensible. The practical interpretation is therefore as follows.}
+
+The topology layer determines which neighbors survive into the trusted feasible graph. The learning layer then behaves like decentralized stochastic optimization on that screened graph. Standard changing-topology theory contributes the consensus and optimization template \cite{koloskova2020unified, nedic2014distributed, 7405263}, screened heterogeneity explains when selective collaboration helps under non-IID data \cite{le2023refined}, and Byzantine-resilient decentralized learning provides the right bounded-damage viewpoint for residual adversarial influence \cite{he2022byzantine, 10208131}.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+\begin{added}
+We presented DMTT, a protocol that extends \texttt{MURMURA} to dynamic network topologies under adversarial topology-manipulation attacks.
+The theoretical analysis shows that DMTT confines Byzantine influence to a bounded residual $\delta_{\max}$ in the mixing matrices, and that this residual shrinks as the Beta-evidence trust mechanism accumulates observations.
+Alongside the protocol analysis, \texttt{MURMURA} is redesigned into a production-ready distributed framework, incorporating coordinator-free wall-clock synchronisation (Eq.~\eqref{eq:wall_clock}), ZeroMQ peer-to-peer transport for model and claim exchange, a deterministic mobility model (Eq.~\eqref{eq:random_walk}--\eqref{eq:edge_condition}) that allows every node to independently reconstruct $\mathcal{G}^t$, and a topology-liar Byzantine attack (Eq.~\eqref{eq:liar_claim}) that provides a controlled stress test of the screening pipeline.
+
+\textcolor{red}{[Conclusion to be completed with experimental findings once results are available.]}
+
+Several directions remain open for future work. First, the doubly-stochastic assumption on $W^t$ could be relaxed to accommodate the fully asymmetric aggregation weights used in \texttt{MURMURA}. Second, the theoretical framework could be extended to bounded-staleness execution to handle severe stragglers. Third, evaluating DMTT on real mobile-device deployments, where the mobility model is not shared a priori and $\mathcal{G}^t$ must be discovered from physical beacons alone, would validate the protocol under conditions closer to deployment.
+\end{added}
+
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+
+
+\end{document}

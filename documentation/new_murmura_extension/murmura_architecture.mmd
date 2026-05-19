@@ -1,0 +1,65 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "14px",
+    "primaryColor":       "#dbeafe",
+    "primaryBorderColor": "#1d4ed8",
+    "primaryTextColor":   "#1e3a5f",
+    "lineColor":          "#475569"
+  }
+}}%%
+flowchart LR
+
+  %% ── Left panel: Simulation Backend ─────────────────────────────
+  subgraph SIM["Simulation Backend  (unchanged)"]
+    direction TB
+    CFG["YAML Config"]:::cfg
+    NET["Network\nOrchestrator"]:::nd
+    SN0["Node 0"]:::nd
+    SN1["Node 1"]:::nd
+    SN2["Node 2\n(Byzantine)"]:::byz
+    SLBL(["in-process · shared memory"]):::lbl
+
+    CFG --> NET
+    NET --> SN0 & SN1 & SN2
+    SN0 <--> SN1
+    SN1 <--> SN2
+  end
+
+  %% ── Right panel: Distributed Backend ───────────────────────────
+  subgraph DIST["Distributed Backend  (new)"]
+    direction TB
+    WC["Wall-clock\nt_k = t₀ + k·Δ"]:::cfg
+    MON["Passive Monitor\n(PULL only)"]:::mon
+    P0["Node 0\n(OS process)"]:::nd
+    P1["Node 1\n(OS process)"]:::nd
+    P2["Node 2\n(Byzantine)"]:::byz
+    DLBL(["Edges shown are G^t neighbors only"]):::lbl
+
+    %% Passive wall-clock reference (no data exchanged)
+    WC -. shared epoch .-> P0 & P1 & P2
+
+    %% MODEL_STATE + TOPO_CLAIM travel over the same G^t edges (to current neighbors only)
+    P0 <-- "MODEL_STATE\n+ TOPO_CLAIM" --> P1
+    P1 <-- "MODEL_STATE\n+ TOPO_CLAIM" --> P2
+
+    %% METRICS: one-way to passive monitor (no reply)
+    P0 & P1 & P2 == METRICS ==> MON
+  end
+
+  %% ── Legend ─────────────────────────────────────────────────────
+  subgraph LEG["Legend"]
+    direction TB
+    LA["─────  MODEL_STATE + TOPO_CLAIM\n        (G^t neighbors only)"]:::lbl
+    LB["═════  METRICS → Monitor  (one-way)"]:::lbl
+    LC["- - -  shared epoch  (passive reference)"]:::lbl
+    LD["Byzantine node"]:::byz
+    LE["Passive monitor  (no sends)"]:::mon
+  end
+
+  %% ── Styles ─────────────────────────────────────────────────────
+  classDef nd   fill:#dbeafe,stroke:#1d4ed8,color:#1e3a5f
+  classDef byz  fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+  classDef mon  fill:#dcfce7,stroke:#15803d,color:#14532d
+  classDef cfg  fill:#fef9c3,stroke:#d97706,color:#78350f
+  classDef lbl  fill:none,stroke:none,color:#6b7280,font-style:italic

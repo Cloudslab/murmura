@@ -1,0 +1,81 @@
+# Condition 3 — Full DMTT
+# Dynamic topology (same mobility as condition 2) + DMTT trust protocol.
+# DMTTNodeProcess computes collaboration scores and selects TopB collaborators.
+# Backend: distributed (ZMQ)
+
+experiment:
+  name: "DMTT-Full"
+  seed: 42
+  rounds: 50
+  verbose: true
+
+topology:
+  type: "fully"          # used only to set num_nodes; actual edges come from mobility
+  num_nodes: 10
+  seed: 12345
+
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+
+attack:
+  enabled: true
+  type: "topology_liar"
+  percentage: 0.3
+  params:
+    model_attack_type: "gaussian"
+    noise_std: 10.0
+
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5
+
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3
+
+backend: distributed
+
+distributed:
+  transport: ipc
+  round_duration_s: 120.0
+  startup_grace_s: 8.0
+
+# Identical mobility to condition 2 (same seed → same G^t sequence)
+mobility:
+  area_size: 100.0
+  comm_range: 40.0
+  max_speed: 8.0
+  seed: 42
+  ensure_connected: true
+
+# DMTT trust protocol parameters (Algorithm 1 / 4)
+dmtt:
+  budget_B: 5            # max collaborators per round |C_i^t| ≤ B
+  rho: 0.1               # link-reliability EMA smoothing ρ
+  lambda_forget: 0.9     # trust forgetting factor λ
+  w_d: 1.0               # direct confirmation weight
+  w_c: 0.5               # corroboration weight
+  w_x: 1.0               # contradiction weight
+  tau_U: 0.3             # uncertainty tolerance τ_U
+  eta: 5.0               # uncertainty penalty scale η
+  w_a: 0.7               # accuracy weight in model score
+  tau_u: 0.5             # model-score uncertainty threshold
+  lambda1: 0.4           # collaboration score: model compatibility weight
+  lambda2: 0.3           # collaboration score: topology trust weight
+  lambda3: 0.2           # collaboration score: link reliability weight
+  lambda4: 0.1           # collaboration score: comm cost weight

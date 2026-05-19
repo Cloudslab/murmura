@@ -2,25 +2,34 @@
 
 from pathlib import Path
 from typing import Optional
+
+import torch
 import typer
 from rich.console import Console
 from rich.table import Table
-import importlib
-
-import torch
 
 from murmura.config import load_config
-from murmura.utils.seed import set_seed
 from murmura.utils.device import get_device
-from murmura.core.network import Network
+from murmura.utils.factories import (
+    build_aggregator_factory,
+    build_attack,
+    build_criterion,
+    build_dataset_adapter,
+    build_model_factory,
+)
+from murmura.utils.seed import set_seed
 
 app = typer.Typer(
     name="murmura",
     help="Murmura: Decentralized Federated Learning Framework",
-    add_completion=False
+    add_completion=False,
 )
 console = Console()
 
+
+# ---------------------------------------------------------------------------
+# run — simulation or distributed depending on config.backend
+# ---------------------------------------------------------------------------
 
 @app.command()
 def run(
@@ -28,231 +37,233 @@ def run(
     device_override: Optional[str] = typer.Option(None, "--device", help="Override device (cpu/cuda/mps)"),
     verbose: bool = typer.Option(True, "--verbose/--quiet", help="Enable verbose output"),
 ):
-    """Run a decentralized federated learning experiment from config file.
+    """Run a decentralized federated learning experiment from a config file.
 
-    Example:
+    Routes to the ZMQ distributed backend when config sets backend: distributed,
+    otherwise runs the existing in-process simulation.
+
+    Examples:
         murmura run experiments/basic_fedavg.yaml
+        murmura run experiments/distributed_fedavg.yaml --quiet
     """
     try:
-        # Load configuration
-        console.print(f"[bold blue]Loading configuration from:[/bold blue] {config_path}")
+        console.print(f"[bold blue]Loading config:[/bold blue] {config_path}")
         config = load_config(config_path)
 
-        # Set seed
-        set_seed(config.experiment.seed)
-
-        # Get device
-        if device_override:
-            device = torch.device(device_override)
+        if config.backend == "distributed":
+            _run_distributed(config_path, verbose)
         else:
-            device = get_device()
-        console.print(f"[bold green]Using device:[/bold green] {device}")
+            _run_simulation(config, config_path, device_override, verbose)
 
-        # Display experiment info
-        console.print(f"\n[bold]Experiment:[/bold] {config.experiment.name}")
-        console.print(f"  Rounds: {config.experiment.rounds}")
-        console.print(f"  Topology: {config.topology.type} ({config.topology.num_nodes} nodes)")
-        console.print(f"  Aggregation: {config.aggregation.algorithm}")
-        if config.attack.enabled:
-            console.print(f"  [red]Attack: {config.attack.type} ({config.attack.percentage*100:.0f}% nodes)[/red]")
-
-        # Load dataset adapter
-        console.print(f"\n[bold]Loading dataset:[/bold] {config.data.adapter}")
-        dataset_adapter = _load_dataset_adapter(config)
-
-        # Load model factory
-        console.print(f"[bold]Loading model:[/bold] {config.model.factory}")
-        model_factory = _load_model_factory(config)
-
-        # Create aggregator factory
-        aggregator_factory = _create_aggregator_factory(config, model_factory, device)
-
-        # Check if using evidential models (wearables)
-        evidential = config.model.factory.startswith("examples.wearables.")
-        criterion = None
-        if evidential:
-            from murmura.examples.wearables import get_evidential_loss
-            num_classes = config.model.params.get("num_classes", 6)
-            # Use longer annealing period for FL (rounds, not epochs)
-            # and reduced KL weight for stability with aggregation
-            annealing_rounds = config.experiment.rounds // 2  # Anneal over first half
-            criterion = get_evidential_loss(
-                num_classes=num_classes,
-                annealing_epochs=annealing_rounds,  # In FL: rounds, not epochs
-                lambda_weight=0.1,  # Reduced KL weight for FL stability
-            )
-            console.print("[bold cyan]Using evidential deep learning with uncertainty quantification[/bold cyan]")
-            console.print(f"  KL annealing over {annealing_rounds} rounds, λ=0.1")
-
-        # Create network
-        console.print("\n[bold]Creating network...[/bold]")
-        network = Network.from_config(
-            config=config,
-            model_factory=model_factory,
-            dataset_adapter=dataset_adapter,
-            aggregator_factory=aggregator_factory,
-            device=device,
-            criterion=criterion,
-            evidential=evidential,
-        )
-
-        # Run training
-        console.print("\n[bold green]Starting training...[/bold green]\n")
-        history = network.train(
-            rounds=config.experiment.rounds,
-            local_epochs=config.training.local_epochs,
-            lr=config.training.lr,
-            verbose=verbose or config.experiment.verbose
-        )
-
-        # Display results
-        _display_results(history, network)
-
-        console.print("\n[bold green]✓ Training completed successfully![/bold green]")
-
-    except Exception as e:
-        console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
+    except Exception as exc:
+        console.print(f"\n[bold red]Error:[/bold red] {exc}")
         raise typer.Exit(1)
 
 
+def _run_simulation(config, config_path, device_override, verbose):
+    from murmura.core.network import Network
+
+    set_seed(config.experiment.seed)
+
+    device = torch.device(device_override) if device_override else get_device()
+    console.print(f"[bold green]Device:[/bold green] {device}")
+    console.print(f"\n[bold]Experiment:[/bold] {config.experiment.name}")
+    console.print(f"  Backend:    simulation")
+    console.print(f"  Rounds:     {config.experiment.rounds}")
+    console.print(f"  Topology:   {config.topology.type} ({config.topology.num_nodes} nodes)")
+    console.print(f"  Aggregation:{config.aggregation.algorithm}")
+    if config.attack.enabled:
+        console.print(
+            f"  [red]Attack: {config.attack.type} "
+            f"({config.attack.percentage * 100:.0f}% nodes)[/red]"
+        )
+
+    console.print(f"\n[bold]Loading dataset:[/bold] {config.data.adapter}")
+    dataset_adapter = build_dataset_adapter(config)
+
+    console.print(f"[bold]Loading model:[/bold] {config.model.factory}")
+    model_factory = build_model_factory(config)
+
+    aggregator_factory = build_aggregator_factory(config, model_factory, device)
+    criterion, evidential = build_criterion(config)
+
+    if evidential:
+        console.print("[bold cyan]Using evidential deep learning (EDL)[/bold cyan]")
+
+    console.print("\n[bold]Creating network…[/bold]")
+    network = Network.from_config(
+        config=config,
+        model_factory=model_factory,
+        dataset_adapter=dataset_adapter,
+        aggregator_factory=aggregator_factory,
+        device=device,
+        criterion=criterion,
+        evidential=evidential,
+    )
+
+    console.print("\n[bold green]Starting training…[/bold green]\n")
+    history = network.train(
+        rounds=config.experiment.rounds,
+        local_epochs=config.training.local_epochs,
+        lr=config.training.lr,
+        verbose=verbose or config.experiment.verbose,
+    )
+
+    _display_results(history)
+    console.print("\n[bold green]✓ Training complete[/bold green]")
+
+
+def _run_distributed(config_path: Path, verbose: bool):
+    from murmura.distributed.runner import DistributedRunner
+
+    config = load_config(config_path)
+    console.print(f"\n[bold]Experiment:[/bold] {config.experiment.name}")
+    console.print(f"  Backend:    distributed (ZMQ {config.distributed.transport.upper()})")
+    console.print(f"  Rounds:     {config.experiment.rounds}")
+    console.print(f"  Topology:   {config.topology.type} ({config.topology.num_nodes} nodes)")
+    console.print(f"  Aggregation:{config.aggregation.algorithm}")
+    if config.attack.enabled:
+        console.print(
+            f"  [red]Attack: {config.attack.type} "
+            f"({config.attack.percentage * 100:.0f}% nodes)[/red]"
+        )
+
+    console.print("\n[bold green]Launching distributed processes…[/bold green]\n")
+    runner = DistributedRunner(config_path)
+    history = runner.run(verbose=verbose or config.experiment.verbose)
+
+    _display_results(history)
+    console.print("\n[bold green]✓ Distributed training complete[/bold green]")
+
+
+# ---------------------------------------------------------------------------
+# run-node — launch a single node (multi-machine deployments)
+# ---------------------------------------------------------------------------
+
+@app.command(name="run-node")
+def run_node(
+    config_path: Path = typer.Argument(..., help="Path to the shared config file"),
+    node_id: int = typer.Option(..., "--node-id", "-n", help="This node's ID (0-indexed)"),
+    t_start: float = typer.Option(
+        ...,
+        "--t-start",
+        help=(
+            "Absolute monotonic time (seconds) for round 0 start, "
+            "as printed by `murmura run` on the head node. "
+            "All nodes in the experiment must use the same value."
+        ),
+    ),
+    run_id: str = typer.Option(
+        "default",
+        "--run-id",
+        help="Run identifier matching the head node (printed by `murmura run`).",
+    ),
+    host_override: Optional[str] = typer.Option(
+        None, "--host", help="Override host for TCP transport (e.g., head-node IP)"
+    ),
+):
+    """Launch a single distributed node (for multi-machine deployments).
+
+    Use this on each worker machine after starting `murmura run` on the head
+    node.  The head node prints the t_start and run_id values to pass here.
+
+    Example (3-node cluster):
+        Head node:  murmura run config.yaml
+                    # prints: run_id=abc123  t_start=1234567890.123
+        Worker 1:   murmura run-node config.yaml -n 1 --run-id abc123 --t-start 1234567890.123
+        Worker 2:   murmura run-node config.yaml -n 2 --run-id abc123 --t-start 1234567890.123
+    """
+    try:
+        config = load_config(config_path)
+
+        if config.backend != "distributed":
+            console.print(
+                "[yellow]Warning:[/yellow] config.backend is not 'distributed'. "
+                "Proceeding anyway with distributed node."
+            )
+
+        dist_cfg = config.distributed
+        if host_override:
+            from murmura.config.schema import DistributedConfig
+            dist_dict = config.distributed.model_dump()
+            dist_dict["host"] = host_override
+            dist_cfg = DistributedConfig(**dist_dict)
+
+        from murmura.distributed.endpoints import Endpoints
+        from murmura.distributed.node_process import NodeProcess
+
+        endpoints = Endpoints(dist_cfg, config.topology.num_nodes, run_id)
+
+        console.print(f"[bold green]Starting node {node_id}[/bold green]  run_id={run_id}")
+        proc = NodeProcess.from_config_path(
+            node_id=node_id,
+            config_path=str(config_path),
+            endpoints=endpoints,
+            t_start=t_start,
+        )
+        proc.run()
+
+    except Exception as exc:
+        console.print(f"\n[bold red]Error:[/bold red] {exc}")
+        raise typer.Exit(1)
+
+
+# ---------------------------------------------------------------------------
+# list-components
+# ---------------------------------------------------------------------------
+
 @app.command()
 def list_components(
-    component_type: str = typer.Argument(..., help="Component type (topologies/aggregators/attacks)")
+    component_type: str = typer.Argument(
+        ..., help="Component type (topologies/aggregators/attacks/backends)"
+    ),
 ):
     """List available components.
 
-    Example:
+    Examples:
         murmura list-components topologies
         murmura list-components aggregators
+        murmura list-components backends
     """
     if component_type == "topologies":
         console.print("[bold]Available Topologies:[/bold]")
-        console.print("  • ring - Ring topology (each node connects to 2 neighbors)")
-        console.print("  • fully - Fully connected (all-to-all)")
-        console.print("  • erdos - Erdős-Rényi random graph (requires p parameter)")
-        console.print("  • k-regular - k-regular graph (requires k parameter)")
+        console.print("  • ring      — each node connects to 2 neighbours")
+        console.print("  • fully     — all-to-all")
+        console.print("  • erdos     — Erdős-Rényi random graph (requires p)")
+        console.print("  • k-regular — k-regular ring lattice (requires k)")
 
     elif component_type == "aggregators":
         console.print("[bold]Available Aggregators:[/bold]")
-        console.print("  • fedavg - Decentralized FedAvg (simple averaging)")
-        console.print("  • krum - Multi-Krum Byzantine-resilient")
-        console.print("  • balance - Distance-based filtering with adaptive thresholds")
-        console.print("  • sketchguard - Count-Sketch compression for lightweight filtering")
-        console.print("  • ubar - Two-stage Byzantine-resilient (distance + loss)")
-        console.print("  • evidential_trust - Uncertainty-aware trust aggregation (EDL-based)")
+        console.print("  • fedavg           — simple decentralised averaging")
+        console.print("  • krum             — Multi-Krum Byzantine-resilient")
+        console.print("  • balance          — distance-based with adaptive thresholds")
+        console.print("  • sketchguard      — Count-Sketch compression filtering")
+        console.print("  • ubar             — two-stage (distance + loss) Byzantine-resilient")
+        console.print("  • evidential_trust — uncertainty-aware trust aggregation (EDL)")
 
     elif component_type == "attacks":
         console.print("[bold]Available Attacks:[/bold]")
-        console.print("  • gaussian - Gaussian noise injection")
-        console.print("  • directed_deviation - Directional parameter scaling")
+        console.print("  • gaussian           — Gaussian noise injection")
+        console.print("  • directed_deviation — directional parameter scaling")
+
+    elif component_type == "backends":
+        console.print("[bold]Available Backends:[/bold]")
+        console.print("  • simulation  — single-process in-memory (default)")
+        console.print("  • distributed — multi-process ZMQ (set backend: distributed in config)")
+        console.print("\n[bold]Distributed transport options:[/bold]")
+        console.print("  • ipc — IPC sockets, single machine (default)")
+        console.print("  • tcp — TCP sockets, multi-machine")
 
     else:
         console.print(f"[red]Unknown component type: {component_type}[/red]")
-        console.print("Available types: topologies, aggregators, attacks")
+        console.print("Available: topologies, aggregators, attacks, backends")
 
 
-def _load_dataset_adapter(config):
-    """Load dataset adapter from config."""
-    adapter_name = config.data.adapter
+# ---------------------------------------------------------------------------
+# Results display (shared by simulation and distributed paths)
+# ---------------------------------------------------------------------------
 
-    if adapter_name.startswith("leaf."):
-        # LEAF dataset
-        dataset_type = adapter_name.split(".")[1]
-        from murmura.examples.leaf import load_leaf_adapter
-        return load_leaf_adapter(
-            dataset_type,
-            num_nodes=config.topology.num_nodes,
-            seed=config.experiment.seed,
-            **config.data.params
-        )
-    elif adapter_name.startswith("wearables."):
-        # Wearable dataset (uci_har, pamap2, ppg_dalia)
-        dataset_type = adapter_name.split(".")[1]
-        from murmura.examples.wearables import load_wearable_adapter
-        return load_wearable_adapter(
-            dataset_type=dataset_type,
-            num_nodes=config.topology.num_nodes,
-            seed=config.experiment.seed,
-            **config.data.params
-        )
-    else:
-        # Custom adapter - dynamically import
-        module_path, class_name = adapter_name.rsplit(".", 1)
-        module = importlib.import_module(module_path)
-        adapter_class = getattr(module, class_name)
-        return adapter_class(**config.data.params)
-
-
-def _load_model_factory(config):
-    """Load model factory from config."""
-    factory_path = config.model.factory
-
-    if factory_path.startswith("examples.leaf."):
-        # LEAF model
-        from murmura.examples.leaf import get_leaf_model_factory
-        model_type = factory_path.split(".")[-1]
-        return get_leaf_model_factory(model_type, **config.model.params)
-    elif factory_path.startswith("examples.wearables."):
-        # Wearable evidential model
-        from murmura.examples.wearables import get_wearable_model_factory
-        dataset_type = factory_path.split(".")[-1]
-        return get_wearable_model_factory(dataset_type, **config.model.params)
-    else:
-        # Custom model factory
-        module_path, factory_name = factory_path.rsplit(".", 1)
-        module = importlib.import_module(module_path)
-        factory = getattr(module, factory_name)
-        return lambda: factory(**config.model.params)
-
-
-def _create_aggregator_factory(config, model_factory, device):
-    """Create aggregator factory function."""
-    from murmura.aggregation import (
-        FedAvgAggregator,
-        KrumAggregator,
-        BALANCEAggregator,
-        SketchguardAggregator,
-        UBARAggregator,
-        EvidentialTrustAggregator,
-    )
-    from murmura.aggregation.base import calculate_model_dimension
-
-    agg_type = config.aggregation.algorithm.lower()
-    params = dict(config.aggregation.params)  # Make a copy to avoid mutation
-
-    # Calculate model dimension for Sketchguard
-    if agg_type == "sketchguard":
-        sample_model = model_factory()
-        model_dim = calculate_model_dimension(sample_model)
-        params["model_dim"] = model_dim
-        params["total_rounds"] = config.experiment.rounds
-
-    # Common parameters for algorithms that need total_rounds
-    if agg_type in ["balance", "ubar", "evidential_trust"]:
-        params["total_rounds"] = config.experiment.rounds
-
-    def factory(node_id: int):
-        if agg_type == "fedavg":
-            return FedAvgAggregator(**params)
-        elif agg_type == "krum":
-            return KrumAggregator(**params)
-        elif agg_type == "balance":
-            return BALANCEAggregator(**params)
-        elif agg_type == "sketchguard":
-            return SketchguardAggregator(**params)
-        elif agg_type == "ubar":
-            return UBARAggregator(**params)
-        elif agg_type == "evidential_trust":
-            return EvidentialTrustAggregator(**params)
-        else:
-            raise ValueError(f"Unknown aggregation algorithm: {agg_type}")
-
-    return factory
-
-
-def _display_results(history, network):
-    """Display training results in a table."""
-    # Check if we have evidential metrics
+def _display_results(history: dict) -> None:
     has_uncertainty = len(history.get("mean_vacuity", [])) > 0
 
     table = Table(title="Training Results")
@@ -260,45 +271,37 @@ def _display_results(history, network):
     table.add_column("Mean Acc", style="green")
     table.add_column("Std Acc", style="yellow")
     table.add_column("Honest Acc", style="blue")
-    table.add_column("Compromised Acc", style="red")
-
+    table.add_column("Comp. Acc", style="red")
     if has_uncertainty:
         table.add_column("Vacuity", style="magenta")
         table.add_column("Entropy", style="cyan")
         table.add_column("Strength", style="white")
 
     for i in range(len(history["round"])):
-        round_num = history["round"][i]
-        mean_acc = history["mean_accuracy"][i]
-        std_acc = history["std_accuracy"][i]
-
-        honest_acc = history["honest_accuracy"][i] if i < len(history["honest_accuracy"]) else "-"
-        comp_acc = history["compromised_accuracy"][i] if i < len(history["compromised_accuracy"]) else "-"
-
+        honest = history["honest_accuracy"][i] if i < len(history["honest_accuracy"]) else "-"
+        comp = history["compromised_accuracy"][i] if i < len(history["compromised_accuracy"]) else "-"
         row = [
-            str(round_num),
-            f"{mean_acc:.4f}",
-            f"{std_acc:.4f}",
-            f"{honest_acc:.4f}" if isinstance(honest_acc, float) else honest_acc,
-            f"{comp_acc:.4f}" if isinstance(comp_acc, float) else comp_acc,
+            str(history["round"][i]),
+            f"{history['mean_accuracy'][i]:.4f}",
+            f"{history['std_accuracy'][i]:.4f}",
+            f"{honest:.4f}" if isinstance(honest, float) else honest,
+            f"{comp:.4f}" if isinstance(comp, float) else comp,
         ]
-
         if has_uncertainty:
-            vacuity = history["mean_vacuity"][i] if i < len(history["mean_vacuity"]) else 0
-            entropy = history["mean_entropy"][i] if i < len(history["mean_entropy"]) else 0
-            strength = history["mean_strength"][i] if i < len(history["mean_strength"]) else 0
-            row.extend([f"{vacuity:.4f}", f"{entropy:.4f}", f"{strength:.2f}"])
-
+            row += [
+                f"{history['mean_vacuity'][i]:.4f}",
+                f"{history['mean_entropy'][i]:.4f}",
+                f"{history['mean_strength'][i]:.2f}",
+            ]
         table.add_row(*row)
 
     console.print(table)
 
-    # Print interpretation for evidential metrics
     if has_uncertainty:
         console.print("\n[bold]Uncertainty Metrics:[/bold]")
-        console.print("  • [magenta]Vacuity[/magenta]: Epistemic uncertainty (lack of evidence). Lower = more confident.")
-        console.print("  • [cyan]Entropy[/cyan]: Aleatoric uncertainty (prediction entropy). Lower = more decisive.")
-        console.print("  • [white]Strength[/white]: Dirichlet strength (total evidence). Higher = more evidence accumulated.")
+        console.print("  • [magenta]Vacuity[/magenta]: epistemic uncertainty — lower is more confident")
+        console.print("  • [cyan]Entropy[/cyan]: aleatoric uncertainty — lower is more decisive")
+        console.print("  • [white]Strength[/white]: Dirichlet strength — higher means more evidence")
 
 
 if __name__ == "__main__":

@@ -24,8 +24,17 @@ uv pip install -e ".[examples]"
 
 ### Running Experiments
 ```bash
-# Run experiment from config file
+# Simulation backend (default, in-process, fast)
 murmura run murmura/examples/configs/basic_fedavg.yaml
+
+# Distributed backend (ZMQ, actual separate processes)
+murmura run experiments/distributed_fedavg.yaml   # config has backend: distributed
+
+# Multi-machine: start coordinator on head node, then on each worker:
+murmura run-node config.yaml --node-id 1 --coordinator-host 192.168.1.1
+
+# List available backends
+murmura list-components backends
 
 # Or with uv run (without activating venv)
 uv run murmura run murmura/examples/configs/basic_fedavg.yaml
@@ -65,6 +74,63 @@ cd ../../..
 ```
 
 ## Architecture & Design
+
+### Execution Backends
+
+Murmura supports two execution backends selected via `backend:` in the config:
+
+**Simulation** (`backend: simulation`, default) — all nodes run in one Python process. `Network` in `core/network.py` centrally orchestrates local training, state collection, attack injection, and aggregation. Fast for development and hyperparameter search.
+
+**Distributed** (`backend: distributed`) — each node is an independent OS process communicating via ZeroMQ. Round timing is wall-clock based: no coordinator sends round-start signals. The passive monitor only collects metrics and never influences the learning protocol.
+
+```
+murmura/distributed/
+  messaging.py      # MsgType enum + encode/decode + pack_state/pack_obj
+  endpoints.py      # ZMQ endpoint strings for IPC or TCP transport
+  monitor.py        # PULL-only passive metrics collector
+  node_process.py   # PULL (model receive) + PUSH per-neighbour + PUSH to monitor
+  runner.py         # multiprocessing launcher for single-machine runs
+  coordinator.py    # DEAD CODE — replaced by wall-clock + monitor
+```
+
+Socket layout per round:
+- Node PUSH → Node PULL: `MODEL_STATE` (torch.save bytes, peer-to-peer)
+- Node PUSH → Monitor PULL: `METRICS` (pickle dict with `round_idx` key)
+
+Round timing: each node sleeps until `t_start + round_idx * round_duration_s` (monotonic). `t_start` is computed by the runner as `now + startup_grace_s` and passed to all subprocesses at launch.
+
+DMTT hook: `NodeProcess._get_current_neighbors(round_idx)` returns the static topology by default, or `G^t` direct neighbours when `config.mobility` is set. `DMTTNodeProcess` further overrides this to return the TopB trusted-feasible set `C_i^t`.
+
+### DMTT Protocol
+
+```
+murmura/dmtt/
+  state.py        # DMTTNodeState — link reliability EMA + Beta trust + TopB scoring
+  node_process.py # DMTTNodeProcess(NodeProcess) — adds TOPO_CLAIM exchange + trust update
+murmura/topology/dynamic.py  # MobilityModel — deterministic random-walk G^t
+murmura/attacks/topology_liar.py  # TopologyLiarAttack — false TOPO_CLAIM injection
+```
+
+Three paper experiment configs in `experiments/paper/dmtt/`:
+- `01_baseline_murmura.yaml` — static topology, FedAvg, topology-liar attack (simulation)
+- `02_dynamic_no_trust.yaml` — dynamic G^t, no DMTT trust (distributed)
+- `03_dmtt.yaml` — full DMTT with TopB collaborator selection (distributed)
+
+**Message types** (MsgType in messaging.py):
+- `MODEL_STATE=0`: model weights peer-to-peer
+- `METRICS=1`: evaluation results → monitor
+- `TOPO_CLAIM=2`: signed neighbourhood observation (DMTT only)
+
+**DMTT trust update** (`DMTTNodeState`):
+- `update_link_reliability(j, received)` — EMA: `ĉ^{t+1} = (1-ρ)ĉ^t + ρ·ack`
+- `update_trust(j, d, x)` — Beta: `α += w_d·d`, `β += w_x·x`; `T_topo = R·exp(-η·max(0, U-τ_U))`
+- `top_b(candidates, model_scores, B)` — returns TopB by `q_ij = λ1·s_model + λ2·T_topo + λ3·ĉ`
+
+**Config selects process type** (runner.py `_node_main`):
+- `config.dmtt` absent → `NodeProcess` (static or dynamic via mobility)
+- `config.dmtt` present → `DMTTNodeProcess` (full trust protocol)
+
+Shared factory builders in `murmura/utils/factories.py` are used by both the CLI (simulation) and `NodeProcess` (distributed) to avoid duplicating config-to-object wiring.
 
 ### Core Components
 

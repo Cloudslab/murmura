@@ -35,6 +35,7 @@ dependencies = [
     "Pillow>=9.0.0",
     "torchvision>=0.20.1",
     "matplotlib>=3.7.5",
+    "pyzmq>=25.0.0",
 ]
 
 [project.optional-dependencies]
