@@ -13,7 +13,6 @@ interface FeatureCardProps {
 interface AlgorithmCardProps {
   name: string;
   description: string;
-  featured?: boolean;
 }
 
 export default function Home() {
@@ -262,7 +261,7 @@ backend: simulation`}
                 </p>
               </div>
               <div className="mx-auto grid max-w-4xl gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                <AlgorithmCard name="FedAvg" description="Simple averaging" featured={true} />
+                <AlgorithmCard name="FedAvg" description="Simple averaging" />
                 <AlgorithmCard name="Krum" description="Distance-based filtering" />
                 <AlgorithmCard name="BALANCE" description="Adaptive threshold" />
                 <AlgorithmCard name="Sketchguard" description="Sketch compression" />
@@ -335,13 +334,9 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
   )
 }
 
-function AlgorithmCard({ name, description, featured = false }: AlgorithmCardProps) {
+function AlgorithmCard({ name, description }: AlgorithmCardProps) {
   return (
-    <div className={`rounded-lg p-4 text-center transition-all hover:-translate-y-1 hover:shadow-lg ${
-      featured
-        ? 'bg-gradient-to-b from-purple-100 to-white dark:from-purple-900/30 dark:to-background border-2 border-purple-500'
-        : 'bg-background border'
-    }`}>
+    <div className="rounded-lg p-4 text-center bg-background border transition-all hover:-translate-y-1 hover:shadow-lg">
       <h4 className="font-semibold mb-1">{name}</h4>
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
