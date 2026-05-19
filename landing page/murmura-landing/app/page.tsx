@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Network, Shield, Settings, BrainCircuit, Watch, Target, TrendingUp, AlertTriangle, CheckCircle, Database } from "lucide-react"
+import { Network, Shield, Settings, Layers, GitBranch, Terminal, Cpu, Package } from "lucide-react"
 import Link from "next/link"
 import NewsletterForm from "@/components/newsletter-form"
 import { ReactNode } from 'react'
@@ -8,14 +8,6 @@ interface FeatureCardProps {
   icon: ReactNode;
   title: string;
   description: string;
-}
-
-interface DatasetCardProps {
-  name: string;
-  source: string;
-  nodes: string;
-  activities: string;
-  features: string;
 }
 
 interface AlgorithmCardProps {
@@ -40,11 +32,11 @@ export default function Home() {
               <Link href="/#overview" className="text-sm font-medium hover:text-primary">
                 Overview
               </Link>
-              <Link href="/#insight" className="text-sm font-medium hover:text-primary">
-                Key Insight
+              <Link href="/#features" className="text-sm font-medium hover:text-primary">
+                Features
               </Link>
-              <Link href="/#datasets" className="text-sm font-medium hover:text-primary">
-                Datasets
+              <Link href="/#quickstart" className="text-sm font-medium hover:text-primary">
+                Quick Start
               </Link>
               <Link href="/#algorithms" className="text-sm font-medium hover:text-primary">
                 Algorithms
@@ -72,20 +64,17 @@ export default function Home() {
               <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
                 <div className="flex flex-col justify-center space-y-4">
                   <div className="inline-flex items-center rounded-lg bg-muted px-3 py-1 text-sm max-w-fit">
-                    <span className="mr-2 rounded-md bg-purple-600 px-2 py-0.5 text-xs text-white">Research</span>
+                    <span className="mr-2 rounded-md bg-purple-600 px-2 py-0.5 text-xs text-white">Open Source</span>
                     <span className="text-muted-foreground">University of Melbourne</span>
                   </div>
                   <div className="space-y-2">
                     <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                      Evidential Trust-Aware Decentralized Federated Learning
+                      Decentralized Federated Learning, Made Modular
                     </h1>
                     <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                      A modular framework for Byzantine-resilient decentralized FL with uncertainty-driven peer evaluation and personalized model aggregation for Wearable IoT.
+                      Murmura is an open-source framework for running Byzantine-resilient decentralized federated learning experiments. Swap aggregators, topologies, and backends from a single config file.
                     </p>
                   </div>
-                  <p className="text-sm text-muted-foreground italic">
-                    Rangwala, Sinnott, Buyya - University of Melbourne
-                  </p>
                   <div className="flex flex-col gap-2 min-[400px]:flex-row">
                     <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white" asChild>
                       <Link href="https://github.com/Cloudslab/murmura" target="_blank" rel="noopener noreferrer">
@@ -98,10 +87,10 @@ export default function Home() {
                       </Link>
                     </Button>
                     <Button variant="outline" asChild>
-                      <Link href="https://doi.org/10.5281/zenodo.15622123" target="_blank" rel="noopener noreferrer">
+                      <Link href="/#quickstart">
                         <span className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          <span>DOI: 10.5281/zenodo.15622123</span>
+                          <Terminal className="h-4 w-4" />
+                          <span>Quick Start</span>
                         </span>
                       </Link>
                     </Button>
@@ -122,68 +111,33 @@ export default function Home() {
               <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
                 <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">What is Murmura?</h2>
                 <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-                  Murmura is a comprehensive framework for <strong>Evidential Trust-Aware Decentralized Federated Learning</strong>.
-                  It leverages Dirichlet-based uncertainty decomposition to evaluate peer trustworthiness and enable Byzantine-resilient
-                  model aggregation for wearable IoT applications.
+                  Murmura is a config-driven research framework for decentralized federated learning. Define your
+                  topology, aggregation algorithm, attack scenario, and execution backend in a single YAML file
+                  and run reproducible experiments with one command.
                 </p>
                 <div className="mt-6 flex flex-col md:flex-row gap-4 md:gap-8">
                   <div className="flex flex-col items-center gap-2 rounded-lg border bg-background p-6 text-center shadow-sm">
-                    <BrainCircuit className="h-12 w-12 text-purple-600" />
-                    <h3 className="text-xl font-bold">Evidential Deep Learning</h3>
+                    <Settings className="h-12 w-12 text-purple-600" />
+                    <h3 className="text-xl font-bold">Config-Driven</h3>
                     <p className="text-sm text-muted-foreground">
-                      Dirichlet-based models for uncertainty quantification
+                      Full experiments defined in YAML — reproducible, shareable, version-controlled
                     </p>
                   </div>
                   <div className="flex flex-col items-center gap-2 rounded-lg border bg-background p-6 text-center shadow-sm">
-                    <Shield className="h-12 w-12 text-blue-600" />
-                    <h3 className="text-xl font-bold">Byzantine Resilient</h3>
+                    <Layers className="h-12 w-12 text-blue-600" />
+                    <h3 className="text-xl font-bold">Modular</h3>
                     <p className="text-sm text-muted-foreground">
-                      Robust against malicious nodes using trust-aware filtering
+                      Plug in any aggregator, topology, or attack without touching the training loop
                     </p>
                   </div>
                   <div className="flex flex-col items-center gap-2 rounded-lg border bg-background p-6 text-center shadow-sm">
-                    <Watch className="h-12 w-12 text-indigo-600" />
-                    <h3 className="text-xl font-bold">Wearable IoT</h3>
+                    <Cpu className="h-12 w-12 text-indigo-600" />
+                    <h3 className="text-xl font-bold">Two Backends</h3>
                     <p className="text-sm text-muted-foreground">
-                      Designed for activity recognition on resource-constrained devices
+                      Fast in-process simulation or real distributed ZMQ processes — same config
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Key Insight Section */}
-          <section id="insight" className="bg-gradient-to-br from-slate-800 to-slate-900 py-16 md:py-24 text-white">
-            <div className="container px-4 md:px-6">
-              <div className="mx-auto max-w-4xl text-center">
-                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl mb-6">The Key Insight</h2>
-                <p className="text-xl text-white/90 mb-8">
-                  Epistemic-aleatoric uncertainty decomposition from Dirichlet-based evidential models directly indicates peer reliability:
-                </p>
-                <div className="bg-white/10 rounded-2xl p-8 space-y-6">
-                  <div className="flex items-start gap-4 text-left">
-                    <AlertTriangle className="text-amber-400 flex-shrink-0 mt-1 h-7 w-7" />
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">High Epistemic Uncertainty (Vacuity)</h3>
-                      <p className="text-white/80">
-                        Indicates insufficient learning or evidence - possibly Byzantine behavior. These peers should be filtered.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4 text-left">
-                    <CheckCircle className="text-green-400 flex-shrink-0 mt-1 h-7 w-7" />
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">High Aleatoric Uncertainty (Entropy)</h3>
-                      <p className="text-white/80">
-                        Reflects inherent data ambiguity - the peer is still trustworthy and should be included in aggregation.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <p className="mt-8 text-white/80">
-                  This distinction allows intelligent peer filtering that traditional distance-based methods cannot achieve.
-                </p>
               </div>
             </div>
           </section>
@@ -192,77 +146,108 @@ export default function Home() {
           <section id="features" className="py-16 md:py-24">
             <div className="container px-4 md:px-6">
               <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
-                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">Key Contributions</h2>
+                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">Framework Features</h2>
                 <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-                  Murmura introduces novel techniques for trust-aware decentralized federated learning.
+                  Everything you need to design, run, and extend decentralized FL experiments.
                 </p>
               </div>
               <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3 lg:gap-8 mt-12">
                 <FeatureCard
-                    icon={<BrainCircuit className="h-10 w-10" />}
-                    title="Evidential Trust-Aware Aggregation"
-                    description="Novel algorithm leveraging Dirichlet-based uncertainty to identify and filter Byzantine peers via cross-evaluation."
-                />
-                <FeatureCard
-                    icon={<Target className="h-10 w-10" />}
-                    title="Uncertainty-Driven Personalization"
-                    description="Adaptive self-weighting based on local model confidence, balancing knowledge transfer with personalized learning."
-                />
-                <FeatureCard
-                    icon={<TrendingUp className="h-10 w-10" />}
-                    title="BALANCE-Style Threshold Dynamics"
-                    description="Progressive trust threshold tightening as models converge - starting lenient, becoming stricter over training."
+                    icon={<Network className="h-10 w-10" />}
+                    title="Flexible Topologies"
+                    description="Ring, fully-connected, Erdős-Rényi, and k-regular graphs. Topology is decoupled from training logic."
                 />
                 <FeatureCard
                     icon={<Shield className="h-10 w-10" />}
-                    title="Byzantine Attack Resilience"
-                    description="Robust against Gaussian noise and directed deviation attacks with up to 30% compromised nodes."
+                    title="Byzantine Attack Simulation"
+                    description="Built-in Gaussian noise, directed deviation, and topology-liar attacks with configurable Byzantine fraction."
                 />
                 <FeatureCard
-                    icon={<Network className="h-10 w-10" />}
-                    title="Flexible Topologies"
-                    description="Support for ring, fully-connected, Erdos-Renyi, and k-regular network topologies."
+                    icon={<Cpu className="h-10 w-10" />}
+                    title="Simulation & Distributed Backends"
+                    description="Run in-process for fast iteration or as real OS processes over ZeroMQ — switch with one config line."
+                />
+                <FeatureCard
+                    icon={<GitBranch className="h-10 w-10" />}
+                    title="Dynamic Topology Support"
+                    description="Mobility model generates time-varying graphs deterministically from a shared seed across all nodes."
                 />
                 <FeatureCard
                     icon={<Settings className="h-10 w-10" />}
                     title="Config-Driven Experiments"
-                    description="YAML/JSON configuration for reproducible experiments with CLI and Python API support."
+                    description="YAML or JSON configs with Pydantic validation. Every experiment is fully reproducible and shareable."
+                />
+                <FeatureCard
+                    icon={<Package className="h-10 w-10" />}
+                    title="Extensible by Design"
+                    description="Add a new aggregator, topology, or attack by subclassing a single base class — no framework internals to touch."
                 />
               </div>
             </div>
           </section>
 
-          {/* Datasets Section */}
-          <section id="datasets" className="bg-slate-50 dark:bg-slate-900 py-16 md:py-24">
+          {/* Quick Start Section */}
+          <section id="quickstart" className="bg-slate-50 dark:bg-slate-900 py-16 md:py-24">
             <div className="container px-4 md:px-6">
-              <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center mb-12">
-                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">Wearable IoT Datasets</h2>
+              <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center mb-10">
+                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">Quick Start</h2>
                 <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-                  Evaluated on three real-world wearable sensor datasets with natural user heterogeneity.
+                  Install, configure, and run your first experiment in minutes.
                 </p>
               </div>
-              <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
-                <DatasetCard
-                  name="UCI HAR"
-                  source="Smartphone sensors"
-                  nodes="10 subjects"
-                  activities="6 classes"
-                  features="561"
-                />
-                <DatasetCard
-                  name="PAMAP2"
-                  source="Body-worn IMUs"
-                  nodes="9 subjects"
-                  activities="12 classes"
-                  features="4000"
-                />
-                <DatasetCard
-                  name="PPG-DaLiA"
-                  source="Wrist-worn PPG/EDA"
-                  nodes="15 subjects"
-                  activities="7 classes"
-                  features="192"
-                />
+              <div className="mx-auto max-w-3xl space-y-6">
+                <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-200 text-sm font-mono">
+                    <Terminal className="h-4 w-4" />
+                    <span>Install</span>
+                  </div>
+                  <pre className="p-4 text-sm font-mono overflow-x-auto bg-slate-900 text-green-400">
+{`pip install murmura
+# or with uv (recommended)
+uv pip install murmura`}
+                  </pre>
+                </div>
+                <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-200 text-sm font-mono">
+                    <Terminal className="h-4 w-4" />
+                    <span>Run an experiment</span>
+                  </div>
+                  <pre className="p-4 text-sm font-mono overflow-x-auto bg-slate-900 text-green-400">
+{`# Run with a config file
+murmura run experiments/basic_fedavg.yaml
+
+# List available components
+murmura list-components aggregators
+murmura list-components topologies
+murmura list-components attacks`}
+                  </pre>
+                </div>
+                <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-200 text-sm font-mono">
+                    <Settings className="h-4 w-4" />
+                    <span>Example config (YAML)</span>
+                  </div>
+                  <pre className="p-4 text-sm font-mono overflow-x-auto bg-slate-900 text-slate-200">
+{`experiment:
+  name: "my-experiment"
+  rounds: 50
+
+topology:
+  type: "k-regular"
+  num_nodes: 20
+  k: 4
+
+aggregation:
+  algorithm: "krum"
+
+attack:
+  enabled: true
+  type: "gaussian"
+  percentage: 0.2
+
+backend: simulation`}
+                  </pre>
+                </div>
               </div>
             </div>
           </section>
@@ -271,18 +256,18 @@ export default function Home() {
           <section id="algorithms" className="py-16 md:py-24">
             <div className="container px-4 md:px-6">
               <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center mb-12">
-                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">Aggregation Algorithms</h2>
+                <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-5xl">Built-in Aggregators</h2>
                 <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-                  Compare against state-of-the-art Byzantine-resilient aggregation methods.
+                  Six aggregation algorithms ready to use out of the box — or bring your own by subclassing <code className="text-sm bg-muted px-1 py-0.5 rounded">Aggregator</code>.
                 </p>
               </div>
               <div className="mx-auto grid max-w-4xl gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                <AlgorithmCard name="Evidential Trust" description="Uncertainty-aware" featured={true} />
-                <AlgorithmCard name="FedAvg" description="Baseline averaging" />
-                <AlgorithmCard name="Krum" description="Distance-based" />
+                <AlgorithmCard name="FedAvg" description="Simple averaging" featured={true} />
+                <AlgorithmCard name="Krum" description="Distance-based filtering" />
                 <AlgorithmCard name="BALANCE" description="Adaptive threshold" />
                 <AlgorithmCard name="Sketchguard" description="Sketch compression" />
                 <AlgorithmCard name="UBAR" description="Two-stage robust" />
+                <AlgorithmCard name="Evidential Trust" description="Uncertainty-aware" />
               </div>
             </div>
           </section>
@@ -350,36 +335,6 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
   )
 }
 
-
-function DatasetCard({ name, source, nodes, activities, features }: DatasetCardProps) {
-  return (
-    <div className="rounded-lg border bg-background p-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <Database className="h-5 w-5 text-purple-600" />
-        <h3 className="text-xl font-bold text-purple-600">{name}</h3>
-      </div>
-      <dl className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Source</dt>
-          <dd className="font-medium">{source}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Nodes</dt>
-          <dd className="font-medium">{nodes}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Activities</dt>
-          <dd className="font-medium">{activities}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Features</dt>
-          <dd className="font-medium">{features}</dd>
-        </div>
-      </dl>
-    </div>
-  )
-}
-
 function AlgorithmCard({ name, description, featured = false }: AlgorithmCardProps) {
   return (
     <div className={`rounded-lg p-4 text-center transition-all hover:-translate-y-1 hover:shadow-lg ${
@@ -412,15 +367,15 @@ function NetworkGraphic() {
           {/* Filtered connection (dashed red) */}
           <line x1="200" y1="200" x2="280" y2="300" stroke="rgba(239, 68, 68, 0.5)" strokeWidth="2" strokeDasharray="8,4" />
 
-          {/* Animated trust pulse (behind central node) */}
+          {/* Animated trust pulse */}
           <circle cx="200" cy="200" r="45" fill="none" stroke="rgba(124, 58, 237, 0.4)" strokeWidth="2">
             <animate attributeName="r" from="45" to="80" dur="2s" repeatCount="indefinite" />
             <animate attributeName="opacity" from="0.8" to="0" dur="2s" repeatCount="indefinite" />
           </circle>
 
-          {/* Central node with trust indicator (in front) */}
+          {/* Central node */}
           <circle cx="200" cy="200" r="35" fill="rgba(124, 58, 237, 0.9)" />
-          <text x="200" y="205" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">Trust</text>
+          <text x="200" y="205" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">Node</text>
 
           {/* Honest nodes (green) */}
           <circle cx="100" cy="100" r="18" fill="rgba(34, 197, 94, 0.8)" />
@@ -429,10 +384,9 @@ function NetworkGraphic() {
           <circle cx="120" cy="300" r="18" fill="rgba(34, 197, 94, 0.8)" />
           <circle cx="320" cy="200" r="18" fill="rgba(34, 197, 94, 0.8)" />
 
-          {/* Byzantine nodes (red, filtered) */}
+          {/* Byzantine node (red, filtered) */}
           <circle cx="280" cy="300" r="18" fill="rgba(239, 68, 68, 0.6)" strokeDasharray="4,4" stroke="rgba(239, 68, 68, 0.8)" strokeWidth="2" />
         </svg>
       </div>
   )
 }
-
