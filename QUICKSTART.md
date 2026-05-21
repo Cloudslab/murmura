@@ -186,7 +186,6 @@ results = network.train(rounds=10, local_epochs=2, lr=0.01)
 
 - Read the full [README.md](README.md) for detailed documentation
 - Check [examples/](murmura/examples/) for more examples
-- See [MIGRATION.md](MIGRATION.md) if migrating from the old script
 - Explore different aggregation algorithms and topologies
 
 ## Getting Help
