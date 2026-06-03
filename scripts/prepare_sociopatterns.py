@@ -296,6 +296,12 @@ def main() -> None:
         default=None,
         help="Comma-separated list of specific original node IDs to use instead of auto-selection",
     )
+    parser.add_argument(
+        "--raw-file",
+        type=str,
+        default=None,
+        help="Path to an already-downloaded .csv.gz file. Skips the download step entirely.",
+    )
     args = parser.parse_args()
 
     node_ids = None
@@ -313,7 +319,20 @@ def main() -> None:
     print()
 
     print("Step 1/4  Download")
-    gz_path = download(args.dataset)
+    if args.raw_file:
+        gz_path = Path(args.raw_file)
+        if not gz_path.exists():
+            raise FileNotFoundError(f"--raw-file not found: {gz_path}")
+        # Copy into the canonical raw location so the cache check works next time
+        RAW_DIR.mkdir(parents=True, exist_ok=True)
+        import shutil
+        dest = RAW_DIR / f"{args.dataset}.csv.gz"
+        if gz_path.resolve() != dest.resolve():
+            shutil.copy2(gz_path, dest)
+        gz_path = dest
+        print(f"  Using provided file: {gz_path}")
+    else:
+        gz_path = download(args.dataset)
 
     print("Step 2/4  Parse raw CSV")
     contacts = parse_raw(gz_path, DATASETS[args.dataset]["format"])
