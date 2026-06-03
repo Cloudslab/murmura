@@ -82,8 +82,10 @@ class DMTTNodeProcess(NodeProcess):
         t_start: float,
     ) -> "DMTTNodeProcess":
         config = load_config(Path(config_path))
-        if config.mobility is None:
-            raise ValueError("DMTTNodeProcess requires config.mobility to be set.")
+        if config.mobility is None and config.trace_mobility is None:
+            raise ValueError(
+                "DMTTNodeProcess requires config.mobility or config.trace_mobility to be set."
+            )
         if config.dmtt is None:
             raise ValueError("DMTTNodeProcess requires config.dmtt to be set.")
         from murmura.utils.factories import build_mobility_model

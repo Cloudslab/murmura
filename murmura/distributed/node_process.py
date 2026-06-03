@@ -93,7 +93,7 @@ class NodeProcess:
     ) -> "NodeProcess":
         config = load_config(Path(config_path))
         mobility = None
-        if config.mobility is not None:
+        if config.mobility is not None or config.trace_mobility is not None:
             from murmura.utils.factories import build_mobility_model
             mobility = build_mobility_model(config)
         return cls(

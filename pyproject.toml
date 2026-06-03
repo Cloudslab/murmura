@@ -36,6 +36,8 @@ dependencies = [
     "torchvision>=0.20.1",
     "matplotlib>=3.7.5",
     "pyzmq>=25.0.0",
+    "pandas>=1.5.0",
+    "pyarrow>=12.0.0",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,52 @@
+# Dynamic Krum baseline (distributed)
+# Byzantine fraction: 10 %  (f=1)  |  seed: 42
+experiment:
+  name: "DynKrum-byz10-s42"
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+aggregation:
+  algorithm: "krum"
+  params:
+    f: 1
+attack:
+  enabled: true
+  type: "topology_liar"
+  percentage: 0.1
+  params:
+    model_attack_type: "gaussian"
+    noise_std: 10.0
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3
+backend: distributed
+
+distributed:
+  transport: ipc
+  ipc_dir: "/tmp/murmura_dyn_krum_byz10_s42"
+  round_duration_s: 30.0
+  startup_grace_s: 5.0
+trace_mobility:
+  trace_path: "data/sociopatterns/primary_school_N10_R30s.csv"
+  num_nodes: 10
+  ensure_connected: true

@@ -111,6 +111,20 @@ class MobilityConfig(BaseModel):
     )
 
 
+class TraceMobilityConfig(BaseModel):
+    """Contact-trace mobility model that replaces the synthetic random walk."""
+    trace_path: str = Field(
+        description="Path to preprocessed contact-trace CSV (output of prepare_sociopatterns.py)"
+    )
+    num_nodes: int = Field(
+        description="Number of nodes; must match topology.num_nodes"
+    )
+    ensure_connected: bool = Field(
+        default=True,
+        description="Connect isolated nodes to their most-frequent contact peer each round",
+    )
+
+
 class DMTTConfig(BaseModel):
     """DMTT protocol hyper-parameters (Section 4 of the DMTT paper)."""
     # Collaboration budget
@@ -186,10 +200,14 @@ class Config(BaseModel):
         default_factory=DistributedConfig,
         description="ZMQ distributed backend settings (only used when backend=distributed)",
     )
-    # Dynamic topology (optional; when present, activates mobility model in distributed mode)
+    # Dynamic topology — use exactly one of mobility or trace_mobility (not both)
     mobility: Optional[MobilityConfig] = Field(
         default=None,
-        description="Mobility model settings; if set, topology varies per round via G^t",
+        description="Synthetic random-walk mobility; if set, topology varies per round via G^t",
+    )
+    trace_mobility: Optional[TraceMobilityConfig] = Field(
+        default=None,
+        description="Real contact-trace mobility; alternative to mobility for G^t",
     )
     # DMTT trust protocol (optional; when present, activates DMTTNodeProcess)
     dmtt: Optional[DMTTConfig] = Field(

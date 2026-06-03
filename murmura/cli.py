@@ -36,6 +36,12 @@ def run(
     config_path: Path = typer.Argument(..., help="Path to configuration file (YAML/JSON)"),
     device_override: Optional[str] = typer.Option(None, "--device", help="Override device (cpu/cuda/mps)"),
     verbose: bool = typer.Option(True, "--verbose/--quiet", help="Enable verbose output"),
+    results_dir: Optional[Path] = typer.Option(
+        None,
+        "--results-dir",
+        help="Directory to write per-experiment Parquet results file. "
+             "Skipped if not provided.",
+    ),
 ):
     """Run a decentralized federated learning experiment from a config file.
 
@@ -44,6 +50,7 @@ def run(
 
     Examples:
         murmura run experiments/basic_fedavg.yaml
+        murmura run experiments/basic_fedavg.yaml --results-dir results/
         murmura run experiments/distributed_fedavg.yaml --quiet
     """
     try:
@@ -51,16 +58,16 @@ def run(
         config = load_config(config_path)
 
         if config.backend == "distributed":
-            _run_distributed(config_path, verbose)
+            _run_distributed(config_path, verbose, results_dir)
         else:
-            _run_simulation(config, config_path, device_override, verbose)
+            _run_simulation(config, config_path, device_override, verbose, results_dir)
 
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}")
         raise typer.Exit(1)
 
 
-def _run_simulation(config, config_path, device_override, verbose):
+def _run_simulation(config, config_path, device_override, verbose, results_dir=None):
     from murmura.core.network import Network
 
     set_seed(config.experiment.seed)
@@ -110,10 +117,12 @@ def _run_simulation(config, config_path, device_override, verbose):
     )
 
     _display_results(history)
+    if results_dir is not None:
+        _write_results(history, config, results_dir)
     console.print("\n[bold green]✓ Training complete[/bold green]")
 
 
-def _run_distributed(config_path: Path, verbose: bool):
+def _run_distributed(config_path: Path, verbose: bool, results_dir=None):
     from murmura.distributed.runner import DistributedRunner
 
     config = load_config(config_path)
@@ -133,6 +142,8 @@ def _run_distributed(config_path: Path, verbose: bool):
     history = runner.run(verbose=verbose or config.experiment.verbose)
 
     _display_results(history)
+    if results_dir is not None:
+        _write_results(history, config, results_dir)
     console.print("\n[bold green]✓ Distributed training complete[/bold green]")
 
 
@@ -262,6 +273,12 @@ def list_components(
 # ---------------------------------------------------------------------------
 # Results display (shared by simulation and distributed paths)
 # ---------------------------------------------------------------------------
+
+def _write_results(history: dict, config, results_dir) -> None:
+    from murmura.utils.results import write_parquet
+    out = write_parquet(history, config, results_dir=results_dir)
+    console.print(f"[dim]Results written → {out}[/dim]")
+
 
 def _display_results(history: dict) -> None:
     has_uncertainty = len(history.get("mean_vacuity", [])) > 0

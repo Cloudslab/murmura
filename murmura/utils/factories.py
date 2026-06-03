@@ -175,16 +175,26 @@ def build_attack(config: Config) -> Optional[Any]:
 
 
 def build_mobility_model(config: Config):
-    """Instantiate MobilityModel from config.mobility, or None if absent."""
-    if config.mobility is None:
-        return None
-    from murmura.topology.dynamic import MobilityModel
-    m = config.mobility
-    return MobilityModel(
-        num_nodes=config.topology.num_nodes,
-        area_size=m.area_size,
-        comm_range=m.comm_range,
-        max_speed=m.max_speed,
-        seed=m.seed,
-        ensure_connected=m.ensure_connected,
-    )
+    """Return a MobilityModel or TraceBasedMobility, or None if neither is configured."""
+    if config.mobility is not None and config.trace_mobility is not None:
+        raise ValueError("Config may set mobility or trace_mobility, but not both.")
+    if config.mobility is not None:
+        from murmura.topology.dynamic import MobilityModel
+        m = config.mobility
+        return MobilityModel(
+            num_nodes=config.topology.num_nodes,
+            area_size=m.area_size,
+            comm_range=m.comm_range,
+            max_speed=m.max_speed,
+            seed=m.seed,
+            ensure_connected=m.ensure_connected,
+        )
+    if config.trace_mobility is not None:
+        from murmura.topology.trace_mobility import TraceBasedMobility
+        tm = config.trace_mobility
+        return TraceBasedMobility(
+            trace_path=tm.trace_path,
+            num_nodes=tm.num_nodes,
+            ensure_connected=tm.ensure_connected,
+        )
+    return None
