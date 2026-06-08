@@ -24,7 +24,7 @@ HERE = Path(__file__).parent
 SEEDS       = [42, 123, 777]
 BYZ_FRACTION = 0.3
 NUM_NODES   = 10
-TRACE_PATH  = "data/sociopatterns/primary_school_N10_R30s.csv"
+TRACE_PATH  = "data/sociopatterns/primary_school_N10_R30s_mc3.csv"
 
 TOPOLOGY_BLOCK = f"""\
 topology:

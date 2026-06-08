@@ -9,7 +9,7 @@ Total: 3 conditions × 3 seeds = 9 configs.
 
 Usage:
   # First prepare the 9-node contact trace (run once):
-  python scripts/prepare_sociopatterns.py --dataset primary_school --num_nodes 9 --round_duration 30
+  python scripts/prepare_sociopatterns.py --dataset primary_school --num_nodes 9 --round_duration 30 --min-contacts 3
 
   # Then generate configs:
   python experiments/paper/dmtt/exp2_multidata/generate_configs.py
@@ -19,7 +19,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 
-TRACE_PATH = "data/sociopatterns/primary_school_N9_R30s.csv"
+TRACE_PATH = "data/sociopatterns/primary_school_N9_R30s_mc3.csv"
 
 SEEDS        = [42, 123, 777]
 BYZ_FRACTION = 0.3

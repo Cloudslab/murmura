@@ -17,7 +17,7 @@ Total: 6 conditions × 3 fractions × 3 seeds = 54 configs.
 
 Usage:
   # First prepare the contact trace (run once):
-  python scripts/prepare_sociopatterns.py --dataset primary_school --num_nodes 10 --round_duration 30
+  python scripts/prepare_sociopatterns.py --dataset primary_school --num_nodes 10 --round_duration 30 --min-contacts 3
 
   # Then generate configs:
   python experiments/paper/dmtt/exp1_main_comparison/generate_configs.py
@@ -29,7 +29,7 @@ HERE = Path(__file__).parent
 
 # Path to preprocessed contact-trace CSV (output of prepare_sociopatterns.py)
 # Update this if you change --num_nodes or --round_duration in the prepare script.
-TRACE_PATH = "data/sociopatterns/primary_school_N10_R30s.csv"
+TRACE_PATH = "data/sociopatterns/primary_school_N10_R30s_mc3.csv"
 
 SEEDS = [42, 123, 777]
 BYZ_FRACTIONS = [0.1, 0.2, 0.3]

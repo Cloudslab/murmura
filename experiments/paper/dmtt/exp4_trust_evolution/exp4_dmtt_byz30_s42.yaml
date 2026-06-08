@@ -56,7 +56,7 @@ distributed:
   startup_grace_s: 5.0
 
 trace_mobility:
-  trace_path: "data/sociopatterns/primary_school_N10_R30s.csv"
+  trace_path: "data/sociopatterns/primary_school_N10_R30s_mc3.csv"
   num_nodes: 10
   ensure_connected: true
 

@@ -179,12 +179,19 @@ def discretise(
     contacts: List[Tuple[int, int, int]],
     selected: List[int],
     round_duration: int,
-) -> Tuple[Dict[int, Set[Tuple[int, int]]], int]:
+    min_contacts: int = 0,
+) -> Tuple[Dict[int, Set[Tuple[int, int]]], int, int]:
     """Map raw contacts to FL rounds.
+
+    When min_contacts > 0, rounds with fewer than that many edges are dropped
+    and the remaining rounds are renumbered 0, 1, 2, … This removes dead
+    periods (e.g. before/after school hours) so the trace always has meaningful
+    contact density.
 
     Returns:
         edges_per_round: {round_idx: {(i_remapped, j_remapped), …}}
-        total_rounds:    number of distinct rounds in the trace
+        total_rounds:    number of rounds in the output (after any filtering)
+        dropped_rounds:  number of rounds removed by the min_contacts filter
     """
     # Remap original IDs to 0 … num_nodes-1
     id_map = {orig: new for new, orig in enumerate(selected)}
@@ -206,8 +213,19 @@ def discretise(
             a, b = b, a
         edges_per_round[r].add((a, b))
 
-    total_rounds = max(edges_per_round) + 1 if edges_per_round else 0
-    return dict(edges_per_round), total_rounds
+    raw_total = max(edges_per_round) + 1 if edges_per_round else 0
+
+    if min_contacts > 0:
+        # Drop rounds below density threshold and renumber survivors.
+        kept: Dict[int, Set[Tuple[int, int]]] = {}
+        for old_r in range(raw_total):
+            edges = edges_per_round.get(old_r, set())
+            if len(edges) >= min_contacts:
+                kept[len(kept)] = edges
+        dropped = raw_total - len(kept)
+        return kept, len(kept), dropped
+
+    return dict(edges_per_round), raw_total, 0
 
 
 # ---------------------------------------------------------------------------
@@ -236,6 +254,8 @@ def write_metadata(
     total_rounds: int,
     edges_per_round: Dict[int, Set[Tuple[int, int]]],
     out_path: Path,
+    min_contacts: int = 0,
+    dropped_rounds: int = 0,
 ) -> None:
     edge_counts = [len(edges_per_round.get(r, set())) for r in range(total_rounds)]
     isolated_rounds = sum(
@@ -257,6 +277,8 @@ def write_metadata(
         "min_edges_per_round": min(edge_counts, default=0),
         "max_edges_per_round": max(edge_counts, default=0),
         "rounds_with_isolated_nodes": isolated_rounds,
+        "min_contacts_filter": min_contacts,
+        "dropped_sparse_rounds": dropped_rounds,
         "note": (
             "TraceBasedMobility wraps round_idx modulo total_rounds, so a 50-round "
             "FL experiment reuses the trace from the beginning if total_rounds < 50."
@@ -291,6 +313,18 @@ def main() -> None:
         help="FL round duration in seconds; contacts are binned into windows of this size (default: 30)",
     )
     parser.add_argument(
+        "--min-contacts",
+        type=int,
+        default=0,
+        metavar="N",
+        help=(
+            "Drop rounds with fewer than N contact edges; survivors are renumbered 0,1,2,… "
+            "This removes dead periods (e.g. before/after school hours) so the trace always "
+            "has meaningful connectivity. Adds a _mcN suffix to the output filename. "
+            "(default: 0 = keep all rounds)"
+        ),
+    )
+    parser.add_argument(
         "--node_ids",
         type=str,
         default=None,
@@ -308,13 +342,15 @@ def main() -> None:
     if args.node_ids:
         node_ids = [int(x) for x in args.node_ids.split(",")]
 
-    stem = f"{args.dataset}_N{args.num_nodes}_R{args.round_duration}s"
+    mc_tag = f"_mc{args.min_contacts}" if args.min_contacts > 0 else ""
+    stem = f"{args.dataset}_N{args.num_nodes}_R{args.round_duration}s{mc_tag}"
     csv_path  = OUT_DIR / f"{stem}.csv"
     meta_path = OUT_DIR / f"{stem}.json"
 
     print(f"Dataset:        {args.dataset}")
     print(f"Nodes:          {args.num_nodes}")
     print(f"Round duration: {args.round_duration} s")
+    print(f"Min contacts:   {args.min_contacts} (0 = keep all rounds)")
     print(f"Output CSV:     {csv_path}")
     print()
 
@@ -341,14 +377,19 @@ def main() -> None:
     print("Step 3/4  Select nodes and discretise")
     selected = select_nodes(contacts, args.num_nodes, node_ids)
     print(f"  Selected node IDs: {selected}")
-    edges_per_round, total_rounds = discretise(contacts, selected, args.round_duration)
-    print(f"  {total_rounds} rounds  ({total_rounds * args.round_duration / 3600:.1f} h of trace)")
+    edges_per_round, total_rounds, dropped = discretise(
+        contacts, selected, args.round_duration, args.min_contacts
+    )
+    print(f"  {total_rounds} rounds  ({total_rounds * args.round_duration / 3600:.1f} h of active trace)")
+    if dropped:
+        print(f"  Dropped {dropped} sparse rounds (< {args.min_contacts} contacts each)")
 
     print("Step 4/4  Write output")
     write_csv(edges_per_round, total_rounds, csv_path)
     write_metadata(
         args.dataset, selected, args.num_nodes,
         args.round_duration, total_rounds, edges_per_round, meta_path,
+        min_contacts=args.min_contacts, dropped_rounds=dropped,
     )
 
     print()

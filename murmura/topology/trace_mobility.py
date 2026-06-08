@@ -81,10 +81,13 @@ class TraceBasedMobility:
                 "and preprocess the dataset."
             )
 
-        # First pass: count contacts per (node, peer) pair for fallback computation
-        contact_count: Dict[int, Dict[int, int]] = {
-            i: {} for i in range(self.num_nodes)
-        }
+        # Fallback peers use a ring topology: node i → (i+1) % num_nodes.
+        # This is unbiased with respect to Byzantine node placement, unlike a
+        # most-frequent-contact fallback which can systematically pair Byzantine
+        # nodes with specific honest hubs across all sparse rounds.
+        for node in range(self.num_nodes):
+            self._fallback_peer[node] = (node + 1) % self.num_nodes
+
         raw: Dict[int, List[tuple]] = {}   # round → [(i, j), ...]
 
         with open(path, newline="") as fh:
@@ -94,14 +97,6 @@ class TraceBasedMobility:
                 ni = int(row["node_i"])
                 nj = int(row["node_j"])
                 raw.setdefault(r, []).append((ni, nj))
-                contact_count[ni][nj] = contact_count[ni].get(nj, 0) + 1
-                contact_count[nj][ni] = contact_count[nj].get(ni, 0) + 1
-
-        # Compute fallback peers (most-frequent contact overall)
-        for node in range(self.num_nodes):
-            peers = contact_count.get(node, {})
-            if peers:
-                self._fallback_peer[node] = max(peers, key=lambda p: peers[p])
 
         # Build per-round adjacency lists (all keys present, empty list if isolated)
         if not raw:
