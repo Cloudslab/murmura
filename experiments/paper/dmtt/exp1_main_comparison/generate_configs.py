@@ -96,11 +96,12 @@ dmtt:
   budget_B: 5
   rho: 0.1
   lambda_forget: 0.98
-  w_d: 2.0
+  w_d: 1.0
   w_c: 0.5
-  w_x: 1.0
+  w_x: 5.0
   tau_U: 0.3
   eta: 5.0
+  tau_trust: 0.49
   w_a: 0.7
   tau_u: 0.5
   lambda1: 0.1

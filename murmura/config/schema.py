@@ -138,6 +138,13 @@ class DMTTConfig(BaseModel):
     w_d: float = Field(default=1.0, description="Weight for direct confirmation evidence w_d")
     w_c: float = Field(default=0.5, description="Weight for corroboration evidence w_c")
     w_x: float = Field(default=1.0, description="Weight for contradiction evidence w_x")
+    # TopB trust floor: candidates with T_topo < tau_trust are excluded entirely,
+    # even if they are the only available neighbours (node trains locally that round).
+    # Set to 0.0 to disable (default, backward compatible).
+    tau_trust: float = Field(
+        default=0.0,
+        description="Minimum T_topo required for a candidate to enter TopB selection (0=disabled)",
+    )
     # Topology trust T_ij^topo formula
     tau_U: float = Field(default=0.3, description="Uncertainty tolerance threshold τ_U")
     eta: float = Field(default=5.0, description="Uncertainty penalty scale η")

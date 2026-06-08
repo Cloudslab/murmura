@@ -134,12 +134,24 @@ class DMTTNodeState:
         model_scores: Dict[int, float],
         B: int,
     ) -> List[int]:
-        """Return up to B candidates ranked by collaboration score (descending)."""
+        """Return up to B candidates ranked by collaboration score (descending).
+
+        If cfg.tau_trust > 0, candidates whose T_topo falls below that threshold
+        are excluded entirely before ranking — even if they would be the only
+        available collaborator.  An empty return means the node trains locally
+        this round rather than aggregating from an untrusted source.
+        """
         if not candidates:
+            return []
+        floor = self.cfg.tau_trust
+        eligible = candidates if floor <= 0.0 else [
+            j for j in candidates if self.topo_trust(j) >= floor
+        ]
+        if not eligible:
             return []
         scored = [
             (j, self.collab_score(j, model_scores.get(j, 0.5)))
-            for j in candidates
+            for j in eligible
         ]
         scored.sort(key=lambda kv: kv[1], reverse=True)
         return [j for j, _ in scored[:B]]
