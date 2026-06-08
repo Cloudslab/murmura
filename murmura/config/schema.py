@@ -152,6 +152,31 @@ class DMTTConfig(BaseModel):
     lambda3: float = Field(default=0.2, description="Link reliability weight λ_3")
     lambda4: float = Field(default=0.1, description="Communication cost weight λ_4")
 
+    # Ablation flags (Experiment 3)
+    disable_beta_trust: bool = Field(
+        default=False,
+        description="Ablation: freeze T_ij^topo=1.0 (disable Beta topology trust)",
+    )
+    disable_topo_claims: bool = Field(
+        default=False,
+        description="Ablation: skip TOPO_CLAIM trust updates (accept all claims blindly)",
+    )
+
+    # Experiment 4 — per-round trust state logging
+    trust_log_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "If set, each node appends its per-round trust state (T_topo, alpha, beta, c_hat) "
+            "to this file as newline-delimited JSON.  Used by Exp 4 (trust evolution)."
+        ),
+    )
+
+    # Experiment 6 — communication overhead tracking
+    log_comm_bytes: bool = Field(
+        default=False,
+        description="If True, include bytes_sent_model and bytes_sent_topo in METRICS each round.",
+    )
+
 
 class TrainingConfig(BaseModel):
     """Training configuration."""

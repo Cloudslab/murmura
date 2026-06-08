@@ -235,8 +235,7 @@ class Network:
             Configured Network instance
         """
         from murmura.topology import create_topology
-        from murmura.attacks.gaussian import GaussianAttack
-        from murmura.attacks.directed import DirectedDeviationAttack
+        from murmura.utils.factories import build_attack
 
         # Create topology
         topology = create_topology(
@@ -247,23 +246,8 @@ class Network:
             seed=config.topology.seed
         )
 
-        # Create attack if enabled
-        attack = None
-        if config.attack.enabled:
-            if config.attack.type == "gaussian":
-                attack = GaussianAttack(
-                    num_nodes=config.topology.num_nodes,
-                    attack_percentage=config.attack.percentage,
-                    noise_std=config.attack.params.get("noise_std", 10.0),
-                    seed=config.experiment.seed
-                )
-            elif config.attack.type == "directed_deviation":
-                attack = DirectedDeviationAttack(
-                    num_nodes=config.topology.num_nodes,
-                    attack_percentage=config.attack.percentage,
-                    lambda_param=config.attack.params.get("lambda_param", -5.0),
-                    seed=config.experiment.seed
-                )
+        # Create attack if enabled (delegate to shared factory so all types are supported)
+        attack = build_attack(config)
 
         # Create nodes
         nodes = []

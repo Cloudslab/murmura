@@ -26,6 +26,7 @@ Socket layout (inherited from NodeProcess plus TOPO_CLAIM):
 
 import copy
 import io
+import json
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -202,10 +203,14 @@ class DMTTNodeProcess(NodeProcess):
         })
 
         # 4. Push MODEL_STATE + TOPO_CLAIM to every current collaborator
+        bytes_model = 0
+        bytes_topo  = 0
         for nid in current_neighbors:
             sock = self._ensure_push_sock(nid)
             sock.send_multipart(encode(MsgType.MODEL_STATE, self.node_id, state_bytes))
             sock.send_multipart(encode(MsgType.TOPO_CLAIM,  self.node_id, claim_bytes))
+            bytes_model += len(state_bytes)
+            bytes_topo  += len(claim_bytes)
 
         # 5. Collect MODEL_STATE + TOPO_CLAIM from expected neighbours
         neighbor_states, topo_claims = self._collect_dmtt_messages(
@@ -229,6 +234,10 @@ class DMTTNodeProcess(NodeProcess):
         # 8. Process topology claims → update Beta trust
         self._process_topo_claims(topo_claims, round_idx)
 
+        # 8b. Log trust state (Exp 4) — after trust update, before next round
+        if self.dmtt_cfg.trust_log_path:
+            self._append_trust_log(round_idx)
+
         # 9. Aggregate with received states
         if neighbor_states:
             aggregated = node.aggregate_with_neighbors(neighbor_states, round_idx)
@@ -249,7 +258,11 @@ class DMTTNodeProcess(NodeProcess):
             )
 
         # 11. Evaluate + push metrics
-        self._push_metrics(node, round_idx)
+        extra: Dict[str, Any] = {}
+        if self.dmtt_cfg.log_comm_bytes:
+            extra["bytes_sent_model"] = bytes_model
+            extra["bytes_sent_topo"]  = bytes_topo
+        self._push_metrics(node, round_idx, extra=extra)
 
     # ------------------------------------------------------------------
     # Combined MODEL_STATE + TOPO_CLAIM collection
@@ -380,7 +393,10 @@ class DMTTNodeProcess(NodeProcess):
           x += 1 for each claimed neighbour that does NOT appear in G^t
 
         We verify against our local (ground-truth) mobility model.
+        When cfg.disable_topo_claims is True, skip trust updates (ablation: no-edge-conf).
         """
+        if self.dmtt_cfg.disable_topo_claims:
+            return
         assert self._dmtt is not None
         for j, claim in topo_claims.items():
             claimed: List[int] = claim.get("neighbors", [])
@@ -406,3 +422,42 @@ class DMTTNodeProcess(NodeProcess):
             self._collaborators = self.mobility.neighbors_at(round_idx).get(
                 self.node_id, []
             )
+
+    # ------------------------------------------------------------------
+    # Trust state logging (Experiment 4)
+    # ------------------------------------------------------------------
+
+    def _append_trust_log(self, round_idx: int) -> None:
+        """Append one JSON line per round to trust_log_path.
+
+        Each line: {"round": r, "node": i, "peers": {j: {T_topo, alpha, beta, c_hat}}}
+        """
+        assert self._dmtt is not None
+        summary = self._dmtt.state_summary()
+        record  = {"round": round_idx, "node": self.node_id, "peers": summary}
+        path    = Path(self.dmtt_cfg.trust_log_path)  # type: ignore[arg-type]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a") as fh:
+            fh.write(json.dumps(record) + "\n")
+
+    # ------------------------------------------------------------------
+    # Metrics push — override to support extra keys
+    # ------------------------------------------------------------------
+
+    def _push_metrics(  # type: ignore[override]
+        self,
+        node,
+        round_idx: int,
+        skipped: bool = False,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        if skipped:
+            metrics: Dict[str, Any] = {"accuracy": 0.0, "loss": 0.0, "skipped": True}
+        else:
+            metrics = node.evaluate()
+        metrics["round_idx"] = round_idx
+        if extra:
+            metrics.update(extra)
+        self._monitor_push.send_multipart(
+            encode(MsgType.METRICS, self.node_id, pack_obj(metrics))
+        )

@@ -97,13 +97,14 @@ def plot_curves(df: pd.DataFrame, results_dir: Path) -> None:
             continue
         agg = cdf.groupby("round")["honest_accuracy"].agg(["mean", "std"])
         ax.plot(agg.index, agg["mean"], label=CONDITION_LABELS.get(cond, cond), color=colors[i])
-        ax.fill_between(
-            agg.index,
-            agg["mean"] - agg["std"],
-            agg["mean"] + agg["std"],
-            alpha=0.15,
-            color=colors[i],
-        )
+        if agg["std"].notna().any():
+            ax.fill_between(
+                agg.index,
+                (agg["mean"] - agg["std"]).fillna(agg["mean"]),
+                (agg["mean"] + agg["std"]).fillna(agg["mean"]),
+                alpha=0.15,
+                color=colors[i],
+            )
 
     ax.set_xlabel("Round")
     ax.set_ylabel("Honest-node accuracy")

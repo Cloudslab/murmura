@@ -84,7 +84,10 @@ class DMTTNodeState:
 
         R_ij = α/(α+β)  (posterior mean)
         U_ij = sqrt(αβ / ((α+β)²(α+β+1)))  (posterior std / uncertainty)
+        When cfg.disable_beta_trust is True, returns 1.0 (ablation: no-beta-trust).
         """
+        if self.cfg.disable_beta_trust:
+            return 1.0
         self._init(j)
         a, b = self._alpha[j], self._beta[j]
         s    = a + b

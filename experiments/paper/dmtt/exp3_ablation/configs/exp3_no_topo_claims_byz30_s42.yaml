@@ -1,0 +1,68 @@
+# Exp 3 — Ablation: Ablation: skip TOPO_CLAIM trust updates (accept all claims blindly)
+# Byzantine: 30 %  |  seed: 42
+experiment:
+  name: "Exp3-no_topo_claims-byz30-s42"
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+attack:
+  enabled: true
+  type: "topology_liar"
+  percentage: 0.3
+  params:
+    model_attack_type: "gaussian"
+    noise_std: 10.0
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3
+backend: distributed
+
+distributed:
+  transport: ipc
+  ipc_dir: "/tmp/murmura_exp3_no_topo_claims_byz30_s42"
+  round_duration_s: 30.0
+  startup_grace_s: 5.0
+trace_mobility:
+  trace_path: "data/sociopatterns/primary_school_N10_R30s.csv"
+  num_nodes: 10
+  ensure_connected: true
+dmtt:
+  budget_B: 5
+  rho: 0.1
+  lambda_forget: 0.9
+  w_d: 1.0
+  w_c: 0.5
+  w_x: 1.0
+  tau_U: 0.3
+  eta: 5.0
+  w_a: 0.7
+  tau_u: 0.5
+  lambda1: 0.4
+  lambda2: 0.3
+  lambda3: 0.2
+  lambda4: 0.1
+  disable_beta_trust: false
+  disable_topo_claims: true

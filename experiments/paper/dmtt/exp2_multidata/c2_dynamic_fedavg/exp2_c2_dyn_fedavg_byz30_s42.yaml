@@ -1,0 +1,54 @@
+# Exp 2 — C2 Dynamic FedAvg, no trust (distributed)
+# Dataset: PAMAP2  |  Byzantine: 30 %  |  seed: 42
+experiment:
+  name: "Exp2-C2-DynFedAvg-byz30-s42"
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: "fully"
+  num_nodes: 9
+  seed: 12345
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+attack:
+  enabled: true
+  type: "topology_liar"
+  percentage: 0.3
+  params:
+    model_attack_type: "gaussian"
+    noise_std: 10.0
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.001
+  max_samples: null
+data:
+  adapter: "wearables.pamap2"
+  params:
+    data_path: "wearables_datasets/PAMAP2_Dataset"
+    partition_method: "dirichlet"
+    alpha: 0.5
+    window_size: 100
+    window_stride: 50
+    include_heart_rate: true
+    normalize: true
+model:
+  factory: "examples.wearables.pamap2"
+  params:
+    input_dim: 4000
+    hidden_dims: [512, 256, 128]
+    num_classes: 12
+    dropout: 0.3
+backend: distributed
+
+distributed:
+  transport: ipc
+  ipc_dir: "/tmp/murmura_exp2_c2_dyn_fedavg_byz30_s42"
+  round_duration_s: 30.0
+  startup_grace_s: 5.0
+trace_mobility:
+  trace_path: "data/sociopatterns/primary_school_N9_R30s.csv"
+  num_nodes: 9
+  ensure_connected: true

@@ -1,0 +1,44 @@
+# Exp 2 — C1 Static FedAvg baseline (simulation)
+# Dataset: PAMAP2  |  Byzantine: 30 %  |  seed: 123
+experiment:
+  name: "Exp2-C1-Static-byz30-s123"
+  seed: 123
+  rounds: 50
+  verbose: true
+topology:
+  type: "fully"
+  num_nodes: 9
+  seed: 12345
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+attack:
+  enabled: true
+  type: "topology_liar"
+  percentage: 0.3
+  params:
+    model_attack_type: "gaussian"
+    noise_std: 10.0
+training:
+  local_epochs: 2
+  batch_size: 64
+  lr: 0.001
+  max_samples: null
+data:
+  adapter: "wearables.pamap2"
+  params:
+    data_path: "wearables_datasets/PAMAP2_Dataset"
+    partition_method: "dirichlet"
+    alpha: 0.5
+    window_size: 100
+    window_stride: 50
+    include_heart_rate: true
+    normalize: true
+model:
+  factory: "examples.wearables.pamap2"
+  params:
+    input_dim: 4000
+    hidden_dims: [512, 256, 128]
+    num_classes: 12
+    dropout: 0.3
+backend: simulation

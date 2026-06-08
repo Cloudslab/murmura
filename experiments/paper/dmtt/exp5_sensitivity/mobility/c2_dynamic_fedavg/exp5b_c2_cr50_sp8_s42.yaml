@@ -1,0 +1,52 @@
+# Exp 5b — C2 Dynamic FedAvg, comm_range=50, max_speed=8
+experiment:
+  name: "Exp5b-C2-cr50-sp8-s42"
+  seed: 42
+  rounds: 50
+  verbose: true
+topology:
+  type: "fully"
+  num_nodes: 10
+  seed: 12345
+aggregation:
+  algorithm: "fedavg"
+  params: {}
+attack:
+  enabled: true
+  type: "topology_liar"
+  percentage: 0.3
+  params:
+    model_attack_type: "gaussian"
+    noise_std: 10.0
+training:
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  max_samples: null
+data:
+  adapter: "wearables.uci_har"
+  params:
+    data_path: "wearables_datasets/UCI HAR Dataset"
+    split: "train"
+    partition_method: "dirichlet"
+    alpha: 0.5
+model:
+  factory: "examples.wearables.uci_har"
+  params:
+    input_dim: 561
+    hidden_dims: [256, 128]
+    num_classes: 6
+    dropout: 0.3
+backend: distributed
+
+distributed:
+  transport: ipc
+  ipc_dir: "/tmp/murmura_exp5b_c2_cr50_sp8_s42"
+  round_duration_s: 30.0
+  startup_grace_s: 5.0
+mobility:
+  area_size: 100.0
+  comm_range: 50
+  max_speed: 8
+  seed: 42
+  ensure_connected: true
