@@ -1,0 +1,708 @@
+Loading config: /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/c3_dmtt/c3_dmtt_byz10_s123.yaml
+
+Experiment: C3-DMTT-byz10-s123
+  Backend:    distributed (ZMQ IPC)
+  Rounds:     50
+  Topology:   fully (10 nodes)
+  Aggregation:fedavg
+  Attack: topology_liar (10% nodes)
+
+Launching distributed processes…
+
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DistributedRunner] run_id=c4a07c0f  t_start=1025321.500  (startup_grace=5.0s)
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 1] Round 1: collaborators → [0]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 4] Round 1: collaborators → [5]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 3] Round 1: collaborators → [6]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 5] Round 1: collaborators → [4]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 7] Round 1: collaborators → [2]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 0] Round 1: collaborators → [1]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 2] Round 1: collaborators → [7]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 8] Round 1: collaborators → [9]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 6] Round 1: collaborators → [9, 3]
+Gaussian Attack: Compromised 1/10 nodes
+  Compromised nodes: [0]
+  Noise std: 10.0
+[DMTT Node 9] Round 1: collaborators → [6, 8]
+[Monitor] Round 1 (10/10 nodes): acc=0.3383 ± 0.1906
+[Monitor]   Honest: 0.3308  Compromised: 0.4057
+[DMTT Node 1] Round 2: collaborators → [0]
+[DMTT Node 0] Round 2: collaborators → [1]
+[DMTT Node 3] Round 2: collaborators → [4]
+[DMTT Node 4] Round 2: collaborators → [2, 7, 3]
+[DMTT Node 5] Round 2: collaborators → [6]
+[DMTT Node 7] Round 2: collaborators → [2, 4]
+[DMTT Node 2] Round 2: collaborators → [7, 4]
+[DMTT Node 8] Round 2: collaborators → [9]
+[DMTT Node 6] Round 2: collaborators → [9, 5]
+[DMTT Node 9] Round 2: collaborators → [6, 8]
+[Monitor] Round 2 (10/10 nodes): acc=0.4834 ± 0.2932
+[Monitor]   Honest: 0.5372  Compromised: 0.0000
+[DMTT Node 1] Round 3: collaborators → [0]
+[DMTT Node 0] Round 3: collaborators → [1]
+[DMTT Node 3] Round 3: collaborators → [4]
+[DMTT Node 5] Round 3: collaborators → [6]
+[DMTT Node 7] Round 3: collaborators → [2]
+[DMTT Node 2] Round 3: collaborators → [7, 4]
+[DMTT Node 4] Round 3: collaborators → [2, 3]
+[DMTT Node 8] Round 3: collaborators → [9]
+[DMTT Node 6] Round 3: collaborators → [9, 5]
+[DMTT Node 9] Round 3: collaborators → [6, 8]
+[Monitor] Round 3 (10/10 nodes): acc=0.5911 ± 0.2527
+[Monitor]   Honest: 0.6469  Compromised: 0.0883
+[DMTT Node 1] Round 4: collaborators → [0]
+[DMTT Node 0] Round 4: collaborators → [1]
+[DMTT Node 5] Round 4: collaborators → [6]
+[DMTT Node 3] Round 4: collaborators → [4]
+[DMTT Node 7] Round 4: collaborators → [2, 4]
+[DMTT Node 4] Round 4: collaborators → [2, 3, 7]
+[DMTT Node 2] Round 4: collaborators → [7, 4]
+[DMTT Node 8] Round 4: collaborators → [9]
+[DMTT Node 6] Round 4: collaborators → [9, 5]
+[DMTT Node 9] Round 4: collaborators → [6, 8]
+[Monitor] Round 4 (10/10 nodes): acc=0.5328 ± 0.3144
+[Monitor]   Honest: 0.5881  Compromised: 0.0358
+[DMTT Node 0] Round 5: collaborators → [1]
+[DMTT Node 1] Round 5: collaborators → [0]
+[DMTT Node 5] Round 5: collaborators → [6]
+[DMTT Node 3] Round 5: collaborators → [9]
+[DMTT Node 7] Round 5: collaborators → [2]
+[DMTT Node 4] Round 5: collaborators → [2]
+[DMTT Node 2] Round 5: collaborators → [7, 4]
+[DMTT Node 8] Round 5: collaborators → [9]
+[DMTT Node 6] Round 5: collaborators → [5]
+[DMTT Node 9] Round 5: collaborators → [8, 3]
+[Monitor] Round 5 (10/10 nodes): acc=0.5275 ± 0.3171
+[Monitor]   Honest: 0.5818  Compromised: 0.0382
+[DMTT Node 0] Round 6: collaborators → [1]
+[DMTT Node 1] Round 6: collaborators → [0]
+[DMTT Node 5] Round 6: collaborators → [6]
+[DMTT Node 6] Round 6: collaborators → [9, 5]
+[DMTT Node 7] Round 6: collaborators → [2]
+[DMTT Node 4] Round 6: collaborators → [2, 3]
+[DMTT Node 2] Round 6: collaborators → [7, 4]
+[DMTT Node 8] Round 6: collaborators → [9]
+[DMTT Node 3] Round 6: collaborators → [4]
+[DMTT Node 9] Round 6: collaborators → [6, 8]
+[Monitor] Round 6 (10/10 nodes): acc=0.6362 ± 0.2451
+[Monitor]   Honest: 0.6642  Compromised: 0.3842
+[DMTT Node 1] Round 7: collaborators → [0]
+[DMTT Node 0] Round 7: collaborators → [1]
+[DMTT Node 5] Round 7: collaborators → [4]
+[DMTT Node 3] Round 7: collaborators → [2]
+[DMTT Node 7] Round 7: collaborators → [2]
+[DMTT Node 4] Round 7: collaborators → [5]
+[DMTT Node 2] Round 7: collaborators → [7, 3]
+[DMTT Node 8] Round 7: collaborators → [9]
+[DMTT Node 6] Round 7: collaborators → [9]
+[DMTT Node 9] Round 7: collaborators → [8, 6]
+[Monitor] Round 7 (10/10 nodes): acc=0.6206 ± 0.2419
+[Monitor]   Honest: 0.6665  Compromised: 0.2076
+[DMTT Node 1] Round 8: collaborators → [0]
+[DMTT Node 0] Round 8: collaborators → [1]
+[DMTT Node 5] Round 8: collaborators → [6]
+[DMTT Node 4] Round 8: collaborators → [2]
+[DMTT Node 7] Round 8: collaborators → [8]
+[DMTT Node 3] Round 8: collaborators → [6]
+[DMTT Node 2] Round 8: collaborators → [4]
+[DMTT Node 6] Round 8: collaborators → [9, 5, 3]
+[DMTT Node 8] Round 8: collaborators → [7]
+[DMTT Node 9] Round 8: collaborators → [6]
+[Monitor] Round 8 (10/10 nodes): acc=0.5832 ± 0.3165
+[Monitor]   Honest: 0.6275  Compromised: 0.1838
+[DMTT Node 1] Round 9: collaborators → [0]
+[DMTT Node 0] Round 9: collaborators → [1]
+[DMTT Node 5] Round 9: collaborators → [4, 9]
+[DMTT Node 3] Round 9: collaborators → [6]
+[DMTT Node 7] Round 9: collaborators → [2, 8]
+[DMTT Node 8] Round 9: collaborators → [7]
+[DMTT Node 4] Round 9: collaborators → [5]
+[DMTT Node 2] Round 9: collaborators → [7]
+[DMTT Node 9] Round 9: collaborators → [5]
+[DMTT Node 6] Round 9: collaborators → [3]
+[Monitor] Round 9 (10/10 nodes): acc=0.6688 ± 0.3151
+[Monitor]   Honest: 0.7402  Compromised: 0.0263
+[DMTT Node 1] Round 10: collaborators → [0]
+[DMTT Node 0] Round 10: collaborators → [1]
+[DMTT Node 4] Round 10: collaborators → [3, 5]
+[DMTT Node 6] Round 10: collaborators → [9]
+[DMTT Node 3] Round 10: collaborators → [4]
+[DMTT Node 8] Round 10: collaborators → [9]
+[DMTT Node 2] Round 10: collaborators → [7]
+[DMTT Node 7] Round 10: collaborators → [2]
+[DMTT Node 5] Round 10: collaborators → [4]
+[DMTT Node 9] Round 10: collaborators → [6, 8]
+[Monitor] Round 10 (10/10 nodes): acc=0.6741 ± 0.2995
+[Monitor]   Honest: 0.7098  Compromised: 0.3532
+[DMTT Node 1] Round 11: collaborators → [0]
+[DMTT Node 0] Round 11: collaborators → [1]
+[DMTT Node 3] Round 11: collaborators → [4]
+[DMTT Node 5] Round 11: collaborators → [6]
+[DMTT Node 2] Round 11: collaborators → [6, 9]
+[DMTT Node 7] Round 11: collaborators → [8]
+[DMTT Node 4] Round 11: collaborators → [3]
+[DMTT Node 8] Round 11: collaborators → [7]
+[DMTT Node 6] Round 11: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 11: collaborators → [6, 2]
+[Monitor] Round 11 (10/10 nodes): acc=0.6685 ± 0.2511
+[Monitor]   Honest: 0.7046  Compromised: 0.3437
+[DMTT Node 1] Round 12: collaborators → [0]
+[DMTT Node 4] Round 12: collaborators → [3]
+[DMTT Node 0] Round 12: collaborators → [1]
+[DMTT Node 5] Round 12: collaborators → [6]
+[DMTT Node 3] Round 12: collaborators → [4]
+[DMTT Node 8] Round 12: collaborators → [7]
+[DMTT Node 7] Round 12: collaborators → [8]
+[DMTT Node 2] Round 12: collaborators → [6, 9]
+[DMTT Node 6] Round 12: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 12: collaborators → [6, 2]
+[Monitor] Round 12 (10/10 nodes): acc=0.6526 ± 0.3169
+[Monitor]   Honest: 0.7163  Compromised: 0.0788
+[DMTT Node 1] Round 13: collaborators → [0]
+[DMTT Node 0] Round 13: collaborators → [1]
+[DMTT Node 3] Round 13: collaborators → [4]
+[DMTT Node 4] Round 13: collaborators → [3]
+[DMTT Node 5] Round 13: collaborators → [6]
+[DMTT Node 7] Round 13: collaborators → [2, 9]
+[DMTT Node 8] Round 13: collaborators → [9]
+[DMTT Node 2] Round 13: collaborators → [7]
+[DMTT Node 6] Round 13: collaborators → [9, 5]
+[DMTT Node 9] Round 13: collaborators → [6, 8, 7]
+[Monitor] Round 13 (10/10 nodes): acc=0.6577 ± 0.3396
+[Monitor]   Honest: 0.7279  Compromised: 0.0263
+[DMTT Node 0] Round 14: collaborators → [1]
+[DMTT Node 1] Round 14: collaborators → [0]
+[DMTT Node 3] Round 14: collaborators → [2, 5]
+[DMTT Node 4] Round 14: collaborators → [5]
+[DMTT Node 5] Round 14: collaborators → [4, 3]
+[DMTT Node 2] Round 14: collaborators → [7, 3]
+[DMTT Node 8] Round 14: collaborators → [9]
+[DMTT Node 7] Round 14: collaborators → [2, 9]
+[DMTT Node 6] Round 14: collaborators → [9]
+[DMTT Node 9] Round 14: collaborators → [6, 8, 7]
+[Monitor] Round 14 (10/10 nodes): acc=0.7166 ± 0.3305
+[Monitor]   Honest: 0.7832  Compromised: 0.1169
+[DMTT Node 1] Round 15: collaborators → [0]
+[DMTT Node 4] Round 15: collaborators → [3]
+[DMTT Node 0] Round 15: collaborators → [1]
+[DMTT Node 5] Round 15: collaborators → [6]
+[DMTT Node 3] Round 15: collaborators → [4]
+[DMTT Node 2] Round 15: collaborators → [9, 6]
+[DMTT Node 8] Round 15: collaborators → [7]
+[DMTT Node 6] Round 15: collaborators → [9, 5, 2]
+[DMTT Node 7] Round 15: collaborators → [8]
+[DMTT Node 9] Round 15: collaborators → [6, 2]
+[Monitor] Round 15 (10/10 nodes): acc=0.7077 ± 0.3323
+[Monitor]   Honest: 0.7807  Compromised: 0.0501
+[DMTT Node 1] Round 16: collaborators → [0]
+[DMTT Node 5] Round 16: collaborators → [6]
+[DMTT Node 0] Round 16: collaborators → [1]
+[DMTT Node 4] Round 16: collaborators → [3]
+[DMTT Node 7] Round 16: collaborators → [8]
+[DMTT Node 3] Round 16: collaborators → [4]
+[DMTT Node 8] Round 16: collaborators → [7]
+[DMTT Node 2] Round 16: collaborators → [6, 9]
+[DMTT Node 9] Round 16: collaborators → [6, 2]
+[DMTT Node 6] Round 16: collaborators → [9, 5, 2]
+[Monitor] Round 16 (10/10 nodes): acc=0.7021 ± 0.3223
+[Monitor]   Honest: 0.7626  Compromised: 0.1575
+[DMTT Node 0] Round 17: collaborators → [1]
+[DMTT Node 1] Round 17: collaborators → [0]
+[DMTT Node 5] Round 17: collaborators → [6]
+[DMTT Node 4] Round 17: collaborators → [3]
+[DMTT Node 3] Round 17: collaborators → [4]
+[DMTT Node 7] Round 17: collaborators → [8]
+[DMTT Node 8] Round 17: collaborators → [7]
+[DMTT Node 2] Round 17: collaborators → [6, 9]
+[DMTT Node 9] Round 17: collaborators → [6, 2]
+[DMTT Node 6] Round 17: collaborators → [9, 5, 2]
+[Monitor] Round 17 (10/10 nodes): acc=0.7256 ± 0.3241
+[Monitor]   Honest: 0.7855  Compromised: 0.1862
+[DMTT Node 0] Round 18: collaborators → [1]
+[DMTT Node 1] Round 18: collaborators → [0]
+[DMTT Node 4] Round 18: collaborators → [3]
+[DMTT Node 5] Round 18: collaborators → [6]
+[DMTT Node 3] Round 18: collaborators → [4]
+[DMTT Node 7] Round 18: collaborators → [8]
+[DMTT Node 8] Round 18: collaborators → [7]
+[DMTT Node 2] Round 18: collaborators → [6, 9]
+[DMTT Node 6] Round 18: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 18: collaborators → [6, 2]
+[Monitor] Round 18 (10/10 nodes): acc=0.7680 ± 0.2964
+[Monitor]   Honest: 0.8199  Compromised: 0.3007
+[DMTT Node 0] Round 19: collaborators → [1]
+[DMTT Node 1] Round 19: collaborators → [0]
+[DMTT Node 5] Round 19: collaborators → [9, 2]
+[DMTT Node 3] Round 19: collaborators → [4]
+[DMTT Node 4] Round 19: collaborators → [3]
+[DMTT Node 7] Round 19: collaborators → [9, 6]
+[DMTT Node 8] Round 19: collaborators → [9]
+[DMTT Node 6] Round 19: collaborators → [9, 7]
+[DMTT Node 2] Round 19: collaborators → [5]
+[DMTT Node 9] Round 19: collaborators → [6, 8, 7, 5]
+[Monitor] Round 19 (10/10 nodes): acc=0.7697 ± 0.3016
+[Monitor]   Honest: 0.8207  Compromised: 0.3103
+[DMTT Node 1] Round 20: collaborators → [0]
+[DMTT Node 0] Round 20: collaborators → [1]
+[DMTT Node 3] Round 20: collaborators → [4]
+[DMTT Node 4] Round 20: collaborators → [3]
+[DMTT Node 2] Round 20: collaborators → [7, 5]
+[DMTT Node 8] Round 20: collaborators → [9]
+[DMTT Node 7] Round 20: collaborators → [2]
+[DMTT Node 5] Round 20: collaborators → [2]
+[DMTT Node 6] Round 20: collaborators → [9]
+[DMTT Node 9] Round 20: collaborators → [6, 8]
+[Monitor] Round 20 (10/10 nodes): acc=0.8190 ± 0.2904
+[Monitor]   Honest: 0.8562  Compromised: 0.4845
+[DMTT Node 0] Round 21: collaborators → [8]
+[DMTT Node 1] Round 21: collaborators → [2]
+[DMTT Node 3] Round 21: collaborators → [4]
+[DMTT Node 4] Round 21: collaborators → [3, 8]
+[DMTT Node 5] Round 21: collaborators → [6]
+[DMTT Node 7] Round 21: collaborators → [2, 6]
+[DMTT Node 2] Round 21: collaborators → [7, 6, 9, 1]
+[DMTT Node 6] Round 21: collaborators → [9, 5, 2, 7]
+[DMTT Node 8] Round 21: collaborators → [0, 4]
+[DMTT Node 9] Round 21: collaborators → [6, 2]
+[Monitor] Round 21 (10/10 nodes): acc=0.7997 ± 0.2657
+[Monitor]   Honest: 0.8578  Compromised: 0.2768
+[DMTT Node 5] Round 22: collaborators → [6]
+[DMTT Node 3] Round 22: collaborators → [4]
+[DMTT Node 0] Round 22: collaborators → [1]
+[DMTT Node 4] Round 22: collaborators → [3]
+[DMTT Node 8] Round 22: collaborators → [7]
+[DMTT Node 1] Round 22: collaborators → [0]
+[DMTT Node 7] Round 22: collaborators → [8]
+[DMTT Node 6] Round 22: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 22: collaborators → [6, 2]
+[DMTT Node 2] Round 22: collaborators → [6, 9]
+[Monitor] Round 22 (10/10 nodes): acc=0.6718 ± 0.3650
+[Monitor]   Honest: 0.6881  Compromised: 0.5251
+[DMTT Node 1] Round 23: collaborators → [2]
+[DMTT Node 0] Round 23: collaborators → [4]
+[DMTT Node 5] Round 23: collaborators → [6]
+[DMTT Node 3] Round 23: collaborators → [4]
+[DMTT Node 4] Round 23: collaborators → [3, 0]
+[DMTT Node 7] Round 23: collaborators → [8]
+[DMTT Node 8] Round 23: collaborators → [7]
+[DMTT Node 6] Round 23: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 23: collaborators → [6, 1]
+[DMTT Node 9] Round 23: collaborators → [6]
+[Monitor] Round 23 (10/10 nodes): acc=0.4249 ± 0.3576
+[Monitor]   Honest: 0.4278  Compromised: 0.3986
+[DMTT Node 0] Round 24: collaborators → [1]
+[DMTT Node 3] Round 24: collaborators → [7]
+[DMTT Node 5] Round 24: collaborators → [4]
+[DMTT Node 7] Round 24: collaborators → [3]
+[DMTT Node 4] Round 24: collaborators → [5]
+[DMTT Node 8] Round 24: collaborators → [9]
+[DMTT Node 1] Round 24: collaborators → [0]
+[DMTT Node 2] Round 24: collaborators → [9, 6]
+[DMTT Node 9] Round 24: collaborators → [6, 8, 2]
+[DMTT Node 6] Round 24: collaborators → [9, 2]
+[Monitor] Round 24 (10/10 nodes): acc=0.2504 ± 0.2699
+[Monitor]   Honest: 0.2197  Compromised: 0.5274
+[DMTT Node 1] Round 25: collaborators → [0]
+[DMTT Node 0] Round 25: collaborators → [1]
+[DMTT Node 3] Round 25: collaborators → [4, 7]
+[DMTT Node 7] Round 25: collaborators → [3]
+[DMTT Node 5] Round 25: collaborators → [6]
+[DMTT Node 4] Round 25: collaborators → [3]
+[DMTT Node 8] Round 25: collaborators → [9]
+[DMTT Node 6] Round 25: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 25: collaborators → [6, 9]
+[DMTT Node 9] Round 25: collaborators → [6, 8, 2]
+[Monitor] Round 25 (10/10 nodes): acc=0.1131 ± 0.1513
+[Monitor]   Honest: 0.0673  Compromised: 0.5251
+[DMTT Node 1] Round 26: collaborators → [0]
+[DMTT Node 0] Round 26: collaborators → [1]
+[DMTT Node 7] Round 26: collaborators → [8]
+[DMTT Node 4] Round 26: collaborators → [3]
+[DMTT Node 5] Round 26: collaborators → [6]
+[DMTT Node 3] Round 26: collaborators → [4]
+[DMTT Node 8] Round 26: collaborators → [7]
+[DMTT Node 2] Round 26: collaborators → [6, 9]
+[DMTT Node 6] Round 26: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 26: collaborators → [6, 2]
+[Monitor] Round 26 (10/10 nodes): acc=0.0719 ± 0.0688
+[Monitor]   Honest: 0.0791  Compromised: 0.0072
+[DMTT Node 1] Round 27: collaborators → [0]
+[DMTT Node 3] Round 27: collaborators → [4]
+[DMTT Node 4] Round 27: collaborators → [3]
+[DMTT Node 5] Round 27: collaborators → [6]
+[DMTT Node 0] Round 27: collaborators → [1]
+[DMTT Node 7] Round 27: collaborators → [8]
+[DMTT Node 8] Round 27: collaborators → [7]
+[DMTT Node 2] Round 27: collaborators → [6, 9]
+[DMTT Node 6] Round 27: collaborators → [5, 2]
+[DMTT Node 9] Round 27: collaborators → [2]
+[Monitor] Round 27 (10/10 nodes): acc=0.0757 ± 0.0467
+[Monitor]   Honest: 0.0801  Compromised: 0.0358
+[DMTT Node 4] Round 28: collaborators → [3]
+[DMTT Node 0] Round 28: collaborators → [1]
+[DMTT Node 3] Round 28: collaborators → [4]
+[DMTT Node 1] Round 28: collaborators → [0]
+[DMTT Node 7] Round 28: collaborators → [8]
+[DMTT Node 5] Round 28: collaborators → [6]
+[DMTT Node 8] Round 28: collaborators → [7]
+[DMTT Node 6] Round 28: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 28: collaborators → [6, 2]
+[DMTT Node 2] Round 28: collaborators → [6, 9]
+[Monitor] Round 28 (10/10 nodes): acc=0.0835 ± 0.0458
+[Monitor]   Honest: 0.0888  Compromised: 0.0358
+[DMTT Node 1] Round 29: collaborators → [0]
+[DMTT Node 4] Round 29: collaborators → [3]
+[DMTT Node 0] Round 29: collaborators → [1]
+[DMTT Node 7] Round 29: collaborators → [8]
+[DMTT Node 3] Round 29: collaborators → [4]
+[DMTT Node 8] Round 29: collaborators → [7]
+[DMTT Node 5] Round 29: collaborators → [6]
+[DMTT Node 6] Round 29: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 29: collaborators → [6, 9]
+[DMTT Node 9] Round 29: collaborators → [6, 2]
+[Monitor] Round 29 (10/10 nodes): acc=0.0838 ± 0.0444
+[Monitor]   Honest: 0.0891  Compromised: 0.0358
+[DMTT Node 1] Round 30: collaborators → [0]
+[DMTT Node 0] Round 30: collaborators → [1]
+[DMTT Node 4] Round 30: collaborators → [5]
+[DMTT Node 5] Round 30: collaborators → [4]
+[DMTT Node 7] Round 30: collaborators → [8]
+[DMTT Node 3] Round 30: collaborators → [2]
+[DMTT Node 8] Round 30: collaborators → [7]
+[DMTT Node 6] Round 30: collaborators → [9]
+[DMTT Node 2] Round 30: collaborators → [9, 3]
+[DMTT Node 9] Round 30: collaborators → [6, 2]
+[Monitor] Round 30 (10/10 nodes): acc=0.1024 ± 0.0443
+[Monitor]   Honest: 0.1095  Compromised: 0.0382
+[DMTT Node 1] Round 31: collaborators → [0]
+[DMTT Node 0] Round 31: collaborators → [1]
+[DMTT Node 4] Round 31: collaborators → [5]
+[DMTT Node 5] Round 31: collaborators → [4]
+[DMTT Node 7] Round 31: collaborators → [8]
+[DMTT Node 8] Round 31: collaborators → [7]
+[DMTT Node 3] Round 31: collaborators → [6, 2]
+[DMTT Node 6] Round 31: collaborators → [9, 3]
+[DMTT Node 2] Round 31: collaborators → [9, 3]
+[DMTT Node 9] Round 31: collaborators → [6, 2]
+[Monitor] Round 31 (10/10 nodes): acc=0.1472 ± 0.1219
+[Monitor]   Honest: 0.1095  Compromised: 0.4869
+[DMTT Node 0] Round 32: collaborators → [1, 9]
+[DMTT Node 1] Round 32: collaborators → [0]
+[DMTT Node 4] Round 32: collaborators → [5]
+[DMTT Node 5] Round 32: collaborators → [6, 4, 2, 3]
+[DMTT Node 8] Round 32: collaborators → [7]
+[DMTT Node 7] Round 32: collaborators → [8]
+[DMTT Node 3] Round 32: collaborators → [6, 5]
+[DMTT Node 6] Round 32: collaborators → [5, 3]
+[DMTT Node 2] Round 32: collaborators → [5]
+[DMTT Node 9] Round 32: collaborators → [0]
+[Monitor] Round 32 (10/10 nodes): acc=0.1729 ± 0.1206
+[Monitor]   Honest: 0.1487  Compromised: 0.3914
+[DMTT Node 1] Round 33: collaborators → [0]
+[DMTT Node 4] Round 33: collaborators → [5]
+[DMTT Node 7] Round 33: collaborators → [6]
+[DMTT Node 8] Round 33: collaborators → [9]
+[DMTT Node 6] Round 33: collaborators → [2, 7]
+[DMTT Node 3] Round 33: collaborators → [2]
+[DMTT Node 2] Round 33: collaborators → [6, 3]
+[DMTT Node 5] Round 33: collaborators → [4]
+[DMTT Node 0] Round 33: collaborators → [1]
+[DMTT Node 9] Round 33: collaborators → [8]
+[Monitor] Round 33 (10/10 nodes): acc=0.1017 ± 0.0565
+[Monitor]   Honest: 0.1106  Compromised: 0.0215
+[DMTT Node 0] Round 34: collaborators → [1]
+[DMTT Node 1] Round 34: collaborators → [0]
+[DMTT Node 5] Round 34: collaborators → [6]
+[DMTT Node 4] Round 34: collaborators → [3]
+[DMTT Node 7] Round 34: collaborators → [9]
+[DMTT Node 3] Round 34: collaborators → [4, 2]
+[DMTT Node 8] Round 34: collaborators → [9]
+[DMTT Node 2] Round 34: collaborators → [3]
+[DMTT Node 9] Round 34: collaborators → [8, 7]
+[DMTT Node 6] Round 34: collaborators → [5]
+[Monitor] Round 34 (10/10 nodes): acc=0.0944 ± 0.0393
+[Monitor]   Honest: 0.0957  Compromised: 0.0835
+[DMTT Node 4] Round 35: collaborators → [3, 7]
+[DMTT Node 0] Round 35: collaborators → [1]
+[DMTT Node 1] Round 35: collaborators → [0]
+[DMTT Node 6] Round 35: collaborators → [5]
+[DMTT Node 5] Round 35: collaborators → [6]
+[DMTT Node 2] Round 35: collaborators → [3]
+[DMTT Node 3] Round 35: collaborators → [4, 2]
+[DMTT Node 8] Round 35: collaborators → [9]
+[DMTT Node 7] Round 35: collaborators → [4]
+[DMTT Node 9] Round 35: collaborators → [8]
+[Monitor] Round 35 (10/10 nodes): acc=0.1511 ± 0.1336
+[Monitor]   Honest: 0.1096  Compromised: 0.5251
+[DMTT Node 1] Round 36: collaborators → [0]
+[DMTT Node 0] Round 36: collaborators → [1, 9]
+[DMTT Node 6] Round 36: collaborators → [5]
+[DMTT Node 7] Round 36: collaborators → [8]
+[DMTT Node 5] Round 36: collaborators → [6, 4, 2]
+[DMTT Node 4] Round 36: collaborators → [5]
+[DMTT Node 2] Round 36: collaborators → [3, 5]
+[DMTT Node 3] Round 36: collaborators → [2]
+[DMTT Node 8] Round 36: collaborators → [7]
+[DMTT Node 9] Round 36: collaborators → [0]
+[Monitor] Round 36 (10/10 nodes): acc=0.1504 ± 0.1253
+[Monitor]   Honest: 0.1141  Compromised: 0.4773
+[DMTT Node 1] Round 37: collaborators → [0]
+[DMTT Node 4] Round 37: collaborators → [7]
+[DMTT Node 6] Round 37: collaborators → [7]
+[DMTT Node 8] Round 37: collaborators → [9]
+[DMTT Node 3] Round 37: collaborators → [2]
+[DMTT Node 7] Round 37: collaborators → [6, 4]
+[DMTT Node 5] Round 37: collaborators → [2]
+[DMTT Node 2] Round 37: collaborators → [3, 5]
+[DMTT Node 9] Round 37: collaborators → [8]
+[DMTT Node 0] Round 37: collaborators → [1]
+[Monitor] Round 37 (10/10 nodes): acc=0.1397 ± 0.1383
+[Monitor]   Honest: 0.0969  Compromised: 0.5251
+[DMTT Node 1] Round 38: collaborators → [0]
+[DMTT Node 0] Round 38: collaborators → [1]
+[DMTT Node 6] Round 38: collaborators → [5, 2, 7, 4]
+[DMTT Node 4] Round 38: collaborators → [3, 6]
+[DMTT Node 7] Round 38: collaborators → [6]
+[DMTT Node 3] Round 38: collaborators → [4]
+[DMTT Node 5] Round 38: collaborators → [6]
+[DMTT Node 2] Round 38: collaborators → [6]
+[DMTT Node 9] Round 38: collaborators → [8]
+[DMTT Node 8] Round 38: collaborators → [9]
+[Monitor] Round 38 (10/10 nodes): acc=0.1443 ± 0.1449
+[Monitor]   Honest: 0.1007  Compromised: 0.5370
+[DMTT Node 1] Round 39: collaborators → [0]
+[DMTT Node 3] Round 39: collaborators → [4]
+[DMTT Node 0] Round 39: collaborators → [1]
+[DMTT Node 7] Round 39: collaborators → [2, 6]
+[DMTT Node 5] Round 39: collaborators → [6]
+[DMTT Node 4] Round 39: collaborators → [3, 6]
+[DMTT Node 2] Round 39: collaborators → [6, 7]
+[DMTT Node 6] Round 39: collaborators → [5, 2, 7, 4]
+[DMTT Node 9] Round 39: collaborators → [8]
+[DMTT Node 8] Round 39: collaborators → [9]
+[Monitor] Round 39 (10/10 nodes): acc=0.1354 ± 0.1036
+[Monitor]   Honest: 0.1086  Compromised: 0.3771
+[DMTT Node 0] Round 40: collaborators → [1]
+[DMTT Node 1] Round 40: collaborators → [0, 2]
+[DMTT Node 5] Round 40: collaborators → [4]
+[DMTT Node 3] Round 40: collaborators → [6]
+[DMTT Node 4] Round 40: collaborators → [5]
+[DMTT Node 7] Round 40: collaborators → [6]
+[DMTT Node 2] Round 40: collaborators → [1]
+[DMTT Node 6] Round 40: collaborators → [3, 7]
+[DMTT Node 8] Round 40: collaborators → [9]
+[DMTT Node 9] Round 40: collaborators → [8]
+[Monitor] Round 40 (10/10 nodes): acc=0.1212 ± 0.0701
+[Monitor]   Honest: 0.1217  Compromised: 0.1169
+[DMTT Node 0] Round 41: collaborators → [1]
+[DMTT Node 4] Round 41: collaborators → [5]
+[DMTT Node 7] Round 41: collaborators → [8]
+[DMTT Node 3] Round 41: collaborators → [2]
+[DMTT Node 5] Round 41: collaborators → [6, 4]
+[DMTT Node 2] Round 41: collaborators → [3]
+[DMTT Node 6] Round 41: collaborators → [9, 5]
+[DMTT Node 1] Round 41: collaborators → [0]
+[DMTT Node 8] Round 41: collaborators → [7]
+[DMTT Node 9] Round 41: collaborators → [6]
+[Monitor] Round 41 (10/10 nodes): acc=0.1285 ± 0.0805
+[Monitor]   Honest: 0.1361  Compromised: 0.0597
+[DMTT Node 4] Round 42: collaborators → [3, 1]
+[DMTT Node 1] Round 42: collaborators → [0, 4]
+[DMTT Node 0] Round 42: collaborators → [1]
+[DMTT Node 8] Round 42: collaborators → [9]
+[DMTT Node 7] Round 42: collaborators → [2]
+[DMTT Node 5] Round 42: collaborators → [6]
+[DMTT Node 3] Round 42: collaborators → [4]
+[DMTT Node 2] Round 42: collaborators → [7]
+[DMTT Node 9] Round 42: collaborators → [6, 8]
+[DMTT Node 6] Round 42: collaborators → [9, 5]
+[Monitor] Round 42 (10/10 nodes): acc=0.1134 ± 0.0543
+[Monitor]   Honest: 0.1206  Compromised: 0.0477
+[DMTT Node 0] Round 43: collaborators → [1]
+[DMTT Node 3] Round 43: collaborators → [5]
+[DMTT Node 1] Round 43: collaborators → [0]
+[DMTT Node 4] Round 43: collaborators → [5]
+[DMTT Node 5] Round 43: collaborators → [4, 3]
+[DMTT Node 2] Round 43: collaborators → [9, 7]
+[DMTT Node 7] Round 43: collaborators → [2, 6]
+[DMTT Node 8] Round 43: collaborators → [9]
+[DMTT Node 6] Round 43: collaborators → [7]
+[DMTT Node 9] Round 43: collaborators → [2, 8]
+[Monitor] Round 43 (10/10 nodes): acc=0.1318 ± 0.0828
+[Monitor]   Honest: 0.1111  Compromised: 0.3174
+[DMTT Node 1] Round 44: collaborators → [0, 7]
+[DMTT Node 4] Round 44: collaborators → [9]
+[DMTT Node 6] Round 44: collaborators → [5]
+[DMTT Node 0] Round 44: collaborators → [1]
+[DMTT Node 3] Round 44: collaborators → [2, 8]
+[DMTT Node 5] Round 44: collaborators → [6]
+[DMTT Node 7] Round 44: collaborators → [1]
+[DMTT Node 8] Round 44: collaborators → [3]
+[DMTT Node 2] Round 44: collaborators → [3]
+[DMTT Node 9] Round 44: collaborators → [4]
+[Monitor] Round 44 (10/10 nodes): acc=0.1907 ± 0.1119
+[Monitor]   Honest: 0.1812  Compromised: 0.2768
+[DMTT Node 0] Round 45: collaborators → [1]
+[DMTT Node 7] Round 45: collaborators → [6, 1]
+[DMTT Node 6] Round 45: collaborators → [7]
+[DMTT Node 5] Round 45: collaborators → [3, 8]
+[DMTT Node 8] Round 45: collaborators → [5]
+[DMTT Node 1] Round 45: collaborators → [0, 7]
+[DMTT Node 2] Round 45: collaborators → [9, 4]
+[DMTT Node 3] Round 45: collaborators → [5]
+[DMTT Node 4] Round 45: collaborators → [2]
+[DMTT Node 9] Round 45: collaborators → [2]
+[Monitor] Round 45 (10/10 nodes): acc=0.2053 ± 0.1505
+[Monitor]   Honest: 0.2210  Compromised: 0.0644
+[DMTT Node 0] Round 46: collaborators → [1]
+[DMTT Node 8] Round 46: collaborators → [5]
+[DMTT Node 3] Round 46: collaborators → [5]
+[DMTT Node 6] Round 46: collaborators → [7]
+[DMTT Node 1] Round 46: collaborators → [0]
+[DMTT Node 4] Round 46: collaborators → [2]
+[DMTT Node 7] Round 46: collaborators → [6]
+[DMTT Node 5] Round 46: collaborators → [3, 8]
+[DMTT Node 2] Round 46: collaborators → [9, 4]
+[DMTT Node 9] Round 46: collaborators → [2]
+[Monitor] Round 46 (10/10 nodes): acc=0.2061 ± 0.0594
+[Monitor]   Honest: 0.2017  Compromised: 0.2458
+[DMTT Node 0] Round 47: collaborators → [1]
+[DMTT Node 1] Round 47: collaborators → [0, 7]
+[DMTT Node 6] Round 47: collaborators → [7]
+[DMTT Node 7] Round 47: collaborators → [6, 1]
+[DMTT Node 3] Round 47: collaborators → [5]
+[DMTT Node 8] Round 47: collaborators → [5]
+[DMTT Node 5] Round 47: collaborators → [3, 8]
+[DMTT Node 4] Round 47: collaborators → [2, 9]
+[DMTT Node 9] Round 47: collaborators → [2, 4]
+[DMTT Node 2] Round 47: collaborators → [9, 4]
+[Monitor] Round 47 (10/10 nodes): acc=0.2137 ± 0.1208
+[Monitor]   Honest: 0.1794  Compromised: 0.5227
+[DMTT Node 0] Round 48: collaborators → [1]
+[DMTT Node 6] Round 48: collaborators → [7]
+[DMTT Node 3] Round 48: collaborators → [5]
+[DMTT Node 7] Round 48: collaborators → [6]
+[DMTT Node 8] Round 48: collaborators → [5]
+[DMTT Node 1] Round 48: collaborators → [0]
+[DMTT Node 5] Round 48: collaborators → [3, 8]
+[DMTT Node 4] Round 48: collaborators → [2, 9]
+[DMTT Node 9] Round 48: collaborators → [2, 4]
+[DMTT Node 2] Round 48: collaborators → [9, 4]
+[Monitor] Round 48 (10/10 nodes): acc=0.1770 ± 0.0855
+[Monitor]   Honest: 0.1701  Compromised: 0.2387
+[DMTT Node 1] Round 49: collaborators → [0, 7]
+[DMTT Node 0] Round 49: collaborators → [1]
+[DMTT Node 6] Round 49: collaborators → [7]
+[DMTT Node 7] Round 49: collaborators → [6, 1]
+[DMTT Node 3] Round 49: collaborators → [5, 8]
+[DMTT Node 5] Round 49: collaborators → [3, 8]
+[DMTT Node 8] Round 49: collaborators → [5, 3]
+[DMTT Node 4] Round 49: collaborators → [9]
+[DMTT Node 2] Round 49: collaborators → [9]
+[DMTT Node 9] Round 49: collaborators → [2, 4]
+[Monitor] Round 49 (10/10 nodes): acc=0.2072 ± 0.0800
+[Monitor]   Honest: 0.2215  Compromised: 0.0788
+[DMTT Node 0] Round 50: collaborators → [1]
+[DMTT Node 1] Round 50: collaborators → [0]
+[DMTT Node 6] Round 50: collaborators → [7]
+[DMTT Node 7] Round 50: collaborators → [6]
+[DMTT Node 3] Round 50: collaborators → [5]
+[DMTT Node 5] Round 50: collaborators → [4, 3, 8]
+[DMTT Node 8] Round 50: collaborators → [5]
+[DMTT Node 4] Round 50: collaborators → [5]
+[DMTT Node 2] Round 50: collaborators → [9]
+[DMTT Node 9] Round 50: collaborators → [2]
+[Monitor] Round 50 (10/10 nodes): acc=0.1763 ± 0.0778
+[Monitor]   Honest: 0.1787  Compromised: 0.1551
+                                   Training Results                                   
+┏━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┓
+┃ Round ┃ Mean Acc ┃ Std Acc ┃ Honest Acc ┃ Comp. Acc ┃ Vacuity ┃ Entropy ┃ Strength ┃
+┡━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━┩
+│ 1     │ 0.3383   │ 0.1906  │ 0.3308     │ 0.4057    │ nan     │ nan     │ nan      │
+│ 2     │ 0.4834   │ 0.2932  │ 0.5372     │ 0.0000    │ 0.4705  │ 1.6297  │ 501.62   │
+│ 3     │ 0.5911   │ 0.2527  │ 0.6469     │ 0.0883    │ 0.4682  │ 1.6139  │ 275.67   │
+│ 4     │ 0.5328   │ 0.3144  │ 0.5881     │ 0.0358    │ 0.4597  │ 1.6498  │ 509.57   │
+│ 5     │ 0.5275   │ 0.3171  │ 0.5818     │ 0.0382    │ 0.4523  │ 1.5925  │ 324.05   │
+│ 6     │ 0.6362   │ 0.2451  │ 0.6642     │ 0.3842    │ 0.4537  │ 1.5409  │ 178.40   │
+│ 7     │ 0.6206   │ 0.2419  │ 0.6665     │ 0.2076    │ 0.4441  │ 1.5788  │ 489.94   │
+│ 8     │ 0.5832   │ 0.3165  │ 0.6275     │ 0.1838    │ 0.4420  │ 1.5621  │ 500.47   │
+│ 9     │ 0.6688   │ 0.3151  │ 0.7402     │ 0.0263    │ 0.4560  │ 1.5758  │ 377.31   │
+│ 10    │ 0.6741   │ 0.2995  │ 0.7098     │ 0.3532    │ 0.4488  │ 1.5113  │ 637.74   │
+│ 11    │ 0.6685   │ 0.2511  │ 0.7046     │ 0.3437    │ 0.4410  │ 1.5446  │ 446.59   │
+│ 12    │ 0.6526   │ 0.3169  │ 0.7163     │ 0.0788    │ 0.4480  │ 1.4753  │ 356.95   │
+│ 13    │ 0.6577   │ 0.3396  │ 0.7279     │ 0.0263    │ 0.4354  │ 1.5141  │ 641.49   │
+│ 14    │ 0.7166   │ 0.3305  │ 0.7832     │ 0.1169    │ 0.4344  │ 1.5274  │ 544.99   │
+│ 15    │ 0.7077   │ 0.3323  │ 0.7807     │ 0.0501    │ 0.4303  │ 1.4941  │ 349.96   │
+│ 16    │ 0.7021   │ 0.3223  │ 0.7626     │ 0.1575    │ 0.4280  │ 1.4385  │ 266.65   │
+│ 17    │ 0.7256   │ 0.3241  │ 0.7855     │ 0.1862    │ 0.4210  │ 1.4672  │ 834.14   │
+│ 18    │ 0.7680   │ 0.2964  │ 0.8199     │ 0.3007    │ 0.4153  │ 1.4526  │ 582.41   │
+│ 19    │ 0.7697   │ 0.3016  │ 0.8207     │ 0.3103    │ 0.4130  │ 1.4833  │ 1031.96  │
+│ 20    │ 0.8190   │ 0.2904  │ 0.8562     │ 0.4845    │ 0.4119  │ 1.4478  │ 1532.76  │
+│ 21    │ 0.7997   │ 0.2657  │ 0.8578     │ 0.2768    │ 0.4115  │ 1.4415  │ 712.57   │
+│ 22    │ 0.6718   │ 0.3650  │ 0.6881     │ 0.5251    │ 0.3075  │ 1.3365  │ 347.65   │
+│ 23    │ 0.4249   │ 0.3576  │ 0.4278     │ 0.3986    │ 0.2285  │ 1.3124  │ 440.83   │
+│ 24    │ 0.2504   │ 0.2699  │ 0.2197     │ 0.5274    │ 0.1930  │ 1.3005  │ 187.40   │
+│ 25    │ 0.1131   │ 0.1513  │ 0.0673     │ 0.5251    │ 0.0651  │ 1.2785  │ 463.95   │
+│ 26    │ 0.0719   │ 0.0688  │ 0.0791     │ 0.0072    │ 0.1106  │ 1.2484  │ 172.38   │
+│ 27    │ 0.0757   │ 0.0467  │ 0.0801     │ 0.0358    │ 0.0705  │ 1.1189  │ 738.33   │
+│ 28    │ 0.0835   │ 0.0458  │ 0.0888     │ 0.0358    │ 0.0729  │ 1.0927  │ 319.50   │
+│ 29    │ 0.0838   │ 0.0444  │ 0.0891     │ 0.0358    │ 0.0745  │ 1.0753  │ 531.12   │
+│ 30    │ 0.1024   │ 0.0443  │ 0.1095     │ 0.0382    │ 0.0764  │ 1.1105  │ 318.72   │
+│ 31    │ 0.1472   │ 0.1219  │ 0.1095     │ 0.4869    │ 0.1296  │ 1.1848  │ 230.71   │
+│ 32    │ 0.1729   │ 0.1206  │ 0.1487     │ 0.3914    │ 0.1136  │ 1.2286  │ 681.30   │
+│ 33    │ 0.1017   │ 0.0565  │ 0.1106     │ 0.0215    │ 0.0689  │ 1.1291  │ 702.54   │
+│ 34    │ 0.0944   │ 0.0393  │ 0.0957     │ 0.0835    │ 0.0643  │ 1.1506  │ 612.87   │
+│ 35    │ 0.1511   │ 0.1336  │ 0.1096     │ 0.5251    │ 0.1641  │ 1.1963  │ 121.40   │
+│ 36    │ 0.1504   │ 0.1253  │ 0.1141     │ 0.4773    │ 0.0928  │ 1.1079  │ 371.62   │
+│ 37    │ 0.1397   │ 0.1383  │ 0.0969     │ 0.5251    │ 0.0689  │ 1.1651  │ 851.19   │
+│ 38    │ 0.1443   │ 0.1449  │ 0.1007     │ 0.5370    │ 0.0682  │ 1.0742  │ 565.29   │
+│ 39    │ 0.1354   │ 0.1036  │ 0.1086     │ 0.3771    │ 0.0741  │ 1.0609  │ 646.33   │
+│ 40    │ 0.1212   │ 0.0701  │ 0.1217     │ 0.1169    │ 0.0760  │ 1.0455  │ 662.94   │
+│ 41    │ 0.1285   │ 0.0805  │ 0.1361     │ 0.0597    │ 0.0679  │ 1.0831  │ 492.71   │
+│ 42    │ 0.1134   │ 0.0543  │ 0.1206     │ 0.0477    │ 0.0664  │ 0.9952  │ 844.18   │
+│ 43    │ 0.1318   │ 0.0828  │ 0.1111     │ 0.3174    │ 0.1025  │ 1.0341  │ 329.96   │
+│ 44    │ 0.1907   │ 0.1119  │ 0.1812     │ 0.2768    │ 0.2358  │ 1.1456  │ 370.87   │
+│ 45    │ 0.2053   │ 0.1505  │ 0.2210     │ 0.0644    │ 0.1932  │ 1.0695  │ 295.54   │
+│ 46    │ 0.2061   │ 0.0594  │ 0.2017     │ 0.2458    │ 0.1697  │ 0.9882  │ 234.19   │
+│ 47    │ 0.2137   │ 0.1208  │ 0.1794     │ 0.5227    │ 0.1788  │ 0.9376  │ 300.49   │
+│ 48    │ 0.1770   │ 0.0855  │ 0.1701     │ 0.2387    │ 0.1721  │ 1.0267  │ 376.09   │
+│ 49    │ 0.2072   │ 0.0800  │ 0.2215     │ 0.0788    │ 0.1769  │ 1.0582  │ 522.97   │
+│ 50    │ 0.1763   │ 0.0778  │ 0.1787     │ 0.1551    │ 0.1911  │ 1.0749  │ 413.93   │
+└───────┴──────────┴─────────┴────────────┴───────────┴─────────┴─────────┴──────────┘
+
+Uncertainty Metrics:
+  • Vacuity: epistemic uncertainty — lower is more confident
+  • Entropy: aleatoric uncertainty — lower is more decisive
+  • Strength: Dirichlet strength — higher means more evidence
+Results written → /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/results/C3-DMTT-byz10-s123.parquet
+
+✓ Distributed training complete

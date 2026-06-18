@@ -1,0 +1,761 @@
+Loading config: /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/c3_dmtt/c3_dmtt_byz30_s123.yaml
+
+Experiment: C3-DMTT-byz30-s123
+  Backend:    distributed (ZMQ IPC)
+  Rounds:     50
+  Topology:   fully (10 nodes)
+  Aggregation:fedavg
+  Attack: topology_liar (30% nodes)
+
+Launching distributed processes…
+
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DistributedRunner] run_id=671c2c48  t_start=1034249.139  (startup_grace=5.0s)
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 1] Round 1: collaborators → []
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 0] Round 1: collaborators → []
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 5] Round 1: collaborators → []
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 3] Round 1: collaborators → [6]
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 7] Round 1: collaborators → [2]
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 2] Round 1: collaborators → [7]
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 4] Round 1: collaborators → [5]
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 8] Round 1: collaborators → [9]
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 6] Round 1: collaborators → [9, 3]
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DMTT Node 9] Round 1: collaborators → [6, 8]
+[Monitor] Round 1 (10/10 nodes): acc=0.3473 ± 0.2015
+[Monitor]   Honest: 0.3355  Compromised: 0.3750
+[DMTT Node 3] Round 2: collaborators → [4]
+[DMTT Node 2] Round 2: collaborators → [7, 4]
+[DMTT Node 7] Round 2: collaborators → [2, 4]
+[DMTT Node 8] Round 2: collaborators → [9]
+[DMTT Node 6] Round 2: collaborators → [9, 5]
+[DMTT Node 9] Round 2: collaborators → [6, 8]
+[DMTT Node 1] Round 2: collaborators → []
+[DMTT Node 4] Round 2: deadline — missing states from [5], claims from [5].
+[DMTT Node 0] Round 2: collaborators → []
+[DMTT Node 4] Round 2: collaborators → [2, 7, 3]
+[DMTT Node 5] Round 2: collaborators → [6]
+[Monitor] Round 2 (10/10 nodes): acc=0.5125 ± 0.2511
+[Monitor]   Honest: 0.5715  Compromised: 0.3750
+[DMTT Node 3] Round 3: collaborators → []
+[DMTT Node 5] Round 3: collaborators → [6]
+[DMTT Node 7] Round 3: collaborators → [2]
+[DMTT Node 2] Round 3: collaborators → [7]
+[DMTT Node 4] Round 3: collaborators → [2, 3]
+[DMTT Node 8] Round 3: collaborators → [9]
+[DMTT Node 6] Round 3: collaborators → [9, 5]
+[DMTT Node 9] Round 3: collaborators → [6, 8]
+[DMTT Node 0] Round 3: collaborators → []
+[DMTT Node 1] Round 3: collaborators → []
+[Monitor] Round 3 (10/10 nodes): acc=0.4104 ± 0.2255
+[Monitor]   Honest: 0.4012  Compromised: 0.4320
+[DMTT Node 5] Round 4: collaborators → [6]
+[DMTT Node 2] Round 4: collaborators → [7]
+[DMTT Node 7] Round 4: collaborators → [2]
+[DMTT Node 8] Round 4: collaborators → [9]
+[DMTT Node 6] Round 4: collaborators → [9, 5]
+[DMTT Node 9] Round 4: collaborators → [6, 8]
+[DMTT Node 0] Round 4: collaborators → []
+[DMTT Node 3] Round 4: collaborators → []
+[DMTT Node 1] Round 4: collaborators → []
+[DMTT Node 4] Round 4: deadline — missing states from [2, 3], claims from [2, 3].
+[DMTT Node 4] Round 4: collaborators → [2, 7, 3]
+[Monitor] Round 4 (10/10 nodes): acc=0.3125 ± 0.2268
+[Monitor]   Honest: 0.2613  Compromised: 0.4320
+[DMTT Node 5] Round 5: collaborators → [6]
+[DMTT Node 2] Round 5: collaborators → [7]
+[DMTT Node 7] Round 5: collaborators → [2]
+[DMTT Node 8] Round 5: collaborators → [9]
+[DMTT Node 6] Round 5: collaborators → [5]
+[DMTT Node 9] Round 5: collaborators → [8, 3]
+[DMTT Node 4] Round 5: deadline — missing states from [2, 3, 7], claims from [2, 3, 7].
+[DMTT Node 0] Round 5: collaborators → []
+[DMTT Node 4] Round 5: collaborators → [2]
+[DMTT Node 1] Round 5: collaborators → []
+[DMTT Node 3] Round 5: collaborators → [9]
+[Monitor] Round 5 (10/10 nodes): acc=0.2765 ± 0.2152
+[Monitor]   Honest: 0.2098  Compromised: 0.4320
+[DMTT Node 5] Round 6: collaborators → [6]
+[DMTT Node 6] Round 6: collaborators → [9, 5]
+[DMTT Node 2] Round 6: collaborators → [7]
+[DMTT Node 7] Round 6: collaborators → [2]
+[DMTT Node 3] Round 6: collaborators → []
+[DMTT Node 8] Round 6: collaborators → [9]
+[DMTT Node 9] Round 6: collaborators → [6, 8]
+[DMTT Node 1] Round 6: collaborators → []
+[DMTT Node 4] Round 6: deadline — missing states from [2], claims from [2].
+[DMTT Node 0] Round 6: collaborators → []
+[DMTT Node 4] Round 6: collaborators → [2, 3]
+[Monitor] Round 6 (10/10 nodes): acc=0.2899 ± 0.2147
+[Monitor]   Honest: 0.2290  Compromised: 0.4320
+[DMTT Node 5] Round 7: collaborators → []
+[DMTT Node 7] Round 7: collaborators → [2]
+[DMTT Node 2] Round 7: collaborators → [7, 3]
+[DMTT Node 8] Round 7: collaborators → [9]
+[DMTT Node 6] Round 7: collaborators → [9]
+[DMTT Node 9] Round 7: collaborators → [6, 8]
+[DMTT Node 4] Round 7: deadline — missing states from [2, 3], claims from [2, 3].
+[DMTT Node 4] Round 7: collaborators → [5]
+[DMTT Node 0] Round 7: collaborators → []
+[DMTT Node 3] Round 7: collaborators → [2]
+[DMTT Node 1] Round 7: collaborators → []
+[Monitor] Round 7 (10/10 nodes): acc=0.3224 ± 0.2251
+[Monitor]   Honest: 0.2755  Compromised: 0.4320
+[DMTT Node 7] Round 8: collaborators → [8]
+[DMTT Node 3] Round 8: collaborators → [6]
+[DMTT Node 2] Round 8: collaborators → []
+[DMTT Node 8] Round 8: collaborators → [7]
+[DMTT Node 6] Round 8: collaborators → [9, 5, 3]
+[DMTT Node 9] Round 8: collaborators → [6]
+[DMTT Node 5] Round 8: collaborators → [6]
+[DMTT Node 1] Round 8: collaborators → []
+[DMTT Node 0] Round 8: collaborators → []
+[DMTT Node 4] Round 8: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 8: collaborators → [2]
+[Monitor] Round 8 (10/10 nodes): acc=0.3211 ± 0.2236
+[Monitor]   Honest: 0.2736  Compromised: 0.4320
+[DMTT Node 3] Round 9: collaborators → [6]
+[DMTT Node 7] Round 9: collaborators → [2, 8]
+[DMTT Node 8] Round 9: collaborators → [7]
+[DMTT Node 5] Round 9: collaborators → [9]
+[DMTT Node 6] Round 9: collaborators → [3]
+[DMTT Node 9] Round 9: collaborators → [5]
+[DMTT Node 4] Round 9: deadline — missing states from [2], claims from [2].
+[DMTT Node 0] Round 9: collaborators → []
+[DMTT Node 4] Round 9: collaborators → [5]
+[DMTT Node 2] Round 9: collaborators → [7]
+[DMTT Node 1] Round 9: collaborators → []
+[Monitor] Round 9 (10/10 nodes): acc=0.3170 ± 0.2216
+[Monitor]   Honest: 0.2678  Compromised: 0.4320
+[DMTT Node 6] Round 10: collaborators → [9]
+[DMTT Node 3] Round 10: collaborators → []
+[DMTT Node 8] Round 10: collaborators → [9]
+[DMTT Node 2] Round 10: collaborators → [7]
+[DMTT Node 5] Round 10: collaborators → []
+[DMTT Node 7] Round 10: collaborators → [2]
+[DMTT Node 9] Round 10: collaborators → [6, 8]
+[DMTT Node 1] Round 10: collaborators → []
+[DMTT Node 0] Round 10: collaborators → []
+[DMTT Node 4] Round 10: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 10: collaborators → [5, 3]
+[Monitor] Round 10 (10/10 nodes): acc=0.3179 ± 0.2130
+[Monitor]   Honest: 0.2690  Compromised: 0.4320
+[DMTT Node 2] Round 11: collaborators → [6, 9]
+[DMTT Node 7] Round 11: collaborators → [8]
+[DMTT Node 8] Round 11: collaborators → [7]
+[DMTT Node 6] Round 11: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 11: collaborators → [6, 2]
+[DMTT Node 0] Round 11: collaborators → []
+[DMTT Node 3] Round 11: collaborators → []
+[DMTT Node 5] Round 11: collaborators → [6]
+[DMTT Node 4] Round 11: deadline — missing states from [3, 5], claims from [3, 5].
+[DMTT Node 4] Round 11: collaborators → [3]
+[DMTT Node 1] Round 11: collaborators → []
+[Monitor] Round 11 (10/10 nodes): acc=0.3196 ± 0.2142
+[Monitor]   Honest: 0.2714  Compromised: 0.4320
+[DMTT Node 7] Round 12: collaborators → [8]
+[DMTT Node 5] Round 12: collaborators → [6]
+[DMTT Node 8] Round 12: collaborators → [7]
+[DMTT Node 6] Round 12: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 12: collaborators → [6, 9]
+[DMTT Node 9] Round 12: collaborators → [6, 2]
+[DMTT Node 3] Round 12: collaborators → []
+[DMTT Node 4] Round 12: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 12: collaborators → [3]
+[DMTT Node 0] Round 12: collaborators → []
+[DMTT Node 1] Round 12: collaborators → []
+[Monitor] Round 12 (10/10 nodes): acc=0.3218 ± 0.2049
+[Monitor]   Honest: 0.2746  Compromised: 0.4320
+[DMTT Node 8] Round 13: collaborators → [9]
+[DMTT Node 7] Round 13: collaborators → [2, 9]
+[DMTT Node 5] Round 13: collaborators → [6]
+[DMTT Node 2] Round 13: collaborators → [7]
+[DMTT Node 6] Round 13: collaborators → [9, 5]
+[DMTT Node 9] Round 13: collaborators → [6, 8, 7]
+[DMTT Node 4] Round 13: deadline — missing states from [3], claims from [3].
+[DMTT Node 1] Round 13: collaborators → []
+[DMTT Node 4] Round 13: collaborators → [3]
+[DMTT Node 0] Round 13: collaborators → []
+[DMTT Node 3] Round 13: collaborators → []
+[Monitor] Round 13 (10/10 nodes): acc=0.3143 ± 0.2046
+[Monitor]   Honest: 0.2639  Compromised: 0.4320
+[DMTT Node 5] Round 14: collaborators → [3]
+[DMTT Node 2] Round 14: collaborators → [7, 3]
+[DMTT Node 8] Round 14: collaborators → [9]
+[DMTT Node 7] Round 14: collaborators → [2, 9]
+[DMTT Node 6] Round 14: collaborators → [9]
+[DMTT Node 9] Round 14: collaborators → [6, 8, 7]
+[DMTT Node 3] Round 14: collaborators → [2, 5]
+[DMTT Node 4] Round 14: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 14: collaborators → [5]
+[DMTT Node 0] Round 14: collaborators → []
+[DMTT Node 1] Round 14: collaborators → []
+[Monitor] Round 14 (10/10 nodes): acc=0.3114 ± 0.2037
+[Monitor]   Honest: 0.2598  Compromised: 0.4320
+[DMTT Node 5] Round 15: collaborators → [6]
+[DMTT Node 3] Round 15: collaborators → []
+[DMTT Node 2] Round 15: collaborators → [9, 6]
+[DMTT Node 6] Round 15: collaborators → [9, 5, 2]
+[DMTT Node 8] Round 15: collaborators → [7]
+[DMTT Node 7] Round 15: collaborators → [8]
+[DMTT Node 9] Round 15: collaborators → [6, 2]
+[DMTT Node 0] Round 15: collaborators → []
+[DMTT Node 1] Round 15: collaborators → []
+[DMTT Node 4] Round 15: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 15: collaborators → [3]
+[Monitor] Round 15 (10/10 nodes): acc=0.3133 ± 0.2037
+[Monitor]   Honest: 0.2624  Compromised: 0.4320
+[DMTT Node 7] Round 16: collaborators → [8]
+[DMTT Node 5] Round 16: collaborators → [6]
+[DMTT Node 8] Round 16: collaborators → [7]
+[DMTT Node 6] Round 16: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 16: collaborators → [6, 9]
+[DMTT Node 9] Round 16: collaborators → [6, 2]
+[DMTT Node 3] Round 16: collaborators → []
+[DMTT Node 1] Round 16: collaborators → []
+[DMTT Node 4] Round 16: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 16: collaborators → [3]
+[DMTT Node 0] Round 16: collaborators → []
+[Monitor] Round 16 (10/10 nodes): acc=0.3116 ± 0.2034
+[Monitor]   Honest: 0.2600  Compromised: 0.4320
+[DMTT Node 7] Round 17: collaborators → [8]
+[DMTT Node 8] Round 17: collaborators → [7]
+[DMTT Node 5] Round 17: collaborators → [6]
+[DMTT Node 6] Round 17: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 17: collaborators → [6, 9]
+[DMTT Node 9] Round 17: collaborators → [6, 2]
+[DMTT Node 4] Round 17: deadline — missing states from [3], claims from [3].
+[DMTT Node 0] Round 17: collaborators → []
+[DMTT Node 4] Round 17: collaborators → [3]
+[DMTT Node 1] Round 17: collaborators → []
+[DMTT Node 3] Round 17: collaborators → []
+[Monitor] Round 17 (10/10 nodes): acc=0.3128 ± 0.2019
+[Monitor]   Honest: 0.2617  Compromised: 0.4320
+[DMTT Node 7] Round 18: collaborators → [8]
+[DMTT Node 5] Round 18: collaborators → [6]
+[DMTT Node 8] Round 18: collaborators → [7]
+[DMTT Node 6] Round 18: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 18: collaborators → [6, 9]
+[DMTT Node 9] Round 18: collaborators → [6, 2]
+[DMTT Node 1] Round 18: collaborators → []
+[DMTT Node 4] Round 18: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 18: collaborators → [3]
+[DMTT Node 3] Round 18: collaborators → []
+[DMTT Node 0] Round 18: collaborators → []
+[Monitor] Round 18 (10/10 nodes): acc=0.3146 ± 0.2023
+[Monitor]   Honest: 0.2643  Compromised: 0.4320
+[DMTT Node 5] Round 19: collaborators → [9, 2]
+[DMTT Node 7] Round 19: collaborators → [9, 6]
+[DMTT Node 8] Round 19: collaborators → [9]
+[DMTT Node 2] Round 19: collaborators → [5]
+[DMTT Node 6] Round 19: collaborators → [9, 7]
+[DMTT Node 9] Round 19: collaborators → [6, 8, 7, 5]
+[DMTT Node 1] Round 19: collaborators → []
+[DMTT Node 3] Round 19: collaborators → []
+[DMTT Node 0] Round 19: collaborators → []
+[DMTT Node 4] Round 19: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 19: collaborators → [3]
+[Monitor] Round 19 (10/10 nodes): acc=0.3170 ± 0.2029
+[Monitor]   Honest: 0.2677  Compromised: 0.4320
+[DMTT Node 2] Round 20: collaborators → [7, 5]
+[DMTT Node 8] Round 20: collaborators → [9]
+[DMTT Node 7] Round 20: collaborators → [2]
+[DMTT Node 6] Round 20: collaborators → [9]
+[DMTT Node 5] Round 20: collaborators → [2]
+[DMTT Node 9] Round 20: collaborators → [6, 8]
+[DMTT Node 4] Round 20: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 20: collaborators → [3]
+[DMTT Node 0] Round 20: collaborators → []
+[DMTT Node 3] Round 20: collaborators → []
+[DMTT Node 1] Round 20: collaborators → []
+[Monitor] Round 20 (10/10 nodes): acc=0.3172 ± 0.2009
+[Monitor]   Honest: 0.2680  Compromised: 0.4320
+[DMTT Node 7] Round 21: collaborators → [2, 6]
+[DMTT Node 5] Round 21: collaborators → [6]
+[DMTT Node 2] Round 21: collaborators → [7, 6, 9, 1]
+[DMTT Node 6] Round 21: collaborators → [9, 5, 2, 7]
+[DMTT Node 8] Round 21: collaborators → [0, 4]
+[DMTT Node 9] Round 21: collaborators → [6, 2]
+[DMTT Node 0] Round 21: collaborators → [8]
+[DMTT Node 4] Round 21: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 21: collaborators → [3, 8]
+[DMTT Node 3] Round 21: collaborators → []
+[DMTT Node 1] Round 21: collaborators → [2]
+[Monitor] Round 21 (10/10 nodes): acc=0.3184 ± 0.2014
+[Monitor]   Honest: 0.2697  Compromised: 0.4320
+[DMTT Node 5] Round 22: collaborators → [6]
+[DMTT Node 0] Round 22: collaborators → []
+[DMTT Node 8] Round 22: collaborators → [7]
+[DMTT Node 1] Round 22: collaborators → []
+[DMTT Node 7] Round 22: collaborators → [8]
+[DMTT Node 6] Round 22: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 22: collaborators → [6, 2]
+[DMTT Node 2] Round 22: collaborators → [6, 9]
+[DMTT Node 3] Round 22: collaborators → []
+[DMTT Node 4] Round 22: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 22: collaborators → [3]
+[Monitor] Round 22 (10/10 nodes): acc=0.2461 ± 0.1353
+[Monitor]   Honest: 0.2461  Compromised: 0.2462
+[DMTT Node 5] Round 23: collaborators → [6]
+[DMTT Node 8] Round 23: collaborators → [7]
+[DMTT Node 7] Round 23: collaborators → [8]
+[DMTT Node 2] Round 23: collaborators → [6]
+[DMTT Node 9] Round 23: collaborators → [6]
+[DMTT Node 6] Round 23: collaborators → [9, 5, 2]
+[DMTT Node 1] Round 23: collaborators → [2]
+[DMTT Node 4] Round 23: deadline — missing states from [3], claims from [3].
+[DMTT Node 3] Round 23: collaborators → []
+[DMTT Node 0] Round 23: collaborators → [4]
+[DMTT Node 4] Round 23: collaborators → [3, 0]
+[Monitor] Round 23 (10/10 nodes): acc=0.2831 ± 0.1214
+[Monitor]   Honest: 0.2989  Compromised: 0.2462
+[DMTT Node 5] Round 24: collaborators → []
+[DMTT Node 0] Round 24: collaborators → []
+[DMTT Node 7] Round 24: collaborators → [3]
+[DMTT Node 8] Round 24: collaborators → [9]
+[DMTT Node 2] Round 24: collaborators → [9, 6]
+[DMTT Node 9] Round 24: collaborators → [6, 8, 2]
+[DMTT Node 6] Round 24: collaborators → [9, 2]
+[DMTT Node 3] Round 24: collaborators → [7]
+[DMTT Node 4] Round 24: deadline — missing states from [3], claims from [3].
+[DMTT Node 1] Round 24: deadline — missing states from [2], claims from [2].
+[DMTT Node 1] Round 24: collaborators → []
+[DMTT Node 4] Round 24: collaborators → [5]
+[Monitor] Round 24 (10/10 nodes): acc=0.2381 ± 0.1187
+[Monitor]   Honest: 0.2691  Compromised: 0.1659
+[DMTT Node 7] Round 25: collaborators → [3]
+[DMTT Node 3] Round 25: collaborators → [7]
+[DMTT Node 8] Round 25: collaborators → [9]
+[DMTT Node 6] Round 25: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 25: collaborators → [6, 9]
+[DMTT Node 9] Round 25: collaborators → [6, 2, 8]
+[DMTT Node 1] Round 25: collaborators → []
+[DMTT Node 5] Round 25: collaborators → [6]
+[DMTT Node 4] Round 25: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 25: collaborators → [3]
+[DMTT Node 0] Round 25: collaborators → []
+[Monitor] Round 25 (10/10 nodes): acc=0.2408 ± 0.1288
+[Monitor]   Honest: 0.2728  Compromised: 0.1659
+[DMTT Node 3] Round 26: collaborators → []
+[DMTT Node 7] Round 26: collaborators → [8]
+[DMTT Node 5] Round 26: collaborators → [6]
+[DMTT Node 8] Round 26: collaborators → [7]
+[DMTT Node 6] Round 26: collaborators → [9, 5, 2]
+[DMTT Node 2] Round 26: collaborators → [6, 9]
+[DMTT Node 9] Round 26: collaborators → [6, 2]
+[DMTT Node 1] Round 26: collaborators → []
+[DMTT Node 0] Round 26: collaborators → []
+[DMTT Node 4] Round 26: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 26: collaborators → [3]
+[Monitor] Round 26 (10/10 nodes): acc=0.2412 ± 0.1216
+[Monitor]   Honest: 0.2735  Compromised: 0.1659
+[DMTT Node 7] Round 27: collaborators → [8]
+[DMTT Node 8] Round 27: collaborators → [7]
+[DMTT Node 5] Round 27: collaborators → [6]
+[DMTT Node 2] Round 27: collaborators → [6, 9]
+[DMTT Node 6] Round 27: collaborators → [5, 2]
+[DMTT Node 9] Round 27: collaborators → [2]
+[DMTT Node 1] Round 27: collaborators → []
+[DMTT Node 4] Round 27: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 27: collaborators → [3]
+[DMTT Node 3] Round 27: collaborators → []
+[DMTT Node 0] Round 27: collaborators → []
+[Monitor] Round 27 (10/10 nodes): acc=0.2372 ± 0.1159
+[Monitor]   Honest: 0.2678  Compromised: 0.1659
+[DMTT Node 7] Round 28: collaborators → [8]
+[DMTT Node 5] Round 28: collaborators → [6]
+[DMTT Node 8] Round 28: collaborators → [7]
+[DMTT Node 6] Round 28: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 28: collaborators → [6, 2]
+[DMTT Node 2] Round 28: collaborators → [6, 9]
+[DMTT Node 4] Round 28: deadline — missing states from [3], claims from [3].
+[DMTT Node 0] Round 28: collaborators → []
+[DMTT Node 4] Round 28: collaborators → [3]
+[DMTT Node 1] Round 28: collaborators → []
+[DMTT Node 3] Round 28: collaborators → []
+[Monitor] Round 28 (10/10 nodes): acc=0.2349 ± 0.1195
+[Monitor]   Honest: 0.2645  Compromised: 0.1659
+[DMTT Node 5] Round 29: collaborators → [6]
+[DMTT Node 8] Round 29: collaborators → [7]
+[DMTT Node 7] Round 29: collaborators → [8]
+[DMTT Node 2] Round 29: collaborators → [6, 9]
+[DMTT Node 6] Round 29: collaborators → [9, 5, 2]
+[DMTT Node 9] Round 29: collaborators → [6, 2]
+[DMTT Node 0] Round 29: collaborators → []
+[DMTT Node 1] Round 29: collaborators → []
+[DMTT Node 3] Round 29: collaborators → []
+[DMTT Node 4] Round 29: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 29: collaborators → [3]
+[Monitor] Round 29 (10/10 nodes): acc=0.2370 ± 0.1189
+[Monitor]   Honest: 0.2675  Compromised: 0.1659
+[DMTT Node 7] Round 30: collaborators → [8]
+[DMTT Node 5] Round 30: collaborators → []
+[DMTT Node 8] Round 30: collaborators → [7]
+[DMTT Node 2] Round 30: collaborators → [9, 3]
+[DMTT Node 6] Round 30: collaborators → [9]
+[DMTT Node 9] Round 30: collaborators → [6, 2]
+[DMTT Node 4] Round 30: deadline — missing states from [3], claims from [3].
+[DMTT Node 3] Round 30: collaborators → [2]
+[DMTT Node 4] Round 30: collaborators → [5]
+[DMTT Node 1] Round 30: collaborators → []
+[DMTT Node 0] Round 30: collaborators → []
+[Monitor] Round 30 (10/10 nodes): acc=0.2400 ± 0.1185
+[Monitor]   Honest: 0.2718  Compromised: 0.1659
+[DMTT Node 7] Round 31: collaborators → [8]
+[DMTT Node 8] Round 31: collaborators → [7]
+[DMTT Node 3] Round 31: collaborators → [6, 2]
+[DMTT Node 6] Round 31: collaborators → [9, 3]
+[DMTT Node 2] Round 31: collaborators → [9, 3]
+[DMTT Node 9] Round 31: collaborators → [6, 2]
+[DMTT Node 4] Round 31: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 31: collaborators → [5]
+[DMTT Node 1] Round 31: collaborators → []
+[DMTT Node 0] Round 31: collaborators → []
+[DMTT Node 5] Round 31: collaborators → []
+[Monitor] Round 31 (10/10 nodes): acc=0.2349 ± 0.1195
+[Monitor]   Honest: 0.2645  Compromised: 0.1659
+[DMTT Node 7] Round 32: collaborators → [8]
+[DMTT Node 8] Round 32: collaborators → [7]
+[DMTT Node 3] Round 32: collaborators → [6, 5]
+[DMTT Node 6] Round 32: collaborators → [5, 3]
+[DMTT Node 2] Round 32: collaborators → [5]
+[DMTT Node 9] Round 32: collaborators → [0]
+[DMTT Node 0] Round 32: collaborators → [9]
+[DMTT Node 5] Round 32: collaborators → [6, 2, 3]
+[DMTT Node 1] Round 32: collaborators → []
+[DMTT Node 4] Round 32: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 32: collaborators → [5]
+[Monitor] Round 32 (10/10 nodes): acc=0.2370 ± 0.1172
+[Monitor]   Honest: 0.2674  Compromised: 0.1659
+[DMTT Node 7] Round 33: collaborators → [6]
+[DMTT Node 8] Round 33: collaborators → [9]
+[DMTT Node 6] Round 33: collaborators → [2, 7]
+[DMTT Node 2] Round 33: collaborators → [6, 3]
+[DMTT Node 3] Round 33: collaborators → [2]
+[DMTT Node 5] Round 33: collaborators → []
+[DMTT Node 9] Round 33: collaborators → [8]
+[DMTT Node 0] Round 33: collaborators → []
+[DMTT Node 4] Round 33: deadline — missing states from [5], claims from [5].
+[DMTT Node 1] Round 33: collaborators → []
+[DMTT Node 4] Round 33: collaborators → [5]
+[Monitor] Round 33 (10/10 nodes): acc=0.2134 ± 0.1105
+[Monitor]   Honest: 0.2641  Compromised: 0.0951
+[DMTT Node 7] Round 34: collaborators → [9]
+[DMTT Node 3] Round 34: collaborators → [2]
+[DMTT Node 6] Round 34: collaborators → [5]
+[DMTT Node 2] Round 34: collaborators → [3]
+[DMTT Node 9] Round 34: collaborators → [8, 7]
+[DMTT Node 8] Round 34: collaborators → [9]
+[DMTT Node 0] Round 34: collaborators → []
+[DMTT Node 1] Round 34: collaborators → []
+[DMTT Node 5] Round 34: collaborators → [6]
+[DMTT Node 4] Round 34: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 34: collaborators → [3]
+[Monitor] Round 34 (10/10 nodes): acc=0.1714 ± 0.1165
+[Monitor]   Honest: 0.2041  Compromised: 0.0951
+[DMTT Node 6] Round 35: collaborators → [5]
+[DMTT Node 5] Round 35: collaborators → [6]
+[DMTT Node 2] Round 35: collaborators → [3]
+[DMTT Node 3] Round 35: collaborators → [2]
+[DMTT Node 7] Round 35: collaborators → []
+[DMTT Node 8] Round 35: collaborators → [9]
+[DMTT Node 9] Round 35: collaborators → [8]
+[DMTT Node 0] Round 35: collaborators → []
+[DMTT Node 4] Round 35: deadline — missing states from [3], claims from [3].
+[DMTT Node 4] Round 35: collaborators → [7, 3]
+[DMTT Node 1] Round 35: collaborators → []
+[Monitor] Round 35 (10/10 nodes): acc=0.1598 ± 0.1137
+[Monitor]   Honest: 0.1876  Compromised: 0.0951
+[DMTT Node 6] Round 36: collaborators → [5]
+[DMTT Node 5] Round 36: collaborators → [6, 2]
+[DMTT Node 3] Round 36: collaborators → [2]
+[DMTT Node 2] Round 36: collaborators → [3, 5]
+[DMTT Node 8] Round 36: collaborators → [7]
+[DMTT Node 9] Round 36: collaborators → []
+[DMTT Node 4] Round 36: deadline — missing states from [3, 7], claims from [3, 7].
+[DMTT Node 7] Round 36: collaborators → [8]
+[DMTT Node 4] Round 36: collaborators → [5]
+[DMTT Node 1] Round 36: collaborators → []
+[DMTT Node 0] Round 36: collaborators → [9]
+[Monitor] Round 36 (10/10 nodes): acc=0.1699 ± 0.1165
+[Monitor]   Honest: 0.2020  Compromised: 0.0951
+[DMTT Node 6] Round 37: collaborators → [7]
+[DMTT Node 7] Round 37: collaborators → [6]
+[DMTT Node 8] Round 37: collaborators → [9]
+[DMTT Node 3] Round 37: collaborators → [2]
+[DMTT Node 2] Round 37: collaborators → [3, 5]
+[DMTT Node 5] Round 37: collaborators → [2]
+[DMTT Node 1] Round 37: collaborators → []
+[DMTT Node 0] Round 37: deadline — missing states from [9], claims from [9].
+[DMTT Node 0] Round 37: collaborators → []
+[DMTT Node 9] Round 37: collaborators → [8]
+[DMTT Node 4] Round 37: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 37: collaborators → [7]
+[Monitor] Round 37 (10/10 nodes): acc=0.1712 ± 0.1156
+[Monitor]   Honest: 0.2038  Compromised: 0.0951
+[DMTT Node 6] Round 38: collaborators → [5, 2, 7, 4]
+[DMTT Node 7] Round 38: collaborators → [6]
+[DMTT Node 5] Round 38: collaborators → [6]
+[DMTT Node 3] Round 38: collaborators → []
+[DMTT Node 2] Round 38: collaborators → [6]
+[DMTT Node 9] Round 38: collaborators → [8]
+[DMTT Node 8] Round 38: collaborators → [9]
+[DMTT Node 4] Round 38: deadline — missing states from [7], claims from [7].
+[DMTT Node 0] Round 38: collaborators → []
+[DMTT Node 4] Round 38: collaborators → [3, 6]
+[DMTT Node 1] Round 38: collaborators → []
+[Monitor] Round 38 (10/10 nodes): acc=0.1538 ± 0.0967
+[Monitor]   Honest: 0.1790  Compromised: 0.0951
+[DMTT Node 7] Round 39: collaborators → [2, 6]
+[DMTT Node 5] Round 39: collaborators → [6]
+[DMTT Node 2] Round 39: collaborators → [7, 6]
+[DMTT Node 6] Round 39: collaborators → [5, 2, 7]
+[DMTT Node 8] Round 39: collaborators → [9]
+[DMTT Node 9] Round 39: collaborators → [8]
+[DMTT Node 0] Round 39: collaborators → []
+[DMTT Node 4] Round 39: deadline — missing states from [3], claims from [3].
+[DMTT Node 1] Round 39: collaborators → []
+[DMTT Node 3] Round 39: collaborators → []
+[DMTT Node 4] Round 39: collaborators → [6, 3]
+[Monitor] Round 39 (10/10 nodes): acc=0.1604 ± 0.0645
+[Monitor]   Honest: 0.1682  Compromised: 0.1421
+[DMTT Node 5] Round 40: collaborators → []
+[DMTT Node 7] Round 40: collaborators → [6]
+[DMTT Node 2] Round 40: collaborators → []
+[DMTT Node 6] Round 40: collaborators → [3, 7]
+[DMTT Node 9] Round 40: collaborators → [8]
+[DMTT Node 8] Round 40: collaborators → [9]
+[DMTT Node 4] Round 40: deadline — missing states from [3, 6], claims from [3, 6].
+[DMTT Node 4] Round 40: collaborators → [5]
+[DMTT Node 1] Round 40: collaborators → [2]
+[DMTT Node 3] Round 40: collaborators → [6]
+[DMTT Node 0] Round 40: collaborators → []
+[Monitor] Round 40 (10/10 nodes): acc=0.1527 ± 0.0541
+[Monitor]   Honest: 0.1572  Compromised: 0.1421
+[DMTT Node 7] Round 41: collaborators → [8]
+[DMTT Node 3] Round 41: collaborators → [2]
+[DMTT Node 6] Round 41: collaborators → [9, 5]
+[DMTT Node 9] Round 41: collaborators → [6]
+[DMTT Node 8] Round 41: collaborators → [7]
+[DMTT Node 4] Round 41: deadline — missing states from [5], claims from [5].
+[DMTT Node 5] Round 41: collaborators → [6]
+[DMTT Node 1] Round 41: deadline — missing states from [2], claims from [2].
+[DMTT Node 4] Round 41: collaborators → [5]
+[DMTT Node 1] Round 41: collaborators → []
+[DMTT Node 0] Round 41: collaborators → []
+[DMTT Node 2] Round 41: collaborators → [3]
+[Monitor] Round 41 (10/10 nodes): acc=0.1376 ± 0.0392
+[Monitor]   Honest: 0.1357  Compromised: 0.1421
+[DMTT Node 7] Round 42: collaborators → [2]
+[DMTT Node 8] Round 42: collaborators → [9]
+[DMTT Node 5] Round 42: collaborators → [6]
+[DMTT Node 3] Round 42: collaborators → []
+[DMTT Node 2] Round 42: collaborators → [7]
+[DMTT Node 9] Round 42: collaborators → [8, 6]
+[DMTT Node 6] Round 42: collaborators → [9, 5]
+[DMTT Node 4] Round 42: deadline — missing states from [5], claims from [5].
+[DMTT Node 4] Round 42: collaborators → [3, 1]
+[DMTT Node 0] Round 42: collaborators → []
+[DMTT Node 1] Round 42: collaborators → [4]
+[Monitor] Round 42 (10/10 nodes): acc=0.1191 ± 0.0383
+[Monitor]   Honest: 0.1092  Compromised: 0.1421
+[DMTT Node 1] Round 43: collaborators → []
+[DMTT Node 5] Round 43: collaborators → [3]
+[DMTT Node 7] Round 43: collaborators → [2, 6]
+[DMTT Node 2] Round 43: collaborators → [9, 7]
+[DMTT Node 8] Round 43: collaborators → [9]
+[DMTT Node 6] Round 43: collaborators → [7]
+[DMTT Node 9] Round 43: collaborators → [2, 8]
+[DMTT Node 0] Round 43: collaborators → []
+[DMTT Node 4] Round 43: deadline — missing states from [3], claims from [3].
+[DMTT Node 3] Round 43: collaborators → [5]
+[DMTT Node 4] Round 43: collaborators → [5]
+[Monitor] Round 43 (10/10 nodes): acc=0.1024 ± 0.0582
+[Monitor]   Honest: 0.1220  Compromised: 0.0567
+[DMTT Node 6] Round 44: collaborators → [5]
+[DMTT Node 3] Round 44: collaborators → [2, 8]
+[DMTT Node 5] Round 44: collaborators → [6]
+[DMTT Node 7] Round 44: collaborators → [1]
+[DMTT Node 8] Round 44: collaborators → [3]
+[DMTT Node 2] Round 44: collaborators → [3]
+[DMTT Node 9] Round 44: collaborators → [4]
+[DMTT Node 4] Round 44: deadline — missing states from [5], claims from [5].
+[DMTT Node 0] Round 44: collaborators → []
+[DMTT Node 4] Round 44: collaborators → [9]
+[DMTT Node 1] Round 44: collaborators → [7]
+[Monitor] Round 44 (10/10 nodes): acc=0.0993 ± 0.0551
+[Monitor]   Honest: 0.1175  Compromised: 0.0567
+[DMTT Node 1] Round 45: collaborators → [7]
+[DMTT Node 6] Round 45: collaborators → [7]
+[DMTT Node 7] Round 45: collaborators → [6]
+[DMTT Node 5] Round 45: collaborators → [3, 8]
+[DMTT Node 8] Round 45: collaborators → [5]
+[DMTT Node 2] Round 45: collaborators → [9]
+[DMTT Node 3] Round 45: collaborators → [5]
+[DMTT Node 4] Round 45: collaborators → [2]
+[DMTT Node 9] Round 45: collaborators → [2]
+[DMTT Node 0] Round 45: collaborators → []
+[Monitor] Round 45 (10/10 nodes): acc=0.1086 ± 0.0558
+[Monitor]   Honest: 0.1309  Compromised: 0.0567
+[DMTT Node 6] Round 46: collaborators → [7]
+[DMTT Node 3] Round 46: collaborators → [5]
+[DMTT Node 7] Round 46: collaborators → [6]
+[DMTT Node 8] Round 46: collaborators → [5]
+[DMTT Node 5] Round 46: collaborators → [3, 8]
+[DMTT Node 2] Round 46: collaborators → [9]
+[DMTT Node 9] Round 46: collaborators → [2]
+[DMTT Node 4] Round 46: deadline — missing states from [2], claims from [2].
+[DMTT Node 1] Round 46: deadline — missing states from [7], claims from [7].
+[DMTT Node 4] Round 46: collaborators → [2]
+[DMTT Node 1] Round 46: collaborators → []
+[DMTT Node 0] Round 46: collaborators → []
+[Monitor] Round 46 (10/10 nodes): acc=0.1317 ± 0.0950
+[Monitor]   Honest: 0.1638  Compromised: 0.0567
+[DMTT Node 7] Round 47: collaborators → [6]
+[DMTT Node 3] Round 47: collaborators → [5]
+[DMTT Node 6] Round 47: collaborators → [7]
+[DMTT Node 8] Round 47: collaborators → [5]
+[DMTT Node 5] Round 47: collaborators → [3, 8]
+[DMTT Node 2] Round 47: collaborators → [9]
+[DMTT Node 9] Round 47: collaborators → [2]
+[DMTT Node 1] Round 47: collaborators → [7]
+[DMTT Node 4] Round 47: deadline — missing states from [2], claims from [2].
+[DMTT Node 0] Round 47: collaborators → []
+[DMTT Node 4] Round 47: collaborators → [9, 2]
+[Monitor] Round 47 (10/10 nodes): acc=0.1138 ± 0.0872
+[Monitor]   Honest: 0.1383  Compromised: 0.0567
+[DMTT Node 8] Round 48: collaborators → [5]
+[DMTT Node 7] Round 48: collaborators → [6]
+[DMTT Node 3] Round 48: collaborators → [5]
+[DMTT Node 6] Round 48: collaborators → [7]
+[DMTT Node 5] Round 48: collaborators → [3, 8]
+[DMTT Node 9] Round 48: collaborators → [2]
+[DMTT Node 2] Round 48: collaborators → [9]
+[DMTT Node 1] Round 48: deadline — missing states from [7], claims from [7].
+[DMTT Node 1] Round 48: collaborators → []
+[DMTT Node 0] Round 48: collaborators → []
+[DMTT Node 4] Round 48: deadline — missing states from [2, 9], claims from [2, 9].
+[DMTT Node 4] Round 48: collaborators → [9, 2]
+[Monitor] Round 48 (10/10 nodes): acc=0.1130 ± 0.0835
+[Monitor]   Honest: 0.1371  Compromised: 0.0567
+[DMTT Node 6] Round 49: collaborators → [7]
+[DMTT Node 3] Round 49: collaborators → [5, 8]
+[DMTT Node 7] Round 49: collaborators → [6]
+[DMTT Node 8] Round 49: collaborators → [5, 3]
+[DMTT Node 5] Round 49: collaborators → [3, 8]
+[DMTT Node 9] Round 49: collaborators → [2]
+[DMTT Node 2] Round 49: collaborators → [9]
+[DMTT Node 4] Round 49: deadline — missing states from [2, 9], claims from [2, 9].
+[DMTT Node 0] Round 49: collaborators → []
+[DMTT Node 4] Round 49: collaborators → [9]
+[DMTT Node 1] Round 49: collaborators → [7]
+[Monitor] Round 49 (10/10 nodes): acc=0.1156 ± 0.0859
+[Monitor]   Honest: 0.1409  Compromised: 0.0567
+[DMTT Node 6] Round 50: collaborators → [7]
+[DMTT Node 7] Round 50: collaborators → [6]
+[DMTT Node 8] Round 50: collaborators → [5]
+[DMTT Node 5] Round 50: collaborators → [3, 8]
+[DMTT Node 3] Round 50: collaborators → [5]
+[DMTT Node 2] Round 50: collaborators → [9]
+[DMTT Node 9] Round 50: collaborators → [2]
+[DMTT Node 4] Round 50: deadline — missing states from [9], claims from [9].
+[DMTT Node 4] Round 50: collaborators → [5]
+[DMTT Node 0] Round 50: collaborators → []
+[DMTT Node 1] Round 50: deadline — missing states from [7], claims from [7].
+[DMTT Node 1] Round 50: collaborators → []
+[Monitor] Round 50 (10/10 nodes): acc=0.1146 ± 0.0842
+[Monitor]   Honest: 0.1394  Compromised: 0.0567
+                                   Training Results                                   
+┏━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┓
+┃ Round ┃ Mean Acc ┃ Std Acc ┃ Honest Acc ┃ Comp. Acc ┃ Vacuity ┃ Entropy ┃ Strength ┃
+┡━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━┩
+│ 1     │ 0.3473   │ 0.2015  │ 0.3355     │ 0.3750    │ nan     │ nan     │ nan      │
+│ 2     │ 0.5125   │ 0.2511  │ 0.5715     │ 0.3750    │ nan     │ nan     │ nan      │
+│ 3     │ 0.4104   │ 0.2255  │ 0.4012     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 4     │ 0.3125   │ 0.2268  │ 0.2613     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 5     │ 0.2765   │ 0.2152  │ 0.2098     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 6     │ 0.2899   │ 0.2147  │ 0.2290     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 7     │ 0.3224   │ 0.2251  │ 0.2755     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 8     │ 0.3211   │ 0.2236  │ 0.2736     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 9     │ 0.3170   │ 0.2216  │ 0.2678     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 10    │ 0.3179   │ 0.2130  │ 0.2690     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 11    │ 0.3196   │ 0.2142  │ 0.2714     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 12    │ 0.3218   │ 0.2049  │ 0.2746     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 13    │ 0.3143   │ 0.2046  │ 0.2639     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 14    │ 0.3114   │ 0.2037  │ 0.2598     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 15    │ 0.3133   │ 0.2037  │ 0.2624     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 16    │ 0.3116   │ 0.2034  │ 0.2600     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 17    │ 0.3128   │ 0.2019  │ 0.2617     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 18    │ 0.3146   │ 0.2023  │ 0.2643     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 19    │ 0.3170   │ 0.2029  │ 0.2677     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 20    │ 0.3172   │ 0.2009  │ 0.2680     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 21    │ 0.3184   │ 0.2014  │ 0.2697     │ 0.4320    │ nan     │ nan     │ nan      │
+│ 22    │ 0.2461   │ 0.1353  │ 0.2461     │ 0.2462    │ 0.0842  │ 1.0868  │ 5119.17  │
+│ 23    │ 0.2831   │ 0.1214  │ 0.2989     │ 0.2462    │ 0.1290  │ 1.0609  │ 794.29   │
+│ 24    │ 0.2381   │ 0.1187  │ 0.2691     │ 0.1659    │ 0.1363  │ 1.0911  │ 13638.18 │
+│ 25    │ 0.2408   │ 0.1288  │ 0.2728     │ 0.1659    │ 0.1085  │ 1.0827  │ 13634.30 │
+│ 26    │ 0.2412   │ 0.1216  │ 0.2735     │ 0.1659    │ 0.1775  │ 1.1670  │ 13628.81 │
+│ 27    │ 0.2372   │ 0.1159  │ 0.2678     │ 0.1659    │ 0.1843  │ 1.1730  │ 13628.29 │
+│ 28    │ 0.2349   │ 0.1195  │ 0.2645     │ 0.1659    │ 0.1863  │ 1.1701  │ 13628.34 │
+│ 29    │ 0.2370   │ 0.1189  │ 0.2675     │ 0.1659    │ 0.1881  │ 1.1724  │ 13628.31 │
+│ 30    │ 0.2400   │ 0.1185  │ 0.2718     │ 0.1659    │ 0.1945  │ 1.1722  │ 13627.31 │
+│ 31    │ 0.2349   │ 0.1195  │ 0.2645     │ 0.1659    │ 0.1983  │ 1.1854  │ 13625.21 │
+│ 32    │ 0.2370   │ 0.1172  │ 0.2674     │ 0.1659    │ 0.2021  │ 1.1896  │ 13624.46 │
+│ 33    │ 0.2134   │ 0.1105  │ 0.2641     │ 0.0951    │ 0.1782  │ 1.1681  │ 19193.30 │
+│ 34    │ 0.1714   │ 0.1165  │ 0.2041     │ 0.0951    │ 0.1421  │ 1.1220  │ 7791.85  │
+│ 35    │ 0.1598   │ 0.1137  │ 0.1876     │ 0.0951    │ 0.1698  │ 1.1170  │ 7794.51  │
+│ 36    │ 0.1699   │ 0.1165  │ 0.2020     │ 0.0951    │ 0.1401  │ 1.1056  │ 7797.10  │
+│ 37    │ 0.1712   │ 0.1156  │ 0.2038     │ 0.0951    │ 0.1353  │ 1.0963  │ 7794.77  │
+│ 38    │ 0.1538   │ 0.0967  │ 0.1790     │ 0.0951    │ 0.2138  │ 1.1619  │ 7787.80  │
+│ 39    │ 0.1604   │ 0.0645  │ 0.1682     │ 0.1421    │ 0.2112  │ 1.1551  │ 1052.30  │
+│ 40    │ 0.1527   │ 0.0541  │ 0.1572     │ 0.1421    │ 0.1664  │ 1.0813  │ 935.02   │
+│ 41    │ 0.1376   │ 0.0392  │ 0.1357     │ 0.1421    │ 0.1926  │ 1.1058  │ 936.25   │
+│ 42    │ 0.1191   │ 0.0383  │ 0.1092     │ 0.1421    │ 0.2679  │ 1.1312  │ 920.17   │
+│ 43    │ 0.1024   │ 0.0582  │ 0.1220     │ 0.0567    │ 0.2625  │ 1.1076  │ 17254.12 │
+│ 44    │ 0.0993   │ 0.0551  │ 0.1175     │ 0.0567    │ 0.2657  │ 1.1125  │ 17254.27 │
+│ 45    │ 0.1086   │ 0.0558  │ 0.1309     │ 0.0567    │ 0.2120  │ 1.1112  │ 15919.34 │
+│ 46    │ 0.1317   │ 0.0950  │ 0.1638     │ 0.0567    │ 0.1735  │ 0.9987  │ 1095.44  │
+│ 47    │ 0.1138   │ 0.0872  │ 0.1383     │ 0.0567    │ 0.1472  │ 1.0794  │ 1117.18  │
+│ 48    │ 0.1130   │ 0.0835  │ 0.1371     │ 0.0567    │ 0.1529  │ 1.0884  │ 1117.73  │
+│ 49    │ 0.1156   │ 0.0859  │ 0.1409     │ 0.0567    │ 0.1576  │ 1.0916  │ 1116.44  │
+│ 50    │ 0.1146   │ 0.0842  │ 0.1394     │ 0.0567    │ 0.1629  │ 1.0970  │ 1116.56  │
+└───────┴──────────┴─────────┴────────────┴───────────┴─────────┴─────────┴──────────┘
+
+Uncertainty Metrics:
+  • Vacuity: epistemic uncertainty — lower is more confident
+  • Entropy: aleatoric uncertainty — lower is more decisive
+  • Strength: Dirichlet strength — higher means more evidence
+Results written → /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/results/C3-DMTT-byz30-s123.parquet
+
+✓ Distributed training complete

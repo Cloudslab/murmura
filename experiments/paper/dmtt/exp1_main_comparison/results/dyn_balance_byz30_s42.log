@@ -1,0 +1,208 @@
+Loading config: /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/dyn_balance/dyn_balance_byz30_s42.yaml
+
+Experiment: DynBALANCE-byz30-s42
+  Backend:    distributed (ZMQ IPC)
+  Rounds:     50
+  Topology:   fully (10 nodes)
+  Aggregation:balance
+  Attack: topology_liar (30% nodes)
+
+Launching distributed processes…
+
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[DistributedRunner] run_id=ac2d7403  t_start=1009056.235  (startup_grace=5.0s)
+[Monitor] Round 1 (10/10 nodes): acc=0.3228 ± 0.1915
+[Monitor]   Honest: 0.3693  Compromised: 0.2144
+[Monitor] Round 2 (10/10 nodes): acc=0.4543 ± 0.3023
+[Monitor]   Honest: 0.4926  Compromised: 0.3650
+[Monitor] Round 3 (10/10 nodes): acc=0.4725 ± 0.3040
+[Monitor]   Honest: 0.5316  Compromised: 0.3346
+[Monitor] Round 4 (10/10 nodes): acc=0.4900 ± 0.3052
+[Monitor]   Honest: 0.5464  Compromised: 0.3584
+[Monitor] Round 5 (10/10 nodes): acc=0.4024 ± 0.3083
+[Monitor]   Honest: 0.4262  Compromised: 0.3469
+[Monitor] Round 6 (10/10 nodes): acc=0.4541 ± 0.2717
+[Monitor]   Honest: 0.4974  Compromised: 0.3532
+[Monitor] Round 7 (10/10 nodes): acc=0.4294 ± 0.2800
+[Monitor]   Honest: 0.5133  Compromised: 0.2336
+[Monitor] Round 8 (10/10 nodes): acc=0.3225 ± 0.2169
+[Monitor]   Honest: 0.3572  Compromised: 0.2416
+[Monitor] Round 9 (10/10 nodes): acc=0.2808 ± 0.2558
+[Monitor]   Honest: 0.3094  Compromised: 0.2141
+[Monitor] Round 10 (10/10 nodes): acc=0.1406 ± 0.1407
+[Monitor]   Honest: 0.1095  Compromised: 0.2132
+[Monitor] Round 11 (10/10 nodes): acc=0.2012 ± 0.1374
+[Monitor]   Honest: 0.1675  Compromised: 0.2798
+[Monitor] Round 12 (10/10 nodes): acc=0.2100 ± 0.1358
+[Monitor]   Honest: 0.1704  Compromised: 0.3024
+[Monitor] Round 13 (10/10 nodes): acc=0.2106 ± 0.1503
+[Monitor]   Honest: 0.2079  Compromised: 0.2170
+[Monitor] Round 14 (10/10 nodes): acc=0.2094 ± 0.1486
+[Monitor]   Honest: 0.1991  Compromised: 0.2333
+[Monitor] Round 15 (10/10 nodes): acc=0.2957 ± 0.1797
+[Monitor]   Honest: 0.3325  Compromised: 0.2098
+[Monitor] Round 16 (10/10 nodes): acc=0.2777 ± 0.1492
+[Monitor]   Honest: 0.2656  Compromised: 0.3059
+[Monitor] Round 17 (10/10 nodes): acc=0.2421 ± 0.1442
+[Monitor]   Honest: 0.2388  Compromised: 0.2499
+[Monitor] Round 18 (10/10 nodes): acc=0.3109 ± 0.1507
+[Monitor]   Honest: 0.3526  Compromised: 0.2135
+[Monitor] Round 19 (10/10 nodes): acc=0.2778 ± 0.1600
+[Monitor]   Honest: 0.3121  Compromised: 0.1977
+[Monitor] Round 20 (10/10 nodes): acc=0.3062 ± 0.1459
+[Monitor]   Honest: 0.3408  Compromised: 0.2256
+[Monitor] Round 21 (10/10 nodes): acc=0.2524 ± 0.1898
+[Monitor]   Honest: 0.2798  Compromised: 0.1886
+[Monitor] Round 22 (10/10 nodes): acc=0.2274 ± 0.1661
+[Monitor]   Honest: 0.2351  Compromised: 0.2095
+[Monitor] Round 23 (10/10 nodes): acc=0.2907 ± 0.1316
+[Monitor]   Honest: 0.3081  Compromised: 0.2503
+[Monitor] Round 24 (10/10 nodes): acc=0.2803 ± 0.2163
+[Monitor]   Honest: 0.2632  Compromised: 0.3202
+[Monitor] Round 25 (10/10 nodes): acc=0.2680 ± 0.1421
+[Monitor]   Honest: 0.2624  Compromised: 0.2811
+[Monitor] Round 26 (10/10 nodes): acc=0.2444 ± 0.2021
+[Monitor]   Honest: 0.3014  Compromised: 0.1114
+[Monitor] Round 27 (10/10 nodes): acc=0.2628 ± 0.2072
+[Monitor]   Honest: 0.3336  Compromised: 0.0977
+[Monitor] Round 28 (10/10 nodes): acc=0.2691 ± 0.1982
+[Monitor]   Honest: 0.3264  Compromised: 0.1355
+[Monitor] Round 29 (10/10 nodes): acc=0.2402 ± 0.1894
+[Monitor]   Honest: 0.3129  Compromised: 0.0705
+[Monitor] Round 30 (10/10 nodes): acc=0.2431 ± 0.1991
+[Monitor]   Honest: 0.2592  Compromised: 0.2057
+[Monitor] Round 31 (10/10 nodes): acc=0.2902 ± 0.1714
+[Monitor]   Honest: 0.2954  Compromised: 0.2782
+[Monitor] Round 32 (10/10 nodes): acc=0.2206 ± 0.1271
+[Monitor]   Honest: 0.1816  Compromised: 0.3116
+[Monitor] Round 33 (10/10 nodes): acc=0.2538 ± 0.2018
+[Monitor]   Honest: 0.2969  Compromised: 0.1532
+[Monitor] Round 34 (10/10 nodes): acc=0.1894 ± 0.1792
+[Monitor]   Honest: 0.1721  Compromised: 0.2297
+[Monitor] Round 35 (10/10 nodes): acc=0.2019 ± 0.1700
+[Monitor]   Honest: 0.1918  Compromised: 0.2255
+[Monitor] Round 36 (10/10 nodes): acc=0.1612 ± 0.1923
+[Monitor]   Honest: 0.1692  Compromised: 0.1423
+[Monitor] Round 37 (10/10 nodes): acc=0.1920 ± 0.1653
+[Monitor]   Honest: 0.2228  Compromised: 0.1200
+[Monitor] Round 38 (10/10 nodes): acc=0.1914 ± 0.1391
+[Monitor]   Honest: 0.2154  Compromised: 0.1352
+[Monitor] Round 39 (10/10 nodes): acc=0.1825 ± 0.1392
+[Monitor]   Honest: 0.2040  Compromised: 0.1325
+[Monitor] Round 40 (10/10 nodes): acc=0.2492 ± 0.2018
+[Monitor]   Honest: 0.2977  Compromised: 0.1363
+[Monitor] Round 41 (10/10 nodes): acc=0.1302 ± 0.1357
+[Monitor]   Honest: 0.1416  Compromised: 0.1037
+[Monitor] Round 42 (10/10 nodes): acc=0.1495 ± 0.1244
+[Monitor]   Honest: 0.1558  Compromised: 0.1347
+[Monitor] Round 43 (10/10 nodes): acc=0.1599 ± 0.1397
+[Monitor]   Honest: 0.1525  Compromised: 0.1770
+[Monitor] Round 44 (10/10 nodes): acc=0.1848 ± 0.1891
+[Monitor]   Honest: 0.1972  Compromised: 0.1557
+[Monitor] Round 45 (10/10 nodes): acc=0.1390 ± 0.1247
+[Monitor]   Honest: 0.0895  Compromised: 0.2545
+[Monitor] Round 46 (10/10 nodes): acc=0.1355 ± 0.1065
+[Monitor]   Honest: 0.1129  Compromised: 0.1883
+[Monitor] Round 47 (10/10 nodes): acc=0.1589 ± 0.1191
+[Monitor]   Honest: 0.1190  Compromised: 0.2519
+[Monitor] Round 48 (10/10 nodes): acc=0.1627 ± 0.1174
+[Monitor]   Honest: 0.1180  Compromised: 0.2671
+[Monitor] Round 49 (10/10 nodes): acc=0.1517 ± 0.1354
+[Monitor]   Honest: 0.1111  Compromised: 0.2464
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+[Monitor] Round 50 (10/10 nodes): acc=0.1569 ± 0.1197
+[Monitor]   Honest: 0.1138  Compromised: 0.2575
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+                                   Training Results                                    
+┏━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Round ┃ Mean Acc ┃ Std Acc ┃ Honest Acc ┃ Comp. Acc ┃ Vacuity ┃ Entropy ┃ Strength  ┃
+┡━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
+│ 1     │ 0.3228   │ 0.1915  │ 0.3693     │ 0.2144    │ nan     │ nan     │ nan       │
+│ 2     │ 0.4543   │ 0.3023  │ 0.4926     │ 0.3650    │ nan     │ nan     │ nan       │
+│ 3     │ 0.4725   │ 0.3040  │ 0.5316     │ 0.3346    │ nan     │ nan     │ nan       │
+│ 4     │ 0.4900   │ 0.3052  │ 0.5464     │ 0.3584    │ nan     │ nan     │ nan       │
+│ 5     │ 0.4024   │ 0.3083  │ 0.4262     │ 0.3469    │ nan     │ nan     │ nan       │
+│ 6     │ 0.4541   │ 0.2717  │ 0.4974     │ 0.3532    │ nan     │ nan     │ nan       │
+│ 7     │ 0.4294   │ 0.2800  │ 0.5133     │ 0.2336    │ nan     │ nan     │ nan       │
+│ 8     │ 0.3225   │ 0.2169  │ 0.3572     │ 0.2416    │ nan     │ nan     │ nan       │
+│ 9     │ 0.2808   │ 0.2558  │ 0.3094     │ 0.2141    │ nan     │ nan     │ nan       │
+│ 10    │ 0.1406   │ 0.1407  │ 0.1095     │ 0.2132    │ nan     │ nan     │ nan       │
+│ 11    │ 0.2012   │ 0.1374  │ 0.1675     │ 0.2798    │ nan     │ nan     │ nan       │
+│ 12    │ 0.2100   │ 0.1358  │ 0.1704     │ 0.3024    │ nan     │ nan     │ nan       │
+│ 13    │ 0.2106   │ 0.1503  │ 0.2079     │ 0.2170    │ nan     │ nan     │ nan       │
+│ 14    │ 0.2094   │ 0.1486  │ 0.1991     │ 0.2333    │ nan     │ nan     │ nan       │
+│ 15    │ 0.2957   │ 0.1797  │ 0.3325     │ 0.2098    │ nan     │ nan     │ nan       │
+│ 16    │ 0.2777   │ 0.1492  │ 0.2656     │ 0.3059    │ nan     │ nan     │ nan       │
+│ 17    │ 0.2421   │ 0.1442  │ 0.2388     │ 0.2499    │ nan     │ nan     │ nan       │
+│ 18    │ 0.3109   │ 0.1507  │ 0.3526     │ 0.2135    │ nan     │ nan     │ nan       │
+│ 19    │ 0.2778   │ 0.1600  │ 0.3121     │ 0.1977    │ nan     │ nan     │ nan       │
+│ 20    │ 0.3062   │ 0.1459  │ 0.3408     │ 0.2256    │ nan     │ nan     │ nan       │
+│ 21    │ 0.2524   │ 0.1898  │ 0.2798     │ 0.1886    │ nan     │ nan     │ nan       │
+│ 22    │ 0.2274   │ 0.1661  │ 0.2351     │ 0.2095    │ nan     │ nan     │ nan       │
+│ 23    │ 0.2907   │ 0.1316  │ 0.3081     │ 0.2503    │ nan     │ nan     │ nan       │
+│ 24    │ 0.2803   │ 0.2163  │ 0.2632     │ 0.3202    │ 0.1674  │ 0.9748  │ 1015.40   │
+│ 25    │ 0.2680   │ 0.1421  │ 0.2624     │ 0.2811    │ 0.2385  │ 1.0889  │ 1243.83   │
+│ 26    │ 0.2444   │ 0.2021  │ 0.3014     │ 0.1114    │ 0.1966  │ 1.0799  │ 2830.84   │
+│ 27    │ 0.2628   │ 0.2072  │ 0.3336     │ 0.0977    │ 0.1718  │ 1.0163  │ 3427.70   │
+│ 28    │ 0.2691   │ 0.1982  │ 0.3264     │ 0.1355    │ 0.1713  │ 0.9216  │ 4081.46   │
+│ 29    │ 0.2402   │ 0.1894  │ 0.3129     │ 0.0705    │ 0.1985  │ 0.9723  │ 3028.85   │
+│ 30    │ 0.2431   │ 0.1991  │ 0.2592     │ 0.2057    │ 0.2900  │ 1.1427  │ 4477.76   │
+│ 31    │ 0.2902   │ 0.1714  │ 0.2954     │ 0.2782    │ 0.2375  │ 1.1166  │ 9514.30   │
+│ 32    │ 0.2206   │ 0.1271  │ 0.1816     │ 0.3116    │ 0.2338  │ 1.0097  │ 13530.38  │
+│ 33    │ 0.2538   │ 0.2018  │ 0.2969     │ 0.1532    │ 0.1047  │ 0.8165  │ 15091.44  │
+│ 34    │ 0.1894   │ 0.1792  │ 0.1721     │ 0.2297    │ 0.0670  │ 0.7039  │ 5790.84   │
+│ 35    │ 0.2019   │ 0.1700  │ 0.1918     │ 0.2255    │ 0.0478  │ 0.6986  │ 15452.05  │
+│ 36    │ 0.1612   │ 0.1923  │ 0.1692     │ 0.1423    │ 0.0333  │ 0.6407  │ 16424.96  │
+│ 37    │ 0.1920   │ 0.1653  │ 0.2228     │ 0.1200    │ 0.0410  │ 0.7008  │ 24949.29  │
+│ 38    │ 0.1914   │ 0.1391  │ 0.2154     │ 0.1352    │ 0.0262  │ 0.6652  │ 27554.82  │
+│ 39    │ 0.1825   │ 0.1392  │ 0.2040     │ 0.1325    │ 0.0214  │ 0.7241  │ 43649.52  │
+│ 40    │ 0.2492   │ 0.2018  │ 0.2977     │ 0.1363    │ 0.0149  │ 0.6467  │ 33837.20  │
+│ 41    │ 0.1302   │ 0.1357  │ 0.1416     │ 0.1037    │ 0.0187  │ 0.7565  │ 26091.04  │
+│ 42    │ 0.1495   │ 0.1244  │ 0.1558     │ 0.1347    │ 0.0136  │ 0.7602  │ 59269.52  │
+│ 43    │ 0.1599   │ 0.1397  │ 0.1525     │ 0.1770    │ 0.0141  │ 0.7272  │ 54636.07  │
+│ 44    │ 0.1848   │ 0.1891  │ 0.1972     │ 0.1557    │ 0.0128  │ 0.9446  │ 105089.49 │
+│ 45    │ 0.1390   │ 0.1247  │ 0.0895     │ 0.2545    │ 0.0315  │ 0.7752  │ 93847.82  │
+│ 46    │ 0.1355   │ 0.1065  │ 0.1129     │ 0.1883    │ 0.0099  │ 0.8584  │ 157995.00 │
+│ 47    │ 0.1589   │ 0.1191  │ 0.1190     │ 0.2519    │ 0.0117  │ 0.8767  │ 154637.41 │
+│ 48    │ 0.1627   │ 0.1174  │ 0.1180     │ 0.2671    │ 0.0122  │ 0.9110  │ 272961.87 │
+│ 49    │ 0.1517   │ 0.1354  │ 0.1111     │ 0.2464    │ 0.0109  │ 0.9445  │ 395540.79 │
+│ 50    │ 0.1569   │ 0.1197  │ 0.1138     │ 0.2575    │ 0.0121  │ 0.9306  │ 525560.58 │
+└───────┴──────────┴─────────┴────────────┴───────────┴─────────┴─────────┴───────────┘
+
+Uncertainty Metrics:
+  • Vacuity: epistemic uncertainty — lower is more confident
+  • Entropy: aleatoric uncertainty — lower is more decisive
+  • Strength: Dirichlet strength — higher means more evidence
+Results written → /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/results/DynBALANCE-byz30-s42.parquet
+
+✓ Distributed training complete

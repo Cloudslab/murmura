@@ -1,0 +1,334 @@
+Loading config: /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/c1_static_fedavg/c1_static_byz30_s42.yaml
+Device: cuda
+
+Experiment: C1-StaticFedAvg-byz30-s42
+  Backend:    simulation
+  Rounds:     50
+  Topology:   fully (10 nodes)
+  Aggregation:fedavg
+  Attack: topology_liar (30% nodes)
+
+Loading dataset: wearables.uci_har
+Loading model: examples.wearables.uci_har
+Using evidential deep learning (EDL)
+
+Creating network…
+Gaussian Attack: Compromised 3/10 nodes
+  Compromised nodes: [0, 1, 4]
+  Noise std: 10.0
+
+Starting training…
+
+
+=== Round 1/50 ===
+Round 1: Mean Accuracy = 0.1393 ± 0.1730
+  Honest: 0.1024, Compromised: 0.2253
+  Uncertainty: Vacuity=nan, Entropy=nan, Strength=nan
+
+=== Round 2/50 ===
+Round 2: Mean Accuracy = 0.1822 ± 0.1545
+  Honest: 0.1576, Compromised: 0.2397
+  Uncertainty: Vacuity=0.0121, Entropy=0.9548, Strength=718.66
+
+=== Round 3/50 ===
+Round 3: Mean Accuracy = 0.2405 ± 0.1702
+  Honest: 0.3140, Compromised: 0.0691
+  Uncertainty: Vacuity=0.0089, Entropy=1.2681, Strength=817.97
+
+=== Round 4/50 ===
+Round 4: Mean Accuracy = 0.0892 ± 0.1006
+  Honest: 0.0593, Compromised: 0.1591
+  Uncertainty: Vacuity=0.0087, Entropy=1.0092, Strength=754.64
+
+=== Round 5/50 ===
+Round 5: Mean Accuracy = 0.0964 ± 0.0870
+  Honest: 0.0589, Compromised: 0.1839
+  Uncertainty: Vacuity=0.0108, Entropy=1.0667, Strength=600.83
+
+=== Round 6/50 ===
+Round 6: Mean Accuracy = 0.3553 ± 0.2756
+  Honest: 0.4126, Compromised: 0.2216
+  Uncertainty: Vacuity=0.0102, Entropy=0.9792, Strength=673.86
+
+=== Round 7/50 ===
+Round 7: Mean Accuracy = 0.1491 ± 0.1217
+  Honest: 0.1642, Compromised: 0.1138
+  Uncertainty: Vacuity=0.0179, Entropy=0.9818, Strength=503.45
+
+=== Round 8/50 ===
+Round 8: Mean Accuracy = 0.0304 ± 0.0430
+  Honest: 0.0265, Compromised: 0.0396
+  Uncertainty: Vacuity=0.0077, Entropy=0.8971, Strength=840.43
+
+=== Round 9/50 ===
+Round 9: Mean Accuracy = 0.1059 ± 0.0633
+  Honest: 0.1003, Compromised: 0.1189
+  Uncertainty: Vacuity=0.0084, Entropy=1.0095, Strength=846.24
+
+=== Round 10/50 ===
+Round 10: Mean Accuracy = 0.3414 ± 0.1701
+  Honest: 0.3547, Compromised: 0.3105
+  Uncertainty: Vacuity=0.0127, Entropy=0.7988, Strength=615.11
+
+=== Round 11/50 ===
+Round 11: Mean Accuracy = 0.2175 ± 0.1276
+  Honest: 0.2095, Compromised: 0.2362
+  Uncertainty: Vacuity=0.0279, Entropy=0.7431, Strength=470.40
+
+=== Round 12/50 ===
+Round 12: Mean Accuracy = 0.1734 ± 0.1323
+  Honest: 0.1532, Compromised: 0.2204
+  Uncertainty: Vacuity=0.0081, Entropy=0.6692, Strength=922.34
+
+=== Round 13/50 ===
+Round 13: Mean Accuracy = 0.2167 ± 0.0732
+  Honest: 0.2294, Compromised: 0.1872
+  Uncertainty: Vacuity=0.0059, Entropy=1.1454, Strength=1079.34
+
+=== Round 14/50 ===
+Round 14: Mean Accuracy = 0.1701 ± 0.1024
+  Honest: 0.1805, Compromised: 0.1461
+  Uncertainty: Vacuity=0.0045, Entropy=1.0579, Strength=1400.91
+
+=== Round 15/50 ===
+Round 15: Mean Accuracy = 0.2204 ± 0.0967
+  Honest: 0.2301, Compromised: 0.1978
+  Uncertainty: Vacuity=0.0053, Entropy=1.0689, Strength=1249.20
+
+=== Round 16/50 ===
+Round 16: Mean Accuracy = 0.1913 ± 0.0765
+  Honest: 0.1787, Compromised: 0.2209
+  Uncertainty: Vacuity=0.0046, Entropy=0.9802, Strength=1521.59
+
+=== Round 17/50 ===
+Round 17: Mean Accuracy = 0.1941 ± 0.1112
+  Honest: 0.1652, Compromised: 0.2615
+  Uncertainty: Vacuity=0.0058, Entropy=0.7420, Strength=1188.50
+
+=== Round 18/50 ===
+Round 18: Mean Accuracy = 0.2299 ± 0.1768
+  Honest: 0.2618, Compromised: 0.1554
+  Uncertainty: Vacuity=0.0051, Entropy=0.7568, Strength=1779.80
+
+=== Round 19/50 ===
+Round 19: Mean Accuracy = 0.2428 ± 0.1322
+  Honest: 0.2634, Compromised: 0.1946
+  Uncertainty: Vacuity=0.0026, Entropy=0.9841, Strength=2423.74
+
+=== Round 20/50 ===
+Round 20: Mean Accuracy = 0.1549 ± 0.0547
+  Honest: 0.1773, Compromised: 0.1025
+  Uncertainty: Vacuity=0.0035, Entropy=0.9998, Strength=1814.34
+
+=== Round 21/50 ===
+Round 21: Mean Accuracy = 0.2028 ± 0.1241
+  Honest: 0.1811, Compromised: 0.2534
+  Uncertainty: Vacuity=0.0023, Entropy=1.0661, Strength=2678.54
+
+=== Round 22/50 ===
+Round 22: Mean Accuracy = 0.2912 ± 0.1620
+  Honest: 0.3106, Compromised: 0.2458
+  Uncertainty: Vacuity=0.0029, Entropy=0.8740, Strength=2236.20
+
+=== Round 23/50 ===
+Round 23: Mean Accuracy = 0.1932 ± 0.1089
+  Honest: 0.1702, Compromised: 0.2468
+  Uncertainty: Vacuity=0.0033, Entropy=1.0759, Strength=1927.42
+
+=== Round 24/50 ===
+Round 24: Mean Accuracy = 0.2460 ± 0.2107
+  Honest: 0.2881, Compromised: 0.1477
+  Uncertainty: Vacuity=0.0034, Entropy=0.7979, Strength=1916.37
+
+=== Round 25/50 ===
+Round 25: Mean Accuracy = 0.2432 ± 0.2125
+  Honest: 0.2875, Compromised: 0.1398
+  Uncertainty: Vacuity=0.0036, Entropy=0.5571, Strength=1841.02
+
+=== Round 26/50 ===
+Round 26: Mean Accuracy = 0.2813 ± 0.1788
+  Honest: 0.3340, Compromised: 0.1582
+  Uncertainty: Vacuity=0.0139, Entropy=0.7291, Strength=1294.74
+
+=== Round 27/50 ===
+Round 27: Mean Accuracy = 0.2794 ± 0.1991
+  Honest: 0.3113, Compromised: 0.2047
+  Uncertainty: Vacuity=0.0031, Entropy=0.7934, Strength=2325.89
+
+=== Round 28/50 ===
+Round 28: Mean Accuracy = 0.2465 ± 0.0974
+  Honest: 0.2689, Compromised: 0.1943
+  Uncertainty: Vacuity=0.0033, Entropy=0.9214, Strength=2214.70
+
+=== Round 29/50 ===
+Round 29: Mean Accuracy = 0.1785 ± 0.0688
+  Honest: 0.1573, Compromised: 0.2281
+  Uncertainty: Vacuity=0.0072, Entropy=0.8268, Strength=1370.39
+
+=== Round 30/50 ===
+Round 30: Mean Accuracy = 0.1126 ± 0.0672
+  Honest: 0.1369, Compromised: 0.0557
+  Uncertainty: Vacuity=0.0071, Entropy=0.7801, Strength=1310.67
+
+=== Round 31/50 ===
+Round 31: Mean Accuracy = 0.1334 ± 0.0262
+  Honest: 0.1406, Compromised: 0.1168
+  Uncertainty: Vacuity=0.0136, Entropy=0.9936, Strength=1294.95
+
+=== Round 32/50 ===
+Round 32: Mean Accuracy = 0.2832 ± 0.1832
+  Honest: 0.2982, Compromised: 0.2482
+  Uncertainty: Vacuity=0.0192, Entropy=0.6937, Strength=1343.57
+
+=== Round 33/50 ===
+Round 33: Mean Accuracy = 0.2924 ± 0.1496
+  Honest: 0.3225, Compromised: 0.2223
+  Uncertainty: Vacuity=0.0451, Entropy=0.8281, Strength=1339.16
+
+=== Round 34/50 ===
+Round 34: Mean Accuracy = 0.2223 ± 0.1254
+  Honest: 0.2625, Compromised: 0.1284
+  Uncertainty: Vacuity=0.0177, Entropy=0.9468, Strength=2084.07
+
+=== Round 35/50 ===
+Round 35: Mean Accuracy = 0.2179 ± 0.0659
+  Honest: 0.2479, Compromised: 0.1480
+  Uncertainty: Vacuity=0.0316, Entropy=0.8690, Strength=1667.52
+
+=== Round 36/50 ===
+Round 36: Mean Accuracy = 0.2541 ± 0.1968
+  Honest: 0.2903, Compromised: 0.1696
+  Uncertainty: Vacuity=0.0064, Entropy=0.7708, Strength=2150.51
+
+=== Round 37/50 ===
+Round 37: Mean Accuracy = 0.1850 ± 0.1053
+  Honest: 0.2016, Compromised: 0.1463
+  Uncertainty: Vacuity=0.0040, Entropy=0.9424, Strength=2364.47
+
+=== Round 38/50 ===
+Round 38: Mean Accuracy = 0.1688 ± 0.0608
+  Honest: 0.1860, Compromised: 0.1285
+  Uncertainty: Vacuity=0.0019, Entropy=1.1032, Strength=3414.45
+
+=== Round 39/50 ===
+Round 39: Mean Accuracy = 0.1504 ± 0.0441
+  Honest: 0.1621, Compromised: 0.1232
+  Uncertainty: Vacuity=0.0019, Entropy=1.1449, Strength=3530.20
+
+=== Round 40/50 ===
+Round 40: Mean Accuracy = 0.1430 ± 0.0542
+  Honest: 0.1286, Compromised: 0.1768
+  Uncertainty: Vacuity=0.0020, Entropy=1.1710, Strength=3291.13
+
+=== Round 41/50 ===
+Round 41: Mean Accuracy = 0.1903 ± 0.0617
+  Honest: 0.2164, Compromised: 0.1292
+  Uncertainty: Vacuity=0.0017, Entropy=1.1102, Strength=3916.29
+
+=== Round 42/50 ===
+Round 42: Mean Accuracy = 0.1355 ± 0.0397
+  Honest: 0.1296, Compromised: 0.1493
+  Uncertainty: Vacuity=0.0019, Entropy=1.1179, Strength=3514.30
+
+=== Round 43/50 ===
+Round 43: Mean Accuracy = 0.1882 ± 0.0679
+  Honest: 0.1724, Compromised: 0.2250
+  Uncertainty: Vacuity=0.0021, Entropy=1.0718, Strength=3182.17
+
+=== Round 44/50 ===
+Round 44: Mean Accuracy = 0.1762 ± 0.0610
+  Honest: 0.1976, Compromised: 0.1262
+  Uncertainty: Vacuity=0.0015, Entropy=1.2586, Strength=4408.45
+
+=== Round 45/50 ===
+Round 45: Mean Accuracy = 0.2475 ± 0.2055
+  Honest: 0.2888, Compromised: 0.1512
+  Uncertainty: Vacuity=0.0022, Entropy=0.8549, Strength=3165.05
+
+=== Round 46/50 ===
+Round 46: Mean Accuracy = 0.2386 ± 0.1526
+  Honest: 0.2825, Compromised: 0.1363
+  Uncertainty: Vacuity=0.0022, Entropy=0.8589, Strength=3025.63
+
+=== Round 47/50 ===
+Round 47: Mean Accuracy = 0.2430 ± 0.2088
+  Honest: 0.2912, Compromised: 0.1306
+  Uncertainty: Vacuity=0.0022, Entropy=0.9665, Strength=2839.94
+
+=== Round 48/50 ===
+Round 48: Mean Accuracy = 0.2022 ± 0.0794
+  Honest: 0.2260, Compromised: 0.1467
+  Uncertainty: Vacuity=0.0016, Entropy=1.3221, Strength=3830.16
+
+=== Round 49/50 ===
+Round 49: Mean Accuracy = 0.2227 ± 0.1472
+  Honest: 0.2620, Compromised: 0.1310
+  Uncertainty: Vacuity=0.0019, Entropy=1.1885, Strength=3416.71
+
+=== Round 50/50 ===
+Round 50: Mean Accuracy = 0.2554 ± 0.1977
+  Honest: 0.3003, Compromised: 0.1505
+  Uncertainty: Vacuity=0.0018, Entropy=1.1800, Strength=3721.46
+                                   Training Results                                   
+┏━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┓
+┃ Round ┃ Mean Acc ┃ Std Acc ┃ Honest Acc ┃ Comp. Acc ┃ Vacuity ┃ Entropy ┃ Strength ┃
+┡━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━┩
+│ 1     │ 0.1393   │ 0.1730  │ 0.1024     │ 0.2253    │ nan     │ nan     │ nan      │
+│ 2     │ 0.1822   │ 0.1545  │ 0.1576     │ 0.2397    │ 0.0121  │ 0.9548  │ 718.66   │
+│ 3     │ 0.2405   │ 0.1702  │ 0.3140     │ 0.0691    │ 0.0089  │ 1.2681  │ 817.97   │
+│ 4     │ 0.0892   │ 0.1006  │ 0.0593     │ 0.1591    │ 0.0087  │ 1.0092  │ 754.64   │
+│ 5     │ 0.0964   │ 0.0870  │ 0.0589     │ 0.1839    │ 0.0108  │ 1.0667  │ 600.83   │
+│ 6     │ 0.3553   │ 0.2756  │ 0.4126     │ 0.2216    │ 0.0102  │ 0.9792  │ 673.86   │
+│ 7     │ 0.1491   │ 0.1217  │ 0.1642     │ 0.1138    │ 0.0179  │ 0.9818  │ 503.45   │
+│ 8     │ 0.0304   │ 0.0430  │ 0.0265     │ 0.0396    │ 0.0077  │ 0.8971  │ 840.43   │
+│ 9     │ 0.1059   │ 0.0633  │ 0.1003     │ 0.1189    │ 0.0084  │ 1.0095  │ 846.24   │
+│ 10    │ 0.3414   │ 0.1701  │ 0.3547     │ 0.3105    │ 0.0127  │ 0.7988  │ 615.11   │
+│ 11    │ 0.2175   │ 0.1276  │ 0.2095     │ 0.2362    │ 0.0279  │ 0.7431  │ 470.40   │
+│ 12    │ 0.1734   │ 0.1323  │ 0.1532     │ 0.2204    │ 0.0081  │ 0.6692  │ 922.34   │
+│ 13    │ 0.2167   │ 0.0732  │ 0.2294     │ 0.1872    │ 0.0059  │ 1.1454  │ 1079.34  │
+│ 14    │ 0.1701   │ 0.1024  │ 0.1805     │ 0.1461    │ 0.0045  │ 1.0579  │ 1400.91  │
+│ 15    │ 0.2204   │ 0.0967  │ 0.2301     │ 0.1978    │ 0.0053  │ 1.0689  │ 1249.20  │
+│ 16    │ 0.1913   │ 0.0765  │ 0.1787     │ 0.2209    │ 0.0046  │ 0.9802  │ 1521.59  │
+│ 17    │ 0.1941   │ 0.1112  │ 0.1652     │ 0.2615    │ 0.0058  │ 0.7420  │ 1188.50  │
+│ 18    │ 0.2299   │ 0.1768  │ 0.2618     │ 0.1554    │ 0.0051  │ 0.7568  │ 1779.80  │
+│ 19    │ 0.2428   │ 0.1322  │ 0.2634     │ 0.1946    │ 0.0026  │ 0.9841  │ 2423.74  │
+│ 20    │ 0.1549   │ 0.0547  │ 0.1773     │ 0.1025    │ 0.0035  │ 0.9998  │ 1814.34  │
+│ 21    │ 0.2028   │ 0.1241  │ 0.1811     │ 0.2534    │ 0.0023  │ 1.0661  │ 2678.54  │
+│ 22    │ 0.2912   │ 0.1620  │ 0.3106     │ 0.2458    │ 0.0029  │ 0.8740  │ 2236.20  │
+│ 23    │ 0.1932   │ 0.1089  │ 0.1702     │ 0.2468    │ 0.0033  │ 1.0759  │ 1927.42  │
+│ 24    │ 0.2460   │ 0.2107  │ 0.2881     │ 0.1477    │ 0.0034  │ 0.7979  │ 1916.37  │
+│ 25    │ 0.2432   │ 0.2125  │ 0.2875     │ 0.1398    │ 0.0036  │ 0.5571  │ 1841.02  │
+│ 26    │ 0.2813   │ 0.1788  │ 0.3340     │ 0.1582    │ 0.0139  │ 0.7291  │ 1294.74  │
+│ 27    │ 0.2794   │ 0.1991  │ 0.3113     │ 0.2047    │ 0.0031  │ 0.7934  │ 2325.89  │
+│ 28    │ 0.2465   │ 0.0974  │ 0.2689     │ 0.1943    │ 0.0033  │ 0.9214  │ 2214.70  │
+│ 29    │ 0.1785   │ 0.0688  │ 0.1573     │ 0.2281    │ 0.0072  │ 0.8268  │ 1370.39  │
+│ 30    │ 0.1126   │ 0.0672  │ 0.1369     │ 0.0557    │ 0.0071  │ 0.7801  │ 1310.67  │
+│ 31    │ 0.1334   │ 0.0262  │ 0.1406     │ 0.1168    │ 0.0136  │ 0.9936  │ 1294.95  │
+│ 32    │ 0.2832   │ 0.1832  │ 0.2982     │ 0.2482    │ 0.0192  │ 0.6937  │ 1343.57  │
+│ 33    │ 0.2924   │ 0.1496  │ 0.3225     │ 0.2223    │ 0.0451  │ 0.8281  │ 1339.16  │
+│ 34    │ 0.2223   │ 0.1254  │ 0.2625     │ 0.1284    │ 0.0177  │ 0.9468  │ 2084.07  │
+│ 35    │ 0.2179   │ 0.0659  │ 0.2479     │ 0.1480    │ 0.0316  │ 0.8690  │ 1667.52  │
+│ 36    │ 0.2541   │ 0.1968  │ 0.2903     │ 0.1696    │ 0.0064  │ 0.7708  │ 2150.51  │
+│ 37    │ 0.1850   │ 0.1053  │ 0.2016     │ 0.1463    │ 0.0040  │ 0.9424  │ 2364.47  │
+│ 38    │ 0.1688   │ 0.0608  │ 0.1860     │ 0.1285    │ 0.0019  │ 1.1032  │ 3414.45  │
+│ 39    │ 0.1504   │ 0.0441  │ 0.1621     │ 0.1232    │ 0.0019  │ 1.1449  │ 3530.20  │
+│ 40    │ 0.1430   │ 0.0542  │ 0.1286     │ 0.1768    │ 0.0020  │ 1.1710  │ 3291.13  │
+│ 41    │ 0.1903   │ 0.0617  │ 0.2164     │ 0.1292    │ 0.0017  │ 1.1102  │ 3916.29  │
+│ 42    │ 0.1355   │ 0.0397  │ 0.1296     │ 0.1493    │ 0.0019  │ 1.1179  │ 3514.30  │
+│ 43    │ 0.1882   │ 0.0679  │ 0.1724     │ 0.2250    │ 0.0021  │ 1.0718  │ 3182.17  │
+│ 44    │ 0.1762   │ 0.0610  │ 0.1976     │ 0.1262    │ 0.0015  │ 1.2586  │ 4408.45  │
+│ 45    │ 0.2475   │ 0.2055  │ 0.2888     │ 0.1512    │ 0.0022  │ 0.8549  │ 3165.05  │
+│ 46    │ 0.2386   │ 0.1526  │ 0.2825     │ 0.1363    │ 0.0022  │ 0.8589  │ 3025.63  │
+│ 47    │ 0.2430   │ 0.2088  │ 0.2912     │ 0.1306    │ 0.0022  │ 0.9665  │ 2839.94  │
+│ 48    │ 0.2022   │ 0.0794  │ 0.2260     │ 0.1467    │ 0.0016  │ 1.3221  │ 3830.16  │
+│ 49    │ 0.2227   │ 0.1472  │ 0.2620     │ 0.1310    │ 0.0019  │ 1.1885  │ 3416.71  │
+│ 50    │ 0.2554   │ 0.1977  │ 0.3003     │ 0.1505    │ 0.0018  │ 1.1800  │ 3721.46  │
+└───────┴──────────┴─────────┴────────────┴───────────┴─────────┴─────────┴──────────┘
+
+Uncertainty Metrics:
+  • Vacuity: epistemic uncertainty — lower is more confident
+  • Entropy: aleatoric uncertainty — lower is more decisive
+  • Strength: Dirichlet strength — higher means more evidence
+Results written → /DataVol/projects/murmura/experiments/paper/dmtt/exp1_main_comparison/results/C1-StaticFedAvg-byz30-s42.parquet
+
+✓ Training complete
